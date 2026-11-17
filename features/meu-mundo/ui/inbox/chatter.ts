@@ -9,6 +9,7 @@
 import type { MMNotice } from "../../types"
 import { AFFECTION_NAME_AT, callName, type LifeSoul, type Temper } from "../../soul"
 import type { Emotion } from "../portraits"
+import { VOICE_PT, numbered, pickFresh, withVariants } from "./voice-pick"
 
 type Tr = (key: string, fallback: string) => string
 export type ChatterMoment = "enter" | "night" | "morning" | "idle"
@@ -104,16 +105,41 @@ export function brtHour(at = Date.now()) {
 }
 export const isNight = (h: number) => h >= 18 || h < 6
 
-/** Uma fala para o momento (sorteio por `roll` 0–1, para dar para testar). */
+/**
+ * As falas possíveis com as versões (2026-11-17, Alex): cada fala da personalidade + 5 versões
+ * (`<chave>_v1…5`); mágoa e carinho na voz de cada personalidade (`chHurt_<p>_N`) + as 2 gerais.
+ */
+function expand(list: Line[], temper: Temper, mood: "hurt" | "love" | null): Line[] {
+  if (mood) {
+    // a mágoa/o carinho na voz dele; as 2 gerais só para quem ainda não tem as suas
+    const emotion: Emotion = mood === "love" ? "loving" : "sad"
+    const own = numbered(`${mood === "love" ? "chLove" : "chHurt"}_${temper}`).map((k): Line => [k, VOICE_PT[k][0], emotion])
+    if (own.length) return own
+  }
+  const out: Line[] = []
+  for (const [key, pt, emotion] of list) for (const k of withVariants(key)) out.push([k, k === key ? pt : VOICE_PT[k][0], emotion])
+  return out
+}
+
+/** Uma fala para o momento (sorteio por `roll` 0–1, para dar para testar; sem repetir as últimas). */
 export function chatterLine(soul: LifeSoul, moment: ChatterMoment, t: Tr, roll = Math.random()): { title: string; emotion: Emotion } {
   const nick = callName(soul, t)
   let list = LINES[soul.temper]?.[moment] ?? LINES.bondoso.idle
+  let mood: "hurt" | "love" | null = null
   // afeto muda o tom das falas soltas (e às vezes da entrada)
   if ((moment === "idle" || moment === "enter") && nick) {
-    if (soul.affection <= HURT_AT && roll < 0.6) list = HURT
-    else if (soul.affection >= AFFECTION_NAME_AT && roll < 0.4) list = LOVE
+    if (soul.affection <= HURT_AT && roll < 0.6) {
+      list = HURT
+      mood = "hurt"
+    } else if (soul.affection >= AFFECTION_NAME_AT && roll < 0.4) {
+      list = LOVE
+      mood = "love"
+    }
   }
-  const [key, pt, emotion] = list[Math.floor(roll * 997) % list.length]
+  const all = expand(list, soul.temper, mood)
+  const family = `chat:${soul.temper}:${mood ?? moment}`
+  const pick = pickFresh(family, all.map(([k]) => k), (roll * 997) % 1)
+  const [key, pt, emotion] = all.find(([k]) => k === pick) ?? all[0]
   const title = t(key, pt).replace("{nick}", nick)
   return { title, emotion }
 }

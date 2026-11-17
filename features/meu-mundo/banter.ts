@@ -15,6 +15,7 @@ import type { CenterPlaceId } from "./types"
 import TEXT from "./ui/inbox/banter-text.json"
 import type { Emotion } from "./ui/portraits"
 import { myClan, type Clan } from "./classes"
+import { VOICE_PT, pickSticky, withVariants } from "./ui/inbox/voice-pick"
 
 const PT: Record<string, string[]> = TEXT
 type Tr = (key: string, fallback: string) => string
@@ -157,9 +158,11 @@ export function needVoice(need: string, temper: Temper | null | undefined, t: Tr
   if (!temper) return null
   // fome e despensa vazia falam pela classe (sangue × caça), quando a chave existe
   const own = clan ? `need_${need}_${SHORT[temper]}_${clan}` : null
-  if (own && PT[own]) return t(own, PT[own][0])
-  const key = `need_${need}_${SHORT[temper]}`
-  return PT[key] ? t(key, PT[key][0]) : null
+  const base = own && PT[own] ? own : `need_${need}_${SHORT[temper]}`
+  if (!PT[base]) return null
+  // 2026-11-17 (Alex): a frase + 5 versões, sem repetir as últimas (a mesma enquanto o card fica)
+  const key = pickSticky(`need:${base}`, withVariants(base))
+  return t(key, PT[key]?.[0] ?? VOICE_PT[key]?.[0] ?? key)
 }
 
 /** A resposta do personagem a uma conversa de NPC / a um capítulo (sufixo da chave). */

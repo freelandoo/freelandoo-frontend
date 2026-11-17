@@ -1,0 +1,3052 @@
+{
+ "need_hospital_psy_v1": [
+  "Soro na veia e eu aqui sem poder bater em ninguém. Que tortura.",
+  "IV in my arm and nobody to punch. This is torture.",
+  "Suero en la vena y nadie a quien pegar. Qué tortura."
+ ],
+ "need_hospital_psy_v2": [
+  "Cama de hospital, comida de hospital, cara de hospital. Me mata logo.",
+  "Hospital bed, hospital food, hospital face. Just kill me already.",
+  "Cama de hospital, comida de hospital, cara de hospital. Mátame ya."
+ ],
+ "need_hospital_psy_v3": [
+  "O médico disse 'repouso'. Eu ouvi 'fuga'. Bora.",
+  "The doctor said 'rest'. I heard 'escape'. Let's go.",
+  "El médico dijo 'reposo'. Yo oí 'fuga'. Vamos."
+ ],
+ "need_hospital_psy_v4": [
+  "Internado de novo. Parabéns, treinador. Você é péssimo nisso.",
+  "Hospitalized again. Congrats, trainer. You're terrible at this.",
+  "Internado otra vez. Felicidades, entrenador. Eres pésimo en esto."
+ ],
+ "need_hospital_psy_v5": [
+  "Essa camisola aberta atrás é pra eu fugir pelado? Porque eu vou.",
+  "Is this open-back gown so I can escape naked? Because I will.",
+  "¿Esta bata abierta atrás es para escapar desnudo? Porque lo haré."
+ ],
+ "need_unwell_psy_v1": [
+  "Tô verde. E não é de inveja. Médico, agora.",
+  "I'm green. Not with envy. Doctor, now.",
+  "Estoy verde. Y no de envidia. Médico, ya."
+ ],
+ "need_unwell_psy_v2": [
+  "Meu estômago tá brigando comigo. Pela primeira vez eu tô perdendo.",
+  "My stomach's picking a fight. For once, I'm losing.",
+  "Mi estómago me está peleando. Por primera vez, voy perdiendo."
+ ],
+ "need_unwell_psy_v3": [
+  "Se eu morrer, assombro você. Primeiro, me leva na Enfermaria.",
+  "If I die, I'll haunt you. First, take me to the Infirmary.",
+  "Si me muero, te persigo. Primero, llévame a la Enfermería."
+ ],
+ "need_unwell_psy_v4": [
+  "Tô passando mal e de mau humor. Adivinha quem vai sofrer.",
+  "I feel sick and I'm cranky. Guess who's gonna suffer.",
+  "Me siento mal y de mal humor. Adivina quién va a sufrir."
+ ],
+ "need_unwell_psy_v5": [
+  "Febre, tontura e vontade de socar. Só a última é normal.",
+  "Fever, dizziness and the urge to punch. Only the last one's normal.",
+  "Fiebre, mareo y ganas de pegar. Solo lo último es normal."
+ ],
+ "need_exhausted_psy_v1": [
+  "Tô tão destruído que nem tenho força pra ameaçar ninguém. Quase.",
+  "I'm so wrecked I can't even threaten anyone. Almost.",
+  "Estoy tan destrozado que ni puedo amenazar a nadie. Casi."
+ ],
+ "need_exhausted_psy_v2": [
+  "Mais um passo e eu deito no chão. Em cima de você, se precisar.",
+  "One more step and I'm lying down. On you, if I have to.",
+  "Un paso más y me tiro al suelo. Encima de ti, si hace falta."
+ ],
+ "need_exhausted_psy_v3": [
+  "Cansado assim eu viro um assassino lento. Ninguém merece isso.",
+  "This tired, I'm a slow killer. Nobody deserves that.",
+  "Así de cansado soy un asesino lento. Nadie merece eso."
+ ],
+ "need_exhausted_psy_v4": [
+  "Sabe aquele caco que sobra da briga? Sou eu. Cama.",
+  "You know the wreck left after a brawl? That's me. Bed.",
+  "¿Sabes los restos que quedan tras la pelea? Soy yo. Cama."
+ ],
+ "need_exhausted_psy_v5": [
+  "Me deixa apagar. Por bem ou por mal, eu apago.",
+  "Let me pass out. The easy way or the hard way, I'm out.",
+  "Déjame apagarme. Por las buenas o por las malas, me apago."
+ ],
+ "need_starving_psy_v1": [
+  "Tô com tanta fome que você tá começando a parecer comestível.",
+  "I'm so hungry you're starting to look edible.",
+  "Tengo tanta hambre que empiezas a parecer comestible."
+ ],
+ "need_starving_psy_v2": [
+  "Fome assim é crime. E eu conheço crime, acredita.",
+  "Hunger like this is a crime. And I know crime, trust me.",
+  "Un hambre así es un crimen. Y yo sé de crímenes, créeme."
+ ],
+ "need_starving_psy_v3": [
+  "Se eu desmaiar de fome, a primeira coisa que faço ao acordar é te bater.",
+  "If I faint from hunger, first thing I do when I wake up is hit you.",
+  "Si me desmayo de hambre, lo primero que haré al despertar es pegarte."
+ ],
+ "need_starving_psy_v4": [
+  "Meu estômago tá rosnando. Eu tô rosnando. Resolve.",
+  "My stomach's growling. I'm growling. Fix it.",
+  "Mi estómago gruñe. Yo gruño. Arréglalo."
+ ],
+ "need_starving_psy_v5": [
+  "Me alimenta ou me enterra. Escolhe rápido.",
+  "Feed me or bury me. Pick fast.",
+  "Aliméntame o entiérrame. Elige rápido."
+ ],
+ "need_hungry_psy_v1": [
+  "Fome. Comida. Agora. Precisa de desenho?",
+  "Hungry. Food. Now. Need a drawing?",
+  "Hambre. Comida. Ya. ¿Te hago un dibujo?"
+ ],
+ "need_hungry_psy_v2": [
+  "Tô com fome e você tá parado. Combinação perigosa.",
+  "I'm hungry and you're standing still. Dangerous combo.",
+  "Tengo hambre y tú estás quieto. Combinación peligrosa."
+ ],
+ "need_hungry_psy_v3": [
+  "Bateu a fome. Alguém vai pagar por isso, e sou eu que escolho quem.",
+  "Hunger hit. Someone's paying for it, and I'm picking who.",
+  "Llegó el hambre. Alguien lo va a pagar, y yo elijo quién."
+ ],
+ "need_hungry_psy_v4": [
+  "Comida, treinador. Não é pedido, é aviso.",
+  "Food, trainer. Not a request. A warning.",
+  "Comida, entrenador. No es un pedido, es un aviso."
+ ],
+ "need_hungry_psy_v5": [
+  "Barriga roncando. Antes ela do que eu, né?",
+  "Belly's rumbling. Better it than me, right?",
+  "La panza ruge. Mejor ella que yo, ¿no?"
+ ],
+ "need_sleep_psy_v1": [
+  "Cama. Silêncio. Se alguém me acordar, morre.",
+  "Bed. Silence. Whoever wakes me up dies.",
+  "Cama. Silencio. Quien me despierte, muere."
+ ],
+ "need_sleep_psy_v2": [
+  "Tô caindo de sono. O próximo que falar comigo leva.",
+  "I'm dead on my feet. Next one who talks to me gets it.",
+  "Me caigo de sueño. El próximo que me hable, cobra."
+ ],
+ "need_sleep_psy_v3": [
+  "Me põe pra dormir. Prometo sonhar com briga.",
+  "Put me to bed. I promise to dream about fights.",
+  "Llévame a dormir. Prometo soñar con peleas."
+ ],
+ "need_sleep_psy_v4": [
+  "Sono me deixa lento. Lento me deixa puto. Cama.",
+  "Sleepy makes me slow. Slow makes me pissed. Bed.",
+  "El sueño me hace lento. Lento me cabrea. Cama."
+ ],
+ "need_sleep_psy_v5": [
+  "Vou dormir. Pode chamar de trégua.",
+  "I'm going to sleep. Call it a truce.",
+  "Me voy a dormir. Llámalo tregua."
+ ],
+ "need_tired_psy_v1": [
+  "Cansado. Ainda dá pra bater, mas sem capricho.",
+  "Tired. I can still hit, just without the craftsmanship.",
+  "Cansado. Todavía puedo pegar, pero sin esmero."
+ ],
+ "need_tired_psy_v2": [
+  "Tô moído. Quem me olhar torto hoje não leva desconto nenhum.",
+  "I'm beat. Anyone who looks at me wrong gets no discount.",
+  "Estoy molido. Quien me mire raro hoy no tiene descuento."
+ ],
+ "need_tired_psy_v3": [
+  "Meu corpo pediu folga. Eu neguei. Agora ele tá me processando.",
+  "My body asked for a day off. I said no. Now it's suing me.",
+  "Mi cuerpo pidió descanso. Dije que no. Ahora me demanda."
+ ],
+ "need_tired_psy_v4": [
+  "Cansaço é só raiva sem energia. Me dá energia.",
+  "Tiredness is just rage without fuel. Give me fuel.",
+  "El cansancio es rabia sin energía. Dame energía."
+ ],
+ "need_tired_psy_v5": [
+  "Tô arrastando o pé. Igual arrasto os inimigos. Só que mais triste.",
+  "I'm dragging my feet. Like I drag enemies. Just sadder.",
+  "Arrastro los pies. Como arrastro enemigos. Pero más triste."
+ ],
+ "need_stressed_psy_v1": [
+  "Respira fundo, ele disse. Respirei. Ainda quero quebrar tudo.",
+  "'Breathe deep,' he said. I did. Still want to smash everything.",
+  "'Respira hondo', dijo. Respiré. Sigo queriendo romperlo todo."
+ ],
+ "need_stressed_psy_v2": [
+  "Estresse nível: soco na parede. Ou em você. Decide.",
+  "Stress level: punch the wall. Or you. Your call.",
+  "Nivel de estrés: puñetazo a la pared. O a ti. Decide."
+ ],
+ "need_stressed_psy_v3": [
+  "Me leva pra Arena antes que eu arrume briga com poste.",
+  "Take me to the Arena before I start a fight with a lamppost.",
+  "Llévame a la Arena antes de que me pelee con un poste."
+ ],
+ "need_stressed_psy_v4": [
+  "Meu olho tá tremendo. Isso nunca termina bem pra alguém.",
+  "My eye's twitching. That never ends well for somebody.",
+  "Me tiembla el ojo. Eso nunca acaba bien para alguien."
+ ],
+ "need_stressed_psy_v5": [
+  "Terapia? Minha terapia tem espada.",
+  "Therapy? My therapy comes with a sword.",
+  "¿Terapia? Mi terapia tiene espada."
+ ],
+ "need_aging_psy_v1": [
+  "Cabelo branco é só cicatriz que demorou pra aparecer.",
+  "Gray hair is just a scar that took its time.",
+  "Las canas son cicatrices que tardaron en salir."
+ ],
+ "need_aging_psy_v2": [
+  "Tô envelhecendo. A paciência, essa já morreu faz tempo.",
+  "I'm getting old. My patience died ages ago.",
+  "Estoy envejeciendo. La paciencia murió hace rato."
+ ],
+ "need_aging_psy_v3": [
+  "Velho, sim. Mas ainda bato. Agora com dor nas costas.",
+  "Old, sure. Still hit hard. Now with back pain.",
+  "Viejo, sí. Pero sigo pegando. Ahora con dolor de espalda."
+ ],
+ "need_aging_psy_v4": [
+  "A idade chegou. Avisa ela que eu não perco briga.",
+  "Age showed up. Tell it I don't lose fights.",
+  "Llegó la edad. Avísale que yo no pierdo peleas."
+ ],
+ "need_aging_psy_v5": [
+  "Ruga é mapa de briga. E eu tenho atlas.",
+  "Wrinkles are fight maps. I've got an atlas.",
+  "Las arrugas son mapas de peleas. Yo tengo un atlas."
+ ],
+ "need_fridge_empty_psy_v1": [
+  "Abri a despensa e só tinha eco. Quem foi o palhaço?",
+  "Opened the pantry and got an echo. Which clown did this?",
+  "Abrí la despensa y solo había eco. ¿Qué payaso fue?"
+ ],
+ "need_fridge_empty_psy_v2": [
+  "Despensa vazia. Ótimo. Vou comer a porta então.",
+  "Empty pantry. Great. Guess I'll eat the door.",
+  "Despensa vacía. Genial. Me como la puerta, entonces."
+ ],
+ "need_fridge_empty_psy_v3": [
+  "Nada na despensa. Você chama isso de cuidar de mim?",
+  "Nothing in the pantry. You call this taking care of me?",
+  "Nada en la despensa. ¿A esto llamas cuidarme?"
+ ],
+ "need_fridge_empty_psy_v4": [
+  "Até o rato desistiu dessa despensa. Vai no mercado.",
+  "Even the rat gave up on this pantry. Go shopping.",
+  "Hasta la rata abandonó esta despensa. Ve al mercado."
+ ],
+ "need_fridge_empty_psy_v5": [
+  "Vazia. Igual sua promessa de me alimentar.",
+  "Empty. Like your promise to feed me.",
+  "Vacía. Como tu promesa de alimentarme."
+ ],
+ "need_hungry_psy_vampiro_v1": [
+  "Sede. Bolsa de sangue. Agora. Precisa de desenho?",
+  "Thirsty. Blood bag. Now. Need a drawing?",
+  "Sed. Bolsa de sangre. Ya. ¿Te hago un dibujo?"
+ ],
+ "need_hungry_psy_vampiro_v2": [
+  "Tô com sede e você tá parado. Seu pescoço tá muito perto.",
+  "I'm thirsty and you're standing still. Your neck's very close.",
+  "Tengo sed y tú quieto. Tu cuello está muy cerca."
+ ],
+ "need_hungry_psy_vampiro_v3": [
+  "Me arruma uma bolsa antes que eu improvise uma.",
+  "Get me a bag before I improvise one.",
+  "Consígueme una bolsa antes de que improvise una."
+ ],
+ "need_hungry_psy_vampiro_v4": [
+  "Bateu a sede. O pescoço de alguém vai ficar nervoso.",
+  "Thirst hit. Someone's neck is about to get nervous.",
+  "Llegó la sed. El cuello de alguien se va a poner nervioso."
+ ],
+ "need_hungry_psy_vampiro_v5": [
+  "Sangue, treinador. Não é pedido, é aviso.",
+  "Blood, trainer. Not a request. A warning.",
+  "Sangre, entrenador. No es un pedido, es un aviso."
+ ],
+ "need_starving_psy_vampiro_v1": [
+  "Tô tão seco que sua veia tá parecendo um canudo.",
+  "I'm so dry your vein looks like a straw.",
+  "Estoy tan seco que tu vena parece una pajita."
+ ],
+ "need_starving_psy_vampiro_v2": [
+  "Me dá sangue ou eu escolho o doador. Spoiler: é você.",
+  "Give me blood or I pick the donor. Spoiler: it's you.",
+  "Dame sangre o elijo al donante. Spoiler: eres tú."
+ ],
+ "need_starving_psy_vampiro_v3": [
+  "Sede assim é crime. E eu tô quase cometendo um.",
+  "Thirst like this is a crime. And I'm about to commit one.",
+  "Una sed así es un crimen. Y estoy a punto de cometer uno."
+ ],
+ "need_starving_psy_vampiro_v4": [
+  "Minhas presas tão coçando. Resolve antes que elas resolvam.",
+  "My fangs are itching. Fix it before they do.",
+  "Me pican los colmillos. Resuélvelo antes que ellos."
+ ],
+ "need_starving_psy_vampiro_v5": [
+  "Me alimenta ou me enterra. Vampiro enterrado volta puto.",
+  "Feed me or bury me. Buried vampires come back pissed.",
+  "Aliméntame o entiérrame. Vampiro enterrado vuelve cabreado."
+ ],
+ "need_fridge_empty_psy_vampiro_v1": [
+  "Abri a despensa e nem uma gota. Quem foi o palhaço?",
+  "Opened the pantry and not one drop. Which clown did this?",
+  "Abrí la despensa y ni una gota. ¿Qué payaso fue?"
+ ],
+ "need_fridge_empty_psy_vampiro_v2": [
+  "Sem bolsa. Ótimo. Vou bater na porta do vizinho. Com os dentes.",
+  "No bags. Great. I'll knock on the neighbor's door. With my teeth.",
+  "Sin bolsas. Genial. Llamaré a la puerta del vecino. Con los dientes."
+ ],
+ "need_fridge_empty_psy_vampiro_v3": [
+  "Despensa seca. Igual sua dedicação, treinador.",
+  "Dry pantry. Like your dedication, trainer.",
+  "Despensa seca. Como tu dedicación, entrenador."
+ ],
+ "need_fridge_empty_psy_vampiro_v4": [
+  "Nenhuma bolsa. Banco de Sangue existe, sabia?",
+  "No bags. The Blood Bank exists, you know?",
+  "Ni una bolsa. El Banco de Sangre existe, ¿sabías?"
+ ],
+ "need_fridge_empty_psy_vampiro_v5": [
+  "Vazia. Vou começar a olhar pros vizinhos com carinho.",
+  "Empty. I'm starting to look at the neighbors fondly.",
+  "Vacía. Voy a empezar a mirar a los vecinos con cariño."
+ ],
+ "need_hungry_psy_raposa_v1": [
+  "Fome. Carne. Agora. Precisa de desenho?",
+  "Hungry. Meat. Now. Need a drawing?",
+  "Hambre. Carne. Ya. ¿Te hago un dibujo?"
+ ],
+ "need_hungry_psy_raposa_v2": [
+  "Tô com fome e você tá parado. Você tem carne, sabia?",
+  "I'm hungry and you're standing still. You're made of meat, you know?",
+  "Tengo hambre y tú quieto. Tú tienes carne, ¿sabías?"
+ ],
+ "need_hungry_psy_raposa_v3": [
+  "Carne, treinador. Crua ou mal passada, tanto faz. Rápido.",
+  "Meat, trainer. Raw or rare, whatever. Fast.",
+  "Carne, entrenador. Cruda o poco hecha, da igual. Rápido."
+ ],
+ "need_hungry_psy_raposa_v4": [
+  "Minha chama tá pedindo carne. Eu tô pedindo menos educado.",
+  "My flame's asking for meat. I'm asking less politely.",
+  "Mi llama pide carne. Yo la pido con menos educación."
+ ],
+ "need_hungry_psy_raposa_v5": [
+  "Bateu a fome. Alguém vai virar churrasco, e não vai ser eu.",
+  "Hunger hit. Someone's becoming barbecue, and it won't be me.",
+  "Llegó el hambre. Alguien va a ser asado, y no seré yo."
+ ],
+ "need_starving_psy_raposa_v1": [
+  "Tô com tanta fome que você tá parecendo uma picanha.",
+  "I'm so hungry you're starting to look like a steak.",
+  "Tengo tanta hambre que pareces un chuletón."
+ ],
+ "need_starving_psy_raposa_v2": [
+  "Me dá carne ou eu caço. E você corre devagar.",
+  "Give me meat or I hunt. And you run slow.",
+  "Dame carne o cazo. Y tú corres lento."
+ ],
+ "need_starving_psy_raposa_v3": [
+  "Minha chama tá fraca e meu humor tá pior. Carne, já.",
+  "My flame's weak and my mood's worse. Meat, now.",
+  "Mi llama está débil y mi humor peor. Carne, ya."
+ ],
+ "need_starving_psy_raposa_v4": [
+  "Fome de raposa não negocia. Morde.",
+  "Fox hunger doesn't negotiate. It bites.",
+  "El hambre de zorro no negocia. Muerde."
+ ],
+ "need_starving_psy_raposa_v5": [
+  "Me alimenta ou me enterra. Raposa enterrada cava de volta.",
+  "Feed me or bury me. Buried foxes dig back out.",
+  "Aliméntame o entiérrame. Zorro enterrado cava de vuelta."
+ ],
+ "need_fridge_empty_psy_raposa_v1": [
+  "Abri a despensa e só tinha osso. Do rato que morreu de fome.",
+  "Opened the pantry: just bones. From the rat that starved.",
+  "Abrí la despensa y solo había huesos. De la rata que murió de hambre."
+ ],
+ "need_fridge_empty_psy_raposa_v2": [
+  "Sem carne. Ótimo. Vou caçar o carteiro.",
+  "No meat. Great. I'll hunt the mailman.",
+  "Sin carne. Genial. Voy a cazar al cartero."
+ ],
+ "need_fridge_empty_psy_raposa_v3": [
+  "Despensa vazia. Você chama isso de cuidar de mim?",
+  "Empty pantry. You call this taking care of me?",
+  "Despensa vacía. ¿A esto llamas cuidarme?"
+ ],
+ "need_fridge_empty_psy_raposa_v4": [
+  "Nenhuma carne. O Açougue fica logo ali, gênio.",
+  "No meat. The Butcher's is right there, genius.",
+  "Nada de carne. La Carnicería está ahí mismo, genio."
+ ],
+ "need_fridge_empty_psy_raposa_v5": [
+  "Vazia. Igual a sua chance de sair inteiro se não encher.",
+  "Empty. Like your chances of staying in one piece if you don't fill it.",
+  "Vacía. Como tus chances de salir entero si no la llenas."
+ ],
+ "chPsyEnter1_v1": [
+  "Acordei com vontade de fazer amigos. Brincadeira. Bora bater.",
+  "Woke up wanting to make friends. Kidding. Let's go hit people.",
+  "Me desperté con ganas de hacer amigos. Es broma. A pegar."
+ ],
+ "chPsyEnter1_v2": [
+  "Hoje a agenda tá cheia: briga, briga e, se sobrar tempo, briga.",
+  "Busy schedule today: fight, fight and, if there's time, fight.",
+  "Agenda llena hoy: pelea, pelea y, si sobra tiempo, pelea."
+ ],
+ "chPsyEnter1_v3": [
+  "Bom te ver. Agora sai da frente que eu tenho gente pra socar.",
+  "Good to see you. Now move, I've got people to punch.",
+  "Qué bueno verte. Ahora apártate, tengo gente que golpear."
+ ],
+ "chPsyEnter1_v4": [
+  "Chegou? Ótimo. Já tava ficando sem ninguém pra irritar.",
+  "You're here? Great. I was running out of people to annoy.",
+  "¿Llegaste? Genial. Me estaba quedando sin a quién molestar."
+ ],
+ "chPsyEnter1_v5": [
+  "Plano do dia: achar o mais forte e deixar ele menos forte.",
+  "Today's plan: find the strongest guy and make him less strong.",
+  "Plan del día: encontrar al más fuerte y dejarlo menos fuerte."
+ ],
+ "chPsyEnter2_v1": [
+  "Alongamento feito. Agora só falta a vítima.",
+  "Stretching done. Now I just need a victim.",
+  "Estiramiento hecho. Solo falta la víctima."
+ ],
+ "chPsyEnter2_v2": [
+  "Quem vai ser o saco de pancada hoje? Levanta a mão.",
+  "Who's today's punching bag? Raise your hand.",
+  "¿Quién será el saco de boxeo hoy? Levanten la mano."
+ ],
+ "chPsyEnter2_v3": [
+  "Tô de bom humor. Isso é péssimo pra alguém por aí.",
+  "I'm in a good mood. That's terrible news for someone.",
+  "Estoy de buen humor. Pésima noticia para alguien."
+ ],
+ "chPsyEnter2_v4": [
+  "Hoje eu vou ser gentil. Só bato em quem merece. Todo mundo.",
+  "Today I'll be nice. I'll only hit those who deserve it. Everyone.",
+  "Hoy seré amable. Solo pego a quien lo merezca. A todos."
+ ],
+ "chPsyEnter2_v5": [
+  "Me fala um nome. Qualquer nome. Eu resolvo o resto.",
+  "Give me a name. Any name. I'll handle the rest.",
+  "Dime un nombre. Cualquiera. Yo me encargo del resto."
+ ],
+ "chPsyNight1_v1": [
+  "Escureceu. Os monstros saem, os covardes entram. Bora pra rua.",
+  "Dark out. Monsters come out, cowards go in. Let's hit the street.",
+  "Oscureció. Los monstruos salen, los cobardes entran. A la calle."
+ ],
+ "chPsyNight1_v2": [
+  "Noite boa pra fazer um monstro chorar.",
+  "Good night to make a monster cry.",
+  "Buena noche para hacer llorar a un monstruo."
+ ],
+ "chPsyNight1_v3": [
+  "Lua cheia, rua vazia, punho fechado. Perfeito.",
+  "Full moon, empty street, clenched fist. Perfect.",
+  "Luna llena, calle vacía, puño cerrado. Perfecto."
+ ],
+ "chPsyNight1_v4": [
+  "De noite ninguém vê o que eu faço. Eu adoro isso.",
+  "At night nobody sees what I do. I love that.",
+  "De noche nadie ve lo que hago. Me encanta."
+ ],
+ "chPsyNight1_v5": [
+  "Os monstros acham que a noite é deles. Coitados.",
+  "Monsters think the night belongs to them. Poor things.",
+  "Los monstruos creen que la noche es suya. Pobrecitos."
+ ],
+ "chPsyNight2_v1": [
+  "Hora do recreio. Pros monstros, hora do velório.",
+  "Recess time. For the monsters, funeral time.",
+  "Hora del recreo. Para los monstruos, hora del velorio."
+ ],
+ "chPsyNight2_v2": [
+  "A noite chegou. Pode avisar os monstros que eu tô acordado.",
+  "Night's here. Go tell the monsters I'm awake.",
+  "Llegó la noche. Avisa a los monstruos que estoy despierto."
+ ],
+ "chPsyNight2_v3": [
+  "Escuro total. Só eu e o barulho de osso quebrando. Romântico.",
+  "Pitch dark. Just me and the sound of breaking bones. Romantic.",
+  "Oscuridad total. Solo yo y el sonido de huesos rotos. Romántico."
+ ],
+ "chPsyNight2_v4": [
+  "Os monstros têm medo do escuro? Deviam ter medo de mim.",
+  "Monsters afraid of the dark? They should be afraid of me.",
+  "¿Los monstruos le temen a la oscuridad? Deberían temerme a mí."
+ ],
+ "chPsyNight2_v5": [
+  "Escureceu. Se ouvir grito, fica tranquilo: não é meu.",
+  "It's dark. If you hear screaming, relax: it's not mine.",
+  "Oscureció. Si oyes gritos, tranquilo: no son míos."
+ ],
+ "chPsyMorning1_v1": [
+  "Bom dia. O sol nasceu e eu já tô de mau humor. Recorde.",
+  "Morning. Sun's up and I'm already cranky. A record.",
+  "Buenos días. Salió el sol y ya estoy de mal humor. Récord."
+ ],
+ "chPsyMorning1_v2": [
+  "Café? Não. Me dá alguém pra empurrar.",
+  "Coffee? No. Give me someone to shove.",
+  "¿Café? No. Dame a alguien a quien empujar."
+ ],
+ "chPsyMorning1_v3": [
+  "Amanheceu. Que pena, os monstros fugiram. Sobrou vocês.",
+  "Morning. Shame, the monsters ran off. That leaves you lot.",
+  "Amaneció. Qué pena, los monstruos huyeron. Quedan ustedes."
+ ],
+ "chPsyMorning1_v4": [
+  "Bom dia pra quem? Eu dormi mal e alguém vai pagar.",
+  "Good morning for whom? I slept badly and someone's paying.",
+  "¿Buenos días para quién? Dormí mal y alguien lo pagará."
+ ],
+ "chPsyMorning1_v5": [
+  "Acordei. O mundo ainda tá de pé. Por enquanto.",
+  "I'm up. The world's still standing. For now.",
+  "Me desperté. El mundo sigue en pie. Por ahora."
+ ],
+ "chPsyIdle1_v1": [
+  "Parado assim eu começo a ter ideias. Ideias ruins.",
+  "Standing still gives me ideas. Bad ideas.",
+  "Quieto así empiezo a tener ideas. Malas ideas."
+ ],
+ "chPsyIdle1_v2": [
+  "Tédio é o primeiro passo pro crime. Me tira daqui.",
+  "Boredom is the first step to crime. Get me out of here.",
+  "El aburrimiento es el primer paso al crimen. Sácame de aquí."
+ ],
+ "chPsyIdle1_v3": [
+  "Ficar parado é coisa de estátua. E eu quebro estátua.",
+  "Standing still is for statues. And I break statues.",
+  "Quedarse quieto es de estatuas. Y yo rompo estatuas."
+ ],
+ "chPsyIdle1_v4": [
+  "Ninguém apanhou hoje ainda. Isso me preocupa.",
+  "Nobody's been beaten up yet today. That worries me.",
+  "Nadie ha recibido una paliza hoy. Eso me preocupa."
+ ],
+ "chPsyIdle1_v5": [
+  "Tô contando os segundos. E as pessoas que eu vou bater.",
+  "I'm counting the seconds. And the people I'll hit.",
+  "Estoy contando los segundos. Y a la gente que voy a pegar."
+ ],
+ "chPsyIdle2_v1": [
+  "Olha aquele ali. Tem cara de quem merece um soco.",
+  "Look at that one. Face that's begging for a punch.",
+  "Mira a ese. Tiene cara de merecer un puñetazo."
+ ],
+ "chPsyIdle2_v2": [
+  "Todo mundo aqui tem cara de saco de pancada. É talento.",
+  "Everyone here looks like a punching bag. It's a gift.",
+  "Todos aquí tienen cara de saco de boxeo. Es un don."
+ ],
+ "chPsyIdle2_v3": [
+  "Respira, respira… não, não adiantou. Quero bater.",
+  "Breathe, breathe… nope, didn't work. I want to hit something.",
+  "Respira, respira… no, no sirvió. Quiero pegar."
+ ],
+ "chPsyIdle2_v4": [
+  "Se alguém me der bom dia, eu considero provocação.",
+  "If anyone says good morning, I'm taking it as a provocation.",
+  "Si alguien me da los buenos días, lo tomo como provocación."
+ ],
+ "chPsyIdle2_v5": [
+  "Calma, não vou bater em ninguém. Hoje não. Talvez.",
+  "Relax, I won't hit anyone. Not today. Maybe.",
+  "Tranquilo, no le pegaré a nadie. Hoy no. Quizás."
+ ],
+ "chHurt_psicopata_1": [
+  "{nick}, você me larga aqui igual arma enferrujada. Lembra de mim?",
+  "{nick}, you leave me here like a rusty sword. Remember me?",
+  "{nick}, me dejas aquí como un arma oxidada. ¿Te acuerdas de mí?"
+ ],
+ "chHurt_psicopata_2": [
+  "Tô começando a achar que o inimigo é você, {nick}.",
+  "I'm starting to think the enemy is you, {nick}.",
+  "Empiezo a pensar que el enemigo eres tú, {nick}."
+ ],
+ "chHurt_psicopata_3": [
+  "Você sumiu, {nick}. Eu anotei. Eu anoto tudo.",
+  "You vanished, {nick}. I wrote it down. I write everything down.",
+  "Desapareciste, {nick}. Lo anoté. Yo lo anoto todo."
+ ],
+ "chHurt_psicopata_4": [
+  "Ninguém me ignora, {nick}. Só você. Por enquanto.",
+  "Nobody ignores me, {nick}. Only you. For now.",
+  "Nadie me ignora, {nick}. Solo tú. Por ahora."
+ ],
+ "chHurt_psicopata_5": [
+  "Legal, {nick}. Me esquece aí. Eu não esqueço nada.",
+  "Great, {nick}. Forget me. I never forget anything.",
+  "Genial, {nick}. Olvídame. Yo no olvido nada."
+ ],
+ "chLove_psicopata_1": [
+  "{nick}, você é o único que eu não bateria. Talvez.",
+  "{nick}, you're the only one I wouldn't hit. Probably.",
+  "{nick}, eres el único al que no le pegaría. Quizás."
+ ],
+ "chLove_psicopata_2": [
+  "Se alguém mexer com você, {nick}, eu enterro. Com carinho.",
+  "If anyone messes with you, {nick}, I bury them. Lovingly.",
+  "Si alguien se mete contigo, {nick}, lo entierro. Con cariño."
+ ],
+ "chLove_psicopata_3": [
+  "Você é legal, {nick}. Não conta pra ninguém que eu disse.",
+  "You're cool, {nick}. Don't tell anyone I said that.",
+  "Eres genial, {nick}. No le digas a nadie que lo dije."
+ ],
+ "chLove_psicopata_4": [
+  "{nick}, você é tipo uma briga boa: me deixa feliz.",
+  "{nick}, you're like a good fight: you make me happy.",
+  "{nick}, eres como una buena pelea: me haces feliz."
+ ],
+ "chLove_psicopata_5": [
+  "Eu protejo você, {nick}. É a coisa mais fofa que eu faço.",
+  "I protect you, {nick}. It's the cutest thing I do.",
+  "Te protejo, {nick}. Es lo más tierno que hago."
+ ],
+ "need_hospital_cow_v1": [
+  "O médico sorriu. Por que ele sorriu? Isso é ruim, né?",
+  "The doctor smiled. Why did he smile? That's bad, right?",
+  "El médico sonrió. ¿Por qué sonrió? Eso es malo, ¿no?"
+ ],
+ "need_hospital_cow_v2": [
+  "Tô internado e o cara do lado tá tossindo. VAI PEGAR EM MIM.",
+  "I'm in the ward and the guy next to me is coughing. I'M GONNA CATCH IT.",
+  "Estoy internado y el de al lado tose. ME LO VA A PEGAR."
+ ],
+ "need_hospital_cow_v3": [
+  "Essa agulha é pra mim? NÃO. Tô ótimo. Tô curado. Me tira daqui.",
+  "Is that needle for me? NO. I'm fine. I'm cured. Get me out.",
+  "¿Esa aguja es para mí? NO. Estoy bien. Curado. Sácame de aquí."
+ ],
+ "need_hospital_cow_v4": [
+  "Se eu não sair daqui, fala pra todo mundo que eu fui corajoso. Mente.",
+  "If I don't make it out, tell everyone I was brave. Lie.",
+  "Si no salgo de aquí, di a todos que fui valiente. Miente."
+ ],
+ "need_hospital_cow_v5": [
+  "Hospital é cheio de gente doente. Eu tô no pior lugar do mundo!",
+  "Hospitals are full of sick people. I'm in the worst place on earth!",
+  "¡El hospital está lleno de enfermos! ¡Estoy en el peor lugar del mundo!"
+ ],
+ "need_unwell_cow_v1": [
+  "Doeu aqui. E aqui. E se for tudo? Me leva no médico!",
+  "It hurts here. And here. What if it's everything? Doctor!",
+  "Me duele aquí. Y aquí. ¿Y si es todo? ¡Al médico!"
+ ],
+ "need_unwell_cow_v2": [
+  "Pesquisei meus sintomas. Já escolhi a música do meu enterro.",
+  "I looked up my symptoms. I've already picked my funeral song.",
+  "Busqué mis síntomas. Ya elegí la canción de mi entierro."
+ ],
+ "need_unwell_cow_v3": [
+  "Tô passando mal. Não é drama. É drama, mas é sério.",
+  "I feel sick. It's not drama. It's drama, but it's serious.",
+  "Me siento mal. No es drama. Es drama, pero es serio."
+ ],
+ "need_unwell_cow_v4": [
+  "Minha mão tá suando. Isso é doença ou medo? OS DOIS?",
+  "My hands are sweating. Is it sickness or fear? BOTH?",
+  "Me sudan las manos. ¿Es enfermedad o miedo? ¿LAS DOS?"
+ ],
+ "need_unwell_cow_v5": [
+  "E se eu desmaiar na rua e um monstro me achar? ENFERMARIA. JÁ.",
+  "What if I faint outside and a monster finds me? INFIRMARY. NOW.",
+  "¿Y si me desmayo en la calle y me encuentra un monstruo? ENFERMERÍA. YA."
+ ],
+ "need_exhausted_cow_v1": [
+  "Tô tão cansado que se um monstro vier, eu deixo ele me levar.",
+  "I'm so tired that if a monster shows up, I'll let it take me.",
+  "Estoy tan cansado que si viene un monstruo, dejo que me lleve."
+ ],
+ "need_exhausted_cow_v2": [
+  "Minhas pernas pararam de funcionar. Era meu único plano de fuga.",
+  "My legs stopped working. They were my only escape plan.",
+  "Mis piernas dejaron de funcionar. Eran mi único plan de fuga."
+ ],
+ "need_exhausted_cow_v3": [
+  "Exausto assim eu nem consigo ter medo direito. Que horror.",
+  "This exhausted, I can't even be scared properly. Horrible.",
+  "Así de agotado ni siquiera puedo tener miedo bien. Qué horror."
+ ],
+ "need_exhausted_cow_v4": [
+  "Me carrega? Prometo não gritar. Muito.",
+  "Carry me? I promise not to scream. Much.",
+  "¿Me cargas? Prometo no gritar. Mucho."
+ ],
+ "need_exhausted_cow_v5": [
+  "Sem força pra correr. Ou seja: sem plano nenhum. SOCORRO.",
+  "No strength to run. Meaning: no plan at all. HELP.",
+  "Sin fuerza para correr. O sea: sin ningún plan. SOCORRO."
+ ],
+ "need_starving_cow_v1": [
+  "Minha barriga fez um barulho. Ou foi um monstro? FOI UM MONSTRO?",
+  "My belly made a noise. Or was it a monster? WAS IT A MONSTER?",
+  "Mi panza hizo un ruido. ¿O fue un monstruo? ¿FUE UN MONSTRUO?"
+ ],
+ "need_starving_cow_v2": [
+  "Vou desmaiar de fome e alguém vai me roubar. Ou pior.",
+  "I'll faint from hunger and someone will rob me. Or worse.",
+  "Me voy a desmayar de hambre y alguien me robará. O peor."
+ ],
+ "need_starving_cow_v3": [
+  "Fome assim deve ser perigoso. Tem ambulância pra fome?",
+  "Hunger like this must be dangerous. Is there an ambulance for hunger?",
+  "Un hambre así debe ser peligrosa. ¿Hay ambulancia para el hambre?"
+ ],
+ "need_starving_cow_v4": [
+  "Tô fraco, tremendo e com fome. Ou seja, eu normal, só que pior.",
+  "Weak, shaking and hungry. So, normal me, but worse.",
+  "Débil, temblando y con hambre. O sea, yo normal, pero peor."
+ ],
+ "need_starving_cow_v5": [
+  "Se eu morrer de fome, por favor, não deixa ninguém rir.",
+  "If I starve to death, please don't let anyone laugh.",
+  "Si me muero de hambre, por favor, que nadie se ría."
+ ],
+ "need_hungry_cow_v1": [
+  "Tô com fome, mas restaurante tem gente. Gente é perigoso.",
+  "I'm hungry, but restaurants have people. People are dangerous.",
+  "Tengo hambre, pero los restaurantes tienen gente. La gente es peligrosa."
+ ],
+ "need_hungry_cow_v2": [
+  "Bora comer? Mas em casa. Com a porta trancada. Duas vezes.",
+  "Let's eat? At home. With the door locked. Twice.",
+  "¿Comemos? Pero en casa. Con la puerta cerrada. Dos veces."
+ ],
+ "need_hungry_cow_v3": [
+  "Bateu a fome. Delivery entrega até dentro do quarto?",
+  "I'm hungry. Does delivery come all the way into the bedroom?",
+  "Tengo hambre. ¿El delivery entrega hasta dentro del cuarto?"
+ ],
+ "need_hungry_cow_v4": [
+  "Comer na rua é arriscado. E se a comida tiver medo de mim também?",
+  "Eating out is risky. What if the food is scared of me too?",
+  "Comer fuera es arriesgado. ¿Y si la comida también me tiene miedo?"
+ ],
+ "need_hungry_cow_v5": [
+  "Tô com fome. Mas devagar, sem susto, tá?",
+  "I'm hungry. But slowly, no surprises, okay?",
+  "Tengo hambre. Pero despacito, sin sustos, ¿sí?"
+ ],
+ "need_sleep_cow_v1": [
+  "Vou dormir. Você confere debaixo da cama antes?",
+  "I'm going to sleep. Can you check under the bed first?",
+  "Me voy a dormir. ¿Revisas debajo de la cama antes?"
+ ],
+ "need_sleep_cow_v2": [
+  "Tô com sono, mas e se eu sonhar com monstro? Fica comigo?",
+  "I'm sleepy, but what if I dream about monsters? Stay with me?",
+  "Tengo sueño, ¿pero y si sueño con monstruos? ¿Te quedas?"
+ ],
+ "need_sleep_cow_v3": [
+  "Preciso dormir. Com a luz, o abajur e a lanterna ligados.",
+  "I need sleep. With the light, the lamp and the flashlight on.",
+  "Necesito dormir. Con la luz, la lámpara y la linterna encendidas."
+ ],
+ "need_sleep_cow_v4": [
+  "Dormir de olho aberto conta? Porque é o que eu vou fazer.",
+  "Does sleeping with my eyes open count? Because that's the plan.",
+  "¿Dormir con los ojos abiertos cuenta? Porque eso haré."
+ ],
+ "need_sleep_cow_v5": [
+  "Tô morrendo de sono. Morrendo é jeito de falar. Né? NÉ?",
+  "I'm dying of sleepiness. Dying is a figure of speech. Right? RIGHT?",
+  "Me muero de sueño. Morir es una forma de hablar. ¿No? ¿NO?"
+ ],
+ "need_tired_cow_v1": [
+  "Cansado eu corro menos. Correr menos é morrer mais.",
+  "Tired means running less. Running less means dying more.",
+  "Cansado corro menos. Correr menos es morir más."
+ ],
+ "need_tired_cow_v2": [
+  "Tô cansado. Dá pra gente andar perto da parede? Por segurança.",
+  "I'm tired. Can we walk close to the wall? For safety.",
+  "Estoy cansado. ¿Caminamos pegados a la pared? Por seguridad."
+ ],
+ "need_tired_cow_v3": [
+  "Se eu bocejar e um monstro aparecer, a culpa é sua.",
+  "If I yawn and a monster shows up, it's your fault.",
+  "Si bostezo y aparece un monstruo, la culpa es tuya."
+ ],
+ "need_tired_cow_v4": [
+  "Minhas pernas tão moles. Ótimo pra tremer, péssimo pra fugir.",
+  "My legs are jelly. Great for shaking, terrible for running.",
+  "Tengo las piernas flojas. Genial para temblar, pésimo para huir."
+ ],
+ "need_tired_cow_v5": [
+  "Cansado, com medo e com fome. Ah, não, fome ainda não. Ufa.",
+  "Tired, scared and hungry. Oh no wait, not hungry yet. Phew.",
+  "Cansado, con miedo y con hambre. Ah, no, hambre todavía no. Uf."
+ ],
+ "need_stressed_cow_v1": [
+  "Respira, respira… ESQUECI COMO RESPIRA.",
+  "Breathe, breathe… I FORGOT HOW TO BREATHE.",
+  "Respira, respira… OLVIDÉ CÓMO SE RESPIRA."
+ ],
+ "need_stressed_cow_v2": [
+  "Tô tão nervoso que tô com medo do meu próprio reflexo.",
+  "I'm so nervous I'm scared of my own reflection.",
+  "Estoy tan nervioso que le tengo miedo a mi propio reflejo."
+ ],
+ "need_stressed_cow_v3": [
+  "Meu coração tá batendo tão alto que os monstros vão ouvir!",
+  "My heart's beating so loud the monsters will hear it!",
+  "¡Mi corazón late tan fuerte que los monstruos lo van a oír!"
+ ],
+ "need_stressed_cow_v4": [
+  "Calma, calma. Não, eu não tô calmo. Ninguém tá calmo!",
+  "Calm, calm. No, I'm not calm. Nobody is calm!",
+  "Calma, calma. No, no estoy calmado. ¡Nadie está calmado!"
+ ],
+ "need_stressed_cow_v5": [
+  "Tô suando frio. Ou quente. Os dois. Isso é normal?",
+  "Cold sweat. Or hot. Both. Is that normal?",
+  "Sudor frío. O caliente. Los dos. ¿Es normal?"
+ ],
+ "need_aging_cow_v1": [
+  "Achei um cabelo branco. É contagioso? Vai se espalhar?",
+  "Found a gray hair. Is it contagious? Will it spread?",
+  "Encontré una cana. ¿Es contagioso? ¿Se va a extender?"
+ ],
+ "need_aging_cow_v2": [
+  "Tô envelhecendo. Pelo menos velho ninguém chama pra luta.",
+  "I'm getting old. At least nobody challenges old guys to fights.",
+  "Estoy envejeciendo. Al menos a los viejos nadie los reta."
+ ],
+ "need_aging_cow_v3": [
+  "Rugas novas. Será que é o medo deixando marca?",
+  "New wrinkles. Is that fear leaving marks?",
+  "Arrugas nuevas. ¿Será el miedo dejando marca?"
+ ],
+ "need_aging_cow_v4": [
+  "Ficar velho é assustador. Tudo é assustador, mas isso mais.",
+  "Getting old is scary. Everything's scary, but this more.",
+  "Envejecer da miedo. Todo da miedo, pero esto más."
+ ],
+ "need_aging_cow_v5": [
+  "Velho e medroso. Pelo menos agora tenho desculpa pra não sair.",
+  "Old and scared. At least now I have an excuse not to go out.",
+  "Viejo y miedoso. Al menos ahora tengo excusa para no salir."
+ ],
+ "need_fridge_empty_cow_v1": [
+  "Despensa vazia! Vou ter que ir no Empório? COM GENTE?",
+  "Empty pantry! I have to go to the Emporium? WITH PEOPLE?",
+  "¡Despensa vacía! ¿Tengo que ir al Emporio? ¿CON GENTE?"
+ ],
+ "need_fridge_empty_cow_v2": [
+  "Não tem nada pra comer. É o começo do fim, né?",
+  "There's nothing to eat. This is the beginning of the end, right?",
+  "No hay nada para comer. Es el principio del fin, ¿no?"
+ ],
+ "need_fridge_empty_cow_v3": [
+  "Vazia. Será que foi um ladrão? E SE ELE AINDA TÁ AQUI?",
+  "Empty. Was it a thief? WHAT IF HE'S STILL HERE?",
+  "Vacía. ¿Fue un ladrón? ¿Y SI TODAVÍA ESTÁ AQUÍ?"
+ ],
+ "need_fridge_empty_cow_v4": [
+  "Acabou a comida. Vamos morrer. Desculpa o drama. Vamos morrer.",
+  "Food's gone. We're going to die. Sorry for the drama. We're going to die.",
+  "Se acabó la comida. Vamos a morir. Perdón el drama. Vamos a morir."
+ ],
+ "need_fridge_empty_cow_v5": [
+  "Despensa vazia. Pode ir sozinho no mercado? Eu guardo a porta.",
+  "Empty pantry. Can you go shopping alone? I'll guard the door.",
+  "Despensa vacía. ¿Vas solo al mercado? Yo cuido la puerta."
+ ],
+ "need_hungry_cow_vampiro_v1": [
+  "Tô com sede, mas o Banco de Sangue tem fila. Fila tem gente!",
+  "I'm thirsty, but the Blood Bank has a line. Lines have people!",
+  "Tengo sed, pero el Banco de Sangre tiene fila. ¡La fila tiene gente!"
+ ],
+ "need_hungry_cow_vampiro_v2": [
+  "Bora beber? Mas em casa. De canudinho. Com a porta trancada.",
+  "Let's drink? At home. With a straw. Door locked.",
+  "¿Bebemos? Pero en casa. Con pajita. Con la puerta cerrada."
+ ],
+ "need_hungry_cow_vampiro_v3": [
+  "Bateu a sede. Banco de Sangue entrega? Pela janela?",
+  "I'm thirsty. Does the Blood Bank deliver? Through the window?",
+  "Tengo sed. ¿El Banco de Sangre entrega? ¿Por la ventana?"
+ ],
+ "need_hungry_cow_vampiro_v4": [
+  "Beber na rua é arriscado. E se o sangue for de alguém bravo?",
+  "Drinking out is risky. What if the blood came from someone angry?",
+  "Beber fuera es arriesgado. ¿Y si la sangre es de alguien enojado?"
+ ],
+ "need_hungry_cow_vampiro_v5": [
+  "Tô com sede. Uma bolsinha só, sem susto, tá?",
+  "I'm thirsty. Just one little bag, no surprises, okay?",
+  "Tengo sed. Una bolsita nada más, sin sustos, ¿sí?"
+ ],
+ "need_starving_cow_vampiro_v1": [
+  "Tô tão seco que minha pele tá rachando. Isso é normal? NÃO É, NÉ?",
+  "I'm so dry my skin is cracking. Is that normal? IT'S NOT, IS IT?",
+  "Estoy tan seco que se me agrieta la piel. ¿Es normal? NO LO ES, ¿VERDAD?"
+ ],
+ "need_starving_cow_vampiro_v2": [
+  "Se eu ficar mais seco eu viro pó. Já vi acontecer. DE LONGE.",
+  "Any drier and I'll turn to dust. I've seen it happen. FROM AFAR.",
+  "Si me seco más, me vuelvo polvo. Lo he visto pasar. DE LEJOS."
+ ],
+ "need_starving_cow_vampiro_v3": [
+  "Minhas presas tão moles. Vampiro sem presa é só um cara pálido!",
+  "My fangs are wobbly. A vampire without fangs is just a pale guy!",
+  "Se me aflojan los colmillos. ¡Un vampiro sin colmillos es solo un pálido!"
+ ],
+ "need_starving_cow_vampiro_v4": [
+  "Sede assim deve ser perigoso. Tem ambulância pra vampiro?",
+  "Thirst like this must be dangerous. Is there a vampire ambulance?",
+  "Una sed así debe ser peligrosa. ¿Hay ambulancia para vampiros?"
+ ],
+ "need_starving_cow_vampiro_v5": [
+  "Se eu desmaiar de sede, não deixa ninguém me ver assim.",
+  "If I faint from thirst, don't let anyone see me like that.",
+  "Si me desmayo de sed, que nadie me vea así."
+ ],
+ "need_fridge_empty_cow_vampiro_v1": [
+  "Nenhuma bolsa! Vou ter que ir no Banco de Sangue? COM AGULHA?",
+  "No bags! I have to go to the Blood Bank? WITH NEEDLES?",
+  "¡Ni una bolsa! ¿Tengo que ir al Banco de Sangre? ¿CON AGUJAS?"
+ ],
+ "need_fridge_empty_cow_vampiro_v2": [
+  "Acabou o sangue. É o começo do fim, né?",
+  "The blood's gone. This is the beginning of the end, right?",
+  "Se acabó la sangre. Es el principio del fin, ¿no?"
+ ],
+ "need_fridge_empty_cow_vampiro_v3": [
+  "Sumiram as bolsas. Foi um ladrão? E SE FOR UM VAMPIRO MAIOR?",
+  "The bags are gone. Was it a thief? WHAT IF IT'S A BIGGER VAMPIRE?",
+  "Desaparecieron las bolsas. ¿Un ladrón? ¿Y SI ES UN VAMPIRO MÁS GRANDE?"
+ ],
+ "need_fridge_empty_cow_vampiro_v4": [
+  "Sem bolsa. Vamos morrer. Desculpa o drama. Vamos morrer.",
+  "No bags. We're going to die. Sorry for the drama. We're going to die.",
+  "Sin bolsas. Vamos a morir. Perdón el drama. Vamos a morir."
+ ],
+ "need_fridge_empty_cow_vampiro_v5": [
+  "Pode ir sozinho no Banco de Sangue? Eu guardo o caixão.",
+  "Can you go to the Blood Bank alone? I'll guard the coffin.",
+  "¿Vas solo al Banco de Sangre? Yo cuido el ataúd."
+ ],
+ "need_hungry_cow_raposa_v1": [
+  "Tô com fome, mas o Açougue tem faca. Muita faca!",
+  "I'm hungry, but the Butcher's has knives. So many knives!",
+  "Tengo hambre, pero la Carnicería tiene cuchillos. ¡Muchos cuchillos!"
+ ],
+ "need_hungry_cow_raposa_v2": [
+  "Bora comer carne? Em casa. Com a porta trancada. Duas vezes.",
+  "Let's eat meat? At home. Door locked. Twice.",
+  "¿Comemos carne? En casa. Con la puerta cerrada. Dos veces."
+ ],
+ "need_hungry_cow_raposa_v3": [
+  "Bateu a fome. Açougue entrega? Pela janela?",
+  "I'm hungry. Does the Butcher's deliver? Through the window?",
+  "Tengo hambre. ¿La Carnicería entrega? ¿Por la ventana?"
+ ],
+ "need_hungry_cow_raposa_v4": [
+  "Caçar dá medo. E se a comida morder de volta?",
+  "Hunting is scary. What if the food bites back?",
+  "Cazar da miedo. ¿Y si la comida muerde de vuelta?"
+ ],
+ "need_hungry_cow_raposa_v5": [
+  "Tô com fome. Um pedacinho de carne, sem susto, tá?",
+  "I'm hungry. A tiny piece of meat, no surprises, okay?",
+  "Tengo hambre. Un pedacito de carne, sin sustos, ¿sí?"
+ ],
+ "need_starving_cow_raposa_v1": [
+  "Minha chama tá virando fumacinha. ISSO É GRAVE?",
+  "My flame is turning into a wisp of smoke. IS THAT SERIOUS?",
+  "Mi llama se está volviendo humito. ¿ES GRAVE?"
+ ],
+ "need_starving_cow_raposa_v2": [
+  "Se minha chama apagar, eu viro o quê? Tapete?",
+  "If my flame goes out, what do I become? A rug?",
+  "Si se apaga mi llama, ¿en qué me convierto? ¿En alfombra?"
+ ],
+ "need_starving_cow_raposa_v3": [
+  "Tô fraco, tremendo e faminto. Igual eu normal, só que pior.",
+  "Weak, shaking and starving. Like normal me, but worse.",
+  "Débil, temblando y hambriento. Como yo normal, pero peor."
+ ],
+ "need_starving_cow_raposa_v4": [
+  "Fome assim deve ser perigoso. Tem ambulância pra raposa?",
+  "Hunger like this must be dangerous. Is there a fox ambulance?",
+  "Un hambre así debe ser peligrosa. ¿Hay ambulancia para zorros?"
+ ],
+ "need_starving_cow_raposa_v5": [
+  "Se minha chama apagar de fome, não deixa ninguém rir. Nem os lobos.",
+  "If my flame dies of hunger, don't let anyone laugh. Not even the wolves.",
+  "Si mi llama se apaga de hambre, que nadie se ría. Ni los lobos."
+ ],
+ "need_fridge_empty_cow_raposa_v1": [
+  "Sem carne! Vou ter que ir no Açougue? COM O CUTELO DO CARA?",
+  "No meat! I have to go to the Butcher's? WITH HIS CLEAVER?",
+  "¡Sin carne! ¿Tengo que ir a la Carnicería? ¿CON SU CUCHILLA?"
+ ],
+ "need_fridge_empty_cow_raposa_v2": [
+  "Acabou a carne. É o começo do fim, né?",
+  "The meat's gone. This is the beginning of the end, right?",
+  "Se acabó la carne. Es el principio del fin, ¿no?"
+ ],
+ "need_fridge_empty_cow_raposa_v3": [
+  "Sumiu a carne. Foi um lobo? E SE ELE AINDA TÁ AQUI?",
+  "The meat's gone. Was it a wolf? WHAT IF IT'S STILL HERE?",
+  "Desapareció la carne. ¿Fue un lobo? ¿Y SI TODAVÍA ESTÁ AQUÍ?"
+ ],
+ "need_fridge_empty_cow_raposa_v4": [
+  "Caçar? EU? Prefiro passar fome. Não, prefiro não. SOCORRO.",
+  "Hunt? ME? I'd rather starve. No, I'd rather not. HELP.",
+  "¿Cazar? ¿YO? Prefiero pasar hambre. No, prefiero que no. SOCORRO."
+ ],
+ "need_fridge_empty_cow_raposa_v5": [
+  "Pode ir sozinho no Açougue? Eu guardo a toca.",
+  "Can you go to the Butcher's alone? I'll guard the den.",
+  "¿Vas solo a la Carnicería? Yo cuido la madriguera."
+ ],
+ "chCowEnter1_v1": [
+  "Plano de hoje: nada. Nada é seguro. Eu amo nada.",
+  "Today's plan: nothing. Nothing is safe. I love nothing.",
+  "Plan de hoy: nada. Nada es seguro. Amo la nada."
+ ],
+ "chCowEnter1_v2": [
+  "Você voltou! Viu algum monstro no caminho? Fala a verdade.",
+  "You're back! See any monsters on the way? Tell the truth.",
+  "¡Volviste! ¿Viste algún monstruo en el camino? Di la verdad."
+ ],
+ "chCowEnter1_v3": [
+  "Hoje a gente podia ficar olhando a parede. Parede não morde.",
+  "Today we could just stare at the wall. Walls don't bite.",
+  "Hoy podríamos quedarnos mirando la pared. La pared no muerde."
+ ],
+ "chCowEnter1_v4": [
+  "Bom te ver. Trouxe capacete? Eu trouxe dois.",
+  "Good to see you. Bring a helmet? I brought two.",
+  "Qué bueno verte. ¿Trajiste casco? Yo traje dos."
+ ],
+ "chCowEnter1_v5": [
+  "Prometo ser corajoso hoje. Mentira. Mas prometo fingir.",
+  "I promise to be brave today. Lie. But I promise to pretend.",
+  "Prometo ser valiente hoy. Mentira. Pero prometo fingir."
+ ],
+ "chCowEnter2_v1": [
+  "Regra do dia: se algo fizer barulho, a gente corre.",
+  "Rule of the day: if something makes a noise, we run.",
+  "Regla del día: si algo hace ruido, corremos."
+ ],
+ "chCowEnter2_v2": [
+  "Vamos devagar? Devagar a gente vê o perigo antes.",
+  "Let's go slow? Slow means we spot danger first.",
+  "¿Vamos despacio? Despacio vemos el peligro antes."
+ ],
+ "chCowEnter2_v3": [
+  "Hoje é dia de paz. Eu decidi. Ninguém me consultou, mas decidi.",
+  "Today is a day of peace. I decided. Nobody asked me, but I decided.",
+  "Hoy es día de paz. Lo decidí yo. Nadie me consultó, pero lo decidí."
+ ],
+ "chCowEnter2_v4": [
+  "Já fiz meu testamento. Agora podemos sair.",
+  "I've written my will. Now we can go out.",
+  "Ya hice mi testamento. Ahora podemos salir."
+ ],
+ "chCowEnter2_v5": [
+  "Nada de aventura hoje. Aventura é só perigo com nome bonito.",
+  "No adventures today. Adventure is just danger with a nice name.",
+  "Nada de aventuras hoy. Aventura es peligro con nombre bonito."
+ ],
+ "chCowNight1_v1": [
+  "Escureceu. Escuro é onde moram todas as coisas ruins. TODAS.",
+  "It's dark. The dark is where all bad things live. ALL OF THEM.",
+  "Oscureció. En la oscuridad viven todas las cosas malas. TODAS."
+ ],
+ "chCowNight1_v2": [
+  "Noite. Hora de trancar a porta e fingir que não tem ninguém.",
+  "Night. Time to lock the door and pretend nobody's home.",
+  "Noche. Hora de cerrar la puerta y fingir que no hay nadie."
+ ],
+ "chCowNight1_v3": [
+  "Ficou de noite rápido demais. Isso é sinal, né? Sinal de quê?",
+  "Night came too fast. That's a sign, right? A sign of what?",
+  "Anocheció demasiado rápido. Es una señal, ¿no? ¿Señal de qué?"
+ ],
+ "chCowNight1_v4": [
+  "Se a gente não sair, nada acontece. Gênio, eu sei.",
+  "If we don't go out, nothing happens. Genius, I know.",
+  "Si no salimos, no pasa nada. Genial, lo sé."
+ ],
+ "chCowNight1_v5": [
+  "A noite chegou. Minha coragem já foi dormir faz tempo.",
+  "Night's here. My courage went to bed hours ago.",
+  "Llegó la noche. Mi valentía se fue a dormir hace rato."
+ ],
+ "chCowNight2_v1": [
+  "Ouvi um uivo. Foi um lobo? Foi um lobo. CASA.",
+  "I heard a howl. Was it a wolf? It was a wolf. HOME.",
+  "Oí un aullido. ¿Fue un lobo? Fue un lobo. A CASA."
+ ],
+ "chCowNight2_v2": [
+  "Os monstros saem de noite. Eu saio da rua de noite. Justo.",
+  "Monsters come out at night. I come off the street at night. Fair.",
+  "Los monstruos salen de noche. Yo salgo de la calle de noche. Justo."
+ ],
+ "chCowNight2_v3": [
+  "Vamos pra casa? Lá tem cobertor. Cobertor protege de tudo.",
+  "Let's go home? There's a blanket. Blankets protect from everything.",
+  "¿Vamos a casa? Hay manta. La manta protege de todo."
+ ],
+ "chCowNight2_v4": [
+  "Tá escuro e tem sombra mexendo. É sombra, né? NÉ?",
+  "It's dark and a shadow's moving. It's a shadow, right? RIGHT?",
+  "Está oscuro y una sombra se mueve. Es una sombra, ¿no? ¿NO?"
+ ],
+ "chCowNight2_v5": [
+  "Monstro de noite e eu na rua. Isso é filme de terror!",
+  "Monsters at night and me outside. This is a horror movie!",
+  "Monstruos de noche y yo en la calle. ¡Esto es una película de terror!"
+ ],
+ "chCowMorning1_v1": [
+  "Sobrevivi à noite! Alguém mais? Conta as pessoas!",
+  "I survived the night! Anyone else? Count heads!",
+  "¡Sobreviví a la noche! ¿Alguien más? ¡Cuenten a la gente!"
+ ],
+ "chCowMorning1_v2": [
+  "Bom dia! O sol espanta monstro, né? Me diz que espanta.",
+  "Good morning! The sun scares monsters away, right? Tell me it does.",
+  "¡Buenos días! El sol espanta monstruos, ¿no? Dime que sí."
+ ],
+ "chCowMorning1_v3": [
+  "Amanheceu e eu tô vivo. Já valeu o dia. Posso voltar a dormir?",
+  "It's morning and I'm alive. Day's a success. Can I go back to bed?",
+  "Amaneció y estoy vivo. Ya valió el día. ¿Puedo volver a dormir?"
+ ],
+ "chCowMorning1_v4": [
+  "Ufa, dia. Agora só os perigos normais. Que ainda são muitos.",
+  "Phew, daytime. Just the normal dangers now. Which are still many.",
+  "Uf, de día. Ahora solo los peligros normales. Que aún son muchos."
+ ],
+ "chCowMorning1_v5": [
+  "Bom dia! Dormi de olho aberto. Tô com o olho seco.",
+  "Good morning! Slept with my eyes open. My eyes are dry.",
+  "¡Buenos días! Dormí con los ojos abiertos. Tengo los ojos secos."
+ ],
+ "chCowIdle1_v1": [
+  "Esse silêncio tá suspeito. Silêncio demais é armadilha.",
+  "This silence is suspicious. Too much silence is a trap.",
+  "Este silencio es sospechoso. Demasiado silencio es una trampa."
+ ],
+ "chCowIdle1_v2": [
+  "Alguém tá olhando pra gente. Não olha! Olhou? Ai.",
+  "Someone's watching us. Don't look! You looked? Ugh.",
+  "Alguien nos mira. ¡No mires! ¿Miraste? Ay."
+ ],
+ "chCowIdle1_v3": [
+  "Ouviu? Não? Eu ouvi. Acho. Talvez. CORRE.",
+  "Hear that? No? I did. I think. Maybe. RUN.",
+  "¿Oíste? ¿No? Yo sí. Creo. Quizás. CORRE."
+ ],
+ "chCowIdle1_v4": [
+  "Aquele poste tava ali antes? Tava? Tem certeza?",
+  "Was that lamppost there before? Was it? Are you sure?",
+  "¿Ese poste estaba ahí antes? ¿Sí? ¿Seguro?"
+ ],
+ "chCowIdle1_v5": [
+  "Tô com um pressentimento ruim. Sempre tô, mas esse é pior.",
+  "I've got a bad feeling. I always do, but this one's worse.",
+  "Tengo un mal presentimiento. Siempre tengo, pero este es peor."
+ ],
+ "chCowIdle2_v1": [
+  "Rua demais faz mal. Li isso em algum lugar. Inventei, mas faz.",
+  "Too much street is bad for you. I read that. Made it up, but it is.",
+  "Mucha calle hace mal. Lo leí por ahí. Lo inventé, pero hace mal."
+ ],
+ "chCowIdle2_v2": [
+  "Quanto tempo mais a gente vai ficar exposto aqui?",
+  "How much longer are we staying exposed out here?",
+  "¿Cuánto tiempo más vamos a estar expuestos aquí?"
+ ],
+ "chCowIdle2_v3": [
+  "Ficar parado na rua é pedir pra ser atacado. Andando também.",
+  "Standing on the street is asking to be attacked. Walking too.",
+  "Quedarse quieto en la calle es pedir un ataque. Caminando también."
+ ],
+ "chCowIdle2_v4": [
+  "Casa tem paredes. A rua não. Pensa nisso.",
+  "Houses have walls. Streets don't. Think about it.",
+  "La casa tiene paredes. La calle no. Piénsalo."
+ ],
+ "chCowIdle2_v5": [
+  "Já deu de rua por hoje? Por mim já deu de rua pra vida.",
+  "Enough street for today? I've had enough street for a lifetime.",
+  "¿Ya basta de calle por hoy? Yo ya tuve calle para toda la vida."
+ ],
+ "chHurt_covarde_1": [
+  "{nick}, você sumiu e eu achei que um monstro tinha te pegado!",
+  "{nick}, you vanished and I thought a monster got you!",
+  "¡{nick}, desapareciste y pensé que te había atrapado un monstruo!"
+ ],
+ "chHurt_covarde_2": [
+  "Fiquei sozinho, {nick}. Sozinho é o pior jeito de ficar.",
+  "I was alone, {nick}. Alone is the worst way to be.",
+  "Me quedé solo, {nick}. Solo es la peor forma de estar."
+ ],
+ "chHurt_covarde_3": [
+  "Você não liga pra mim, {nick}? Eu tenho medo até disso.",
+  "You don't care about me, {nick}? I'm scared of that too.",
+  "¿No te importo, {nick}? Hasta eso me da miedo."
+ ],
+ "chHurt_covarde_4": [
+  "{nick}, se você me abandonar, quem vai me proteger? Eu? HA.",
+  "{nick}, if you abandon me, who'll protect me? Me? HA.",
+  "{nick}, si me abandonas, ¿quién me protege? ¿Yo? JA."
+ ],
+ "chHurt_covarde_5": [
+  "Tô magoado, {nick}. E com medo. Mas mais magoado.",
+  "I'm hurt, {nick}. And scared. But mostly hurt.",
+  "Estoy dolido, {nick}. Y con miedo. Pero más dolido."
+ ],
+ "chLove_covarde_1": [
+  "{nick}, com você eu tenho só um pouquinho de medo. É muito pouco!",
+  "{nick}, with you I'm only a tiny bit scared. That's so little!",
+  "{nick}, contigo solo tengo un poquito de miedo. ¡Es muy poco!"
+ ],
+ "chLove_covarde_2": [
+  "Você é tipo um cobertor, {nick}. Me protege de tudo.",
+  "You're like a blanket, {nick}. You protect me from everything.",
+  "Eres como una manta, {nick}. Me proteges de todo."
+ ],
+ "chLove_covarde_3": [
+  "Se tiver monstro, {nick}, eu fico atrás de você. Por amor.",
+  "If there's a monster, {nick}, I'll stand behind you. Out of love.",
+  "Si hay un monstruo, {nick}, me pongo detrás de ti. Por amor."
+ ],
+ "chLove_covarde_4": [
+  "{nick}, você é a única coisa nesse mundo que não me assusta.",
+  "{nick}, you're the only thing in this world that doesn't scare me.",
+  "{nick}, eres lo único en este mundo que no me asusta."
+ ],
+ "chLove_covarde_5": [
+  "Gosto tanto de você, {nick}, que até sairia de casa. Talvez.",
+  "I like you so much, {nick}, I'd even leave the house. Maybe.",
+  "Te quiero tanto, {nick}, que hasta saldría de casa. Quizás."
+ ],
+ "need_hospital_glu_v1": [
+  "Gelatina de novo. Isso não é comida, é castigo tremendo.",
+  "Jello again. That's not food, it's a wobbling punishment.",
+  "Gelatina otra vez. Eso no es comida, es un castigo que tiembla."
+ ],
+ "need_hospital_glu_v2": [
+  "Tô internado e o cardápio é sopa ou sopa. Escolhi chorar.",
+  "I'm in the ward and the menu is soup or soup. I chose crying.",
+  "Estoy internado y el menú es sopa o sopa. Elegí llorar."
+ ],
+ "need_hospital_glu_v3": [
+  "Me tira daqui. Lá fora tem pastel, aqui tem soro.",
+  "Get me out. Out there they have pastries, in here, IV drips.",
+  "Sácame de aquí. Afuera hay empanadas, aquí hay suero."
+ ],
+ "need_hospital_glu_v4": [
+  "Soro na veia não conta como refeição, doutor.",
+  "An IV drip doesn't count as a meal, doctor.",
+  "El suero en la vena no cuenta como comida, doctor."
+ ],
+ "need_hospital_glu_v5": [
+  "Se eu morrer aqui, foi da comida. Coloca na lápide.",
+  "If I die in here, it was the food. Put it on my tombstone.",
+  "Si me muero aquí, fue la comida. Ponlo en la lápida."
+ ],
+ "need_unwell_glu_v1": [
+  "Tô passando mal. Pode ter sido o terceiro pastel. Ou o quarto.",
+  "I feel sick. Might've been the third pastry. Or the fourth.",
+  "Me siento mal. Pudo ser la tercera empanada. O la cuarta."
+ ],
+ "need_unwell_glu_v2": [
+  "Meu estômago tá de greve. Logo ele, meu melhor amigo.",
+  "My stomach's on strike. Of all things, my best friend.",
+  "Mi estómago está en huelga. Justo él, mi mejor amigo."
+ ],
+ "need_unwell_glu_v3": [
+  "Doente e sem apetite. Isso é o fim do mundo.",
+  "Sick and no appetite. This is the end of the world.",
+  "Enfermo y sin apetito. Es el fin del mundo."
+ ],
+ "need_unwell_glu_v4": [
+  "Me leva no médico. Se tiver biscoito na recepção, melhor.",
+  "Take me to the doctor. Bonus if there are cookies at reception.",
+  "Llévame al médico. Si hay galletas en recepción, mejor."
+ ],
+ "need_unwell_glu_v5": [
+  "Tô enjoado. Nunca achei que ia dizer isso na vida.",
+  "I'm nauseous. Never thought I'd say that in my life.",
+  "Tengo náuseas. Nunca pensé que diría eso en mi vida."
+ ],
+ "need_exhausted_glu_v1": [
+  "Tô tão cansado que deixei metade do prato. ME AJUDA.",
+  "I'm so tired I left half my plate. HELP ME.",
+  "Estoy tan cansado que dejé medio plato. AYÚDAME."
+ ],
+ "need_exhausted_glu_v2": [
+  "Sem energia. Tentei recarregar com bolo. Não funcionou.",
+  "No energy. Tried recharging with cake. Didn't work.",
+  "Sin energía. Intenté recargar con pastel. No funcionó."
+ ],
+ "need_exhausted_glu_v3": [
+  "Exausto. Me deita num sofá perto da geladeira.",
+  "Exhausted. Lay me on a couch near the fridge.",
+  "Agotado. Acuéstame en un sofá cerca de la nevera."
+ ],
+ "need_exhausted_glu_v4": [
+  "Tô um caco. Um caco com fome, ainda por cima.",
+  "I'm a wreck. A hungry wreck, on top of that.",
+  "Estoy hecho polvo. Y polvo con hambre, encima."
+ ],
+ "need_exhausted_glu_v5": [
+  "Sem força pra nada. Nem pra levantar e pegar o pudim.",
+  "No strength for anything. Not even to get up for the pudding.",
+  "Sin fuerza para nada. Ni para levantarme por el flan."
+ ],
+ "need_starving_glu_v1": [
+  "Tô com tanta fome que comeria a sola da bota. Com molho.",
+  "I'm so hungry I'd eat my boot sole. With gravy.",
+  "Tengo tanta hambre que me comería la suela de la bota. Con salsa."
+ ],
+ "need_starving_glu_v2": [
+  "Fome nível: olhar pro poste e pensar em espetinho.",
+  "Hunger level: looking at a lamppost and thinking 'skewer'.",
+  "Nivel de hambre: mirar un poste y pensar en brocheta."
+ ],
+ "need_starving_glu_v3": [
+  "Meu estômago tá comendo meu estômago. Isso é canibalismo!",
+  "My stomach is eating my stomach. That's cannibalism!",
+  "¡Mi estómago se está comiendo mi estómago! ¡Es canibalismo!"
+ ],
+ "need_starving_glu_v4": [
+  "COMIDA. Qualquer uma. Até a sua. Principalmente a sua.",
+  "FOOD. Any food. Even yours. Especially yours.",
+  "COMIDA. Cualquiera. Hasta la tuya. Sobre todo la tuya."
+ ],
+ "need_starving_glu_v5": [
+  "Se eu desmaiar, me acorda com cheiro de bacon.",
+  "If I faint, wake me up with the smell of bacon.",
+  "Si me desmayo, despiértame con olor a tocino."
+ ],
+ "need_hungry_glu_v1": [
+  "Comi faz uma hora. Uma hora inteira! Bora comer?",
+  "I ate an hour ago. A whole hour! Let's eat?",
+  "Comí hace una hora. ¡Una hora entera! ¿Comemos?"
+ ],
+ "need_hungry_glu_v2": [
+  "Fome de novo. Meu estômago não respeita horário. Nem eu.",
+  "Hungry again. My stomach doesn't respect schedules. Neither do I.",
+  "Hambre otra vez. Mi estómago no respeta horarios. Yo tampoco."
+ ],
+ "need_hungry_glu_v3": [
+  "Bora fazer uma pausa? Pausa pra comer. Que outra pausa seria?",
+  "Let's take a break? A food break. What other kind is there?",
+  "¿Hacemos una pausa? Pausa para comer. ¿Qué otra pausa hay?"
+ ],
+ "need_hungry_glu_v4": [
+  "Tô com fome. Não é novidade, mas é urgente.",
+  "I'm hungry. Not news, but urgent.",
+  "Tengo hambre. No es novedad, pero es urgente."
+ ],
+ "need_hungry_glu_v5": [
+  "Lanche das três? São duas? Adianta o relógio.",
+  "Three o'clock snack? It's two? Move the clock forward.",
+  "¿Merienda de las tres? ¿Son las dos? Adelanta el reloj."
+ ],
+ "need_sleep_glu_v1": [
+  "Vou dormir. Deixa um sanduíche no criado-mudo, por garantia.",
+  "Going to bed. Leave a sandwich on the nightstand, just in case.",
+  "Me voy a dormir. Deja un sándwich en la mesita, por si acaso."
+ ],
+ "need_sleep_glu_v2": [
+  "Sono bateu. Sonhar com lasanha também é refeição, né?",
+  "Sleepy. Dreaming about lasagna counts as a meal, right?",
+  "Me dio sueño. Soñar con lasaña también es comida, ¿no?"
+ ],
+ "need_sleep_glu_v3": [
+  "Preciso dormir. Mas antes, uma ceia. Pequena. Média. Grande.",
+  "I need sleep. But first, supper. Small. Medium. Large.",
+  "Necesito dormir. Pero antes, una cena. Pequeña. Mediana. Grande."
+ ],
+ "need_sleep_glu_v4": [
+  "Cama e cobertor. E um biscoito. Dois. O pacote.",
+  "Bed and blanket. And a cookie. Two. The whole pack.",
+  "Cama y manta. Y una galleta. Dos. El paquete."
+ ],
+ "need_sleep_glu_v5": [
+  "Tô morrendo de sono. Me acorda no café da manhã. Ou antes.",
+  "I'm dying of sleepiness. Wake me for breakfast. Or earlier.",
+  "Me muero de sueño. Despiértame para el desayuno. O antes."
+ ],
+ "need_tired_glu_v1": [
+  "Tô cansado. A solução clínica é pudim.",
+  "I'm tired. The clinical solution is pudding.",
+  "Estoy cansado. La solución clínica es flan."
+ ],
+ "need_tired_glu_v2": [
+  "Me dá um bolo que eu volto a ter energia. Ciência.",
+  "Give me cake and I'll get my energy back. Science.",
+  "Dame un pastel y recupero la energía. Ciencia."
+ ],
+ "need_tired_glu_v3": [
+  "Cansado. Já comi tudo que dava energia. Agora só sobrou fome.",
+  "Tired. Already ate everything with energy. Only hunger's left.",
+  "Cansado. Ya me comí todo lo que daba energía. Solo queda hambre."
+ ],
+ "need_tired_glu_v4": [
+  "Tô sem pique. Meu pique tá na geladeira.",
+  "No pep. My pep is in the fridge.",
+  "Sin ánimo. Mi ánimo está en la nevera."
+ ],
+ "need_tired_glu_v5": [
+  "Cansaço é o corpo pedindo lanche. Eu escuto meu corpo.",
+  "Tiredness is your body asking for a snack. I listen to my body.",
+  "El cansancio es el cuerpo pidiendo merienda. Yo escucho a mi cuerpo."
+ ],
+ "need_stressed_glu_v1": [
+  "Estresse? Tenho remédio: dois hambúrgueres e não falar comigo.",
+  "Stress? I have medicine: two burgers and nobody talking to me.",
+  "¿Estrés? Tengo remedio: dos hamburguesas y que nadie me hable."
+ ],
+ "need_stressed_glu_v2": [
+  "Tô nervoso. Me passa a batata e ninguém se machuca.",
+  "I'm nervous. Pass the fries and nobody gets hurt.",
+  "Estoy nervioso. Pásame las papas y nadie sale herido."
+ ],
+ "need_stressed_glu_v3": [
+  "Meu psicólogo é a geladeira. E ela sempre me escuta.",
+  "My therapist is the fridge. And it always listens.",
+  "Mi psicólogo es la nevera. Y siempre me escucha."
+ ],
+ "need_stressed_glu_v4": [
+  "Estressado. Comendo de nervoso. Comendo de tudo, na verdade.",
+  "Stressed. Stress-eating. Eating everything, actually.",
+  "Estresado. Comiendo de nervios. Comiendo de todo, en realidad."
+ ],
+ "need_stressed_glu_v5": [
+  "Quando o mundo desaba, eu como os escombros. Com farofa.",
+  "When the world collapses, I eat the rubble. With crumbs on top.",
+  "Cuando el mundo se derrumba, me como los escombros. Con migas."
+ ],
+ "need_aging_glu_v1": [
+  "Tô envelhecendo. Mas meu apetite tá jovem e saudável.",
+  "I'm getting old. But my appetite is young and healthy.",
+  "Estoy envejeciendo. Pero mi apetito está joven y sano."
+ ],
+ "need_aging_glu_v2": [
+  "Velho tem desconto no rodízio? Pergunto por mim.",
+  "Do old folks get a discount at the buffet? Asking for me.",
+  "¿Los viejos tienen descuento en el bufé? Pregunto por mí."
+ ],
+ "need_aging_glu_v3": [
+  "Mais velho e mais redondo. Sabedoria ocupa espaço.",
+  "Older and rounder. Wisdom takes up space.",
+  "Más viejo y más redondo. La sabiduría ocupa espacio."
+ ],
+ "need_aging_glu_v4": [
+  "A idade chegou. O apetite nunca saiu.",
+  "Age showed up. Appetite never left.",
+  "Llegó la edad. El apetito nunca se fue."
+ ],
+ "need_aging_glu_v5": [
+  "Velho, mas sei onde fica toda padaria da cidade. Isso é respeito.",
+  "Old, but I know every bakery in town. That's respect.",
+  "Viejo, pero sé dónde está cada panadería. Eso es respeto."
+ ],
+ "need_fridge_empty_glu_v1": [
+  "Abri a despensa e ouvi meu estômago chorar.",
+  "Opened the pantry and heard my stomach cry.",
+  "Abrí la despensa y oí llorar a mi estómago."
+ ],
+ "need_fridge_empty_glu_v2": [
+  "Vazia. VAZIA. Liga pra polícia. Liga pros bombeiros.",
+  "Empty. EMPTY. Call the police. Call the fire brigade.",
+  "Vacía. VACÍA. Llama a la policía. Llama a los bomberos."
+ ],
+ "need_fridge_empty_glu_v3": [
+  "Quem deixou a despensa assim? Isso é crime contra mim.",
+  "Who left the pantry like this? This is a crime against me.",
+  "¿Quién dejó la despensa así? Es un crimen contra mí."
+ ],
+ "need_fridge_empty_glu_v4": [
+  "Despensa vazia. Já posso considerar luto?",
+  "Empty pantry. Can I start mourning?",
+  "Despensa vacía. ¿Ya puedo estar de luto?"
+ ],
+ "need_fridge_empty_glu_v5": [
+  "Não tem nada. Nem migalha. Até a migalha fugiu.",
+  "Nothing. Not a crumb. Even the crumbs ran away.",
+  "No hay nada. Ni una miga. Hasta la miga huyó."
+ ],
+ "need_hungry_glu_vampiro_v1": [
+  "Bebi faz uma hora. Uma hora inteira! Bora no Banco de Sangue?",
+  "I drank an hour ago. A whole hour! Blood Bank?",
+  "Bebí hace una hora. ¡Una hora entera! ¿Al Banco de Sangre?"
+ ],
+ "need_hungry_glu_vampiro_v2": [
+  "Sede de novo. Minha garganta não respeita horário. Nem eu.",
+  "Thirsty again. My throat doesn't respect schedules. Neither do I.",
+  "Sed otra vez. Mi garganta no respeta horarios. Yo tampoco."
+ ],
+ "need_hungry_glu_vampiro_v3": [
+  "Bora fazer uma pausa? Pausa pra beber. Que outra pausa seria?",
+  "Let's take a break? A drink break. What other kind is there?",
+  "¿Hacemos una pausa? Pausa para beber. ¿Qué otra pausa hay?"
+ ],
+ "need_hungry_glu_vampiro_v4": [
+  "Tô com sede. Não é novidade, mas é urgente.",
+  "I'm thirsty. Not news, but urgent.",
+  "Tengo sed. No es novedad, pero es urgente."
+ ],
+ "need_hungry_glu_vampiro_v5": [
+  "Bolsinha das três? São duas? Adianta o relógio.",
+  "Three o'clock bag? It's two? Move the clock forward.",
+  "¿Bolsita de las tres? ¿Son las dos? Adelanta el reloj."
+ ],
+ "need_starving_glu_vampiro_v1": [
+  "Tô tão seco que beberia de qualquer tipo. Até O negativo.",
+  "I'm so dry I'd drink any type. Even O negative.",
+  "Estoy tan seco que bebería de cualquier tipo. Hasta O negativo."
+ ],
+ "need_starving_glu_vampiro_v2": [
+  "Sede nível: olhar pro pescoço do vizinho e pensar em canudo.",
+  "Thirst level: looking at the neighbor's neck and thinking 'straw'.",
+  "Nivel de sed: mirar el cuello del vecino y pensar en pajita."
+ ],
+ "need_starving_glu_vampiro_v3": [
+  "Me dá uma bolsa. Ou duas. Ou o Banco inteiro.",
+  "Give me a bag. Or two. Or the whole Bank.",
+  "Dame una bolsa. O dos. O el Banco entero."
+ ],
+ "need_starving_glu_vampiro_v4": [
+  "SANGUE. Qualquer um. Até o seu. Principalmente o seu.",
+  "BLOOD. Anyone's. Even yours. Especially yours.",
+  "SANGRE. De quien sea. Hasta la tuya. Sobre todo la tuya."
+ ],
+ "need_starving_glu_vampiro_v5": [
+  "Se eu desmaiar, me acorda com cheiro de bolsa fresca.",
+  "If I faint, wake me up with the smell of a fresh bag.",
+  "Si me desmayo, despiértame con olor a bolsa fresca."
+ ],
+ "need_fridge_empty_glu_vampiro_v1": [
+  "Abri a despensa e ouvi minhas presas chorarem.",
+  "Opened the pantry and heard my fangs cry.",
+  "Abrí la despensa y oí llorar a mis colmillos."
+ ],
+ "need_fridge_empty_glu_vampiro_v2": [
+  "Vazia. VAZIA. Liga pro Banco de Sangue. Liga pra emergência.",
+  "Empty. EMPTY. Call the Blood Bank. Call emergency.",
+  "Vacía. VACÍA. Llama al Banco de Sangre. Llama a emergencias."
+ ],
+ "need_fridge_empty_glu_vampiro_v3": [
+  "Quem bebeu todas as bolsas? Ah. Fui eu. Mesmo assim, crime.",
+  "Who drank all the bags? Oh. Me. Still a crime.",
+  "¿Quién se bebió todas las bolsas? Ah. Yo. Igual es un crimen."
+ ],
+ "need_fridge_empty_glu_vampiro_v4": [
+  "Sem bolsa. Já posso considerar luto?",
+  "No bags. Can I start mourning?",
+  "Sin bolsas. ¿Ya puedo estar de luto?"
+ ],
+ "need_fridge_empty_glu_vampiro_v5": [
+  "Nem uma gota. Até a gota fugiu de mim.",
+  "Not a drop. Even the drops ran away from me.",
+  "Ni una gota. Hasta la gota huyó de mí."
+ ],
+ "need_hungry_glu_raposa_v1": [
+  "Comi faz uma hora. Uma hora inteira! Bora no Açougue?",
+  "I ate an hour ago. A whole hour! Butcher's?",
+  "Comí hace una hora. ¡Una hora entera! ¿A la Carnicería?"
+ ],
+ "need_hungry_glu_raposa_v2": [
+  "Fome de novo. Minha chama não respeita horário. Nem eu.",
+  "Hungry again. My flame doesn't respect schedules. Neither do I.",
+  "Hambre otra vez. Mi llama no respeta horarios. Yo tampoco."
+ ],
+ "need_hungry_glu_raposa_v3": [
+  "Bora fazer uma pausa? Pausa pra carne. Que outra pausa seria?",
+  "Let's take a break? A meat break. What other kind is there?",
+  "¿Hacemos una pausa? Pausa para carne. ¿Qué otra pausa hay?"
+ ],
+ "need_hungry_glu_raposa_v4": [
+  "Minha chama tá roncando. Chama não ronca. A minha ronca.",
+  "My flame is growling. Flames don't growl. Mine does.",
+  "Mi llama está rugiendo. Las llamas no rugen. La mía sí."
+ ],
+ "need_hungry_glu_raposa_v5": [
+  "Churrasco das três? São duas? Adianta o relógio.",
+  "Three o'clock barbecue? It's two? Move the clock forward.",
+  "¿Asado de las tres? ¿Son las dos? Adelanta el reloj."
+ ],
+ "need_starving_glu_raposa_v1": [
+  "Tô com tanta fome que comeria a sola da bota. Mal passada.",
+  "I'm so hungry I'd eat my boot sole. Rare.",
+  "Tengo tanta hambre que me comería la suela. Poco hecha."
+ ],
+ "need_starving_glu_raposa_v2": [
+  "Fome nível: olhar pro lobo e pensar em costela.",
+  "Hunger level: looking at a wolf and thinking 'ribs'.",
+  "Nivel de hambre: mirar al lobo y pensar en costillas."
+ ],
+ "need_starving_glu_raposa_v3": [
+  "Minha chama virou brasa de churrasco. Sem o churrasco!",
+  "My flame turned into barbecue coals. Minus the barbecue!",
+  "¡Mi llama se volvió brasa de asado! ¡Sin el asado!"
+ ],
+ "need_starving_glu_raposa_v4": [
+  "CARNE. Qualquer uma. Até a sua. Principalmente a sua.",
+  "MEAT. Any meat. Even yours. Especially yours.",
+  "CARNE. Cualquiera. Hasta la tuya. Sobre todo la tuya."
+ ],
+ "need_starving_glu_raposa_v5": [
+  "Se eu desmaiar, me acorda com cheiro de picanha.",
+  "If I faint, wake me up with the smell of steak.",
+  "Si me desmayo, despiértame con olor a chuletón."
+ ],
+ "need_fridge_empty_glu_raposa_v1": [
+  "Abri a despensa e ouvi meu estômago uivar.",
+  "Opened the pantry and heard my stomach howl.",
+  "Abrí la despensa y oí aullar a mi estómago."
+ ],
+ "need_fridge_empty_glu_raposa_v2": [
+  "Vazia. VAZIA. Liga pro Açougue. Liga pros bombeiros.",
+  "Empty. EMPTY. Call the Butcher's. Call the fire brigade.",
+  "Vacía. VACÍA. Llama a la Carnicería. Llama a los bomberos."
+ ],
+ "need_fridge_empty_glu_raposa_v3": [
+  "Quem comeu toda a carne? Ah. Fui eu. Mesmo assim, crime.",
+  "Who ate all the meat? Oh. Me. Still a crime.",
+  "¿Quién se comió toda la carne? Ah. Yo. Igual es un crimen."
+ ],
+ "need_fridge_empty_glu_raposa_v4": [
+  "Sem carne. Já posso considerar luto?",
+  "No meat. Can I start mourning?",
+  "Sin carne. ¿Ya puedo estar de luto?"
+ ],
+ "need_fridge_empty_glu_raposa_v5": [
+  "Nem um osso. Até o osso fugiu.",
+  "Not one bone. Even the bones ran away.",
+  "Ni un hueso. Hasta el hueso huyó."
+ ],
+ "chGluEnter1_v1": [
+  "Oi! Trouxe comida? Não? Então por que veio?",
+  "Hi! Bring food? No? Then why'd you come?",
+  "¡Hola! ¿Trajiste comida? ¿No? ¿Entonces a qué viniste?"
+ ],
+ "chGluEnter1_v2": [
+  "Que saudade. De você e do almoço. Mais do almoço.",
+  "Missed you. You and lunch. Mostly lunch.",
+  "Te extrañé. A ti y al almuerzo. Más al almuerzo."
+ ],
+ "chGluEnter1_v3": [
+  "Bom te ver. Agora me fala do cardápio.",
+  "Good to see you. Now tell me about the menu.",
+  "Qué bueno verte. Ahora háblame del menú."
+ ],
+ "chGluEnter1_v4": [
+  "Antes de qualquer aventura: lanche. Depois: outro lanche.",
+  "Before any adventure: snack. After: another snack.",
+  "Antes de cualquier aventura: merienda. Después: otra merienda."
+ ],
+ "chGluEnter1_v5": [
+  "Chegou! Bora fazer um tour gastronômico pela cidade?",
+  "You're here! Food tour around the city?",
+  "¡Llegaste! ¿Hacemos un tour gastronómico por la ciudad?"
+ ],
+ "chGluEnter2_v1": [
+  "Você chegou e minha barriga roncou. Coincidência? Não.",
+  "You arrived and my belly growled. Coincidence? No.",
+  "Llegaste y me rugió la panza. ¿Coincidencia? No."
+ ],
+ "chGluEnter2_v2": [
+  "Te esperei tanto que comi o seu lanche. Desculpa. Não muito.",
+  "Waited so long I ate your snack. Sorry. Not very.",
+  "Te esperé tanto que me comí tu merienda. Perdón. No mucho."
+ ],
+ "chGluEnter2_v3": [
+  "Oi! Você tá com cheiro de padaria ou é imaginação minha?",
+  "Hi! Do you smell like a bakery or is it just me?",
+  "¡Hola! ¿Hueles a panadería o es mi imaginación?"
+ ],
+ "chGluEnter2_v4": [
+  "Que bom te ver! Cadê a comida?",
+  "Great to see you! Where's the food?",
+  "¡Qué bueno verte! ¿Dónde está la comida?"
+ ],
+ "chGluEnter2_v5": [
+  "Fiquei te esperando. Com fome. Com muita fome.",
+  "I was waiting for you. Hungry. Very hungry.",
+  "Te estuve esperando. Con hambre. Con mucha hambre."
+ ],
+ "chGluNight1_v1": [
+  "Noite é a hora da geladeira brilhar. Literalmente.",
+  "Night is when the fridge shines. Literally.",
+  "La noche es cuando la nevera brilla. Literalmente."
+ ],
+ "chGluNight1_v2": [
+  "Escureceu. Hora da ceia. Depois, da ceia da ceia.",
+  "It's dark. Supper time. Then, supper's supper.",
+  "Oscureció. Hora de la cena. Después, la cena de la cena."
+ ],
+ "chGluNight1_v3": [
+  "Comer de noite engorda? Engorda de felicidade.",
+  "Does eating at night make you fat? Fat with joy.",
+  "¿Comer de noche engorda? Engorda de felicidad."
+ ],
+ "chGluNight1_v4": [
+  "Lanche da madrugada é o mais honesto. Ninguém tá vendo.",
+  "The midnight snack is the most honest. Nobody's watching.",
+  "La merienda de madrugada es la más honesta. Nadie mira."
+ ],
+ "chGluNight1_v5": [
+  "Noite chegou. Quem topa um pastel na madrugada?",
+  "Night's here. Who's up for a midnight pastry?",
+  "Llegó la noche. ¿Quién se apunta a una empanada de madrugada?"
+ ],
+ "chGluMorning1_v1": [
+  "Bom dia! Café, pão, ovo, bolo e o almoço adiantado.",
+  "Good morning! Coffee, bread, eggs, cake and an early lunch.",
+  "¡Buenos días! Café, pan, huevo, pastel y el almuerzo adelantado."
+ ],
+ "chGluMorning1_v2": [
+  "Acordei sonhando com panqueca. Vamos realizar sonhos?",
+  "Woke up dreaming of pancakes. Shall we make dreams come true?",
+  "Desperté soñando con panqueques. ¿Cumplimos sueños?"
+ ],
+ "chGluMorning1_v3": [
+  "Bom dia! Já sei o que vou comer até o jantar.",
+  "Good morning! I already know what I'm eating until dinner.",
+  "¡Buenos días! Ya sé lo que voy a comer hasta la cena."
+ ],
+ "chGluMorning1_v4": [
+  "Café da manhã é a refeição mais importante. Depois do almoço.",
+  "Breakfast is the most important meal. After lunch.",
+  "El desayuno es la comida más importante. Después del almuerzo."
+ ],
+ "chGluMorning1_v5": [
+  "Amanheceu. Meu estômago acordou antes de mim. Bom dia!",
+  "Morning. My stomach woke up before me. Good morning!",
+  "Amaneció. Mi estómago despertó antes que yo. ¡Buenos días!"
+ ],
+ "chGluIdle1_v1": [
+  "Parado assim eu fico pensando em comida. Andando também.",
+  "Standing still, I think about food. Walking too.",
+  "Quieto así pienso en comida. Caminando también."
+ ],
+ "chGluIdle1_v2": [
+  "Meu estômago tá fazendo música. Ritmo: fome.",
+  "My stomach's making music. Genre: hunger.",
+  "Mi estómago está haciendo música. Ritmo: hambre."
+ ],
+ "chGluIdle1_v3": [
+  "Ouviu esse barulho? Fui eu. Por dentro.",
+  "Hear that noise? That was me. On the inside.",
+  "¿Oíste ese ruido? Fui yo. Por dentro."
+ ],
+ "chGluIdle1_v4": [
+  "Tá cheirando a churrasco ou eu tô alucinando de novo?",
+  "Does it smell like barbecue or am I hallucinating again?",
+  "¿Huele a asado o estoy alucinando otra vez?"
+ ],
+ "chGluIdle1_v5": [
+  "Tédio dá fome. Tudo dá fome, na verdade.",
+  "Boredom makes me hungry. Everything does, actually.",
+  "El aburrimiento da hambre. Todo da hambre, en realidad."
+ ],
+ "chGluIdle2_v1": [
+  "Que tal uma pausa estratégica na padaria?",
+  "How about a strategic stop at the bakery?",
+  "¿Qué tal una pausa estratégica en la panadería?"
+ ],
+ "chGluIdle2_v2": [
+  "Conheço um lugar com coxinha do tamanho da minha cabeça.",
+  "I know a place with croquettes the size of my head.",
+  "Conozco un lugar con croquetas del tamaño de mi cabeza."
+ ],
+ "chGluIdle2_v3": [
+  "Aventura é bom. Aventura com lanche é melhor.",
+  "Adventure is good. Adventure with snacks is better.",
+  "La aventura es buena. Con merienda, mejor."
+ ],
+ "chGluIdle2_v4": [
+  "Bora pra taverna? Eu pago. Mentira, você paga.",
+  "Tavern? My treat. Lie, your treat.",
+  "¿Vamos a la taberna? Yo invito. Mentira, invitas tú."
+ ],
+ "chGluIdle2_v5": [
+  "Tenho uma ideia brilhante: comer.",
+  "I have a brilliant idea: eating.",
+  "Tengo una idea brillante: comer."
+ ],
+ "chHurt_comilao_1": [
+  "{nick}, você sumiu igual o último pedaço de pizza.",
+  "{nick}, you vanished like the last slice of pizza.",
+  "{nick}, desapareciste como el último trozo de pizza."
+ ],
+ "chHurt_comilao_2": [
+  "Você nem me alimenta direito, {nick}. Nem de carinho.",
+  "You don't even feed me properly, {nick}. Not even affection.",
+  "Ni me alimentas bien, {nick}. Ni de cariño."
+ ],
+ "chHurt_comilao_3": [
+  "Tô chateado, {nick}. Nem a comida tá tendo graça.",
+  "I'm upset, {nick}. Even food isn't fun anymore.",
+  "Estoy molesto, {nick}. Ni la comida tiene gracia."
+ ],
+ "chHurt_comilao_4": [
+  "{nick}, até a geladeira me dá mais atenção que você.",
+  "{nick}, even the fridge gives me more attention than you.",
+  "{nick}, hasta la nevera me da más atención que tú."
+ ],
+ "chHurt_comilao_5": [
+  "Você me esqueceu, {nick}. Vou comer pra esquecer você.",
+  "You forgot me, {nick}. I'll eat to forget you.",
+  "Me olvidaste, {nick}. Voy a comer para olvidarte."
+ ],
+ "chLove_comilao_1": [
+  "{nick}, eu dividiria minha sobremesa com você. Isso é amor.",
+  "{nick}, I'd share my dessert with you. That's love.",
+  "{nick}, compartiría mi postre contigo. Eso es amor."
+ ],
+ "chLove_comilao_2": [
+  "Você é melhor que bolo, {nick}. Quase. Não, é sim.",
+  "You're better than cake, {nick}. Almost. No, you are.",
+  "Eres mejor que el pastel, {nick}. Casi. No, sí lo eres."
+ ],
+ "chLove_comilao_3": [
+  "{nick}, você é o recheio da minha vida.",
+  "{nick}, you're the filling of my life.",
+  "{nick}, eres el relleno de mi vida."
+ ],
+ "chLove_comilao_4": [
+  "Gosto de você mais que de pastel, {nick}. Não espalha.",
+  "I like you more than pastries, {nick}. Don't spread it.",
+  "Te quiero más que a las empanadas, {nick}. No lo cuentes."
+ ],
+ "chLove_comilao_5": [
+  "Com você, {nick}, até salada fica gostosa. Mentira. Mas quase.",
+  "With you, {nick}, even salad tastes good. Lie. But almost.",
+  "Contigo, {nick}, hasta la ensalada sabe rica. Mentira. Pero casi."
+ ],
+ "need_hospital_kind_v1": [
+  "Estou internado. A equipe é gentilíssima. A gelatina, nem tanto.",
+  "I'm hospitalized. The staff is lovely. The jello, less so.",
+  "Estoy internado. El personal es amabilísimo. La gelatina, no tanto."
+ ],
+ "need_hospital_kind_v2": [
+  "Agradeço a visita. Se puder, traga minha alta junto.",
+  "Thank you for visiting. If you can, bring my discharge papers.",
+  "Gracias por la visita. Si puede, traiga mi alta también."
+ ],
+ "need_hospital_kind_v3": [
+  "Estou bem cuidado. Apenas um pouco mais furado que de costume.",
+  "I'm well looked after. Just a bit more punctured than usual.",
+  "Estoy bien cuidado. Solo un poco más agujereado que de costumbre."
+ ],
+ "need_hospital_kind_v4": [
+  "Repouso absoluto, disse o médico. Obedecerei, com alguma tristeza.",
+  "Total rest, said the doctor. I shall obey, somewhat sadly.",
+  "Reposo absoluto, dijo el médico. Obedeceré, con cierta tristeza."
+ ],
+ "need_hospital_kind_v5": [
+  "Estou na Enfermaria. Perdoe o incômodo de ser frágil.",
+  "I'm in the Infirmary. Forgive the inconvenience of being fragile.",
+  "Estoy en la Enfermería. Perdone la molestia de ser frágil."
+ ],
+ "need_unwell_kind_v1": [
+  "Perdoe a franqueza, mas acho que vou desmaiar.",
+  "Forgive my frankness, but I believe I'm about to faint.",
+  "Perdone la franqueza, pero creo que me voy a desmayar."
+ ],
+ "need_unwell_kind_v2": [
+  "Não me sinto bem. Mas não quero atrapalhar seu dia.",
+  "I don't feel well. But I don't want to ruin your day.",
+  "No me siento bien. Pero no quiero arruinarle el día."
+ ],
+ "need_unwell_kind_v3": [
+  "Estou febril. Se não for pedir demais, um médico seria ótimo.",
+  "I'm feverish. If it's not too much to ask, a doctor would be lovely.",
+  "Tengo fiebre. Si no es mucho pedir, un médico sería estupendo."
+ ],
+ "need_unwell_kind_v4": [
+  "Meu corpo protesta com educação. Por ora.",
+  "My body is protesting politely. For now.",
+  "Mi cuerpo protesta con educación. Por ahora."
+ ],
+ "need_unwell_kind_v5": [
+  "Podemos visitar a Enfermaria? Prometo ser um paciente exemplar.",
+  "Might we visit the Infirmary? I promise to be a model patient.",
+  "¿Podemos visitar la Enfermería? Prometo ser un paciente ejemplar."
+ ],
+ "need_exhausted_kind_v1": [
+  "Estou exausto, mas sorrio. É o que me resta.",
+  "I'm exhausted, but I smile. It's all I have left.",
+  "Estoy agotado, pero sonrío. Es lo que me queda."
+ ],
+ "need_exhausted_kind_v2": [
+  "Com todo o respeito, minhas pernas pediram demissão.",
+  "With all due respect, my legs have handed in their resignation.",
+  "Con todo respeto, mis piernas presentaron su renuncia."
+ ],
+ "need_exhausted_kind_v3": [
+  "Preciso descansar. Agradeço sua compreensão, e sua cama.",
+  "I need rest. I appreciate your understanding, and your bed.",
+  "Necesito descansar. Agradezco su comprensión, y su cama."
+ ],
+ "need_exhausted_kind_v4": [
+  "Estou no limite. Educadamente no limite, mas no limite.",
+  "I'm at my limit. Politely at my limit, but at my limit.",
+  "Estoy al límite. Educadamente al límite, pero al límite."
+ ],
+ "need_exhausted_kind_v5": [
+  "Se não for incômodo, gostaria de desmaiar com dignidade.",
+  "If it's no trouble, I'd like to collapse with dignity.",
+  "Si no es molestia, me gustaría desmayarme con dignidad."
+ ],
+ "need_starving_kind_v1": [
+  "Perdoe, mas estou com tanta fome que já não sou tão gentil.",
+  "Forgive me, but I'm so hungry I'm no longer quite so kind.",
+  "Perdone, pero tengo tanta hambre que ya no soy tan amable."
+ ],
+ "need_starving_kind_v2": [
+  "Estou faminto. Aceito qualquer coisa, inclusive constrangimento.",
+  "I'm starving. I'll accept anything, including embarrassment.",
+  "Estoy hambriento. Acepto cualquier cosa, incluso la vergüenza."
+ ],
+ "need_starving_kind_v3": [
+  "Com todo o carinho: preciso comer agora, por favor.",
+  "With all my affection: I need to eat now, please.",
+  "Con todo el cariño: necesito comer ahora, por favor."
+ ],
+ "need_starving_kind_v4": [
+  "Minha educação resiste. Meu estômago, não.",
+  "My manners are holding up. My stomach isn't.",
+  "Mi educación resiste. Mi estómago, no."
+ ],
+ "need_starving_kind_v5": [
+  "Seria indelicado eu desmaiar de fome aqui? Pergunto por perguntar.",
+  "Would it be rude of me to faint from hunger here? Just asking.",
+  "¿Sería descortés desmayarme de hambre aquí? Solo pregunto."
+ ],
+ "need_hungry_kind_v1": [
+  "Se não for incômodo, aceitaria uma refeição.",
+  "If it's no trouble, I'd gladly accept a meal.",
+  "Si no es molestia, aceptaría una comida."
+ ],
+ "need_hungry_kind_v2": [
+  "Estou com um pouco de fome. Sem pressa. Mas com fome.",
+  "I'm a little hungry. No rush. But hungry.",
+  "Tengo un poco de hambre. Sin prisa. Pero con hambre."
+ ],
+ "need_hungry_kind_v3": [
+  "Que tal comermos juntos? Seria uma honra. E uma necessidade.",
+  "Shall we eat together? It would be an honor. And a necessity.",
+  "¿Comemos juntos? Sería un honor. Y una necesidad."
+ ],
+ "need_hungry_kind_v4": [
+  "Sinto um leve vazio. No estômago, felizmente.",
+  "I feel a slight emptiness. In my stomach, thankfully.",
+  "Siento un leve vacío. En el estómago, por suerte."
+ ],
+ "need_hungry_kind_v5": [
+  "Uma refeição agora seria um gesto muito bonito da sua parte.",
+  "A meal right now would be a lovely gesture on your part.",
+  "Una comida ahora sería un gesto muy bonito de su parte."
+ ],
+ "need_sleep_kind_v1": [
+  "Com sua licença, gostaria de dormir um pouco.",
+  "With your permission, I'd like to sleep for a while.",
+  "Con su permiso, me gustaría dormir un poco."
+ ],
+ "need_sleep_kind_v2": [
+  "Estou com sono. Prometo acordar com mais bom humor ainda.",
+  "I'm sleepy. I promise to wake up even more cheerful.",
+  "Tengo sueño. Prometo despertar aún de mejor humor."
+ ],
+ "need_sleep_kind_v3": [
+  "Se possível, uma cama. Se não, aceito o chão com gratidão.",
+  "A bed, if possible. If not, I'll gratefully accept the floor.",
+  "Una cama, si es posible. Si no, acepto el suelo con gratitud."
+ ],
+ "need_sleep_kind_v4": [
+  "Vou repousar. Obrigado por cuidar do meu sono.",
+  "I'll rest now. Thank you for looking after my sleep.",
+  "Voy a descansar. Gracias por cuidar mi sueño."
+ ],
+ "need_sleep_kind_v5": [
+  "Meus olhos estão fechando sozinhos. Que falta de modos a deles.",
+  "My eyes are closing on their own. How rude of them.",
+  "Mis ojos se cierran solos. Qué falta de modales la suya."
+ ],
+ "need_tired_kind_v1": [
+  "Estou cansado, mas jamais deixaria você sozinho.",
+  "I'm tired, but I'd never leave you alone.",
+  "Estoy cansado, pero jamás le dejaría solo."
+ ],
+ "need_tired_kind_v2": [
+  "Cansado, porém grato. Mais cansado do que grato, confesso.",
+  "Tired, yet grateful. More tired than grateful, I confess.",
+  "Cansado, pero agradecido. Más cansado que agradecido, lo confieso."
+ ],
+ "need_tired_kind_v3": [
+  "Uma pausa breve faria maravilhas por mim.",
+  "A brief pause would do wonders for me.",
+  "Una breve pausa haría maravillas por mí."
+ ],
+ "need_tired_kind_v4": [
+  "Estou fatigado. Nada que um chá e um cochilo não resolvam.",
+  "I'm fatigued. Nothing a cup of tea and a nap can't fix.",
+  "Estoy fatigado. Nada que un té y una siesta no arreglen."
+ ],
+ "need_tired_kind_v5": [
+  "Sigo firme ao seu lado. Um pouco mais devagar, perdoe.",
+  "I remain firmly by your side. A little slower, forgive me.",
+  "Sigo firme a su lado. Un poco más despacio, perdone."
+ ],
+ "need_stressed_kind_v1": [
+  "Estou tenso. Se pudermos respirar juntos, agradeço.",
+  "I'm tense. If we could breathe together, I'd be grateful.",
+  "Estoy tenso. Si pudiéramos respirar juntos, lo agradecería."
+ ],
+ "need_stressed_kind_v2": [
+  "Confesso que estou à beira de um ataque. Um ataque educado.",
+  "I confess I'm on the verge of a breakdown. A polite one.",
+  "Confieso que estoy al borde de un ataque. Un ataque educado."
+ ],
+ "need_stressed_kind_v3": [
+  "Minha paciência é grande, mas hoje está um pouco amassada.",
+  "My patience is vast, but today it's a little crumpled.",
+  "Mi paciencia es grande, pero hoy está un poco arrugada."
+ ],
+ "need_stressed_kind_v4": [
+  "Respire comigo? Inspira, expira, e ignoramos o mundo.",
+  "Breathe with me? In, out, and we ignore the world.",
+  "¿Respira conmigo? Inspira, espira, e ignoramos el mundo."
+ ],
+ "need_stressed_kind_v5": [
+  "Estou nervoso. Peço desculpas antecipadas por qualquer suspiro.",
+  "I'm nervous. I apologize in advance for any sighing.",
+  "Estoy nervioso. Pido disculpas por adelantado por cualquier suspiro."
+ ],
+ "need_aging_kind_v1": [
+  "Envelheço com gratidão. E com dor nos joelhos.",
+  "I'm aging with gratitude. And knee pain.",
+  "Envejezco con gratitud. Y con dolor de rodillas."
+ ],
+ "need_aging_kind_v2": [
+  "Cada ruga é uma lembrança sua. Algumas, bem cansativas.",
+  "Every wrinkle is a memory of you. Some quite exhausting.",
+  "Cada arruga es un recuerdo suyo. Algunos, bastante agotadores."
+ ],
+ "need_aging_kind_v3": [
+  "Estou mais velho e mais sábio. Principalmente mais velho.",
+  "I'm older and wiser. Mostly older.",
+  "Estoy más viejo y más sabio. Sobre todo más viejo."
+ ],
+ "need_aging_kind_v4": [
+  "A idade chega para todos. Comigo, chegou com elegância.",
+  "Age comes for everyone. With me, it came elegantly.",
+  "La edad llega para todos. Conmigo, llegó con elegancia."
+ ],
+ "need_aging_kind_v5": [
+  "Fico velho ao seu lado. Que honra. Que dor nas costas.",
+  "I grow old by your side. What an honor. What back pain.",
+  "Envejezco a su lado. Qué honor. Qué dolor de espalda."
+ ],
+ "need_fridge_empty_kind_v1": [
+  "A despensa está vazia. Não é uma crítica. É uma constatação.",
+  "The pantry is empty. Not a criticism. An observation.",
+  "La despensa está vacía. No es una crítica. Es una constatación."
+ ],
+ "need_fridge_empty_kind_v2": [
+  "Faltam mantimentos. Sugiro, com carinho, uma ida ao Empório.",
+  "We're out of supplies. I fondly suggest a trip to the Emporium.",
+  "Faltan víveres. Sugiero, con cariño, una visita al Emporio."
+ ],
+ "need_fridge_empty_kind_v3": [
+  "A despensa está tão vazia que dá eco. Educado, mas dá.",
+  "The pantry is so empty it echoes. Politely, but it does.",
+  "La despensa está tan vacía que hace eco. Educado, pero lo hace."
+ ],
+ "need_fridge_empty_kind_v4": [
+  "Perdoe incomodar, mas não temos nada para comer. Nada mesmo.",
+  "Sorry to bother you, but we have nothing to eat. Nothing at all.",
+  "Perdone la molestia, pero no tenemos nada que comer. Nada de nada."
+ ],
+ "need_fridge_empty_kind_v5": [
+  "Não há comida. Mas há esperança. E um Empório aberto.",
+  "There's no food. But there's hope. And an open Emporium.",
+  "No hay comida. Pero hay esperanza. Y un Emporio abierto."
+ ],
+ "need_hungry_kind_vampiro_v1": [
+  "Se não for incômodo, aceitaria uma bolsa de sangue.",
+  "If it's no trouble, I'd gladly accept a blood bag.",
+  "Si no es molestia, aceptaría una bolsa de sangre."
+ ],
+ "need_hungry_kind_vampiro_v2": [
+  "Estou com um pouco de sede. Sem pressa. Mas com sede.",
+  "I'm a little thirsty. No rush. But thirsty.",
+  "Tengo un poco de sed. Sin prisa. Pero con sed."
+ ],
+ "need_hungry_kind_vampiro_v3": [
+  "Que tal visitarmos o Banco de Sangue? Seria uma honra.",
+  "Shall we visit the Blood Bank? It would be an honor.",
+  "¿Visitamos el Banco de Sangre? Sería un honor."
+ ],
+ "need_hungry_kind_vampiro_v4": [
+  "Sinto uma leve secura. Nas veias, felizmente.",
+  "I feel slightly parched. In my veins, thankfully.",
+  "Siento una leve sequedad. En las venas, por suerte."
+ ],
+ "need_hungry_kind_vampiro_v5": [
+  "Uma bolsa agora seria um gesto muito bonito da sua parte.",
+  "A bag right now would be a lovely gesture on your part.",
+  "Una bolsa ahora sería un gesto muy bonito de su parte."
+ ],
+ "need_starving_kind_vampiro_v1": [
+  "Perdoe, mas estou com tanta sede que já não sou tão gentil.",
+  "Forgive me, but I'm so thirsty I'm no longer quite so kind.",
+  "Perdone, pero tengo tanta sed que ya no soy tan amable."
+ ],
+ "need_starving_kind_vampiro_v2": [
+  "Estou seco. Aceito qualquer tipo sanguíneo, com gratidão.",
+  "I'm parched. I'll accept any blood type, gratefully.",
+  "Estoy seco. Acepto cualquier tipo de sangre, con gratitud."
+ ],
+ "need_starving_kind_vampiro_v3": [
+  "Com todo o carinho: preciso de sangue agora, por favor.",
+  "With all my affection: I need blood now, please.",
+  "Con todo el cariño: necesito sangre ahora, por favor."
+ ],
+ "need_starving_kind_vampiro_v4": [
+  "Minha educação resiste. Minhas presas, não.",
+  "My manners are holding up. My fangs aren't.",
+  "Mi educación resiste. Mis colmillos, no."
+ ],
+ "need_starving_kind_vampiro_v5": [
+  "Seria indelicado eu olhar para o seu pescoço assim? Perdão.",
+  "Would it be rude of me to look at your neck like this? Pardon.",
+  "¿Sería descortés mirar su cuello así? Perdón."
+ ],
+ "need_fridge_empty_kind_vampiro_v1": [
+  "Não há bolsas. Não é uma crítica. É uma constatação.",
+  "There are no bags. Not a criticism. An observation.",
+  "No hay bolsas. No es una crítica. Es una constatación."
+ ],
+ "need_fridge_empty_kind_vampiro_v2": [
+  "Sugiro, com carinho, uma ida ao Banco de Sangue.",
+  "I fondly suggest a trip to the Blood Bank.",
+  "Sugiero, con cariño, una visita al Banco de Sangre."
+ ],
+ "need_fridge_empty_kind_vampiro_v3": [
+  "A despensa está tão seca quanto eu. Educadamente seca.",
+  "The pantry is as dry as I am. Politely dry.",
+  "La despensa está tan seca como yo. Educadamente seca."
+ ],
+ "need_fridge_empty_kind_vampiro_v4": [
+  "Perdoe incomodar, mas não temos uma gota sequer.",
+  "Sorry to bother you, but we don't have a single drop.",
+  "Perdone la molestia, pero no tenemos ni una gota."
+ ],
+ "need_fridge_empty_kind_vampiro_v5": [
+  "Não há sangue. Mas há esperança. E um Banco aberto.",
+  "There's no blood. But there's hope. And an open Bank.",
+  "No hay sangre. Pero hay esperanza. Y un Banco abierto."
+ ],
+ "need_hungry_kind_raposa_v1": [
+  "Se não for incômodo, aceitaria um pedaço de carne.",
+  "If it's no trouble, I'd gladly accept a piece of meat.",
+  "Si no es molestia, aceptaría un trozo de carne."
+ ],
+ "need_hungry_kind_raposa_v2": [
+  "Minha chama está um pouco baixa. Nada grave. Ainda.",
+  "My flame is a little low. Nothing serious. Yet.",
+  "Mi llama está un poco baja. Nada grave. Todavía."
+ ],
+ "need_hungry_kind_raposa_v3": [
+  "Que tal visitarmos o Açougue? Seria uma honra.",
+  "Shall we visit the Butcher's? It would be an honor.",
+  "¿Visitamos la Carnicería? Sería un honor."
+ ],
+ "need_hungry_kind_raposa_v4": [
+  "Minha chama pede alimento, com toda a educação.",
+  "My flame requests food, with the utmost courtesy.",
+  "Mi llama pide alimento, con toda la educación."
+ ],
+ "need_hungry_kind_raposa_v5": [
+  "Um pedaço de carne agora aqueceria minha chama e meu coração.",
+  "A piece of meat now would warm my flame and my heart.",
+  "Un trozo de carne ahora calentaría mi llama y mi corazón."
+ ],
+ "need_starving_kind_raposa_v1": [
+  "Perdoe, mas minha fome já está mais selvagem que minha educação.",
+  "Forgive me, but my hunger is now wilder than my manners.",
+  "Perdone, pero mi hambre ya es más salvaje que mi educación."
+ ],
+ "need_starving_kind_raposa_v2": [
+  "Minha chama está quase apagando. Com elegância, mas apagando.",
+  "My flame is nearly out. Elegantly, but out.",
+  "Mi llama casi se apaga. Con elegancia, pero se apaga."
+ ],
+ "need_starving_kind_raposa_v3": [
+  "Com todo o carinho: preciso de carne agora, por favor.",
+  "With all my affection: I need meat now, please.",
+  "Con todo el cariño: necesito carne ahora, por favor."
+ ],
+ "need_starving_kind_raposa_v4": [
+  "Minha cortesia resiste. Meus instintos de caça, não.",
+  "My courtesy holds. My hunting instincts don't.",
+  "Mi cortesía resiste. Mis instintos de caza, no."
+ ],
+ "need_starving_kind_raposa_v5": [
+  "Seria indelicado eu caçar algo agora? Pergunto por perguntar.",
+  "Would it be rude of me to hunt something now? Just asking.",
+  "¿Sería descortés cazar algo ahora? Solo pregunto."
+ ],
+ "need_fridge_empty_kind_raposa_v1": [
+  "Não há carne. Não é uma crítica. É uma constatação.",
+  "There's no meat. Not a criticism. An observation.",
+  "No hay carne. No es una crítica. Es una constatación."
+ ],
+ "need_fridge_empty_kind_raposa_v2": [
+  "Sugiro, com carinho, uma ida ao Açougue.",
+  "I fondly suggest a trip to the Butcher's.",
+  "Sugiero, con cariño, una visita a la Carnicería."
+ ],
+ "need_fridge_empty_kind_raposa_v3": [
+  "A despensa está mais vazia que uma toca abandonada. Com respeito.",
+  "The pantry is emptier than an abandoned den. Respectfully.",
+  "La despensa está más vacía que una madriguera abandonada. Con respeto."
+ ],
+ "need_fridge_empty_kind_raposa_v4": [
+  "Perdoe incomodar, mas não temos carne. Nem um osso.",
+  "Sorry to bother you, but we have no meat. Not even a bone.",
+  "Perdone la molestia, pero no tenemos carne. Ni un hueso."
+ ],
+ "need_fridge_empty_kind_raposa_v5": [
+  "Não há carne. Mas há esperança. E um Açougue aberto.",
+  "There's no meat. But there's hope. And an open Butcher's.",
+  "No hay carne. Pero hay esperanza. Y una Carnicería abierta."
+ ],
+ "chKindEnter1_v1": [
+  "Bom te ver! Que hoje ninguém morra. Seria um ótimo começo.",
+  "Good to see you! May nobody die today. That'd be a fine start.",
+  "¡Qué bueno verle! Que hoy no muera nadie. Sería un buen comienzo."
+ ],
+ "chKindEnter1_v2": [
+  "Que alegria! Vamos espalhar gentileza. E sobreviver, se der.",
+  "What a joy! Let's spread kindness. And survive, if possible.",
+  "¡Qué alegría! Repartamos amabilidad. Y sobrevivamos, si se puede."
+ ],
+ "chKindEnter1_v3": [
+  "Olá! Preparei meu melhor sorriso e meu pior pressentimento.",
+  "Hello! I've prepared my best smile and my worst premonition.",
+  "¡Hola! Preparé mi mejor sonrisa y mi peor presentimiento."
+ ],
+ "chKindEnter1_v4": [
+  "Bem-vindo de volta. O mundo continua cruel, mas estamos aqui.",
+  "Welcome back. The world is still cruel, but here we are.",
+  "Bienvenido de nuevo. El mundo sigue siendo cruel, pero aquí estamos."
+ ],
+ "chKindEnter1_v5": [
+  "Que dia lindo para ajudar alguém. Ou ser ajudado. Tanto faz.",
+  "Lovely day to help someone. Or be helped. Either way.",
+  "Qué día precioso para ayudar a alguien. O que me ayuden. Da igual."
+ ],
+ "chKindEnter2_v1": [
+  "Que saudade! Contei os minutos. Foram muitos.",
+  "I missed you! I counted the minutes. There were many.",
+  "¡Le extrañé! Conté los minutos. Fueron muchos."
+ ],
+ "chKindEnter2_v2": [
+  "Você voltou! Eu já estava conversando com as plantas.",
+  "You're back! I'd started talking to the plants.",
+  "¡Volvió! Ya estaba conversando con las plantas."
+ ],
+ "chKindEnter2_v3": [
+  "Senti sua falta. O silêncio aqui é muito educado, mas é chato.",
+  "I missed you. The silence here is very polite, but boring.",
+  "Le extrañé. El silencio aquí es muy educado, pero aburrido."
+ ],
+ "chKindEnter2_v4": [
+  "Que bom que voltou. Eu estava quase preocupado. Quase.",
+  "So glad you're back. I was almost worried. Almost.",
+  "Qué bueno que volvió. Casi estaba preocupado. Casi."
+ ],
+ "chKindEnter2_v5": [
+  "Oi! Guardei um abraço pra você. Está meio amassado.",
+  "Hi! I saved a hug for you. It's a bit crumpled.",
+  "¡Hola! Le guardé un abrazo. Está un poco arrugado."
+ ],
+ "chKindNight1_v1": [
+  "Escureceu. Os monstros saem e nós, com licença, entramos.",
+  "It's dark. The monsters come out and we, if you'll excuse us, go in.",
+  "Oscureció. Los monstruos salen y nosotros, con permiso, entramos."
+ ],
+ "chKindNight1_v2": [
+  "Boa noite. Que os monstros tenham juízo hoje.",
+  "Good night. May the monsters behave themselves tonight.",
+  "Buenas noches. Que los monstruos tengan juicio hoy."
+ ],
+ "chKindNight1_v3": [
+  "A noite pede descanso. E pede também que evitemos a morte.",
+  "The night calls for rest. And for avoiding death, too.",
+  "La noche pide descanso. Y también que evitemos la muerte."
+ ],
+ "chKindNight1_v4": [
+  "Vamos para casa? Lá a gentileza é mais segura.",
+  "Shall we go home? Kindness is safer there.",
+  "¿Vamos a casa? Allí la amabilidad es más segura."
+ ],
+ "chKindNight1_v5": [
+  "Que noite bonita. Bonita de se ver pela janela, trancada.",
+  "What a lovely night. Lovely to look at through a locked window.",
+  "Qué noche bonita. Bonita de ver por la ventana, cerrada."
+ ],
+ "chKindMorning1_v1": [
+  "Bom dia! Que hoje todos acordem. Inclusive os que vimos ontem.",
+  "Good morning! May everyone wake up today. Even the ones from last night.",
+  "¡Buenos días! Que hoy todos despierten. Incluso los de anoche."
+ ],
+ "chKindMorning1_v2": [
+  "Que manhã linda! Quase dá vontade de perdoar os deuses.",
+  "What a lovely morning! Almost makes me want to forgive the gods.",
+  "¡Qué mañana preciosa! Casi dan ganas de perdonar a los dioses."
+ ],
+ "chKindMorning1_v3": [
+  "Bom dia! Fiz uma lista de boas ações. É longa e otimista.",
+  "Good morning! I made a list of good deeds. It's long and optimistic.",
+  "¡Buenos días! Hice una lista de buenas acciones. Es larga y optimista."
+ ],
+ "chKindMorning1_v4": [
+  "Amanheceu! Sigamos fazendo o bem, mesmo sem recibo.",
+  "Morning! Let's keep doing good, even without a receipt.",
+  "¡Amaneció! Sigamos haciendo el bien, aunque sin recibo."
+ ],
+ "chKindMorning1_v5": [
+  "Bom dia. O sol nasceu para todos. Uns precisam mais.",
+  "Good morning. The sun rose for everyone. Some need it more.",
+  "Buenos días. El sol salió para todos. Algunos lo necesitan más."
+ ],
+ "chKindIdle1_v1": [
+  "Aquele senhor parece perdido. Ajudamos? Ou rezamos por ele?",
+  "That gentleman looks lost. Shall we help? Or pray for him?",
+  "Ese señor parece perdido. ¿Le ayudamos? ¿O rezamos por él?"
+ ],
+ "chKindIdle1_v2": [
+  "Quem diria que ajudar dá tanto trabalho. Ainda assim, vamos.",
+  "Who knew helping was so much work. Still, let's go.",
+  "Quién diría que ayudar da tanto trabajo. Aun así, vamos."
+ ],
+ "chKindIdle1_v3": [
+  "Hoje ainda não fiz nenhuma boa ação. Sinto-me um bandido.",
+  "I haven't done a single good deed today. I feel like a criminal.",
+  "Hoy no he hecho ninguna buena acción. Me siento un bandido."
+ ],
+ "chKindIdle1_v4": [
+  "Se alguém precisar de mim, estou aqui. Sentado. Mas aqui.",
+  "If anyone needs me, I'm here. Sitting. But here.",
+  "Si alguien me necesita, estoy aquí. Sentado. Pero aquí."
+ ],
+ "chKindIdle1_v5": [
+  "Podemos ajudar alguém? Prometo não fazer discurso. Muito.",
+  "Can we help someone? I promise not to give a speech. Much.",
+  "¿Ayudamos a alguien? Prometo no dar un discurso. Mucho."
+ ],
+ "chKindIdle2_v1": [
+  "Agradeço por tudo. Até pelas vezes em que esqueceu de mim.",
+  "Thank you for everything. Even the times you forgot me.",
+  "Gracias por todo. Incluso por las veces que me olvidó."
+ ],
+ "chKindIdle2_v2": [
+  "Obrigado por estar aqui. Faz toda a diferença.",
+  "Thank you for being here. It makes all the difference.",
+  "Gracias por estar aquí. Marca toda la diferencia."
+ ],
+ "chKindIdle2_v3": [
+  "Você cuida tão bem de mim. Às vezes até na hora certa.",
+  "You take such good care of me. Sometimes even on time.",
+  "Me cuida tan bien. A veces incluso a tiempo."
+ ],
+ "chKindIdle2_v4": [
+  "Sou grato. Muito. Às vezes, até demais.",
+  "I'm grateful. Very. Sometimes, too much.",
+  "Estoy agradecido. Mucho. A veces, demasiado."
+ ],
+ "chKindIdle2_v5": [
+  "Obrigado. Não digo isso o bastante. Digo demais, na verdade.",
+  "Thank you. I don't say it enough. I say it too much, actually.",
+  "Gracias. No lo digo lo suficiente. Lo digo demasiado, en realidad."
+ ],
+ "chHurt_bondoso_1": [
+  "Não quero ser inconveniente, {nick}, mas você me esqueceu.",
+  "I don't wish to be a bother, {nick}, but you forgot me.",
+  "No quiero ser inoportuno, {nick}, pero me olvidó."
+ ],
+ "chHurt_bondoso_2": [
+  "Tudo bem, {nick}. Eu entendo. Só não entendo muito bem.",
+  "It's fine, {nick}. I understand. I just don't understand very well.",
+  "Está bien, {nick}. Lo entiendo. Solo que no lo entiendo muy bien."
+ ],
+ "chHurt_bondoso_3": [
+  "{nick}, perdoe a pergunta: eu fiz algo de errado?",
+  "{nick}, forgive me for asking: did I do something wrong?",
+  "{nick}, perdone la pregunta: ¿hice algo mal?"
+ ],
+ "chHurt_bondoso_4": [
+  "Estou bem, {nick}. Estou ótimo. Estou mentindo, desculpe.",
+  "I'm fine, {nick}. I'm great. I'm lying, sorry.",
+  "Estoy bien, {nick}. Estupendo. Estoy mintiendo, perdón."
+ ],
+ "chHurt_bondoso_5": [
+  "Sentir sua falta não é reclamação, {nick}. É só um fato triste.",
+  "Missing you isn't a complaint, {nick}. Just a sad fact.",
+  "Extrañarle no es una queja, {nick}. Solo un hecho triste."
+ ],
+ "chLove_bondoso_1": [
+  "{nick}, você é a melhor coisa que me aconteceu nesta cidade.",
+  "{nick}, you're the best thing that's happened to me in this city.",
+  "{nick}, es lo mejor que me ha pasado en esta ciudad."
+ ],
+ "chLove_bondoso_2": [
+  "Sou grato todos os dias por você, {nick}. Até nos ruins.",
+  "I'm grateful for you every day, {nick}. Even the bad ones.",
+  "Agradezco por usted cada día, {nick}. Incluso los malos."
+ ],
+ "chLove_bondoso_3": [
+  "Com você, {nick}, até os monstros parecem menos feios.",
+  "With you, {nick}, even the monsters look less ugly.",
+  "Con usted, {nick}, hasta los monstruos parecen menos feos."
+ ],
+ "chLove_bondoso_4": [
+  "{nick}, se eu tivesse um coração maior, seria todo seu.",
+  "{nick}, if I had a bigger heart, it would all be yours.",
+  "{nick}, si tuviera un corazón más grande, sería todo suyo."
+ ],
+ "chLove_bondoso_5": [
+  "Obrigado por existir, {nick}. Sério. Obrigado.",
+  "Thank you for existing, {nick}. Really. Thank you.",
+  "Gracias por existir, {nick}. En serio. Gracias."
+ ],
+ "need_hospital_comp_v1": [
+  "Internado. Enquanto isso o ranking anda sem mim. Absurdo.",
+  "Hospitalized. Meanwhile the ranking moves on without me. Absurd.",
+  "Internado. Mientras tanto el ranking avanza sin mí. Absurdo."
+ ],
+ "need_hospital_comp_v2": [
+  "Cama de hospital não dá ponto. Me tira daqui.",
+  "Hospital beds don't score points. Get me out of here.",
+  "La cama de hospital no da puntos. Sácame de aquí."
+ ],
+ "need_hospital_comp_v3": [
+  "Tô de molho, mas no top 3 dos pacientes. Fácil.",
+  "I'm laid up, but top 3 among the patients. Easy.",
+  "Estoy en reposo, pero en el top 3 de pacientes. Fácil."
+ ],
+ "need_hospital_comp_v4": [
+  "Médico disse repouso. Bora ver quem repousa mais rápido.",
+  "Doctor said rest. Let's see who rests fastest.",
+  "El médico dijo reposo. A ver quién reposa más rápido."
+ ],
+ "need_hospital_comp_v5": [
+  "Me tirem daqui! Alguém tá batendo meu recorde agora!",
+  "Get me out! Someone is beating my record right now!",
+  "¡Sáquenme de aquí! ¡Alguien está batiendo mi récord ahora mismo!"
+ ],
+ "need_unwell_comp_v1": [
+  "Tô mal. Mas até doente eu ganho de você.",
+  "I feel awful. But even sick I'd beat you.",
+  "Estoy mal. Pero hasta enfermo te gano."
+ ],
+ "need_unwell_comp_v2": [
+  "Doente? Isso é só um adversário fraco. Me leva no médico.",
+  "Sick? That's just a weak opponent. Take me to the doctor.",
+  "¿Enfermo? Es solo un rival débil. Llévame al médico."
+ ],
+ "need_unwell_comp_v3": [
+  "Se eu jogar assim, perco. E eu não perco. Médico, já.",
+  "If I play like this, I lose. And I don't lose. Doctor, now.",
+  "Si juego así, pierdo. Y yo no pierdo. Médico, ya."
+ ],
+ "need_unwell_comp_v4": [
+  "Meu corpo tá jogando contra. Traidor.",
+  "My body's playing for the other team. Traitor.",
+  "Mi cuerpo juega en mi contra. Traidor."
+ ],
+ "need_unwell_comp_v5": [
+  "Tô fora de forma. Temporariamente. Anota isso.",
+  "I'm out of shape. Temporarily. Write that down.",
+  "Estoy fuera de forma. Temporalmente. Anótalo."
+ ],
+ "need_exhausted_comp_v1": [
+  "Exausto, mas ainda em primeiro. Em cansaço.",
+  "Exhausted, but still in first place. In tiredness.",
+  "Agotado, pero sigo primero. En cansancio."
+ ],
+ "need_exhausted_comp_v2": [
+  "Preciso me recuperar. Campeão também tem intervalo.",
+  "I need to recover. Champions get halftime too.",
+  "Necesito recuperarme. El campeón también tiene descanso."
+ ],
+ "need_exhausted_comp_v3": [
+  "Minhas pernas pediram tempo técnico.",
+  "My legs called a timeout.",
+  "Mis piernas pidieron tiempo muerto."
+ ],
+ "need_exhausted_comp_v4": [
+  "Tô quebrado. Mas quebrado de tanto ganhar.",
+  "I'm wrecked. But wrecked from winning so much.",
+  "Estoy roto. Pero roto de tanto ganar."
+ ],
+ "need_exhausted_comp_v5": [
+  "Exausto. Se eu perder agora, a culpa é do cansaço. Não minha.",
+  "Exhausted. If I lose now, blame the fatigue. Not me.",
+  "Agotado. Si pierdo ahora, la culpa es del cansancio. No mía."
+ ],
+ "need_starving_comp_v1": [
+  "Tô com fome de vitória. E de comida. Mais de comida.",
+  "I'm hungry for victory. And food. Mostly food.",
+  "Tengo hambre de victoria. Y de comida. Más de comida."
+ ],
+ "need_starving_comp_v2": [
+  "Sem combustível não tem pódio. Comida, rápido!",
+  "No fuel, no podium. Food, fast!",
+  "Sin combustible no hay podio. ¡Comida, rápido!"
+ ],
+ "need_starving_comp_v3": [
+  "Fome assim tira 20% do meu desempenho. Inaceitável.",
+  "Hunger like this cuts my performance by 20%. Unacceptable.",
+  "Un hambre así me quita un 20% de rendimiento. Inaceptable."
+ ],
+ "need_starving_comp_v4": [
+  "Me alimenta antes que eu perca pra um preguiçoso.",
+  "Feed me before I lose to a lazybones.",
+  "Aliméntame antes de que pierda contra un perezoso."
+ ],
+ "need_starving_comp_v5": [
+  "Até atleta de elite come. Principalmente atleta de elite.",
+  "Even elite athletes eat. Especially elite athletes.",
+  "Hasta los atletas de élite comen. Sobre todo los de élite."
+ ],
+ "need_hungry_comp_v1": [
+  "Hora de reabastecer. Pit stop de 30 segundos.",
+  "Refuel time. 30-second pit stop.",
+  "Hora de repostar. Pit stop de 30 segundos."
+ ],
+ "need_hungry_comp_v2": [
+  "Fome. Rápido, que o ranking não espera.",
+  "Hungry. Quick, the ranking won't wait.",
+  "Hambre. Rápido, que el ranking no espera."
+ ],
+ "need_hungry_comp_v3": [
+  "Come rápido que eu quero bater recorde de refeição.",
+  "Eat fast, I want to set a meal record.",
+  "Come rápido, quiero batir el récord de comida."
+ ],
+ "need_hungry_comp_v4": [
+  "Tô com fome. Quem chegar primeiro na mesa ganha.",
+  "I'm hungry. First one to the table wins.",
+  "Tengo hambre. El primero en llegar a la mesa gana."
+ ],
+ "need_hungry_comp_v5": [
+  "Bora comer? Aposto que eu termino antes.",
+  "Let's eat? Bet I finish first.",
+  "¿Comemos? Apuesto a que termino antes."
+ ],
+ "need_sleep_comp_v1": [
+  "Vou dormir. Aposto que durmo mais rápido que você.",
+  "Going to sleep. Bet I fall asleep faster than you.",
+  "Me voy a dormir. Apuesto a que me duermo antes que tú."
+ ],
+ "need_sleep_comp_v2": [
+  "Sono é recuperação. Recuperação é vantagem.",
+  "Sleep is recovery. Recovery is an edge.",
+  "El sueño es recuperación. La recuperación es ventaja."
+ ],
+ "need_sleep_comp_v3": [
+  "Preciso dormir pra amanhã ganhar de todo mundo de novo.",
+  "I need sleep so I can beat everyone again tomorrow.",
+  "Necesito dormir para ganarle a todos otra vez mañana."
+ ],
+ "need_sleep_comp_v4": [
+  "Cama agora. Recorde amanhã.",
+  "Bed now. Record tomorrow.",
+  "Cama ahora. Récord mañana."
+ ],
+ "need_sleep_comp_v5": [
+  "Dormir oito horas. Ou seis. Recorde pessoal: quatro.",
+  "Eight hours of sleep. Or six. Personal best: four.",
+  "Dormir ocho horas. O seis. Récord personal: cuatro."
+ ],
+ "need_tired_comp_v1": [
+  "Cansado? Eu? Só tô guardando energia pra final.",
+  "Tired? Me? I'm just saving energy for the final.",
+  "¿Cansado? ¿Yo? Solo guardo energía para la final."
+ ],
+ "need_tired_comp_v2": [
+  "Tô cansado, mas o segundo lugar tá mais.",
+  "I'm tired, but second place is more tired.",
+  "Estoy cansado, pero el segundo lugar lo está más."
+ ],
+ "need_tired_comp_v3": [
+  "Um descanso rápido e volto pro topo.",
+  "A quick rest and I'm back on top.",
+  "Un descanso rápido y vuelvo a la cima."
+ ],
+ "need_tired_comp_v4": [
+  "Cansaço é desculpa de perdedor. Mas tô cansado.",
+  "Tiredness is a loser's excuse. But I'm tired.",
+  "El cansancio es excusa de perdedor. Pero estoy cansado."
+ ],
+ "need_tired_comp_v5": [
+  "Só preciso de cinco minutos. Quatro. Três, vai.",
+  "I just need five minutes. Four. Fine, three.",
+  "Solo necesito cinco minutos. Cuatro. Tres, va."
+ ],
+ "need_stressed_comp_v1": [
+  "Estressado. Alguém passou meu recorde? FALA.",
+  "Stressed. Did someone beat my record? TELL ME.",
+  "Estresado. ¿Alguien superó mi récord? DÍMELO."
+ ],
+ "need_stressed_comp_v2": [
+  "Preciso ganhar alguma coisa. Qualquer coisa. Par ou ímpar.",
+  "I need to win something. Anything. Rock paper scissors.",
+  "Necesito ganar algo. Lo que sea. Piedra, papel o tijera."
+ ],
+ "need_stressed_comp_v3": [
+  "Estresse de competidor: só passa com troféu.",
+  "Competitor's stress: only a trophy cures it.",
+  "Estrés de competidor: solo se cura con trofeo."
+ ],
+ "need_stressed_comp_v4": [
+  "Tô nervoso. Me arruma um desafio que eu desestresso.",
+  "I'm on edge. Find me a challenge and I'll unwind.",
+  "Estoy nervioso. Consígueme un desafío y me relajo."
+ ],
+ "need_stressed_comp_v5": [
+  "Perder me estressa. Ganhar me acalma. Faça as contas.",
+  "Losing stresses me. Winning calms me. Do the math.",
+  "Perder me estresa. Ganar me calma. Haz las cuentas."
+ ],
+ "need_aging_comp_v1": [
+  "Tô ficando velho. Mas ainda no topo do ranking dos velhos.",
+  "Getting old. But still top of the old folks' ranking.",
+  "Me hago viejo. Pero sigo en la cima del ranking de viejos."
+ ],
+ "need_aging_comp_v2": [
+  "Idade é só número. E eu sempre ganho em número.",
+  "Age is just a number. And I always win at numbers.",
+  "La edad es solo un número. Y yo siempre gano en números."
+ ],
+ "need_aging_comp_v3": [
+  "Velho, mas experiente. Experiência é trapaça legalizada.",
+  "Old, but experienced. Experience is legal cheating.",
+  "Viejo, pero con experiencia. La experiencia es trampa legal."
+ ],
+ "need_aging_comp_v4": [
+  "Ruga nova. Medalha por tempo de serviço.",
+  "New wrinkle. Long-service medal.",
+  "Arruga nueva. Medalla por años de servicio."
+ ],
+ "need_aging_comp_v5": [
+  "Envelhecendo e ainda invicto contra o espelho.",
+  "Aging and still undefeated against the mirror.",
+  "Envejeciendo y aún invicto contra el espejo."
+ ],
+ "need_fridge_empty_comp_v1": [
+  "Despensa vazia. Isso é sabotagem do adversário.",
+  "Empty pantry. This is sabotage by the competition.",
+  "Despensa vacía. Esto es sabotaje del rival."
+ ],
+ "need_fridge_empty_comp_v2": [
+  "Sem comida não tem treino. Sem treino não tem pódio.",
+  "No food, no training. No training, no podium.",
+  "Sin comida no hay entrenamiento. Sin entrenamiento no hay podio."
+ ],
+ "need_fridge_empty_comp_v3": [
+  "Quem esvaziou a despensa quer me ver perder.",
+  "Whoever emptied the pantry wants me to lose.",
+  "Quien vació la despensa quiere verme perder."
+ ],
+ "need_fridge_empty_comp_v4": [
+  "Despensa zerada. Bora no Empório bater recorde de compra.",
+  "Pantry at zero. Let's hit the Emporium for a shopping record.",
+  "Despensa a cero. Vamos al Emporio a batir el récord de compra."
+ ],
+ "need_fridge_empty_comp_v5": [
+  "Vazia. Meu rendimento caiu 30% só de olhar.",
+  "Empty. My performance dropped 30% just looking at it.",
+  "Vacía. Mi rendimiento bajó un 30% solo de mirarla."
+ ],
+ "need_hungry_comp_vampiro_v1": [
+  "Hora de reabastecer. Bolsa em 30 segundos.",
+  "Refuel time. Bag in 30 seconds.",
+  "Hora de repostar. Bolsa en 30 segundos."
+ ],
+ "need_hungry_comp_vampiro_v2": [
+  "Sede. Rápido, que o ranking não espera.",
+  "Thirsty. Quick, the ranking won't wait.",
+  "Sed. Rápido, que el ranking no espera."
+ ],
+ "need_hungry_comp_vampiro_v3": [
+  "Bora no Banco de Sangue? Aposto que eu bebo primeiro.",
+  "Blood Bank? Bet I drink first.",
+  "¿Al Banco de Sangre? Apuesto a que bebo primero."
+ ],
+ "need_hungry_comp_vampiro_v4": [
+  "Tô com sede. Quem chegar primeiro na bolsa ganha.",
+  "I'm thirsty. First one to the bag wins.",
+  "Tengo sed. El primero en llegar a la bolsa gana."
+ ],
+ "need_hungry_comp_vampiro_v5": [
+  "Combustível de vampiro: sangue. Tanque na reserva.",
+  "Vampire fuel: blood. Tank on reserve.",
+  "Combustible de vampiro: sangre. Tanque en reserva."
+ ],
+ "need_starving_comp_vampiro_v1": [
+  "Sem sangue não tem pódio. Bolsa, rápido!",
+  "No blood, no podium. Bag, fast!",
+  "Sin sangre no hay podio. ¡Bolsa, rápido!"
+ ],
+ "need_starving_comp_vampiro_v2": [
+  "Sede assim tira 20% do meu desempenho. Inaceitável.",
+  "Thirst like this cuts my performance by 20%. Unacceptable.",
+  "Una sed así me quita un 20% de rendimiento. Inaceptable."
+ ],
+ "need_starving_comp_vampiro_v3": [
+  "Me alimenta antes que eu perca pra um vampiro preguiçoso.",
+  "Feed me before I lose to a lazy vampire.",
+  "Aliméntame antes de que pierda contra un vampiro perezoso."
+ ],
+ "need_starving_comp_vampiro_v4": [
+  "Tô seco. Seco não ganha nem par ou ímpar.",
+  "I'm dry. Dry can't even win rock paper scissors.",
+  "Estoy seco. Seco no gana ni a piedra, papel o tijera."
+ ],
+ "need_starving_comp_vampiro_v5": [
+  "Até vampiro de elite bebe. Principalmente de elite.",
+  "Even elite vampires drink. Especially elite ones.",
+  "Hasta los vampiros de élite beben. Sobre todo los de élite."
+ ],
+ "need_fridge_empty_comp_vampiro_v1": [
+  "Nenhuma bolsa. Isso é sabotagem do adversário.",
+  "No bags. This is sabotage by the competition.",
+  "Ni una bolsa. Esto es sabotaje del rival."
+ ],
+ "need_fridge_empty_comp_vampiro_v2": [
+  "Sem sangue não tem treino. Sem treino não tem pódio.",
+  "No blood, no training. No training, no podium.",
+  "Sin sangre no hay entrenamiento. Sin entrenamiento no hay podio."
+ ],
+ "need_fridge_empty_comp_vampiro_v3": [
+  "Algum vampiro rival bebeu nossas bolsas. Exijo revanche.",
+  "Some rival vampire drank our bags. I demand a rematch.",
+  "Algún vampiro rival se bebió nuestras bolsas. Exijo revancha."
+ ],
+ "need_fridge_empty_comp_vampiro_v4": [
+  "Bora no Banco de Sangue bater recorde de bolsas.",
+  "Let's hit the Blood Bank for a bag record.",
+  "Vamos al Banco de Sangre a batir el récord de bolsas."
+ ],
+ "need_fridge_empty_comp_vampiro_v5": [
+  "Sem bolsa. Meu rendimento caiu 30% só de olhar.",
+  "No bags. My performance dropped 30% just looking.",
+  "Sin bolsas. Mi rendimiento bajó un 30% solo de mirar."
+ ],
+ "need_hungry_comp_raposa_v1": [
+  "Hora de reabastecer. Carne em 30 segundos.",
+  "Refuel time. Meat in 30 seconds.",
+  "Hora de repostar. Carne en 30 segundos."
+ ],
+ "need_hungry_comp_raposa_v2": [
+  "Fome. Raposa lenta não sobe no ranking.",
+  "Hungry. Slow foxes don't climb the ranking.",
+  "Hambre. Zorro lento no sube en el ranking."
+ ],
+ "need_hungry_comp_raposa_v3": [
+  "Bora no Açougue? Aposto que eu chego primeiro.",
+  "Butcher's? Bet I get there first.",
+  "¿A la Carnicería? Apuesto a que llego primero."
+ ],
+ "need_hungry_comp_raposa_v4": [
+  "Tô com fome. Quem chegar primeiro na carne ganha.",
+  "I'm hungry. First one to the meat wins.",
+  "Tengo hambre. El primero en llegar a la carne gana."
+ ],
+ "need_hungry_comp_raposa_v5": [
+  "Combustível de raposa: carne. Chama na reserva.",
+  "Fox fuel: meat. Flame on reserve.",
+  "Combustible de zorro: carne. Llama en reserva."
+ ],
+ "need_starving_comp_raposa_v1": [
+  "Sem carne não tem pódio. Rápido!",
+  "No meat, no podium. Fast!",
+  "Sin carne no hay podio. ¡Rápido!"
+ ],
+ "need_starving_comp_raposa_v2": [
+  "Fome assim tira 20% da minha chama. Inaceitável.",
+  "Hunger like this cuts my flame by 20%. Unacceptable.",
+  "Un hambre así me quita un 20% de llama. Inaceptable."
+ ],
+ "need_starving_comp_raposa_v3": [
+  "Me alimenta antes que eu perca pra uma raposa preguiçosa.",
+  "Feed me before I lose to a lazy fox.",
+  "Aliméntame antes de que pierda contra un zorro perezoso."
+ ],
+ "need_starving_comp_raposa_v4": [
+  "Chama fraca não ganha nem par ou ímpar.",
+  "A weak flame can't even win rock paper scissors.",
+  "Una llama débil no gana ni a piedra, papel o tijera."
+ ],
+ "need_starving_comp_raposa_v5": [
+  "Até raposa de elite come. Principalmente de elite.",
+  "Even elite foxes eat. Especially elite ones.",
+  "Hasta los zorros de élite comen. Sobre todo los de élite."
+ ],
+ "need_fridge_empty_comp_raposa_v1": [
+  "Sem carne. Isso é sabotagem do adversário.",
+  "No meat. This is sabotage by the competition.",
+  "Sin carne. Esto es sabotaje del rival."
+ ],
+ "need_fridge_empty_comp_raposa_v2": [
+  "Sem carne não tem treino. Sem treino não tem pódio.",
+  "No meat, no training. No training, no podium.",
+  "Sin carne no hay entrenamiento. Sin entrenamiento no hay podio."
+ ],
+ "need_fridge_empty_comp_raposa_v3": [
+  "Alguma raposa rival comeu nossa carne. Exijo revanche.",
+  "Some rival fox ate our meat. I demand a rematch.",
+  "Algún zorro rival se comió nuestra carne. Exijo revancha."
+ ],
+ "need_fridge_empty_comp_raposa_v4": [
+  "Bora no Açougue bater recorde de compra.",
+  "Let's hit the Butcher's for a shopping record.",
+  "Vamos a la Carnicería a batir el récord de compra."
+ ],
+ "need_fridge_empty_comp_raposa_v5": [
+  "Sem carne. Meu rendimento caiu 30% só de olhar.",
+  "No meat. My performance dropped 30% just looking.",
+  "Sin carne. Mi rendimiento bajó un 30% solo de mirar."
+ ],
+ "chCompEnter1_v1": [
+  "Chegou! Ótimo. Já tô ganhando de 3 a 0 contra ninguém.",
+  "You're here! Great. I'm already up 3-0 against nobody.",
+  "¡Llegaste! Genial. Ya voy ganando 3 a 0 contra nadie."
+ ],
+ "chCompEnter1_v2": [
+  "Hoje eu ganho tudo. E o que eu não ganhar, eu recorro.",
+  "Today I win everything. Whatever I don't, I appeal.",
+  "Hoy lo gano todo. Y lo que no gane, lo apelo."
+ ],
+ "chCompEnter1_v3": [
+  "Bora! O pódio tá frio sem mim.",
+  "Let's go! The podium's cold without me.",
+  "¡Vamos! El podio está frío sin mí."
+ ],
+ "chCompEnter1_v4": [
+  "Pronto pra me ver ganhar? Não de você. De todo mundo.",
+  "Ready to watch me win? Not against you. Against everyone.",
+  "¿Listo para verme ganar? No a ti. A todos."
+ ],
+ "chCompEnter1_v5": [
+  "Meta do dia: primeiro lugar. Meta reserva: primeiro lugar.",
+  "Today's goal: first place. Backup goal: first place.",
+  "Meta del día: primer lugar. Meta de reserva: primer lugar."
+ ],
+ "chCompEnter2_v1": [
+  "Meu recorde de ontem tá me olhando. Vou bater nele.",
+  "Yesterday's record is staring at me. I'm going to beat it.",
+  "Mi récord de ayer me está mirando. Voy a batirlo."
+ ],
+ "chCompEnter2_v2": [
+  "Aquecimento feito. Agora é humilhar.",
+  "Warm-up done. Now for the humiliation.",
+  "Calentamiento hecho. Ahora toca humillar."
+ ],
+ "chCompEnter2_v3": [
+  "Quem tá no topo hoje? Ninguém. Ainda.",
+  "Who's on top today? Nobody. Yet.",
+  "¿Quién está arriba hoy? Nadie. Todavía."
+ ],
+ "chCompEnter2_v4": [
+  "Hoje é dia de ranking. Todo dia é dia de ranking.",
+  "Today is ranking day. Every day is ranking day.",
+  "Hoy es día de ranking. Todos los días son día de ranking."
+ ],
+ "chCompEnter2_v5": [
+  "Segundo lugar é só o primeiro perdedor. Bora.",
+  "Second place is just the first loser. Let's go.",
+  "El segundo lugar es solo el primer perdedor. Vamos."
+ ],
+ "chCompNight1_v1": [
+  "Noite? Ótimo. Menos gente, mais vitória.",
+  "Night? Great. Fewer people, more wins.",
+  "¿Noche? Genial. Menos gente, más victorias."
+ ],
+ "chCompNight1_v2": [
+  "Uma partida antes de dormir. Ou cinco. Até ganhar.",
+  "One match before bed. Or five. Until I win.",
+  "Una partida antes de dormir. O cinco. Hasta ganar."
+ ],
+ "chCompNight1_v3": [
+  "Dormir perdendo? Nunca. Mais uma.",
+  "Go to bed on a loss? Never. One more.",
+  "¿Dormir perdiendo? Nunca. Una más."
+ ],
+ "chCompNight1_v4": [
+  "De noite os rivais dormem. Eu treino.",
+  "At night the rivals sleep. I train.",
+  "De noche los rivales duermen. Yo entreno."
+ ],
+ "chCompNight1_v5": [
+  "Escureceu e eu ainda tô em segundo. Inaceitável.",
+  "It's dark and I'm still in second. Unacceptable.",
+  "Oscureció y sigo segundo. Inaceptable."
+ ],
+ "chCompMorning1_v1": [
+  "Bom dia! Acordei antes de todo mundo. Já tô ganhando.",
+  "Good morning! Woke up before everyone. Already winning.",
+  "¡Buenos días! Me desperté antes que todos. Ya voy ganando."
+ ],
+ "chCompMorning1_v2": [
+  "Café da manhã de campeão: vitória com pão.",
+  "Champion's breakfast: victory on toast.",
+  "Desayuno de campeón: victoria con pan."
+ ],
+ "chCompMorning1_v3": [
+  "Amanheceu. O ranking zerou? Não? Então bora subir.",
+  "Morning. Did the ranking reset? No? Then let's climb.",
+  "Amaneció. ¿Se reinició el ranking? ¿No? Entonces a subir."
+ ],
+ "chCompMorning1_v4": [
+  "Bom dia! Ontem eu ganhei. Hoje vou ganhar mais.",
+  "Good morning! I won yesterday. Today I'll win more.",
+  "¡Buenos días! Ayer gané. Hoy voy a ganar más."
+ ],
+ "chCompMorning1_v5": [
+  "Novo dia, mesmo campeão. Eu.",
+  "New day, same champion. Me.",
+  "Nuevo día, mismo campeón. Yo."
+ ],
+ "chCompIdle1_v1": [
+  "Enquanto a gente tá parado, alguém tá treinando.",
+  "While we stand around, someone's training.",
+  "Mientras estamos quietos, alguien está entrenando."
+ ],
+ "chCompIdle1_v2": [
+  "Parado assim eu perco posição. Isso dói fisicamente.",
+  "Standing still loses me positions. It physically hurts.",
+  "Quieto así pierdo posiciones. Me duele físicamente."
+ ],
+ "chCompIdle1_v3": [
+  "Vamos fazer alguma coisa. Qualquer coisa que tenha placar.",
+  "Let's do something. Anything with a scoreboard.",
+  "Hagamos algo. Lo que sea que tenga marcador."
+ ],
+ "chCompIdle1_v4": [
+  "Tô contando quanto tempo a gente tá parado. Recorde ruim.",
+  "I'm timing how long we've been standing here. Bad record.",
+  "Estoy contando cuánto llevamos quietos. Mal récord."
+ ],
+ "chCompIdle1_v5": [
+  "Aposto que consigo ficar mais impaciente que você.",
+  "Bet I can be more impatient than you.",
+  "Apuesto a que puedo ser más impaciente que tú."
+ ],
+ "chCompIdle2_v1": [
+  "Corrida, Paint, Jetpack. Escolhe onde quer perder.",
+  "Race, Paint, Jetpack. Pick where you want to lose.",
+  "Carrera, Paint, Jetpack. Elige dónde quieres perder."
+ ],
+ "chCompIdle2_v2": [
+  "Aposto que ganho até de olho fechado. Quer apostar?",
+  "Bet I'd win with my eyes closed. Want to bet?",
+  "Apuesto a que gano con los ojos cerrados. ¿Apostamos?"
+ ],
+ "chCompIdle2_v3": [
+  "Olha aquele ali. Eu ganho dele fácil. E daquele também.",
+  "See that guy? I'd beat him easily. And that one too.",
+  "Mira a ese. Le gano fácil. Y a ese también."
+ ],
+ "chCompIdle2_v4": [
+  "Quem é o melhor da cidade? Eu. Pergunta retórica.",
+  "Who's the best in town? Me. Rhetorical question.",
+  "¿Quién es el mejor de la ciudad? Yo. Pregunta retórica."
+ ],
+ "chCompIdle2_v5": [
+  "Me desafia. Qualquer coisa. Eu ganho.",
+  "Challenge me. Anything. I win.",
+  "Desafíame. Lo que sea. Gano yo."
+ ],
+ "chHurt_competitivo_1": [
+  "{nick}, você me deixou no banco. Campeão não fica no banco.",
+  "{nick}, you benched me. Champions don't sit on the bench.",
+  "{nick}, me dejaste en el banquillo. Un campeón no se sienta ahí."
+ ],
+ "chHurt_competitivo_2": [
+  "Você sumiu, {nick}. Perdi três posições esperando.",
+  "You vanished, {nick}. I lost three places waiting.",
+  "Desapareciste, {nick}. Perdí tres puestos esperando."
+ ],
+ "chHurt_competitivo_3": [
+  "Tô em último lugar na sua lista, {nick}? Não aceito.",
+  "Am I last on your list, {nick}? I don't accept that.",
+  "¿Estoy último en tu lista, {nick}? No lo acepto."
+ ],
+ "chHurt_competitivo_4": [
+  "{nick}, até o reserva recebe mais atenção que eu.",
+  "{nick}, even the reserve player gets more attention than me.",
+  "{nick}, hasta el suplente recibe más atención que yo."
+ ],
+ "chHurt_competitivo_5": [
+  "Me ignorou, {nick}. Isso conta como derrota pra você.",
+  "You ignored me, {nick}. That counts as a loss for you.",
+  "Me ignoraste, {nick}. Eso cuenta como derrota para ti."
+ ],
+ "chLove_competitivo_1": [
+  "{nick}, você é o melhor treinador do ranking. Do meu ranking.",
+  "{nick}, you're the best trainer in the ranking. My ranking.",
+  "{nick}, eres el mejor entrenador del ranking. De mi ranking."
+ ],
+ "chLove_competitivo_2": [
+  "Com você, {nick}, até perder é quase bom. Quase.",
+  "With you, {nick}, even losing is almost good. Almost.",
+  "Contigo, {nick}, hasta perder es casi bueno. Casi."
+ ],
+ "chLove_competitivo_3": [
+  "{nick}, você é meu troféu favorito.",
+  "{nick}, you're my favorite trophy.",
+  "{nick}, eres mi trofeo favorito."
+ ],
+ "chLove_competitivo_4": [
+  "Time eu e você, {nick}? Invicto.",
+  "Team you and me, {nick}? Undefeated.",
+  "¿Equipo tú y yo, {nick}? Invicto."
+ ],
+ "chLove_competitivo_5": [
+  "Se tivesse campeonato de treinador, {nick}, você ganhava. Depois de mim.",
+  "If there were a trainer championship, {nick}, you'd win. After me.",
+  "Si hubiera campeonato de entrenadores, {nick}, ganarías. Después de mí."
+ ]
+}
