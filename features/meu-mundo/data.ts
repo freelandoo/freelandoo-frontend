@@ -235,6 +235,8 @@ export interface FightTicket {
     /** mm3d-72: personalidade e afeto (probabilidades da luta). */
     temper?: FightTemper | null
     affection?: number | null
+    /** R2 (2026-11-17): status da classe das peças vestidas — ticket com isto = luta nova (ataque − defesa). */
+    classGear?: { flat?: Partial<Record<ClassStatKey, number>>; pct?: Partial<Record<ClassStatKey, number>> } | null
   }
   expiresAt: string
 }
