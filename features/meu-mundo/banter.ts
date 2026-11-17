@@ -15,7 +15,7 @@ import type { CenterPlaceId } from "./types"
 import TEXT from "./ui/inbox/banter-text.json"
 import type { Emotion } from "./ui/portraits"
 import { myClan, type Clan } from "./classes"
-import { VOICE_PT, pickSticky, withVariants } from "./ui/inbox/voice-pick"
+import { VOICE_PT, pickFresh, pickSticky, withVariants } from "./ui/inbox/voice-pick"
 
 const PT: Record<string, string[]> = TEXT
 type Tr = (key: string, fallback: string) => string
@@ -95,7 +95,8 @@ export function banterKeys(topic: BanterTopic, temper: Temper, clan: Clan | null
     const own = Object.keys(PT).filter((k) => k.startsWith(`${prefix}${clan}_`))
     if (own.length) return own
   }
-  return Object.keys(PT).filter((k) => k.startsWith(prefix) && /^d+$/.test(k.slice(prefix.length)))
+  // 2026-11-17: era `/^d+$/` (a barra se perdeu no 7f77cdf5) e calava TODA reação fora da comida
+  return Object.keys(PT).filter((k) => k.startsWith(prefix) && /^\d+$/.test(k.slice(prefix.length)))
 }
 
 /**
@@ -148,7 +149,8 @@ export function banterEmotion(topic: BanterTopic, temper: Temper): Emotion {
 export function banterLine(temper: Temper, e: BanterEvent, t: Tr, roll = Math.random()): { title: string; emotion: Emotion } | null {
   const keys = banterKeys(e.topic, temper)
   if (!keys.length) return null
-  const key = keys[Math.min(keys.length - 1, Math.floor(roll * keys.length))]
+  // sem repetir as últimas do mesmo assunto (voice-pick.ts)
+  const key = pickFresh(`bt:${e.topic}:${temper}`, keys, roll)
   const title = t(key, PT[key]?.[0] ?? key).replaceAll("{god}", e.god ?? "")
   return { title, emotion: banterEmotion(e.topic, temper) }
 }
