@@ -9,12 +9,13 @@
 
 const DIR = "/meu-mundo/armas/v2"
 /**
- * Pasta das miniaturas das abas da loja (e das armas de linha). As novas, com o selo da classe de
- * raridade no canto inferior esquerdo (`MEU MUNDO 3D/arte/armas-thumb/gpt/`), entram numa PASTA NOVA
- * com os MESMOS nomes de arquivo (`<id-curto>.webp`, `arco-…`, `fogo-…`, `escudo-…`) e só esta linha
- * muda (o cache do navegador não segura a velha).
+ * Pasta das miniaturas das abas da loja (e das armas de linha). `thumb2` (17/11): arte 2:3 (512×768)
+ * com o selo da classe de raridade no canto inferior esquerdo, feita no ChatGPT a partir do print de
+ * cada arma (`MEU MUNDO 3D/arte/armas-thumb/`). Mesmos nomes de `thumb/` (a deitada 16:7, aposentada).
+ * Cartões e casas da Mochila são 2:3 para caber a arte inteira. `fogo-pinca` não tem (modelo vazio):
+ * o quadro cai no desenho da categoria.
  */
-const THUMB = `${DIR}/thumb`
+const THUMB = `${DIR}/thumb2`
 
 /** Cor do rastro do golpe: [principal, borda]. */
 const COLORS: Record<string, [string, string]> = {

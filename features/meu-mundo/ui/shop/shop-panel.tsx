@@ -175,6 +175,7 @@ export default function ShopPanel({
             render: () => (
               <ShopCard
                 img={gearThumb(item)}
+                art={!!gearThumb(item)}
                 category={(item.category === "shield" ? "armor" : item.category) as ItemCategory}
                 rarity={rank}
                 rank={rank}

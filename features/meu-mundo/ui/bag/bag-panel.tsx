@@ -230,7 +230,7 @@ export default function BagPanel({
                     const c = list[i]
                     if (!c)
                       return (
-                        <li key={"v" + i} className={`${TX.label} grid aspect-square place-items-center uppercase`} style={{ background: AE.well, color: AE.dim, opacity: 0.55, clipPath: chamfer(AE.cut.chip) }} aria-hidden>
+                        <li key={"v" + i} className={`${TX.label} grid aspect-[2/3] place-items-center uppercase`} style={{ background: AE.well, color: AE.dim, opacity: 0.55, clipPath: chamfer(AE.cut.chip) }} aria-hidden>
                           {t("bagEmptyCell", "vazio")}
                         </li>
                       )
@@ -307,12 +307,19 @@ function CellButton({ cell, active, onClick }: { cell: Cell; active: boolean; on
       aria-pressed={active}
       aria-label={cell.name}
       title={cell.name}
-      className="relative block aspect-square w-full overflow-hidden transition-transform duration-100 active:scale-[0.95]"
+      className="relative block aspect-[2/3] w-full overflow-hidden transition-transform duration-100 active:scale-[0.95]"
       style={{ background: AE.well, clipPath: chamfer(AE.cut.chip), boxShadow: active ? `inset 0 0 0 2px ${AE.gold}` : `inset 0 0 0 1px ${AE.brassLine}` }}
     >
-      <span className="absolute inset-0 grid place-items-center p-1">
-        {cell.gear ? <GearThumb item={cell.gear} /> : cell.slot ? <SlotThumb slot={cell.slot} /> : null}
-      </span>
+      {/* 17/11: casa 2:3 — a arte da arma ocupa a casa inteira; o resto fica num quadrado no meio */}
+      {cell.gear && gearThumb(cell.gear) ? (
+        <span className="absolute inset-0">
+          <GearThumb item={cell.gear} />
+        </span>
+      ) : (
+        <span className="absolute inset-0 grid place-items-center p-1">
+          <span className="grid aspect-square w-full place-items-center">{cell.gear ? <GearThumb item={cell.gear} /> : cell.slot ? <SlotThumb slot={cell.slot} /> : null}</span>
+        </span>
+      )}
       {/* faixa da classe de raridade */}
       <span aria-hidden className="absolute inset-x-0 bottom-0 h-1" style={{ background: rc }} />
       {cell.qty != null && cell.qty > 1 && (
@@ -336,9 +343,7 @@ function CellButton({ cell, active, onClick }: { cell: Cell; active: boolean; on
 
 function GearThumb({ item }: { item: GearItem }) {
   const src = gearThumb(item)
-  if (src)
-    // eslint-disable-next-line @next/next/no-img-element -- miniatura estática local, lista
-    return <img src={src} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full object-contain" />
+  if (src) return <ItemImage src={src} category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={item.rarity} alt="" fill fit="cover" />
   return <ItemImage category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={item.rarity} alt="" ratio={1} />
 }
 

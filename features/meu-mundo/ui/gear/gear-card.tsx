@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import type { ApiResult, ClassStatKey, GearBag, GearClassStats, GearItem, GearOut } from "../../data"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
+import { ArtCard } from "../kit/art-card"
 import { AE, rankOf } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
 import { teko } from "../status/evo-skin"
@@ -77,11 +78,10 @@ export function GearItemCard({ item, t, subtitle, lines, children }: {
   item: GearItem; t: GearTr; subtitle?: string; lines?: string[]; children?: ReactNode
 }) {
   const rank = rankOf(item)
-  return (
-    <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
-      <div className="shrink-0">
-        <ItemImage src={gearThumb(item)} category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={rank} alt={nameOf(item, t)} ratio={16 / 7} />
-      </div>
+  const art = gearThumb(item)
+  const category = (item.category === "shield" ? "armor" : item.category) as ItemCategory
+  const body = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <h4 className={teko.className + " text-[24px] font-semibold uppercase leading-tight"} style={{ color: AE.text }}>{nameOf(item, t)}</h4>
         <RankSeal rank={rank} t={t} />
@@ -99,6 +99,21 @@ export function GearItemCard({ item, t, subtitle, lines, children }: {
         </details>
       )}
       <div className="mt-auto grid gap-2 pt-1">{children}</div>
+    </>
+  )
+  // 17/11: arma com arte 2:3 — a arte ocupa o cartão e o texto fica por cima (Loja, Forja, Mochila…)
+  if (art)
+    return (
+      <ArtCard src={art} category={category} rarity={rank} alt={nameOf(item, t)}>
+        {body}
+      </ArtCard>
+    )
+  return (
+    <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
+      <div className="shrink-0">
+        <ItemImage src={null} category={category} rarity={rank} alt={nameOf(item, t)} ratio={16 / 7} />
+      </div>
+      {body}
     </div>
   )
 }

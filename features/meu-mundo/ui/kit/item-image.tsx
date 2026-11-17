@@ -171,6 +171,7 @@ export function ItemImage({
   ratio = 1,
   size,
   fit = "contain",
+  fill = false,
 }: {
   src?: string | null
   category: ItemCategory
@@ -183,6 +184,8 @@ export function ItemImage({
   size?: number
   /** B5: "cover" preenche o quadro (retratos); padrão "contain" (itens). */
   fit?: "contain" | "cover"
+  /** 17/11: ocupa o pai inteiro (altura 100%, sem proporção) e, em "cover", centraliza — fundo do ArtCard. */
+  fill?: boolean
 }) {
   const [state, setState] = useState<"loading" | "ok" | "fail">(src ? "loading" : "fail")
   const [shownSrc, setShownSrc] = useState(src)
@@ -198,7 +201,7 @@ export function ItemImage({
       className="relative overflow-hidden"
       style={{
         width: size ?? "100%",
-        aspectRatio: String(ratio),
+        ...(fill ? { height: "100%" } : { aspectRatio: String(ratio) }),
         background: `radial-gradient(70% 70% at 50% 40%, ${AE.steelHi} 0%, ${AE.well} 100%)`,
         boxShadow: `inset 0 0 0 1px ${AE.brassLine}`,
       }}
@@ -230,7 +233,7 @@ export function ItemImage({
           draggable={false}
           onLoad={() => setState("ok")}
           onError={() => setState("fail")}
-          className={`absolute inset-0 h-full w-full ${fit === "cover" ? "object-cover object-top" : "object-contain"}`}
+          className={`absolute inset-0 h-full w-full ${fit === "cover" ? (fill ? "object-cover object-center" : "object-cover object-top") : "object-contain"}`}
           style={{ visibility: state === "ok" ? "visible" : "hidden" }}
         />
       )}

@@ -5,11 +5,13 @@
 // esta peça, dentro do carrossel do kit (que roda pela prateleira em arco do mercado).
 // Imagem em cima (item, retrato ou o desenho da categoria), nome, selo, linhas e a
 // ação embaixo. Rolagem só vertical dentro do card.
+// 17/11: `art` = a imagem é a arte 2:3 da arma — ocupa o card todo e o texto vai por cima (ArtCard).
 
 import type { ReactNode } from "react"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { AE, toneOf, type Rank, type Rarity } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
+import { ArtCard } from "../kit/art-card"
 import { archivo, teko } from "../status/evo-skin"
 
 export interface ShopLine {
@@ -34,6 +36,7 @@ export function ShopCard({
   note,
   portrait = false,
   dim = false,
+  art = false,
   children,
 }: {
   img?: string | null
@@ -56,22 +59,21 @@ export function ShopCard({
   portrait?: boolean
   /** ainda não tem / nunca enfrentou: a imagem apagada */
   dim?: boolean
+  /** a imagem é a arte 2:3 da arma: preenche o card e o texto fica por cima */
+  art?: boolean
   children?: ReactNode
 }) {
   const color = tagColor ?? toneOf(rarity)?.color ?? AE.goldSoft
-  return (
-    <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
-      <div className="relative shrink-0" style={{ opacity: dim ? 0.38 : 1, filter: dim ? "grayscale(1)" : undefined }}>
-        <ItemImage src={img} category={category} rarity={rarity} alt={title} ratio={portrait ? 16 / 11 : 16 / 8} fit={portrait ? "cover" : "contain"} />
-        {badge && (
-          <span
-            className={`${archivo.className} absolute right-1.5 top-1.5 px-2 py-1 text-[12px] font-bold leading-none`}
-            style={{ background: "rgba(12,15,20,0.86)", color: AE.goldSoft, boxShadow: `inset 0 0 0 1px ${AE.brassLine}` }}
-          >
-            {badge}
-          </span>
-        )}
-      </div>
+  const badgeEl = badge && (
+    <span
+      className={`${archivo.className} absolute right-1.5 top-1.5 z-10 px-2 py-1 text-[12px] font-bold leading-none`}
+      style={{ background: "rgba(12,15,20,0.86)", color: AE.goldSoft, boxShadow: `inset 0 0 0 1px ${AE.brassLine}` }}
+    >
+      {badge}
+    </span>
+  )
+  const body = (
+    <>
       <div className="flex items-start justify-between gap-2">
         <h4 className={`${teko.className} text-[24px] font-semibold uppercase leading-tight`} style={{ color: AE.text }}>
           {title}
@@ -102,6 +104,21 @@ export function ShopCard({
         </p>
       )}
       {children && <div className="mt-auto grid gap-2 pt-1">{children}</div>}
+    </>
+  )
+  if (art && img)
+    return (
+      <ArtCard src={img} category={category} rarity={rarity} alt={title} badge={badgeEl} dim={dim}>
+        {body}
+      </ArtCard>
+    )
+  return (
+    <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
+      <div className="relative shrink-0" style={{ opacity: dim ? 0.38 : 1, filter: dim ? "grayscale(1)" : undefined }}>
+        <ItemImage src={img} category={category} rarity={rarity} alt={title} ratio={portrait ? 16 / 11 : 16 / 8} fit={portrait ? "cover" : "contain"} />
+        {badgeEl}
+      </div>
+      {body}
     </div>
   )
 }
