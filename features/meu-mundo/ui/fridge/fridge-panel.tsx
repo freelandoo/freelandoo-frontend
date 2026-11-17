@@ -24,6 +24,7 @@ import { MM } from "../hud/tokens"
 import { itemName } from "../status/status-pages"
 import { categories, effectsOf, mealFit, thumbOf, verbOf, type CategoryCard, type FridgeCategory } from "./fridge-logic"
 import { Arc, Card, ICE, effectText, toneColor } from "./shelf"
+import { RankSeal } from "../kit/rank-seal"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -214,7 +215,7 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
             render={(i, active) => {
               const c = cats[i]
               return (
-                <Card active={active} empty={c.qty === 0} img={c.cover} badge={`×${c.qty}`} w={cardW} h={cardH} compact={compact}>
+                <Card overlay active={active} empty={c.qty === 0} img={c.cover} badge={`×${c.qty}`} w={cardW} h={cardH} compact={compact}>
                   <div className={`${teko.className} truncate ${compact ? "text-[17px]" : "text-[24px]"} font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
                     {t(CATEGORY_LABEL[c.id][0], CATEGORY_LABEL[c.id][1])}
                   </div>
@@ -245,9 +246,12 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
               const n = stock[it.id] ?? 0
               const fx = effectsOf(it)
               return (
-                <Card active={active} empty={n === 0} img={thumbOf(it.id)} badge={n ? `×${n}` : t("frOut", "Acabou")} w={cardW} h={cardH} compact={compact}>
-                  <div className={`${teko.className} line-clamp-2 ${compact ? "text-[15px]" : "text-[20px]"} font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
-                    {itemName(it, t)}
+                <Card overlay active={active} empty={n === 0} img={thumbOf(it.id)} badge={n ? `×${n}` : t("frOut", "Acabou")} w={cardW} h={cardH} compact={compact}>
+                  <div className="flex items-start justify-between gap-1">
+                    <div className={`${teko.className} line-clamp-2 ${compact ? "text-[15px]" : "text-[20px]"} font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
+                      {itemName(it, t)}
+                    </div>
+                    {it.rank && <RankSeal rank={it.rank} t={t} size={compact ? "sm" : "md"} />}
                   </div>
                   {fx[0] && (
                     <div className={`${teko.className} ${compact ? "mt-0.5 text-[14px]" : "mt-1 text-[19px]"} leading-none`} style={{ color: toneColor(fx[0].tone) }}>

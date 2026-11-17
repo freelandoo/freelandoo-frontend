@@ -8,9 +8,11 @@
 // Fala 18+ conta o fato sem detalhar sangue; variante por classe = chave
 // separada (`_raposa` / `_vampiro`), nunca `if` com texto no componente.
 
-import type { BodyId } from "./types"
+import type { BodyId, PlaceUse } from "./types"
 
 export type NpcId = "nivea" | "delegado" | "raposa_velha" | "vampiro_velho" | "vizinha_raposa" | "vizinho_vampiro" | "sacerdotisa" | "arauto" | "forjador" | "armeiro" | "bibliotecaria" | "ciborgue" | "fulvo" | "pipa" | "cavaleiro"
+  // 17/11: donos de loja e gente dos prédios do centro (1ª fala maior, de lore; depois a de sempre)
+  | "atendente_sangue" | "acougueiro" | "caixa" | "armeira" | "secretaria" | "professor" | "professora" | "recepcionista" | "personal" | "padre"
 
 /** Onde a pessoa está na história quando abre a conversa. */
 export interface TalkMoment {
@@ -18,6 +20,8 @@ export interface TalkMoment {
   step: string | null
   /** classe de quem ouve (C2: o líder do outro povo responde com desprezo) */
   clan?: "raposa" | "vampiro" | null
+  /** 17/11: já falou com este NPC antes (false = primeira vez: vale a conversa `first`) */
+  met?: boolean
 }
 
 export interface NpcLine {
@@ -42,6 +46,8 @@ export interface NpcConversation {
   idle?: boolean
   /** C3: no fim, o NPC entrega um texto do Arquivo para ler ali (o livro do Ninho) */
   archive?: string
+  /** 17/11: a conversa da PRIMEIRA visita (maior, de lore). Depois dela, a de sempre. */
+  first?: boolean
 }
 
 export interface NpcDef {
@@ -50,6 +56,8 @@ export interface NpcDef {
   conversations: NpcConversation[]
   /** só ambiente (nenhum passo pede `talk:` dele): abrir não pede nada ao servidor */
   ambient?: boolean
+  /** 17/11: dono de loja — depois da conversa a loja abre direto (o mesmo uso do balcão) */
+  shop?: PlaceUse
 }
 
 const rival = (clan: "raposa" | "vampiro") => (m: TalkMoment) => m.clan === clan
@@ -101,6 +109,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     look: "",
     conversations: [
       { id: "tregua", when: at("cap2", "tregua"), lines: [{ key: "tregua_1" }, { key: "tregua_2" }, { key: "tregua_3" }, { key: "tregua_4" }] },
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
     ],
   },
@@ -168,8 +177,10 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ambient: true,
     conversations: [
       { id: "cap4", when: at("cap4"), lines: [{ key: "cap4_1" }, { key: "cap4_2" }] },
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
     ],
+    shop: "forge",
   },
   armeiro: {
     body: "vampiro",
@@ -177,8 +188,10 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ambient: true,
     conversations: [
       { id: "cap4", when: at("cap4"), lines: [{ key: "cap4_1", byClan: true }] },
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
     ],
+    shop: "weapons",
   },
   // C3 (cap. 5): a bibliotecária guarda o livro do Ninho (para quem não entra nas
   // Matas, o Vampiro). No passo "ninho" ela o entrega; o servidor só grava a leitura
@@ -189,6 +202,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ambient: true,
     conversations: [
       { id: "ninho", when: at("cap5", "ninho"), lines: [{ key: "ninho_1" }, { key: "ninho_2" }], archive: "registro_ninho" },
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
       { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
     ],
   },
@@ -248,6 +262,102 @@ export const NPCS: Record<NpcId, NpcDef> = {
       { id: "idle", idle: true, lines: [{ key: "idle_1" }] },
     ],
   },
+  // 17/11 (pedido do Alex): quem atende nos prédios do centro fala. A 1ª visita conta quem é e o lugar
+  // na história de Lúmen; depois, uma fala curta de sempre. Dono de loja: a loja abre logo depois.
+  atendente_sangue: {
+    body: "vampiro_adulto",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }, { key: "primeira_3" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+    shop: "order",
+  },
+  acougueiro: {
+    body: "raposa_adulto",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }, { key: "primeira_3" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+    shop: "order",
+  },
+  caixa: {
+    body: "ekaterina",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+    shop: "market",
+  },
+  armeira: {
+    body: "raposa_f",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+    shop: "armory",
+  },
+  secretaria: {
+    body: "ekaterina",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  professor: {
+    body: "sergio",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  professora: {
+    body: "ekaterina",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  recepcionista: {
+    body: "ekaterina",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  personal: {
+    body: "sergio",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
+  padre: {
+    body: "sergio",
+    look: "",
+    ambient: true,
+    conversations: [
+      { id: "primeira", first: true, lines: [{ key: "primeira_1" }, { key: "primeira_2" }] },
+      { id: "idle", idle: true, lines: [{ key: "idle_1" }, { key: "idle_2" }] },
+    ],
+  },
 }
 
 export const isNpcId = (id: string): id is NpcId => Object.prototype.hasOwnProperty.call(NPCS, id)
@@ -255,7 +365,11 @@ export const isNpcId = (id: string): id is NpcId => Object.prototype.hasOwnPrope
 /** A conversa do momento: a primeira cujo `when` vale; senão a de sempre. */
 export function conversationFor(npc: NpcId, m: TalkMoment): NpcConversation {
   const list = NPCS[npc].conversations
-  return list.find((c) => c.when && c.when(m)) ?? list.find((c) => !c.when) ?? list[list.length - 1]
+  const story = list.find((c) => c.when && c.when(m))
+  if (story) return story
+  const first = list.find((c) => c.first)
+  if (first && m.met === false) return first
+  return list.find((c) => !c.when && !c.first) ?? list[list.length - 1]
 }
 
 export interface TalkPage {

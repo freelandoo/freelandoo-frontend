@@ -38,11 +38,17 @@ import type { BodyId, InteriorDef, Interactable, PlaceUse } from "../types"
 import { Joystick, SAFE, SceneCurtain } from "./meu-mundo-view"
 import { EvoButton } from "./hud/hud-kit"
 import { NpcTalk, npcTx } from "./talk/npc-talk"
-import { isNpcId, npcNameKey, type NpcId } from "../npcs"
+import { NPCS, isNpcId, npcNameKey, type NpcId } from "../npcs"
 
 type Tr = (key: string, fallback: string) => string
 
 /** Rótulo e ícone do que se faz em cada uso. */
+/** 17/11: o NPC dono do balcão `use` neste interior (shop do NPC = use do ponto). */
+function shopOwnerIn(interior: InteriorDef, use: PlaceUse): NpcId | null {
+  for (const n of interior.npcs ?? []) if (n.talk && isNpcId(n.talk) && NPCS[n.talk].shop === use) return n.talk
+  return null
+}
+
 function actionOf(use: PlaceUse, t: Tr): { label: string; icon: ReactNode } {
   switch (use) {
     case "forge":
@@ -130,6 +136,13 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
   const [isTouch, setIsTouch] = useState(false)
   // Lore v2 F4: conversa aberta com um NPC do prédio
   const [talk, setTalk] = useState<NpcId | null>(null)
+  // 17/11: a fala de sempre do dono de loja, num balão que some sozinho
+  const [say, setSay] = useState<{ npc: NpcId; text: string } | null>(null)
+  useEffect(() => {
+    if (!say) return
+    const id = window.setTimeout(() => setSay(null), 4000)
+    return () => window.clearTimeout(id)
+  }, [say])
   // Internado/preso liberado: a cena reabre a pé (a cama deixa de prender).
   const sceneMode: PlaceMode = mode !== "visit" && discharged ? "visit" : mode
 
@@ -171,6 +184,7 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
         },
         onExit: () => alive && exitRef.current?.(),
         onTalk: (npc) => alive && isNpcId(npc) && setTalk(npc),
+        spotOwner: (use) => shopOwnerIn(interior, use),
         onError: () => alive && setStatus("error"),
       })
       gameRef.current = handle
@@ -195,17 +209,22 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
 
   const patient = sceneMode === "patient"
   const bottom = (px: number) => `calc(max(16px, env(safe-area-inset-bottom)) + ${px}px)`
+  // 17/11: balcão com dono → o botão já é "Falar com <dono>" (a loja abre depois da fala)
+  const owner = nearby?.kind === "spot" ? shopOwnerIn(interior, nearby.spot.use) : null
+  const talkLabel = (npc: NpcId) => ({ label: npcTx(t, "npcTalkWith").replace("{name}", npcTx(t, npcNameKey(npc))), icon: <MessageCircle className="h-5 w-5" /> })
   const action =
-    nearby?.kind === "door"
+    owner
+      ? talkLabel(owner)
+      : nearby?.kind === "door"
       ? { label: t("hospitalLeave", "Sair"), icon: <DoorOpen className="h-5 w-5" /> }
       : nearby?.kind === "bed"
         ? { label: t("bedLie", "Deitar"), icon: <BedDouble className="h-5 w-5" /> }
         : nearby?.kind === "seat"
           ? { label: t("sit", "Sentar"), icon: <Armchair className="h-5 w-5" /> }
           : nearby?.kind === "spot"
-            ? { label: t("pvGoTo", "Usar"), icon: actionOf(nearby.spot.use, t).icon }
+            ? actionOf(nearby.spot.use, t) // 17/11: o botão já diz o que acontece (nada de "Usar")
             : nearby?.kind === "npc" && isNpcId(nearby.npc)
-              ? { label: npcTx(t, "npcTalkWith").replace("{name}", npcTx(t, npcNameKey(nearby.npc))), icon: <MessageCircle className="h-5 w-5" /> }
+              ? talkLabel(nearby.npc)
               : null
   const use = placeUseOf(where)
   const doUse = () => {
@@ -243,7 +262,7 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
             </EvoButton>
           )}
           {!patient && where.kind === "free" && action && !talk && (
-            <EvoButton variant="primary" icon={action.icon} onClick={() => gameRef.current?.interact()} kbd={isTouch ? undefined : "E"}>
+            <EvoButton variant="primary" icon={action.icon} onClick={() => (owner ? setTalk(owner) : gameRef.current?.interact())} kbd={isTouch ? undefined : "E"}>
               {action.label}
             </EvoButton>
           )}
@@ -252,7 +271,24 @@ export function PlaceView({ interior, body, look = "", mode, bed, placeName, onE
 
       {status === "ready" && isTouch && !patient && !talk && <Joystick gameRef={gameRef} />}
 
-      {talk && <NpcTalk npc={talk} onClose={() => setTalk(null)} />}
+      {talk && (
+        <NpcTalk
+          npc={talk}
+          onSay={(text) => setSay(text ? { npc: talk, text } : null)}
+          onClose={() => {
+            setTalk(null)
+            // 17/11: dono de loja — depois da conversa, a loja abre direto
+            const shop = NPCS[talk].shop
+            if (shop && onUse) onUse(shop, where)
+          }}
+        />
+      )}
+      {say && (
+        <div className="pointer-events-none absolute left-1/2 top-6 z-[60] max-w-[min(92vw,520px)] -translate-x-1/2 bg-black/80 px-4 py-2 text-white" role="status" aria-live="polite">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">{npcTx(t, npcNameKey(say.npc))}</p>
+          <p className="text-[15px] leading-snug">{say.text}</p>
+        </div>
+      )}
 
       {status !== "ready" && (
         <SceneCurtain

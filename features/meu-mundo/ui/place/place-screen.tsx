@@ -13,16 +13,19 @@
 //  - conversar com o vendedor (supermercado): casas e cores do carro.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { BookOpen, Dumbbell, Sparkles, UtensilsCrossed } from "lucide-react"
+import { BookOpen, Dumbbell, Sparkles } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { getLife, postLifeActivity, postLifeOrder } from "../../data"
 import { POSE_OF_ANIM, type PlacePose } from "../../engine/avatars"
 import type { PlaceState } from "../../engine/place-game"
 import type { BodyId, InteriorDef, LifeItem, PlaceUse } from "../../types"
-import { effectsOf } from "../fridge/fridge-logic"
+import { effectsOf, thumbOf } from "../fridge/fridge-logic"
+import { ShopCard } from "../shop/shop-card"
+import { AetherCarousel } from "../kit/aether-carousel"
+import { AetherButton } from "../kit/aether-modal"
 import { canEatItem, clanOfBody, dietOfClan, myClan } from "../../classes"
-import { effectText, toneColor } from "../fridge/shelf"
+import { effectText } from "../fridge/shelf"
 import { itemName } from "../status/status-pages"
 import { EvoButton, EvoDialog, EvoToast } from "../hud/hud-kit"
 import { PlaceView } from "../place-view"
@@ -296,27 +299,34 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
                       : t("pvDietNote_vampiro", "Aqui é o Açougue: Vampiro só toma a água da fonte. O sangue fica no Banco de Sangue.")}
                   </p>
                 )}
-                {menu.items.map((it) => {
-                  const poor = menu.coins < it.price
-                  return (
-                    <div key={it.id} className="flex items-center gap-3 border-b py-2" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-                      <UtensilsCrossed className="h-5 w-5 shrink-0 opacity-70" />
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold">{itemName(it, t)}</div>
-                        <div className="mt-0.5 flex flex-wrap gap-x-2 text-[12px]">
-                          {effectsOf(it).slice(0, 3).map((e) => (
-                            <span key={e.key} style={{ color: toneColor(e.tone) }}>
-                              {effectText(e, t)}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <EvoButton variant={poor ? "ghost" : "gold"} size="sm" loading={busy} onClick={() => !poor && void order(it)}>
-                        {poor ? t("mkNoCoins", "Moedas insuficientes") : t("pvOrderPrice", "Pedir · {n}").replace("{n}", String(it.price))}
-                      </EvoButton>
-                    </div>
-                  )
-                })}
+                {/* 17/11: cardápio em cartões grandes (arte 2:3, classe e status por cima), como a Loja */}
+                <AetherCarousel
+                  cardWidth={280}
+                  cardHeight={420}
+                  items={menu.items.map((it) => {
+                    const poor = menu.coins < it.price
+                    return {
+                      key: it.id,
+                      label: itemName(it, t),
+                      render: () => (
+                        <ShopCard
+                          img={thumbOf(it.id)}
+                          art
+                          category={it.kind === "drink" ? "drink" : "food"}
+                          rank={it.rank}
+                          t={t}
+                          title={itemName(it, t)}
+                          badge={t("gearPrice", "{p} moedas").replace("{p}", String(it.price))}
+                          lines={effectsOf(it).map((e) => ({ text: effectText(e, t) ?? "", tone: e.tone === "good" ? ("good" as const) : e.tone === "bad" ? ("bad" as const) : ("gold" as const) }))}
+                        >
+                          <AetherButton disabled={poor || busy} busy={busy} onClick={() => !poor && void order(it)}>
+                            {poor ? t("mkNoCoins", "Moedas insuficientes") : t("pvOrderPrice", "Pedir · {n}").replace("{n}", String(it.price))}
+                          </AetherButton>
+                        </ShopCard>
+                      ),
+                    }
+                  })}
+                />
               </div>
             )}
           </EvoDialog>

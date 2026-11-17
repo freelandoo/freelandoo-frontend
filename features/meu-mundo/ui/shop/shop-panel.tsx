@@ -296,8 +296,10 @@ export default function ShopPanel({
           render: () => (
             <ShopCard
               img={thumbOf(it.id)}
+              art
               category={foodCategory(it)}
-              portrait
+              rank={it.rank}
+              t={t}
               title={itemName(it, t)}
               badge={t("gearPrice", "{p} moedas").replace("{p}", String(it.price))}
               subtitle={n ? t("shopInFridge", "Na geladeira: {n}").replace("{n}", String(n)) : undefined}

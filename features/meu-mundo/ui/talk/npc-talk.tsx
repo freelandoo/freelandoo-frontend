@@ -35,9 +35,35 @@ interface Ready {
   far: boolean
   /** C3: o NPC entrega um texto do Arquivo no fim (o livro do Ninho) */
   archive: string | null
+  /** 17/11: dono de loja já conhecido, conversa solta — vira balão e a loja abre */
+  quick: boolean
 }
 
-export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
+// 17/11: quem já foi apresentado (a 1ª conversa, maior, sai uma vez por aparelho)
+const MET_KEY = "mm-npc-met"
+function metSet(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(MET_KEY) || "[]") as string[])
+  } catch {
+    return new Set()
+  }
+}
+function markMet(npc: string) {
+  try {
+    const s = metSet()
+    s.add(npc)
+    localStorage.setItem(MET_KEY, JSON.stringify([...s]))
+  } catch {
+    /* sem armazenamento: a 1ª fala volta na próxima vez */
+  }
+}
+
+export function NpcTalk({ npc, onClose, onSay }: {
+  npc: NpcId
+  onClose: () => void
+  /** 17/11: dono de loja — a fala de sempre sai num balão (sem janela) e quem chamou abre a loja */
+  onSay?: (text: string) => void
+}) {
   const t = useTranslations("MeuMundo") as T
   const [ready, setReady] = useState<Ready | null>(null)
   const [i, setI] = useState(0)
@@ -55,17 +81,27 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
       const quest = q && q.ok ? q.data.quest : null
       const cur = quest && quest.current ? quest.current : null
       const clan = q && q.ok ? q.data.clan : null
-      const conv = conversationFor(npc, { chapter: quest && !quest.locked ? quest.id : null, step: cur ? cur.key : null, clan })
+      const met = metSet().has(npc)
+      const conv = conversationFor(npc, { chapter: quest && !quest.locked ? quest.id : null, step: cur ? cur.key : null, clan, met })
+      if (conv.first) markMet(npc)
       // cada personalidade responde do seu jeito (sem personalidade, a conversa acaba no NPC)
       const temper = currentSoul()?.temper
       const replyKey = temper ? `npc_${npc}_${conv.id}_re_${temperSuffix(temper)}` : ""
       const pages = talkPages(npc, conv, clan, PT[replyKey] ? replyKey : null)
-      setReady({ pages, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`), archive: conv.archive ?? null })
+      setReady({ pages, far: !!(m && !m.ok && cur && cur.check === `talk:${npc}`), archive: conv.archive ?? null, quick: !!onSay && !!def.shop && !!conv.idle && !conv.archive })
     })()
     return () => {
       alive = false
     }
+    // onSay só decide o modo rápido; não reabre a conversa se mudar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [npc, def.ambient])
+
+  useEffect(() => {
+    if (!ready?.quick || !onSay) return
+    onSay(ready.pages[0] ? npcTx(t, ready.pages[0].key) : "")
+    onClose()
+  }, [ready, onSay, onClose, t])
 
   const close = () => {
     // a missão reconfere (a conversa pode ter cumprido o passo)
@@ -78,6 +114,7 @@ export function NpcTalk({ npc, onClose }: { npc: NpcId; onClose: () => void }) {
   const replying = !!page?.you
   const last = !!ready && i >= pages.length - 1
 
+  if (ready?.quick) return null
   // C3: o livro abre no lugar da conversa (fechar o livro fecha tudo)
   if (book) return <ArchiveBook id={book} onClose={close} />
   return (

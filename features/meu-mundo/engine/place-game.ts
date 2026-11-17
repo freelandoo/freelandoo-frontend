@@ -72,6 +72,8 @@ export interface PlaceGameOptions {
   onExit?: () => void
   /** Mudou onde a pessoa está (sentou, deitou, chegou num ponto de uso, levantou). */
   onState?: (state: PlaceState) => void
+  /** 17/11: dono do balcão (id da conversa) — o ponto vira "Falar com" em vez de ocupar o lugar. */
+  spotOwner?: (use: PlaceUse) => string | null
   /** Lore v2 F4: "Falar" com um NPC do prédio (id da conversa, talk:<id>). */
   onTalk?: (npc: string) => void
   onError?: (reason: "context-lost") => void
@@ -296,6 +298,12 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       settle(it.seat)
       setState({ kind: "seat", seat: it.seat })
     } else if (it.kind === "spot") {
+      // 17/11: balcão com dono → conversa direto com ele (a loja abre depois da fala)
+      const owner = opts.spotOwner?.(it.spot.use)
+      if (owner) {
+        opts.onTalk?.(owner)
+        return
+      }
       settle(it.spot)
       setState({ kind: "spot", spot: it.spot })
     } else if (it.kind === "npc") opts.onTalk?.(it.npc)

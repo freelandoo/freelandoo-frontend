@@ -173,6 +173,7 @@ export function Card({
   img,
   art,
   imgK = 0.6,
+  overlay = false,
   badge,
   w,
   h,
@@ -186,6 +187,8 @@ export function Card({
   art?: ReactNode
   /** Fração da altura do card ocupada pela imagem (padrão 0,6). */
   imgK?: number
+  /** 17/11: a foto ocupa o card inteiro (2:3) e o texto vai por cima, no degradê do pé (ArtCard). */
+  overlay?: boolean
   /** selo do canto (quantidade, preço); vazio = sem selo */
   badge?: string
   w: number
@@ -193,7 +196,7 @@ export function Card({
   compact: boolean
   children: ReactNode
 }) {
-  const imgH = Math.round(h * imgK)
+  const imgH = overlay ? h : Math.round(h * imgK)
   return (
     <div className="relative h-full w-full">
       {/* contorno rubi do escolhido: camada estática, só a opacidade muda */}
@@ -201,7 +204,7 @@ export function Card({
         className="pointer-events-none absolute -inset-[3px]"
         style={{ borderRadius: MM.radius.card + 3, boxShadow: `inset 0 0 0 2px ${MM.ruby}, ${MM.shadow}`, opacity: active ? 1 : 0, transition: "opacity 180ms" }}
       />
-      <Chamfer cut={14} border={active ? MM.rubyBorder : MM.border} className="h-full overflow-hidden" fill={FUNDO.card}>
+      <Chamfer cut={14} border={active ? MM.rubyBorder : MM.border} className="relative h-full overflow-hidden" fill={FUNDO.card}>
         <div className="relative overflow-hidden" style={{ height: imgH, background: "radial-gradient(ellipse at 50% 35%, #2a3646, #0d1118)" }}>
           {art ? (
             <div className="h-full w-full" style={{ opacity: empty ? 0.35 : 1 }}>
@@ -230,7 +233,16 @@ export function Card({
           </span>
           )}
         </div>
-        <div className={compact ? "px-2 pb-1.5 pt-1" : "px-2.5 pb-2 pt-1.5"}>{children}</div>
+        {overlay ? (
+          <div
+            className={`absolute inset-x-0 bottom-0 ${compact ? "px-2 pb-1.5 pt-8" : "px-2.5 pb-2 pt-12"}`}
+            style={{ background: "linear-gradient(180deg, rgba(8,10,14,0) 0%, rgba(8,10,14,0.82) 40%, rgba(8,10,14,0.95) 100%)", textShadow: "0 1px 2px #000" }}
+          >
+            {children}
+          </div>
+        ) : (
+          <div className={compact ? "px-2 pb-1.5 pt-1" : "px-2.5 pb-2 pt-1.5"}>{children}</div>
+        )}
       </Chamfer>
     </div>
   )

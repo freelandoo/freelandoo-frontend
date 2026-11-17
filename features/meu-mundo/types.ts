@@ -472,6 +472,8 @@ export interface LifeItem {
   meal?: number
   /** VS5 (2026-11-15): de quem é — "carne" (Raposa), "sangue" (Vampiro), null = de todos. Servidor antigo não manda. */
   diet?: "carne" | "sangue" | null
+  /** 17/11: classe de raridade (E…S), mesma escala das armas. Servidor antigo não manda. */
+  rank?: "E" | "D" | "C" | "B" | "A" | "S" | "SS" | "SSR" | "legendary" | "divine"
 }
 
 export interface LifeDay {

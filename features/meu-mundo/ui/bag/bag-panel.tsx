@@ -29,6 +29,9 @@ import { useWorkshop } from "../gear/use-workshop"
 import { SlotDetail, SlotThumb } from "../items/items-panel"
 import { buildSlots, slotName, type Slot } from "../items/item-catalog"
 import { uiSound } from "../../engine/audio"
+import { ShopCard } from "../shop/shop-card"
+import { effectsOf } from "../fridge/fridge-logic"
+import { effectText } from "../fridge/shelf"
 
 type Tab = "weapons" | "armor" | "materials" | "food" | "things"
 const TABS: [Tab, string, string][] = [
@@ -139,7 +142,7 @@ export default function BagPanel({
     }
     for (const s of slots) {
       const tb: Tab = s.group === "food" || s.group === "health" ? "food" : "things"
-      out[tb].push({ key: "s:" + s.key, name: slotName(s, t), qty: s.qty, rarity: null, equipped: !!s.skin?.equipped, fresh: s.fresh, slot: s })
+      out[tb].push({ key: "s:" + s.key, name: slotName(s, t), qty: s.qty, rarity: s.item?.rank ?? null, equipped: !!s.skin?.equipped, fresh: s.fresh, slot: s })
     }
     return out
   }, [catalog, bag, slots, t, onlySlot])
@@ -311,9 +314,9 @@ function CellButton({ cell, active, onClick }: { cell: Cell; active: boolean; on
       style={{ background: AE.well, clipPath: chamfer(AE.cut.chip), boxShadow: active ? `inset 0 0 0 2px ${AE.gold}` : `inset 0 0 0 1px ${AE.brassLine}` }}
     >
       {/* 17/11: casa 2:3 — a arte da arma ocupa a casa inteira; o resto fica num quadrado no meio */}
-      {cell.gear && gearThumb(cell.gear) ? (
+      {(cell.gear && gearThumb(cell.gear)) || (cell.slot?.item && cell.slot.thumb) ? (
         <span className="absolute inset-0">
-          <GearThumb item={cell.gear} />
+          {cell.gear ? <GearThumb item={cell.gear} /> : <ItemImage src={cell.slot!.thumb} category={cell.slot!.item!.kind === "drink" ? "drink" : "food"} rarity={cell.slot!.item!.rank} alt="" fill fit="cover" />}
         </span>
       ) : (
         <span className="absolute inset-0 grid place-items-center p-1">
@@ -377,6 +380,26 @@ function Detail({
       ✕
     </button>
   )
+  // 17/11: comida e tônico no cartão grande (arte 2:3, classe e efeitos por cima), como a Loja
+  if (cell.slot?.item) {
+    const it = cell.slot.item
+    return (
+      <div className="relative">
+        {close}
+        <ShopCard
+          img={cell.slot.thumb}
+          art
+          category={it.kind === "drink" ? "drink" : "food"}
+          rank={it.rank}
+          t={t}
+          title={cell.name}
+          badge={cell.qty != null ? "×" + cell.qty : undefined}
+          lines={effectsOf(it).map((e) => ({ text: effectText(e, t) ?? "", tone: e.tone === "good" ? ("good" as const) : e.tone === "bad" ? ("bad" as const) : ("gold" as const) }))}
+          note={t("itEatHint", "Para comer ou tomar, abra a geladeira dentro de casa.")}
+        />
+      </div>
+    )
+  }
   if (cell.slot)
     return (
       <div className="relative p-3">
