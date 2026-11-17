@@ -243,11 +243,20 @@ export function EquipPage({
         className="group relative flex w-[72px] flex-col items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-[#FF8A1F]"
       >
         <span
-          className="relative block h-14 w-14 overflow-hidden transition-transform duration-150 group-active:scale-95"
+          // casa 2:3 como a Mochila (17/11): a arte ocupa a casa inteira; sem arte, o ícone fica num quadrado no meio
+          className={`relative block overflow-hidden transition-transform duration-150 group-active:scale-95 ${compact ? "h-[60px] w-10" : "h-[84px] w-14"}`}
           style={{ background: "rgba(12,15,20,0.72)", boxShadow: `inset 0 0 0 ${on ? 2 : 1}px ${on ? "#FFE2A6" : tone}`, borderRadius: 10 }}
         >
-          {item ? (
-            <ItemImage src={gearThumb(item)} category={thumbCategory(item)} rarity={item.rarity} alt="" ratio={1} />
+          {item && gearThumb(item) ? (
+            <span className="absolute inset-0">
+              <ItemImage src={gearThumb(item)} category={thumbCategory(item)} rarity={item.rarity} alt="" fill fit="cover" />
+            </span>
+          ) : item ? (
+            <span className="absolute inset-0 grid place-items-center">
+              <span className="block w-full">
+                <ItemImage category={thumbCategory(item)} rarity={item.rarity} alt="" ratio={1} />
+              </span>
+            </span>
           ) : (
             <span className={`${teko.className} absolute inset-0 flex items-center justify-center text-[22px]`} style={{ color: "rgba(232,182,91,0.5)" }}>
               +
