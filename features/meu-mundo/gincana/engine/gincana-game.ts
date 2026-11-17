@@ -6,8 +6,13 @@
 // sala) e desenha os outros pelo que a sala repassa, um pouco no passado.
 //
 // Câmera atrás de quem joga (arrastar gira; solta e ela volta devagar para a
-// frente da prova). Teclado: WASD/setas andam, Espaço pula, Shift/E mergulha.
-// Celular: joystick + PULAR e MERGULHAR na tela (a interface chama jump/dive).
+// frente da prova). Teclado: WASD/setas andam, Espaço pula, Shift/E mergulha,
+// F/Ctrl (segurando) agarra. Celular: joystick + PULAR, MERGULHAR e AGARRAR
+// na tela (a interface chama jump/dive/setGrab).
+//
+// Gincana 2.0 (2026-11-16): a prova é de uma FASE (a do menu no treino; a da
+// sala em grupo) e fecha quando a vaga dos classificados enche — quem não
+// chegou até lá está eliminado.
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -28,10 +33,11 @@ import { lerpAngle } from "../../engine/motion"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { BODY_IDS, type BodyId } from "../../types"
-import { CHECKPOINTS, FINISH_Z, GINCANA, LOGOS, sectionAt } from "../sim/course"
+import { GINCANA, sectionAt } from "../sim/course"
 import { ANIM, MODE, groundUnder, runnerAnim, type RunEvent, type RunIntent } from "../sim/body"
 import { GincanaRace } from "../sim/race"
 import { CourseView } from "./course-view"
+import { themeOf } from "./phase-themes"
 import { GincanaAudio } from "./audio"
 import type { GincanaNet, GincanaSeat, GincanaStart, RunnerSample } from "./net"
 import { GAME_MUSIC, sceneSound } from "../../engine/audio"
@@ -64,6 +70,12 @@ export interface GincanaHud {
   board: BoardRow[]
   /** 0–1 do turbo do logo da Freelandoo (0 = sem). */
   boost: number
+  /** Classificam os primeiros `quota`; `qualified` já chegaram. */
+  quota: number
+  qualified: number
+  /** Agarrando alguém / sendo agarrado agora. */
+  grabbing: boolean
+  held: boolean
 }
 
 export type GincanaNotice =
@@ -74,12 +86,19 @@ export type GincanaNotice =
   | { kind: "logo" }
   | { kind: "finish"; place: number; time: number }
   | { kind: "timeout" }
+  | { kind: "door"; open: boolean }
+  | { kind: "grab" }
+  | { kind: "held" }
+  | { kind: "climb" }
+  | { kind: "eliminated" }
 
 export interface GincanaResult {
   place: number
   total: number
   /** s da chegada (−1 = o tempo acabou antes). */
   time: number
+  /** Chegou dentro da vaga. */
+  qualified: boolean
 }
 
 export interface GincanaGameOptions {
@@ -89,6 +108,8 @@ export interface GincanaGameOptions {
   name?: string
   /** Em grupo (sem isto, treino com 7 computadores). */
   mp?: { net: GincanaNet; start: GincanaStart }
+  /** Fase do treino (em grupo vale a da sala). */
+  phase?: string
   /** Nomes dos computadores do treino (traduzidos fora). */
   botNames?: string[]
   onReady?: () => void
@@ -102,6 +123,8 @@ export interface GincanaGameHandle {
   setJoystick: (x: number, y: number) => void
   jump: () => void
   dive: () => void
+  /** AGARRAR segurado (true) ou solto. */
+  setGrab: (on: boolean) => void
   setMuted: (m: boolean) => void
   dispose: () => void
 }
@@ -170,9 +193,12 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     seed,
     seatDefs.map((s) => ({ slot: s.slot, ctl: s.slot === me ? "local" : mp ? "remote" : "bot" })),
     mp ? mp.start.countdown : GINCANA.countdown,
+    mp ? (mp.start.phase ?? "cidade") : (opts.phase ?? "cidade"),
   )
+  const C = race.course
+  const theme = themeOf(C.id)
 
-  const course = new CourseView(scene, seed, low)
+  const course = new CourseView(scene, seed, low, C, theme)
   const lib = new AvatarLibrary(scene, false, false, 24, false, false, false, true)
   const fallbackMat = new StandardMaterial("gincana-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -219,7 +245,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   musicSnd.set(GAME_MUSIC.gincana, null)
 
   // logos da Freelandoo (mm3d-47b): turbo com brilho; aura dourada em quem pegou
-  const logos = buildLogos(scene, LOGOS.map((L, id) => ({ id, at: new Vector3(L.x, L.y, L.z) })), low, 0.55)
+  const logos = buildLogos(scene, C.logos.map((L, id) => ({ id, at: new Vector3(L.x, L.y, L.z) })), low, 0.55)
   const auraMat = new StandardMaterial("gincana-aura", scene)
   auraMat.diffuseColor = new Color3(0, 0, 0)
   auraMat.specularColor = new Color3(0, 0, 0)
@@ -240,12 +266,13 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   let joyY = 0
   let jumpQ = false
   let diveQ = false
+  let grabHeld = false
   let yaw = 0
   let pitch = 0.36
   let dragAt = -99
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase()
-    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "w", "a", "s", "d", "shift", "e"].includes(k)) e.preventDefault()
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "w", "a", "s", "d", "shift", "e", "f", "control"].includes(k)) e.preventDefault()
     if (down && !e.repeat) {
       if (k === " ") jumpQ = true
       if (k === "shift" || k === "e") diveQ = true
@@ -302,7 +329,8 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     // relativo à câmera: frente = para onde ela olha
     const fx = Math.sin(yaw)
     const fz = Math.cos(yaw)
-    return { mx: fx * iy + fz * ix, mz: fz * iy - fx * ix, jump: jumpQ, dive: diveQ } as RunIntent
+    const grab = grabHeld || keys.has("f") || keys.has("control")
+    return { mx: fx * iy + fz * ix, mz: fz * iy - fx * ix, jump: jumpQ, dive: diveQ, grab } as RunIntent
   }
 
   // ── relógio, eventos, placar ───────────────────────────────────────────────
@@ -330,8 +358,8 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   const board = (): BoardRow[] => {
     const rows = race.runners.map((b) => {
       const s = seats.get(b.slot)!
-      const z = b.fin >= 0 ? FINISH_Z : Math.max(CHECKPOINTS[b.cp].z, Math.min(FINISH_Z, b.z))
-      return { slot: b.slot, name: s.name, me: b.slot === me, bot: s.bot, fin: b.fin, progress: Math.max(0, Math.min(1, (z + 4) / (FINISH_Z + 4))) }
+      const z = b.fin >= 0 ? C.finishZ : race.distOf(b)
+      return { slot: b.slot, name: s.name, me: b.slot === me, bot: s.bot, fin: b.fin, progress: Math.max(0, Math.min(1, (z + 4) / (C.finishZ + 4))) }
     })
     rows.sort((a, b) => (a.fin >= 0 && b.fin >= 0 ? a.fin - b.fin : a.fin >= 0 ? -1 : b.fin >= 0 ? 1 : b.progress - a.progress))
     return rows
@@ -346,20 +374,44 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       timeLeft: Math.max(0, GINCANA.timeLimit - Math.max(0, t)),
       place: rows.findIndex((r) => r.me) + 1,
       total: rows.length,
-      section: sectionAt(mine.z),
+      section: sectionAt(C, mine.z),
       finished: mine.fin >= 0,
       myTime: mine.fin,
       board: rows,
       boost: mine.boost / GINCANA.boostT,
+      quota: race.quota,
+      qualified: Math.min(race.quota, race.order.length),
+      grabbing: mine.grab >= 0,
+      held: mine.held > 0,
     }
   }
 
+  let wasHeld = false
   const onEvents = () => {
     for (const e of events) {
       if (e.type === "tile") continue
       if (e.type === "splash") splashAt(e.x, e.z)
+      if (e.type === "door") {
+        if (e.slot === me) {
+          if (e.open) audio.logo()
+          else audio.hit()
+          opts.onNotice?.({ kind: "door", open: e.open })
+        }
+        continue
+      }
       if (e.slot !== me) continue
       switch (e.type) {
+        case "bounce":
+          audio.jump()
+          break
+        case "climb":
+          audio.jump()
+          opts.onNotice?.({ kind: "climb" })
+          break
+        case "grab":
+          audio.dive()
+          opts.onNotice?.({ kind: "grab" })
+          break
         case "jump":
           audio.jump()
           break
@@ -407,7 +459,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
         if (t >= b.t) return b
         const k = (t - a.t) / Math.max(1e-3, b.t - a.t)
         if (Math.hypot(b.x - a.x, b.z - a.z) > 6) return k < 0.5 ? a : b
-        return { t, x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k, f: lerpAngle(a.f, b.f, k), a: k < 0.5 ? a.a : b.a, cp: b.cp, fin: b.fin }
+        return { t, x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k, f: lerpAngle(a.f, b.f, k), a: k < 0.5 ? a.a : b.a, cp: b.cp, fin: b.fin, g: k < 0.5 ? a.g : b.g }
       }
     }
     return list[list.length - 1]
@@ -417,7 +469,9 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     if (ended) return
     ended = true
     const rows = board()
-    opts.onEnd?.({ place: rows.findIndex((r) => r.me) + 1, total: rows.length, time: mine.fin })
+    const place = rows.findIndex((r) => r.me) + 1
+    const k = race.order.indexOf(me)
+    opts.onEnd?.({ place, total: rows.length, time: mine.fin, qualified: mine.fin >= 0 && k >= 0 && k < race.quota })
   }
 
   const frame = (ms: number) => {
@@ -458,21 +512,25 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       for (const [slot, list] of mp.net.samples) {
         if (slot === me) continue
         const s = sampleAt(list, rt)
-        if (s) race.setRemote(slot, { x: s.x, y: s.y, z: s.z, f: s.f, a: s.a, cp: s.cp, fin: s.fin })
+        if (s) race.setRemote(slot, { x: s.x, y: s.y, z: s.z, f: s.f, a: s.a, cp: s.cp, fin: s.fin, g: s.g })
       }
       poseAt -= dt
       if (poseAt <= 0 && race.t >= 0) {
         poseAt = POSE_EVERY
-        mp.net.sendPose({ x: mine.x, y: mine.y, z: mine.z, f: mine.facing, a: runnerAnim(mine), cp: mine.cp, fin: mine.fin })
+        mp.net.sendPose({ x: mine.x, y: mine.y, z: mine.z, f: mine.facing, a: runnerAnim(mine), cp: mine.cp, fin: mine.fin, g: mine.grab })
       }
     }
-    if (!ended && (mine.fin >= 0 || race.t >= GINCANA.timeLimit)) {
-      if (mine.fin < 0) opts.onNotice?.({ kind: "timeout" })
+    // fui agarrado agora
+    const heldNow = mine.held > 0
+    if (heldNow && !wasHeld) opts.onNotice?.({ kind: "held" })
+    wasHeld = heldNow
+    if (!ended && (mine.fin >= 0 || race.t >= GINCANA.timeLimit || race.closed())) {
+      if (mine.fin < 0) opts.onNotice?.({ kind: race.closed() ? "eliminated" : "timeout" })
       finishGame()
     }
 
     // ── desenho ──
-    course.update(race.t, clock, race.world.tiles)
+    course.update(race.t, clock, race.world)
     // entre dois passos da física: a fração que sobrou do tempo (sem isso o corpo
     // anda aos trancos quando o quadro não bate com os 60 passos por segundo)
     const alpha = Math.max(0, Math.min(1, (target - race.t) / GINCANA.step))
@@ -520,7 +578,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       s.char.animate(dt, 0, speed)
     }
     // logos da Freelandoo: os que eu já peguei somem até voltar
-    for (let i = 0; i < LOGOS.length; i++) logos.setOn(i, race.t - mine.took[i] >= GINCANA.logoBack)
+    for (let i = 0; i < C.logos.length; i++) logos.setOn(i, race.t - mine.took[i] >= GINCANA.logoBack)
     logos.tick(clock)
     // turbo: aura dourada pulsando em volta de mim
     const me4 = seats.get(me)!
@@ -631,6 +689,10 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     dive() {
       diveQ = true
       audio.resume()
+    },
+    setGrab(on) {
+      grabHeld = on
+      if (on) audio.resume()
     },
     setMuted(m) {
       audio.setMuted(m)

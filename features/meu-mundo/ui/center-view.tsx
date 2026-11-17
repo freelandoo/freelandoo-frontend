@@ -91,11 +91,11 @@ const noturnoJoin: NoturnoJoin = async (ride, body, hooks, phase) =>
   }, hooks)
 
 /** Gincana em grupo (mm3d-47): a rede só baixa quando alguém escolhe Multiplayer. */
-const gincanaJoin: GincanaJoin = async (body, hooks) =>
+const gincanaJoin: GincanaJoin = async (body, hooks, phase) =>
   (await import("../gincana/engine/net")).joinGincana(async () => {
     const token = getToken()
     if (!token) return null
-    const r = await postGincanaJoin(token, body)
+    const r = await postGincanaJoin(token, body, phase)
     return r.ok ? r.data : null
   }, hooks)
 

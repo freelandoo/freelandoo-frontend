@@ -185,7 +185,7 @@ export const postCorridaJoin = (token: string, ship?: string, track?: string) =>
 /** Rolê Noturno em grupo (mm3d-42): espera até 1 minuto; todos na mesma rua. */
 export const postNoturnoJoin = (token: string, ride: string, body: string, phase?: string) => call<NoturnoSession>(token, "POST", "/center/noturno", { ride, body, phase })
 /** Gincana em grupo (mm3d-47): espera até 1 minuto; o computador completa as 8 vagas. */
-export const postGincanaJoin = (token: string, body: string) => call<GincanaSession>(token, "POST", "/center/gincana", { body })
+export const postGincanaJoin = (token: string, body: string, phase?: string) => call<GincanaSession>(token, "POST", "/center/gincana", { body, phase })
 export const getVisits = (token: string) => call<VisitState>(token, "GET", "/visits")
 export const getInviteCandidates = (token: string) =>
   call<{ candidates: { name: string; available: boolean; reason: string | null }[] }>(token, "GET", "/visits/candidates")

@@ -10,9 +10,14 @@
 //  - PROVA: posição e tempo em cima à esquerda, o trecho no alto, placar ao
 //    vivo, contagem, avisos; no celular joystick + PULAR e MERGULHAR;
 //  - FIM: colocação, tempo, recorde e a classificação.
+//
+// Gincana 2.0 (2026-11-16): o MENU escolhe a FASE (a de sempre + uma por
+// Domínio; phase-themes.ts); recorde por fase; na prova, quantos já
+// classificaram (a vaga fecha a prova) e o AGARRAR (F/Ctrl; botão no celular,
+// segurando); no fim, classificou ou eliminado.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Flag, Loader2, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { Flag, Loader2, Star, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -26,11 +31,13 @@ import type { GincanaLobbyEntry, GincanaNet, GincanaNetStatus, GincanaResultRow,
 import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 import { GodVoice } from "../../ui/quest/god-voice"
+import { GINCANA_THEMES, themeOf, type GincanaTheme } from "../engine/phase-themes"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type GincanaJoin = (
   body: BodyId,
   hooks: { signal: AbortSignal; onLobby: (list: GincanaLobbyEntry[], until: number) => void; onStatus: (s: GincanaNetStatus) => void },
+  phase?: string,
 ) => Promise<{ net: GincanaNet; start: GincanaStart } | null>
 
 export interface GincanaViewProps {
@@ -51,21 +58,38 @@ const BG = "radial-gradient(120% 90% at 50% 0%, #4fd6ff 0%, #8a6cff 48%, #3a1d6e
 const BOT_NAMES = ["Pipoca", "Jujuba", "Paçoca", "Cocada", "Quindim", "Bolacha", "Brigadeiro", "Pudim", "Canjica", "Suspiro"]
 
 type Mp = { net: GincanaNet; start: GincanaStart }
-type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind: "game"; key: number; mp?: Mp }
+type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind: "game"; key: number; mp?: Mp; phase: string }
 
-/** Recorde do aparelho (conveniência local; some se o navegador limpar). */
+/** Recorde do aparelho por fase (conveniência local; some se o navegador limpar). A de sempre fica na chave antiga. */
 const REC_KEY = "mm-gincana-recorde-v1"
-function loadRecord(): number | null {
+const PHASE_KEY = "mm-gincana-fase-v1"
+const recKey = (phase: string) => (phase === "cidade" ? REC_KEY : `${REC_KEY}:${phase}`)
+function loadRecord(phase: string): number | null {
   try {
-    const v = Number(localStorage.getItem(REC_KEY))
+    const v = Number(localStorage.getItem(recKey(phase)))
     return Number.isFinite(v) && v > 0 ? v : null
   } catch {
     return null
   }
 }
-function saveRecord(t: number) {
+function saveRecord(phase: string, t: number) {
   try {
-    localStorage.setItem(REC_KEY, String(t))
+    localStorage.setItem(recKey(phase), String(t))
+  } catch {
+    /* sem armazenamento */
+  }
+}
+function loadPhase(): string {
+  try {
+    const v = localStorage.getItem(PHASE_KEY)
+    return v && GINCANA_THEMES.some((x) => x.id === v) ? v : "cidade"
+  } catch {
+    return "cidade"
+  }
+}
+function savePhase(phase: string) {
+  try {
+    localStorage.setItem(PHASE_KEY, phase)
   } catch {
     /* sem armazenamento */
   }
@@ -78,17 +102,9 @@ function fmt(t: number) {
   return `${m}:${s < 10 ? "0" : ""}${s.toFixed(1)}`
 }
 
-function useSections() {
+function useSections(theme: GincanaTheme) {
   const t = useTranslations("MeuMundo")
-  return [
-    t("gincanaSec0", "Largada"),
-    t("gincanaSec1", "Carrossel"),
-    t("gincanaSec2", "Passarelas"),
-    t("gincanaSec3", "Luvas"),
-    t("gincanaSec4", "Xadrez"),
-    t("gincanaSec5", "Subida"),
-    t("gincanaSec6", "Chegada"),
-  ]
+  return theme.sections.map(([k, v]) => t(k, v))
 }
 
 export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps) {
@@ -96,12 +112,15 @@ export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps
   const [stage, setStage] = useState<Stage>({ kind: "menu" })
   const [lobby, setLobby] = useState<{ list: GincanaLobbyEntry[]; until: number }>({ list: [], until: 0 })
   const [error, setError] = useState<string | null>(null)
+  const [phase, setPhase] = useState("cidade")
+  useEffect(() => setPhase(loadPhase()), [])
   const seq = useRef(0)
   const play = useCallback(
     async (multi: boolean) => {
       setError(null)
+      savePhase(phase)
       if (!multi || !join) {
-        setStage({ kind: "game", key: ++seq.current })
+        setStage({ kind: "game", key: ++seq.current, phase })
         return
       }
       const ac = new AbortController()
@@ -112,23 +131,23 @@ export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps
         setStage({ kind: "menu" })
       }
       try {
-        const got = await join(body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} })
+        const got = await join(body, { signal: ac.signal, onLobby: (list, until) => setLobby({ list, until }), onStatus: () => {} }, phase)
         if (ac.signal.aborted) {
           got?.net.dispose()
           return
         }
         if (!got) return fail()
-        setStage({ kind: "game", key: ++seq.current, mp: got })
+        setStage({ kind: "game", key: ++seq.current, mp: got, phase: got.start.phase ?? phase })
       } catch {
         if (!ac.signal.aborted) fail()
       }
     },
-    [join, body, t],
+    [join, body, t, phase],
   )
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#3a1d6e" }}>
       {stage.kind === "game" ? (
-        <GincanaScreen key={stage.key} body={body} look={look} name={name} mp={stage.mp} onAgain={() => void play(!!stage.mp)} onMenu={() => setStage({ kind: "menu" })} />
+        <GincanaScreen key={stage.key} body={body} look={look} name={name} mp={stage.mp} phase={stage.phase} onAgain={() => void play(!!stage.mp)} onMenu={() => setStage({ kind: "menu" })} />
       ) : stage.kind === "lobby" ? (
         <Lobby
           list={lobby.list}
@@ -139,7 +158,7 @@ export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps
           }}
         />
       ) : (
-        <Menu onPlay={(m) => void play(m)} onExit={onExit} multi={!!join} error={error} />
+        <Menu phase={phase} onPhase={setPhase} onPlay={(m) => void play(m)} onExit={onExit} multi={!!join} error={error} />
       )}
     </div>
   )
@@ -166,25 +185,35 @@ function Lobby({ list, until, onCancel }: { list: GincanaLobbyEntry[]; until: nu
 
 // ═══ menu ════════════════════════════════════════════════════════════════════
 
-function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => void; onExit: () => void; multi: boolean; error: string | null }) {
+function Menu({
+  phase,
+  onPhase,
+  onPlay,
+  onExit,
+  multi,
+  error,
+}: {
+  phase: string
+  onPhase: (p: string) => void
+  onPlay: (multi: boolean) => void
+  onExit: () => void
+  multi: boolean
+  error: string | null
+}) {
   const t = useTranslations("MeuMundo")
-  const sections = useSections()
+  const theme = themeOf(phase)
+  const sections = useSections(theme)
   const [rec, setRec] = useState<number | null>(null)
-  useEffect(() => setRec(loadRecord()), [])
-  const tips = [
-    { c: ORANGE, title: sections[1], text: t("gincanaHow1", "A barra gira rente ao chão: pule na hora certa.") },
-    { c: "#8A4DFF", title: sections[2], text: t("gincanaHow2", "Vigas estreitas e bolas de pêndulo: espere a bola passar.") },
-    { c: PINK, title: sections[3], text: t("gincanaHow3", "Luvas socam dos lados: passe quando elas voltarem.") },
-    { c: "#63E05A", title: sections[4], text: t("gincanaHow4", "O piso treme e cai logo depois que alguém pisa.") },
-    { c: TEAL, title: sections[5], text: t("gincanaHow5", "Bolas gigantes descem a rampa: desvie até o topo.") },
-  ]
+  useEffect(() => setRec(loadRecord(phase)), [phase])
+  const TIP_COLORS = [ORANGE, "#8A4DFF", PINK, "#63E05A", TEAL]
+  const tips = theme.tips.map(([k, v], i) => ({ c: TIP_COLORS[i], title: sections[i + 1], text: t(k, v) }))
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
       <div className="w-full max-w-[580px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: TEAL }}>
-              {t("gincanaKicker", "Corrida de obstáculos sobre o mar")}
+              {t("gincanaKicker2", "Corrida de obstáculos · 7 fases")}
             </div>
             <h1 className="mt-1.5 text-[34px] font-black italic leading-none tracking-tight max-[759px]:text-[27px]">
               <span style={{ color: YELLOW }}>GIN</span>
@@ -192,13 +221,52 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
               <span style={{ color: TEAL }}>NA</span>
             </h1>
             <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("gincanaPitch", "Oito na largada, cinco trechos malucos e uma linha de chegada. Caiu na água? Volta ao último posto e segue.")}
+              {t("gincanaPitch2", "Oito na largada e só seis classificam: quando a vaga enche, a prova fecha. Caiu? Volta ao último posto e segue.")}
             </p>
           </div>
           <BackToCity onExit={onExit} className="pointer-events-auto" />
         </div>
 
-        <ul className="mt-4 grid grid-cols-5 gap-1.5 max-[759px]:grid-cols-1 max-[759px]:gap-1 [@media(max-height:620px)]:hidden">
+        {/* fases: a de sempre e uma por Domínio */}
+        <div role="radiogroup" aria-label={t("gincanaPhases", "Fases")} className="mt-3 grid grid-cols-7 gap-1 max-[759px]:grid-cols-4">
+          {GINCANA_THEMES.map((th) => {
+            const on = th.id === phase
+            return (
+              <button
+                key={th.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => onPhase(th.id)}
+                className="flex min-h-[64px] flex-col items-start justify-between rounded-none px-1.5 py-1 text-left transition-transform active:scale-[0.97]"
+                style={{ background: `linear-gradient(150deg, ${th.bg[0]}, ${th.bg[1]})`, border: `1.5px solid ${on ? th.accent : MM.border}`, boxShadow: on ? `0 0 14px ${th.accent}66` : "none" }}
+              >
+                <span className="text-[10px] font-black tabular-nums" style={{ color: th.accent }}>
+                  {th.num}
+                </span>
+                <span className="text-[11px] font-black italic leading-tight text-white">{t(th.nameKey, th.name)}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <b className="text-[15px] font-black italic" style={{ color: theme.accent }}>
+            {t(theme.nameKey, theme.name)}
+          </b>
+          <span className="text-[12px]" style={{ color: MM.muted }}>
+            {t(theme.domainKey, theme.domain)}
+          </span>
+          <span className="inline-flex items-center gap-[1px]" aria-label={`${theme.difficulty}/5`}>
+            {Array.from({ length: 5 }, (_, i) => (
+              <Star key={i} className="h-3 w-3" style={{ color: i < theme.difficulty ? YELLOW : "rgba(255,255,255,0.22)" }} fill={i < theme.difficulty ? YELLOW : "transparent"} />
+            ))}
+          </span>
+        </div>
+        <p className="mt-0.5 text-[12.5px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
+          {t(theme.pitchKey, theme.pitch)}
+        </p>
+
+        <ul className="mt-3 grid grid-cols-5 gap-1.5 max-[759px]:grid-cols-1 max-[759px]:gap-1 [@media(max-height:620px)]:hidden">
           {tips.map((x, i) => (
             <li key={i} className="rounded-none p-2.5 text-[12px] leading-snug max-[759px]:flex max-[759px]:items-baseline max-[759px]:gap-2 max-[759px]:py-1.5" style={{ background: MM.card, color: MM.muted, border: `1px solid ${MM.border}` }}>
               <b className="block text-[12.5px] max-[759px]:shrink-0" style={{ color: x.c }}>
@@ -243,10 +311,10 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
         </div>
 
         <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("gincanaKeys", "WASD ou setas andam · Espaço pula · Shift ou E mergulha · arraste para girar a câmera")}
+          {t("gincanaKeys2", "WASD ou setas andam · Espaço pula · Shift ou E mergulha · segure F ou Ctrl para agarrar · arraste para girar a câmera")}
         </p>
         <p className="mt-3 hidden text-[12px] leading-snug max-[759px]:block [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("gincanaTouchHelp", "Joystick anda · PULAR e MERGULHAR na direita · arraste a tela para girar a câmera")}
+          {t("gincanaTouchHelp2", "Joystick anda · PULAR, MERGULHAR e AGARRAR (segure) na direita · arraste a tela para girar a câmera")}
         </p>
       </div>
     </div>
@@ -255,9 +323,10 @@ function Menu({ onPlay, onExit, multi, error }: { onPlay: (multi: boolean) => vo
 
 // ═══ prova ═══════════════════════════════════════════════════════════════════
 
-function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId; look?: string; name?: string; mp?: Mp; onAgain: () => void; onMenu: () => void }) {
+function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body: BodyId; look?: string; name?: string; mp?: Mp; phase: string; onAgain: () => void; onMenu: () => void }) {
   const t = useTranslations("MeuMundo")
-  const sections = useSections()
+  const theme = themeOf(phase)
+  const sections = useSections(theme)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const gameRef = useRef<GincanaGameHandle | null>(null)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
@@ -308,7 +377,11 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
                 ? tt("gincanaHitSwing", "Bolada do pêndulo!")
                 : n.by === "glove"
                   ? tt("gincanaHitGlove", "Luvada!")
-                  : tt("gincanaHitBall", "Atropelado pela bola!"),
+                  : n.by === "push"
+                    ? tt("gincanaHitPush", "Empurrado!")
+                    : n.by === "tackle"
+                      ? tt("gincanaHitTackle", "Derrubado por um mergulho!")
+                      : tt("gincanaHitBall", "Atropelado pela bola!"),
             "bad",
             1100,
           )
@@ -328,6 +401,21 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
         case "timeout":
           say(tt("gincanaTimeout", "Tempo esgotado!"), "bad", 2000)
           break
+        case "door":
+          say(n.open ? tt("gincanaDoorOpen", "Porta aberta!") : tt("gincanaDoorFake", "Porta falsa!"), n.open ? "ok" : "bad", 900)
+          break
+        case "grab":
+          say(tt("gincanaGrab", "Agarrou!"), "hot", 800)
+          break
+        case "held":
+          say(tt("gincanaHeld", "Te agarraram!"), "bad", 900)
+          break
+        case "climb":
+          say(tt("gincanaClimb", "Subiu na beira!"), "ok", 700)
+          break
+        case "eliminated":
+          say(tt("gincanaEliminated", "Eliminado: a vaga encheu!"), "bad", 2200)
+          break
         default:
           break
       }
@@ -335,12 +423,12 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
     const onEnd = (r: GincanaResult) => {
       if (!alive) return
       if (mp || r.time < 0) {
-        setResult({ r, record: false, best: mp ? null : loadRecord() })
+        setResult({ r, record: false, best: mp ? null : loadRecord(phase) })
         return
       }
-      const prev = loadRecord()
+      const prev = loadRecord(phase)
       const record = prev === null || r.time < prev
-      if (record) saveRecord(r.time)
+      if (record) saveRecord(phase, r.time)
       setResult({ r, record, best: prev })
     }
     try {
@@ -350,6 +438,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
         look,
         name,
         mp,
+        phase,
         botNames: BOT_NAMES,
         onReady: () => alive && setStatus("ready"),
         onHud: (h) => alive && setHud(h),
@@ -428,6 +517,18 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
                 </span>
               )}
             </div>
+            {/* quantos já classificaram (a vaga fecha a prova) */}
+            {!result && (
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-black" style={{ background: glass, color: hud.qualified >= hud.quota - 1 ? PINK : MM.text }}>
+                <Flag className="h-3 w-3" style={{ color: TEAL }} />
+                {t("gincanaQualified", "Classificados {n}/{q}").replace("{n}", String(hud.qualified)).replace("{q}", String(hud.quota))}
+              </div>
+            )}
+            {(hud.grabbing || hud.held) && !result && (
+              <div className="rounded-full px-2.5 py-0.5 text-[11px] font-black italic" style={{ background: hud.held ? "rgba(110,16,34,0.85)" : `${PINK}dd`, color: "#fff" }}>
+                {hud.held ? t("gincanaHeldNow", "Segurado!") : t("gincanaGrabbingNow", "Agarrando")}
+              </div>
+            )}
             {hud.boost > 0 && !result && (
               <div className="flex items-center gap-2 rounded-full px-2.5 py-1" style={{ background: "rgba(70,52,12,0.88)", border: `1px solid ${MM.goldBorder}`, boxShadow: "0 0 18px rgba(242,183,5,0.55)" }}>
                 <span className="text-[11px] font-black italic uppercase tracking-[0.12em]" style={{ color: "#FFE3A0" }}>
@@ -484,7 +585,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
                 {Math.max(1, Math.ceil(hud.countdown))}
               </span>
               <span className="max-w-[360px] rounded-full px-4 py-2 text-center text-[13px] font-semibold" style={{ background: glass, color: MM.text }}>
-                {isTouch ? t("gincanaHintTouch", "Joystick anda · PULAR e MERGULHAR à direita") : t("gincanaHintKeys", "WASD anda · Espaço pula · Shift mergulha")}
+                {isTouch ? t("gincanaHintTouch2", "Joystick anda · PULAR, MERGULHAR e AGARRAR à direita") : t("gincanaHintKeys2", "WASD anda · Espaço pula · Shift mergulha · F agarra")}
               </span>
             </div>
           )}
@@ -505,7 +606,7 @@ function GincanaScreen({ body, look, name, mp, onAgain, onMenu }: { body: BodyId
             </div>
           )}
           {isTouch && !result && hud.phase !== "end" && <TouchControls gameRef={gameRef} />}
-          {result && <Results result={result.r} record={result.record} best={result.best} live={hud.board} final={final} me={mp ? mp.start.me : 0} group={!!mp} onAgain={onAgain} onMenu={onMenu} />}
+          {result && <Results result={result.r} record={result.record} best={result.best} live={hud.board} quota={hud.quota} final={final} me={mp ? mp.start.me : 0} group={!!mp} onAgain={onAgain} onMenu={onMenu} />}
         </>
       )}
 
@@ -553,15 +654,48 @@ function ActionBtn({ label, color, size, onPress }: { label: string; color: stri
   )
 }
 
+/** Botão que vale enquanto está apertado (AGARRAR). */
+function HoldBtn({ label, color, size, onHold }: { label: string; color: string; size: number; onHold: (on: boolean) => void }) {
+  const [on, setOn] = useState(false)
+  const set = (v: boolean) => {
+    setOn(v)
+    onHold(v)
+  }
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={on}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+        set(true)
+      }}
+      onPointerUp={() => set(false)}
+      onPointerCancel={() => set(false)}
+      onLostPointerCapture={() => set(false)}
+      className="grid shrink-0 place-items-center rounded-full text-[11px] font-black uppercase italic tracking-wide text-white"
+      style={{ width: size, height: size, touchAction: "none", transform: on ? "scale(0.94)" : "none", background: `radial-gradient(circle at 35% 30%, ${color}, ${color}cc 62%, ${color}99)`, boxShadow: on ? `0 0 0 3px #fff inset, 0 0 16px ${color}` : "0 6px 18px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.25) inset" }}
+    >
+      {label}
+    </button>
+  )
+}
+
 function TouchControls({ gameRef }: { gameRef: React.RefObject<GincanaGameHandle | null> }) {
   const t = useTranslations("MeuMundo")
   const dive = useCallback(() => gameRef.current?.dive(), [gameRef])
   const jump = useCallback(() => gameRef.current?.jump(), [gameRef])
+  const grab = useCallback((on: boolean) => gameRef.current?.setGrab(on), [gameRef])
   return (
     <>
       <Joystick gameRef={gameRef} />
       <div className="absolute flex items-end gap-3" style={{ right: SAFE.right, bottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)" }}>
-        <ActionBtn label={t("gincanaDive", "Mergulhar")} color={TEAL} size={72} onPress={dive} />
+        <div className="flex flex-col items-center gap-3">
+          <HoldBtn label={t("gincanaGrabBtn", "Agarrar")} color={ORANGE} size={60} onHold={grab} />
+          <ActionBtn label={t("gincanaDive", "Mergulhar")} color={TEAL} size={72} onPress={dive} />
+        </div>
         <div className="pb-10">
           <ActionBtn label={t("gincanaJump", "Pular")} color={PINK} size={92} onPress={jump} />
         </div>
@@ -598,6 +732,7 @@ function Results({
   record,
   best,
   live,
+  quota,
   final,
   me,
   group,
@@ -608,6 +743,7 @@ function Results({
   record: boolean
   best: number | null
   live: BoardRow[]
+  quota: number
   final: GincanaResultRow[] | null
   me: number
   group: boolean
@@ -621,7 +757,13 @@ function Results({
   const place = rows.findIndex((r) => r.me) + 1 || result.place
   const running = final ? 0 : rows.filter((r) => r.fin < 0).length
   const title =
-    result.time < 0 ? t("gincanaNoTime", "O tempo acabou!") : place === 1 ? t("gincanaWin", "1º lugar! Você venceu!") : t("gincanaPlaceTitle", "Você chegou em {n}º").replace("{n}", String(place))
+    result.time < 0
+      ? result.qualified
+        ? t("gincanaNoTime", "O tempo acabou!")
+        : t("gincanaOut", "Eliminado! A vaga encheu antes")
+      : place === 1
+        ? t("gincanaWin", "1º lugar! Você venceu!")
+        : t("gincanaPlaceTitle", "Você chegou em {n}º").replace("{n}", String(place))
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
       <div className="w-full max-w-[420px] rounded-none p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
@@ -631,6 +773,9 @@ function Results({
         <h2 className="mt-1 text-[25px] font-black italic leading-tight" style={{ color: place === 1 && result.time >= 0 ? YELLOW : MM.text }}>
           {title}
         </h2>
+        <p className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-black uppercase tracking-[0.08em]" style={{ background: result.qualified ? "rgba(99,224,90,0.18)" : "rgba(110,16,34,0.6)", color: result.qualified ? "#9BF59A" : "#ffd5dc" }}>
+          {result.qualified ? t("gincanaQualifiedTag", "Classificado") : t("gincanaEliminatedTag", "Eliminado")}
+        </p>
         {result.time >= 0 && (
           <p className="mt-1 flex items-center gap-1.5 text-[15px] font-bold tabular-nums">
             <Timer className="h-4 w-4" style={{ color: YELLOW }} /> {fmt(result.time)}
@@ -657,7 +802,7 @@ function Results({
           </div>
           <ol className="mt-1.5 flex max-h-[38vh] flex-col gap-1 overflow-y-auto">
             {rows.map((r, i) => (
-              <li key={r.slot} className="flex items-center gap-2 rounded-none px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent" }}>
+              <li key={r.slot} className="flex items-center gap-2 rounded-none px-2 py-1 text-[13px]" style={{ background: r.me ? MM.rubySoft : "transparent", borderTop: i === quota ? `1px dashed ${PINK}` : undefined }}>
                 <span className="w-5 shrink-0 text-right font-black tabular-nums" style={{ color: i === 0 ? YELLOW : MM.muted }}>
                   {i + 1}
                 </span>

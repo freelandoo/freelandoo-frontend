@@ -1,31 +1,39 @@
 // features/meu-mundo/gincana/sim/bots.ts — GINCANA (mm3d-47): os computadores.
 //
-// Cada computador tem uma rota sorteada pela semente (lado do carrossel, viga
-// das passarelas, faixa do campo, coluna do xadrez), um passo e uma
-// HABILIDADE (0,55–0,95) que decide quanto ele erra: pula a barra cedo ou
-// tarde, às vezes não espera o pêndulo nem a luva. Tudo determinístico pela
-// semente e pelo tempo — a sala e o treino no aparelho decidem igual.
+// Cada computador segue a ROTA da fase (courses.ts; a semente escolhe o lado,
+// a viga, a faixa), com um passo e uma HABILIDADE (0,55–0,95) que decide quanto
+// ele erra: pula a barra cedo ou tarde, às vezes não espera o pêndulo, a luva
+// ou o bloco. Gincana 2.0: o comportamento é genérico (vale em qualquer fase):
+// pula buraco quando o chão acaba e há chão adiante, espera a plataforma que
+// anda chegar, escolhe porta (as que já abriram primeiro; bateu numa falsa,
+// tenta a vizinha), troca de ladrilho quando o da frente treme, escolhe a
+// faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
+// sala e o treino no aparelho decidem igual.
 
-import { BALLS, GINCANA, GLOVES, PENDULUMS, POSTS, RAMP, SWEEPERS, TILE_COLS, TILE_PITCH, TILE_ROWS, TILE_Z0, TILES, gloveAt, pendulumAt, sweeperAngle, tileUp } from "./course"
-import { MODE, type RunIntent, type RunWorld, type Runner } from "./body"
+import { GINCANA, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, type RoutePoint } from "./course"
+import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
-  route: { x: number; z: number }[]
+  route: RoutePoint[]
   skill: number
   pace: number
   seed: number
   slot: number
-  /** Coluna do xadrez e faixa da subida (mudam no caminho). */
-  col: number
+  /** Faixa da subida (muda no caminho). */
   laneX: number
   /** s até poder pular de novo. */
   jumpCool: number
   stuck: number
   lastZ: number
-  /** s esperando (pêndulo/luva); passou da paciência, vai assim mesmo. */
+  /** s esperando (pêndulo/luva/bloco/plataforma); passou da paciência, vai assim mesmo. */
   waited: number
   /** Mergulho para a chegada (só os melhores). */
   divesFinish: boolean
+  /** Porta escolhida (−1 = nenhuma) e as falsas que já descobriu. */
+  door: number
+  bad: Set<number>
+  /** Ladrilho escolhido (−1 = nenhum). */
+  tile: number
 }
 
 /** 0–1 determinístico. */
@@ -36,93 +44,148 @@ export function botRand(seed: number, a: number, b = 0) {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296
 }
 
-const tileX = (c: number) => (c - (TILE_COLS - 1) / 2) * TILE_PITCH
-
-export function newBrain(seed: number, slot: number): BotBrain {
+export function newBrain(w: RunWorld, seed: number, slot: number): BotBrain {
   const r = (k: number) => botRand(seed, slot, k)
-  const side = r(1) < 0.5 ? -1 : 1
-  const route: { x: number; z: number }[] = []
-  const add = (x: number, z: number) => route.push({ x, z })
-  // largada e carrossel
-  add(side * 1.2, 10)
-  add(side * 0.8, 15.5)
-  add(side * 2.5, 20)
-  add(side * 4.5, 29)
-  add(side * 4.5, 33)
-  add(side * 4.5, 38.5)
-  add(side * 4.5, 42)
-  add(side * 4.6, 46)
-  add(side * 4.5, 50)
-  add(side * 4.5, 53)
-  add(side * 4.5, 57.5)
-  add(side * 3.5, 61)
-  add(side * 3.2, 66)
-  add(side * 2, 71)
-  add(0, 75.8)
-  add(0, 80)
-  add(0, 84)
-  // passarelas
-  const L = [-5, 0, 5][Math.floor(r(2) * 3)]
-  const D = L !== 0 ? L : r(3) < 0.5 ? -5 : 5
-  add(L * 0.6, 88)
-  add(L, 90.4)
-  for (const z of [94, 98, 102, 105]) add(L, z)
-  for (let k = 1; k <= 4; k++) add(L + (D - L) * (k / 4), 105 + 3.5 * k)
-  for (const z of [122, 126, 130, 133.6]) add(D, z)
-  add(D * 0.4, 137)
-  // luvas
-  const F = [-2.2, 2.2, -4.8, 4.8][Math.floor(r(4) * 4)]
-  for (let z = 142; z <= 183; z += 3) add(F, z)
-  // xadrez (a coluna muda no caminho; aqui só o eixo z)
-  const col = Math.floor(r(5) * TILE_COLS)
-  add(tileX(col) * 0.6, 187)
-  add(tileX(col), 190.8)
-  for (let k = 0; k < TILE_ROWS; k++) add(tileX(col), TILE_Z0 + k * TILE_PITCH)
-  add(tileX(col) * 0.5, 213)
-  add(0, 216.5)
-  // subida e chegada
-  for (let z = 222; z <= 256; z += 2.5) add(0, z)
-  add(0, 259)
-  add(0, 264)
-  add(0, 269)
+  const route = w.course.route(r)
   const skill = 0.55 + r(6) * 0.4
-  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, col, laneX: 0, jumpCool: 0, stuck: 0, lastZ: -99, waited: 0, divesFinish: r(8) < skill - 0.35 }
+  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, lastZ: -99, waited: 0, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
+}
+
+/** Escolhe a porta da fileira à frente: aberta (alguém passou) > desconhecida mais perto > a sorteada. */
+function pickDoor(br: BotBrain, b: Runner, w: RunWorld, row: number) {
+  const C = w.course
+  let best = -1
+  let bestScore = -Infinity
+  for (let i = 0; i < C.doors.length; i++) {
+    const d = C.doors[i]
+    if (d.row !== row || br.bad.has(i)) continue
+    let score = -Math.abs(d.x - b.x) * 0.25 + botRand(br.seed, br.slot * 13 + i, row) * 1.5
+    if (w.doors[i] >= 0) score += 6 * br.skill + 1
+    if (w.doors[i] === -2) score -= 20
+    if (score > bestScore) {
+      bestScore = score
+      best = i
+    }
+  }
+  return best
 }
 
 /** Intenção do computador neste passo. */
 export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.step): RunIntent {
-  const it: RunIntent = { mx: 0, mz: 0, jump: false, dive: false }
+  const C = w.course
+  const it: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
   br.jumpCool = Math.max(0, br.jumpCool - dt)
   if (b.mode !== MODE.RUN || w.t < 0) return it
   const t = w.t
   // próximo ponto: o primeiro adiante (as rotas só andam para +z)
   let wi = 0
   while (wi < br.route.length - 1 && br.route[wi].z < b.z + 0.6) wi++
-  let tx = br.route[wi].x
-  const tz = br.route[wi].z
+  const wp = br.route[wi]
+  let tx = wp.x
+  let tz = wp.z
+  let go = br.pace
 
-  // xadrez: troca de coluna se o ladrilho da frente caiu ou está tremendo
-  if (b.z > 189 && b.z < 212) {
-    let row = 0
-    while (row < TILE_ROWS - 1 && TILE_Z0 + row * TILE_PITCH < b.z + 0.8) row++
-    const ok = (c: number) => {
-      if (c < 0 || c >= TILE_COLS) return false
-      const s = w.tiles[row * TILE_COLS + c]
-      return tileUp(s, t + 0.35) && !(s >= 0 && t - s < 0.8)
+  // plataforma que anda: mira onde ela está; espera ela chegar antes de passar
+  if (wp.m !== undefined) {
+    const p = C.pads[wp.m]
+    const sh = padShift(p, t)
+    tx = p.x + sh.dx
+    const edge = p.z + sh.dz - p.hz
+    const lead = (botRand(br.seed, br.slot * 7 + wp.m, Math.floor(t / 3)) - 0.5) * (1 - br.skill) * 2.5
+    if (b.z < edge && edge - b.z < 2.2 && Math.abs(tx + lead - b.x) > 1.4) go = 0
+    // em cima de uma que anda: acompanha a de baixo até alinhar
+    if (go === 0 && b.pad >= 0 && C.pads[b.pad].mw !== 0) {
+      const q = C.pads[b.pad]
+      tx = q.x + padShift(q, t).dx
     }
-    if (!ok(br.col)) {
-      const order = br.col < TILE_COLS / 2 ? [br.col + 1, br.col - 1, br.col + 2, br.col - 2] : [br.col - 1, br.col + 1, br.col - 2, br.col + 2]
-      for (const c of order) {
-        if (ok(c)) {
-          br.col = c
-          break
+  }
+
+  // portas: na fileira à frente, mira a escolhida; bateu numa falsa, troca
+  if (C.doors.length) {
+    for (let row = 0; row < C.doorOpen.length; row++) {
+      let dz = Infinity
+      for (const d of C.doors) if (d.row === row) dz = d.z
+      if (b.z > dz + 0.5 || dz - b.z > 7) continue
+      if (br.door < 0 || C.doors[br.door].row !== row || br.bad.has(br.door)) br.door = pickDoor(br, b, w, row)
+      // a escolhida se revelou falsa (alguém bateu) ou eu estou parado na frente dela
+      if (br.door >= 0 && w.doors[br.door] === -2 && !w.open[br.door] && botRand(br.seed, br.slot, row * 5 + br.door) < br.skill + 0.2) {
+        br.bad.add(br.door)
+        br.door = pickDoor(br, b, w, row)
+      }
+      if (br.door >= 0) {
+        const d = C.doors[br.door]
+        tx = d.x
+        tz = Math.max(tz, d.z + 1.2)
+        if (dz - b.z < 0.9 && Math.abs(b.x - d.x) < d.hw && !w.open[br.door]) {
+          br.bad.add(br.door)
+          br.door = pickDoor(br, b, w, row)
         }
       }
+      break
     }
-    tx = tileX(br.col)
   }
+
+  // ladrilhos: escolhe o próximo em pé (e não tremendo), perto da reta
+  if (C.tiles.length && !b.ground && br.tile >= 0) {
+    // no ar: segue mirando o ladrilho escolhido (freia no ar se for passar)
+    tx = C.tiles[br.tile].x
+    tz = C.tiles[br.tile].z
+  } else if (C.tiles.length && b.ground) {
+    let near = false
+    for (const q of C.tiles) if (Math.abs(q.z - b.z) < 3.2 && Math.abs(q.x - b.x) < 9) near = true
+    if (near) {
+      const ok = (i: number) => {
+        const s = w.tiles[i]
+        return tileUp(C, s, t + 0.35) && !(s >= 0 && t - s < 0.8)
+      }
+      let under = -1
+      for (let i = 0; i < C.tiles.length; i++) if (onTile(C.tiles[i], b.x, b.z, 0) && Math.abs(C.tiles[i].y - b.y) < 0.3) under = i
+      const cur = br.tile
+      const curQ = cur >= 0 ? C.tiles[cur] : null
+      if (!curQ || curQ.z < b.z + 0.8 || !ok(cur)) {
+        let best = -1
+        let bestScore = -Infinity
+        for (let i = 0; i < C.tiles.length; i++) {
+          const q = C.tiles[i]
+          const ahead = q.z - b.z
+          if (ahead < 1.2 || ahead > 3.6 || Math.abs(q.x - b.x) > 4.5 || !ok(i)) continue
+          const score = -Math.abs(q.x - b.x) - Math.abs(q.x) * 0.15 + botRand(br.seed, br.slot, i) * 0.8
+          if (score > bestScore) {
+            bestScore = score
+            best = i
+          }
+        }
+        // nada firme adiante e estou num ladrilho (que já treme): o firme mais perto, para qualquer lado
+        // chão firme (plataforma) logo à frente: segue a rota
+        const solid = groundUnder(w, b.x, b.z + 2.4, b.y + 0.5)
+        if (best < 0 && solid.pad >= 0 && solid.y > b.y - 0.5) under = -2
+        if (best < 0 && under >= 0) {
+          let bd = Infinity
+          for (let i = 0; i < C.tiles.length; i++) {
+            if (i === under || !ok(i)) continue
+            const dd = Math.hypot(C.tiles[i].x - b.x, C.tiles[i].z - b.z)
+            if (dd < 3.8 && dd < bd) {
+              bd = dd
+              best = i
+            }
+          }
+        }
+        br.tile = best
+      }
+      if (br.tile >= 0) {
+        tx = C.tiles[br.tile].x
+        tz = C.tiles[br.tile].z
+      } else if (under === -1) {
+        // na beira, sem ladrilho firme à frente: espera voltarem
+        let ahead = false
+        for (const q of C.tiles) if (q.z - b.z > 0.5 && q.z - b.z < 3.2) ahead = true
+        if (ahead && botRand(br.seed, br.slot, 900 + Math.floor(t)) < br.skill + 0.25) go = 0
+      }
+    } else br.tile = -1
+  }
+
   // subida: a faixa mais livre das bolas que vêm
-  if (b.z > RAMP.z0 - 2 && b.z < RAMP.z1 + 0.5) {
+  if (C.ramp && C.balls && b.z > C.ramp.z0 - 2 && b.z < C.ramp.z1 + 0.5) {
     const gaps = [-5.4, -2.9, 0, 2.9, 5.4]
     let best = br.laneX
     let bestScore = -Infinity
@@ -133,7 +196,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
         const ahead = bl[k + 2] - b.z
         if (ahead < -1 || ahead > 9) continue
         const dx = Math.abs(bl[k] - gx)
-        if (dx < BALLS.R + 1) score -= (10 - ahead) * (BALLS.R + 1 - dx)
+        if (dx < C.balls.R + 1) score -= (10 - ahead) * (C.balls.R + 1 - dx)
       }
       if (score > bestScore) {
         bestScore = score
@@ -142,7 +205,13 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     }
     // os menos hábeis demoram a perceber
     if (botRand(br.seed, br.slot, Math.floor(t * 4)) < br.skill) br.laneX = best
-    tx = br.laneX
+    tx = C.ramp.x + br.laneX
+  }
+
+  // esteira: corre contra ela (mira um pouco além)
+  if (b.pad >= 0) {
+    const p = C.pads[b.pad]
+    if (p.bx !== 0) tx -= p.bx * 0.35
   }
 
   let dx = tx - b.x
@@ -150,9 +219,9 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   const d = Math.hypot(dx, dz) || 1
   dx /= d
   dz /= d
-  // desvia das colunas (pilar do carrossel, frades do campo)
-  for (const q of POSTS) {
-    if (q.y1 <= b.y + GINCANA.stepUp || q.y0 > b.y + 1) continue
+  // desvia das colunas (pilar, frade, caixa) — o cogumelo é chão
+  for (const q of C.posts) {
+    if (q.b > 0 || q.y1 <= b.y + GINCANA.stepUp || q.y0 > b.y + 1) continue
     const ox = q.x - b.x
     const oz = q.z - b.z
     const ahead = ox * dx + oz * dz
@@ -166,46 +235,56 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     dz += -dx * s * k * 0.2
   }
   const m = Math.hypot(dx, dz) || 1
-  let go = br.pace
   it.mx = (dx / m) * go
   it.mz = (dz / m) * go
+  const vRun = GINCANA.run * Math.max(0.3, br.pace)
 
   // pêndulo adiante na mesma linha: espera passar (os menos hábeis às vezes vão)
-  if (b.z > 86 && b.z < 134) {
-    for (let i = 0; i < PENDULUMS.length; i++) {
-      const p = PENDULUMS[i]
-      const ahead = p.z - b.z
-      // decide entre 4,6 e 2,4 m (freia em ~0,6 m e fica fora do alcance); mais perto, vai
-      // (a bola do vizinho também alcança: confere todos os que balançam até aqui)
-      if (ahead < 2.4 || ahead > 4.6 || Math.abs(p.x - b.x) > p.len * Math.sin(p.amp) + 2) continue
-      // a bola passa pela faixa enquanto eu atravesso? (entrar e sair do alcance dela)
-      const reach = p.R + GINCANA.bodyR + 0.3
-      // onde eu estarei (na viga diagonal o x muda no caminho)
-      const slope = it.mx / Math.max(0.2, it.mz)
-      let near = false
-      for (let k = 0; k <= 4; k++) {
-        const dz = ahead - reach + (2 * reach * k) / 4
-        const q = pendulumAt(p, t + dz / (GINCANA.run * br.pace))
-        if (Math.abs(q.x - (b.x + slope * dz)) < reach) near = true
-      }
-      if (near && botRand(br.seed, br.slot * 97 + i, Math.floor(t / 2.86)) < br.skill + 0.05) go = 0
+  for (let i = 0; i < C.pendulums.length; i++) {
+    const p = C.pendulums[i]
+    const ahead = p.z - b.z
+    // decide entre 4,6 e 2,4 m (freia em ~0,6 m e fica fora do alcance); mais perto, vai
+    if (ahead < 2.4 || ahead > 4.6 || Math.abs(p.x - b.x) > p.len * Math.sin(p.amp) + 2) continue
+    const reach = p.R + GINCANA.bodyR + 0.3
+    const slope = it.mx / Math.max(0.2, it.mz)
+    let near = false
+    for (let k = 0; k <= 4; k++) {
+      const dz2 = ahead - reach + (2 * reach * k) / 4
+      const q = pendulumAt(p, t + dz2 / vRun)
+      if (Math.abs(q.x - (b.x + slope * dz2)) < reach) near = true
     }
+    if (near && botRand(br.seed, br.slot * 97 + i, Math.floor(t / 2.86)) < br.skill + 0.05) go = 0
   }
   // luva prestes a socar na faixa por onde vai passar: espera
-  if (b.z > 140 && b.z < 184) {
-    for (let i = 0; i < GLOVES.length; i++) {
-      const g = GLOVES[i]
-      const ahead = g.z - b.z
-      if (ahead < 1.3 || ahead > 3.4) continue
-      const enter = (ahead - 1.6) / GINCANA.run
-      const leave = (ahead + 1.6) / GINCANA.run
-      let hot = false
-      for (const f of [0, 0.5, 1]) {
-        const q = gloveAt(g, t + Math.max(0, enter + (leave - enter) * f))
-        if (q.hot || q.u > 0.5) hot = true
-      }
-      if (hot && botRand(br.seed, br.slot * 89 + i, Math.floor(t / 2.6)) < br.skill + 0.1) go = 0
+  for (let i = 0; i < C.gloves.length; i++) {
+    const g = C.gloves[i]
+    const ahead = g.z - b.z
+    if (ahead < 1.3 || ahead > 3.4) continue
+    // a luva alcança o meu x?
+    const tipMax = g.x0 + g.dir * (g.reach + g.R)
+    if ((g.dir > 0 && b.x > tipMax + 0.6) || (g.dir < 0 && b.x < tipMax - 0.6)) continue
+    const enter = (ahead - 1.6) / vRun
+    const leave = (ahead + 1.6) / vRun
+    let hot = false
+    for (const f of [0, 0.5, 1]) {
+      const q = gloveAt(g, t + Math.max(0, enter + (leave - enter) * f))
+      if (q.hot || q.u > 0.5) hot = true
     }
+    if (hot && botRand(br.seed, br.slot * 89 + i, Math.floor(t / g.period)) < br.skill + 0.1) go = 0
+  }
+  // bloco que anda cruzando a minha linha logo à frente: espera
+  for (let i = 0; i < C.pushers.length; i++) {
+    const q = C.pushers[i]
+    const ahead = q.z - b.z
+    if (ahead < q.hz + 0.5 || ahead > q.hz + 3) continue
+    const enter = (ahead - q.hz - 0.6) / vRun
+    const leave = (ahead + q.hz + 0.6) / vRun
+    let block = false
+    for (const f of [0, 0.33, 0.66, 1]) {
+      const P = pusherAt(q, t + Math.max(0, enter + (leave - enter) * f))
+      if (Math.abs(P.x - b.x) < q.hx + GINCANA.bodyR + 0.5) block = true
+    }
+    if (block && botRand(br.seed, br.slot * 71 + i, Math.floor((t * q.w) / 3.14)) < br.skill + 0.1) go = 0
   }
   if (go === 0) br.waited += dt
   if (go === 0 && br.waited < 6 + br.skill * 4) {
@@ -213,37 +292,64 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     it.mz = 0
   } else if (go > 0) br.waited = Math.max(0, br.waited - dt * 0.5)
 
-  // barra do carrossel chegando: pula na hora (com o erro da habilidade)
-  if (b.ground && br.jumpCool <= 0 && b.z < 80) {
-    for (let i = 0; i < SWEEPERS.length; i++) {
-      const s = SWEEPERS[i]
-      const cx = b.x - s.x
-      const cz = b.z - s.z
-      const r = Math.hypot(cx, cz)
-      if (r > s.len + 0.3 || r < 1.0) continue
+  // barra chegando: pula na hora (com o erro da habilidade)
+  if (b.ground && br.jumpCool <= 0) {
+    // prevê onde estarei (velocidade de agora) e onde a barra estará: pula ~0,15 s antes do contato
+    const vx = b.vx + (it.mx * GINCANA.run - b.vx) * 0.5
+    const vz = b.vz + (it.mz * GINCANA.run - b.vz) * 0.5
+    for (let i = 0; i < C.sweepers.length; i++) {
+      const s = C.sweepers[i]
+      if (Math.hypot(b.x - s.x, b.z - s.z) > s.len + 5) continue
+      let tc = -1
+      for (let k = 1; k <= 30 && tc < 0; k++) {
+        const h = k * 0.02
+        const px = b.x + vx * h - s.x
+        const pz = b.z + vz * h - s.z
+        const a = sweeperAngle(s, t + h)
+        const dx = Math.sin(a)
+        const dz = Math.cos(a)
+        const along = Math.max(s.both ? -s.len : 0, Math.min(s.len, px * dx + pz * dz))
+        if (Math.abs(along) < 0.9) continue
+        if (Math.hypot(px - dx * along, pz - dz * along) < s.r + GINCANA.bodyR + 0.08) tc = h
+      }
+      if (tc < 0) continue
       const span = s.both ? Math.PI : Math.PI * 2
-      const ang = Math.atan2(cx, cz)
-      const a = sweeperAngle(s, t)
-      const delta = ((((ang - a) * Math.sign(s.w)) % span) + span) % span
-      // contato antes do alinhamento: a grossura da barra e do corpo
-      const ttr = (delta - (s.r + GINCANA.bodyR) / Math.max(r, 1)) / Math.abs(s.w)
       const pass = Math.floor((s.w * t + s.a0) / span)
-      const err = (botRand(br.seed, br.slot * 31 + i, pass) - 0.5) * (1 - br.skill) * 0.7
-      if (ttr < 0.22 + err && ttr > 0.02) {
+      const err = (botRand(br.seed, br.slot * 31 + i, pass) - 0.5) * (1 - br.skill) * 0.3
+      if (tc < 0.2 + err && tc > 0.04) {
         it.jump = true
         br.jumpCool = 0.7
       }
     }
   }
   // ladrilho tremendo embaixo: pula para o próximo
-  if (b.ground && br.jumpCool <= 0 && b.z > 191 && b.z < 211) {
-    for (let i = 0; i < TILES.length; i++) {
-      const q = TILES[i]
+  if (b.ground && br.jumpCool <= 0) {
+    for (let i = 0; i < C.tiles.length; i++) {
+      const q = C.tiles[i]
       const s = w.tiles[i]
-      if (s < 0 || Math.abs(b.x - q.x) > q.h || Math.abs(b.z - q.z) > q.h) continue
-      if (t - s > 0.45 && botRand(br.seed, br.slot, i) < br.skill) {
+      if (s < 0 || !onTile(q, b.x, b.z, 0)) continue
+      if (t - s > C.tileTime.warn * 0.6 && botRand(br.seed, br.slot, i) < br.skill) {
         it.jump = true
         br.jumpCool = 0.6
+      }
+    }
+  }
+  // o chão acaba logo à frente e há chão adiante: pula o buraco
+  const sp = Math.hypot(it.mx, it.mz)
+  const tileNear = br.tile >= 0 && Math.hypot(C.tiles[br.tile].x - b.x, C.tiles[br.tile].z - b.z) < 2.6
+  if (b.ground && br.jumpCool <= 0 && sp > 0.3 && !tileNear) {
+    const fx = it.mx / sp
+    const fz = it.mz / sp
+    const near = groundUnder(w, b.x + fx * 1.0, b.z + fz * 1.0, b.y + 0.5)
+    if (near.y < b.y - 0.6 || near.y === -Infinity) {
+      let far = false
+      for (const k of [2.2, 3.2, 4.2, 5.0]) {
+        const g = groundUnder(w, b.x + fx * k, b.z + fz * k, b.y + 1.2)
+        if (g.y > b.y - 1.2) far = true
+      }
+      if (far) {
+        it.jump = true
+        br.jumpCool = 0.5
       }
     }
   }
@@ -259,6 +365,6 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     }
   }
   // reta final: os melhores mergulham para a linha
-  if (br.divesFinish && b.ground && b.z > 259 && b.z < 262 && Math.abs(b.facing) < 0.3) it.dive = true
+  if (br.divesFinish && b.ground && b.z > C.finishZ - 7 && b.z < C.finishZ - 4 && Math.abs(b.facing) < 0.3) it.dive = true
   return it
 }

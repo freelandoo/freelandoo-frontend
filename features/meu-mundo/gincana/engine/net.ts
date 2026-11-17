@@ -12,6 +12,10 @@
 //
 // O relógio é o da sala (tempo do pacote + meia ida e volta): as barras, os
 // pêndulos e as luvas ficam no mesmo lugar para todos.
+//
+// Gincana 2.0 (2026-11-16): a reserva pede uma FASE (sala por fase; vem de
+// volta no "start"); a pose leva `g` (vaga que estou agarrando) e o resultado
+// leva `q` (classificou).
 
 import { Client, type Room } from "@colyseus/sdk"
 import { getPublicBackendUrl } from "@/lib/backend-public"
@@ -32,6 +36,8 @@ export interface GincanaStart {
   /** s até o "vai". */
   countdown: number
   seats: GincanaSeat[]
+  /** Fase da largada (sala antiga sem fase = "cidade"). */
+  phase?: string
 }
 export interface GincanaResultRow {
   slot: number
@@ -41,6 +47,8 @@ export interface GincanaResultRow {
   fin: number
   dist: number
   gone: boolean
+  /** Classificou (chegou dentro da vaga). */
+  q?: boolean
 }
 export interface GincanaLobbyEntry {
   name: string
@@ -56,6 +64,8 @@ export interface RunnerSample {
   a: number
   cp: number
   fin: number
+  /** Vaga que está agarrando (−1 = ninguém). */
+  g: number
 }
 
 interface SPlayer {
@@ -73,7 +83,7 @@ interface SState {
 
 const CLOSE_REPLACED = 4009
 const PING_MS = 2000
-const FIELDS = 8
+const FIELDS = 9
 /** Amostras guardadas por pessoa (~1 s). */
 const KEEP = 24
 
@@ -189,7 +199,7 @@ export class GincanaNet {
       const list = this.samples.get(slot) ?? []
       const last = list[list.length - 1]
       if (last && last.t >= m.t) continue
-      list.push({ t: m.t, x: m.c[k + 1], y: m.c[k + 2], z: m.c[k + 3], f: m.c[k + 4], a: m.c[k + 5], cp: m.c[k + 6], fin: m.c[k + 7] })
+      list.push({ t: m.t, x: m.c[k + 1], y: m.c[k + 2], z: m.c[k + 3], f: m.c[k + 4], a: m.c[k + 5], cp: m.c[k + 6], fin: m.c[k + 7], g: m.c[k + 8] ?? -1 })
       if (list.length > KEEP) list.shift()
       this.samples.set(slot, list)
     }
@@ -200,9 +210,9 @@ export class GincanaNet {
     return this.offset === null ? null : performance.now() / 1000 + this.offset
   }
 
-  sendPose(p: { x: number; y: number; z: number; f: number; a: number; cp: number; fin: number }) {
+  sendPose(p: { x: number; y: number; z: number; f: number; a: number; cp: number; fin: number; g: number }) {
     const r = (v: number, k = 1000) => Math.round(v * k) / k
-    this.room?.send("p", { x: r(p.x), y: r(p.y), z: r(p.z, 100), f: r(p.f, 100), a: p.a, cp: p.cp, n: r(p.fin, 100) })
+    this.room?.send("p", { x: r(p.x), y: r(p.y), z: r(p.z, 100), f: r(p.f, 100), a: p.a, cp: p.cp, n: r(p.fin, 100), g: p.g })
   }
 
   dispose() {
