@@ -14240,7 +14240,18 @@
     "gincanaHowGe2": "Icicles swing over the bridges: wait for them to pass.",
     "gincanaHowGe3": "The floes slide sideways: wait for the next one.",
     "gincanaHowGe4": "Thin ice breaks right after someone steps on it.",
-    "gincanaHowGe5": "Snowballs roll down the ramp: dodge your way to the top."
+    "gincanaHowGe5": "Snowballs roll down the ramp: dodge your way to the top.",
+    "rankE": "E",
+    "rankD": "D",
+    "rankC": "C",
+    "rankB": "B",
+    "rankA": "A",
+    "rankS": "S",
+    "rankSS": "SS",
+    "rankSSR": "SSR",
+    "rankLegendary": "Legendary",
+    "rankDivine": "Divine",
+    "rankClassOf": "Class {r}"
   },
   "Sports": {
     "eyebrow": "Sports",

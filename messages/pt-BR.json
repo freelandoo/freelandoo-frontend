@@ -13654,7 +13654,18 @@
     "gincanaHowGe2": "Estalactites balançam sobre as pontes: espere passar.",
     "gincanaHowGe3": "As placas andam de lado: espere a próxima chegar.",
     "gincanaHowGe4": "O gelo fino quebra logo depois que alguém pisa.",
-    "gincanaHowGe5": "Bolas de neve descem a rampa: desvie até o topo."
+    "gincanaHowGe5": "Bolas de neve descem a rampa: desvie até o topo.",
+    "rankE": "E",
+    "rankD": "D",
+    "rankC": "C",
+    "rankB": "B",
+    "rankA": "A",
+    "rankS": "S",
+    "rankSS": "SS",
+    "rankSSR": "SSR",
+    "rankLegendary": "Lendária",
+    "rankDivine": "Divina",
+    "rankClassOf": "Classe {r}"
   },
   "Sports": {
     "eyebrow": "Esportes",

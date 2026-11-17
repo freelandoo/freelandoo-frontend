@@ -19,7 +19,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { screenAnchor } from "../../engine/screen-anchor"
 import { FLOAT_COLOR, type FloatKind } from "../kit/steam/steam-tokens"
 import { currentUiFx } from "../kit/steam/fx-tier"
-import { RARITY, type Rarity } from "../kit/aether-tokens"
+import { RANK, type Rank } from "../kit/aether-tokens"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { archivo, cinzel, teko } from "../status/evo-skin"
 import g from "./gain-layer.module.css"
@@ -36,7 +36,8 @@ export interface FloatNum {
 export interface DropItem {
   id: string
   qty: number
-  rarity: Rarity
+  /** Classe de raridade (E…Divina): pinta a placa e o selo. */
+  rank: Rank
   name: string
 }
 
@@ -119,7 +120,7 @@ export function GainLayer({ nums, drops, more, onDone }: { nums: FloatNum[]; dro
     }
   }, [nCount, dCount])
 
-  const rarityLabel = (r: Rarity) => t(RARITY[r].labelKey, RARITY[r].label)
+  const rankLabel = (r: Rank) => t(RANK[r].labelKey, RANK[r].label)
   const spoken = [...nums.map((n) => `${n.text} ${n.label}`), ...drops.map((d) => `×${d.qty} ${d.name}`)].join(", ")
 
   return (
@@ -153,14 +154,14 @@ export function GainLayer({ nums, drops, more, onDone }: { nums: FloatNum[]; dro
         {dCount > 0 && (
           <div ref={plates} className={g.plates} data-side="right">
             {drops.map((it, i) => {
-              const r = RARITY[it.rarity] || RARITY.common
+              const r = RANK[it.rank] || RANK.E
               const style = { "--r": r.color, "--d": `${(nCount ? 260 : 0) + i * PLATE_STEP}ms`, "--life": `${PLATE_LIFE}ms` } as CSSProperties
-              const n = fx === "low" ? 0 : fx === "high" ? (it.rarity === "common" ? 6 : 10) : 4
+              const n = fx === "low" ? 0 : fx === "high" ? (it.rank === "E" ? 6 : 10) : 4
               return (
                 <div key={it.id} className={`${archivo.className} ${g.plate}`} style={style}>
                   <span className={g.medal}>
                     <span className={g.medalArt}>
-                      <ItemImage category={dropCategory(it.id)} rarity={it.rarity} alt="" />
+                      <ItemImage category={dropCategory(it.id)} rarity={it.rank} alt="" />
                     </span>
                   </span>
                   {sparks(n, 40).map((p, k) => (
@@ -171,7 +172,7 @@ export function GainLayer({ nums, drops, more, onDone }: { nums: FloatNum[]; dro
                       <span className={`${teko.className} ${g.plateQty}`}>×{it.qty}</span>
                       <span className={`${cinzel.className} ${g.plateName}`}>{it.name}</span>
                     </span>
-                    {it.rarity !== "common" && <span className={g.plateRarity}>{rarityLabel(it.rarity)}</span>}
+                    {it.rank !== "E" && <span className={g.plateRarity}>{rankLabel(it.rank)}</span>}
                   </span>
                 </div>
               )

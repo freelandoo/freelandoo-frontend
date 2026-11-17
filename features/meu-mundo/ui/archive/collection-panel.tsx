@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { getCollection, getGear, openChest, type Collection, type GearCategory, type GearItem } from "../../data"
-import { AE, RARITY, chamfer } from "../kit/aether-tokens"
+import { AE, RANK, chamfer, rankOf } from "../kit/aether-tokens"
 import { celebrate } from "../rewards/reward-bus"
 
 type T = (k: string, f: string) => string
@@ -71,7 +71,7 @@ export function CollectionPanel({ t }: { t: T }) {
           <ul className="flex flex-wrap gap-1.5">
             {list.map((it, i) => (
               <li key={(it.id || "x") + i} className="px-2 py-1 text-[12px]" title={it.found && it.at ? new Date(it.at).toLocaleDateString() : undefined}
-                style={{ background: it.found ? AE.steel : AE.iron, color: it.found ? RARITY[it.rarity].color : AE.dim, boxShadow: `inset 0 0 0 1px ${AE.brassLine}` }}>
+                style={{ background: it.found ? AE.steel : AE.iron, color: it.found ? RANK[rankOf(it)].color : AE.dim, boxShadow: `inset 0 0 0 1px ${AE.brassLine}` }}>
                 {it.found || it.id ? nameOf(it) : "???"}
               </li>
             ))}

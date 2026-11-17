@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useReducedMotion } from "framer-motion"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { Receipt } from "../../data"
-import { RARITY, type Rarity } from "../kit/aether-tokens"
+import { RANK, rankOf, type Rank } from "../kit/aether-tokens"
 import { applyUiFx } from "../kit/steam/fx-tier"
 import { FLOAT_COLOR, FLOAT_TONE, type FloatKind } from "../kit/steam/steam-tokens"
 import { ATTR_META, VITAL_META, fmtDelta, toneOf } from "./reward-grammar"
@@ -38,7 +38,7 @@ interface Bundle {
   unlocks: string[]
   attrs: Record<string, number>
   vitals: Record<string, number>
-  items: { id: string; qty: number; rarity: Rarity }[]
+  items: { id: string; qty: number; rank: Rank }[]
   /** mm3d-60k: moedas que a luta/minijogo dropou. */
   coins: number
   special: boolean
@@ -64,7 +64,7 @@ function merge(list: Receipt[]): Bundle {
       if (it.qty <= 0) continue
       const cur = b.items.find((i) => i.id === it.id)
       if (cur) cur.qty += it.qty
-      else b.items.push({ id: it.id, qty: it.qty, rarity: (it.rarity as Rarity) || "common" })
+      else b.items.push({ id: it.id, qty: it.qty, rank: rankOf(it) })
     }
     if (r.source === "quest" || (r.items || []).some((i) => i.rarity && i.rarity !== "common")) b.special = true
   }
@@ -137,9 +137,9 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
       const m = VITAL_META[k as keyof typeof VITAL_META]
       if (m && Math.abs(v) >= 0.5) nums.push({ key: k, kind: k as FloatKind, color: FLOAT_TONE[toneOf(k, v)], text: fmtDelta(v, 0), label: t(m.labelKey, m.label) })
     }
-    const all: DropItem[] = b.items.map((it) => ({ id: it.id, qty: it.qty, rarity: it.rarity, name: t(`gear_${it.id}`, it.id) }))
+    const all: DropItem[] = b.items.map((it) => ({ id: it.id, qty: it.qty, rank: it.rank, name: t(`gear_${it.id}`, it.id) }))
     // moedas = uma placa de drop (a primeira)
-    if (b.coins > 0) all.unshift({ id: "coins", qty: Math.round(b.coins), rarity: "common", name: t("rewardCoins", "Moedas") })
+    if (b.coins > 0) all.unshift({ id: "coins", qty: Math.round(b.coins), rank: "E", name: t("rewardCoins", "Moedas") })
     const drops = all.length > MAX_PLATES ? all.slice(0, MAX_PLATES - 1) : all
     return { nums: nums.slice(0, MAX_NUMS), drops, more: all.length - drops.length }
   }, [b, t])
@@ -148,7 +148,7 @@ function GainBurst({ b, t, onDone }: { b: Bundle; t: T; onDone: () => void }) {
   }, [nums.length, drops.length, more, onDone])
   // o tubo de luz no personagem (cor do primeiro ganho; item raro pinta com a raridade)
   useEffect(() => {
-    const color = nums.length ? (nums[0].color ?? FLOAT_COLOR[nums[0].kind]) : drops.length ? (RARITY[drops[0].rarity] || RARITY.common).color : b.care ? FLOAT_TONE.good : null
+    const color = nums.length ? (nums[0].color ?? FLOAT_COLOR[nums[0].kind]) : drops.length ? (RANK[drops[0].rank] || RANK.E).color : b.care ? FLOAT_TONE.good : null
     if (color) playGainFx(color, nums[0]?.kind)
     // caiu item: o som da recompensa por cima do ganho (áudio P1: `ui-recompensa` estava sem chamada)
     if (drops.length) uiCue("reward", 0.8)

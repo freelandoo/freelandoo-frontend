@@ -8,7 +8,8 @@
 
 import type { ReactNode } from "react"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
-import { AE, RARITY, type Rarity } from "../kit/aether-tokens"
+import { AE, toneOf, type Rank, type Rarity } from "../kit/aether-tokens"
+import { RankSeal } from "../kit/rank-seal"
 import { archivo, teko } from "../status/evo-skin"
 
 export interface ShopLine {
@@ -22,6 +23,8 @@ export function ShopCard({
   img,
   category,
   rarity = "common",
+  rank,
+  t,
   title,
   tag,
   tagColor,
@@ -35,7 +38,10 @@ export function ShopCard({
 }: {
   img?: string | null
   category: ItemCategory
-  rarity?: Rarity
+  rarity?: Rank | Rarity
+  /** Item do catálogo: o selo da classe (E…Divina) no lugar do `tag`. Precisa do `t`. */
+  rank?: Rank
+  t?: (key: string, fallback: string) => string
   title: string
   /** selo ao lado do nome (raridade, "Seu", "Classe"…) */
   tag?: string
@@ -52,7 +58,7 @@ export function ShopCard({
   dim?: boolean
   children?: ReactNode
 }) {
-  const color = tagColor ?? RARITY[rarity]?.color ?? AE.goldSoft
+  const color = tagColor ?? toneOf(rarity)?.color ?? AE.goldSoft
   return (
     <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
       <div className="relative shrink-0" style={{ opacity: dim ? 0.38 : 1, filter: dim ? "grayscale(1)" : undefined }}>
@@ -70,7 +76,7 @@ export function ShopCard({
         <h4 className={`${teko.className} text-[24px] font-semibold uppercase leading-tight`} style={{ color: AE.text }}>
           {title}
         </h4>
-        {tag && (
+        {rank && t ? <RankSeal rank={rank} t={t} /> : tag && (
           <span className="shrink-0 px-1.5 py-1 text-[10px] font-bold uppercase" style={{ color, boxShadow: "inset 0 0 0 1px " + color }}>
             {tag}
           </span>

@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react"
 import { fuseRunes, socketRune, unsocketRune, type GearBag, type GearCatalog, type GearInstance, type GearItem } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
-import { AE, RARITY } from "../kit/aether-tokens"
+import { AE, RANK, rankOf } from "../kit/aether-tokens"
 import { GearItemCard, bonusLines, nameOf, type GearAction, type GearTr } from "./gear-card"
 import { gradeName } from "./refinement-card"
 
@@ -31,7 +31,7 @@ export function RuneSocketCard({ item, inst, bag, byId, values, t, act, busy }: 
           const id = sockets[i]
           return (
             <li key={i} className="flex min-h-11 items-center justify-between gap-2 px-2 text-[13px]" style={{ background: AE.well, boxShadow: "inset 0 0 0 1px " + AE.brassLine, color: id ? AE.text : AE.muted }}>
-              <span className="min-w-0 truncate" style={id && byId.has(id) ? { color: RARITY[byId.get(id)!.rarity].color } : undefined}>{id ? runeName(id, byId, t) : t("runeEmpty", "Engaste livre")}</span>
+              <span className="min-w-0 truncate" style={id && byId.has(id) ? { color: RANK[rankOf(byId.get(id))].color } : undefined}>{id ? runeName(id, byId, t) : t("runeEmpty", "Engaste livre")}</span>
               {id && <AetherButton tone="secondary" disabled={busy} onClick={() => void act("unsocket-" + inst.id + "-" + i, (tk, key) => unsocketRune(tk, inst.id, i, key, inst.version), t("runeRemoved", "A runa voltou para a mochila."))}>{t("runeRemove", "Tirar")}</AetherButton>}
             </li>
           )
@@ -68,7 +68,7 @@ export function RuneFusePanel({ catalog, bag, byId, t, act, busy }: { catalog: G
         const all = Math.floor(have / fuseIn)
         return (
           <li key={it.id} className="grid gap-2 p-3" style={{ background: AE.steel, boxShadow: "inset 0 0 0 1px " + AE.brassLine }}>
-            <p className="text-[13px] font-bold" style={{ color: RARITY[it.rarity].color }}>{nameOf(it, t)} · {have}</p>
+            <p className="text-[13px] font-bold" style={{ color: RANK[rankOf(it)].color }}>{nameOf(it, t)} · {have}</p>
             <p className="text-[12px]" style={{ color: AE.text }}>{t("runeFuseRule", "{n} viram 1 {to}").replace("{n}", String(fuseIn)).replace("{to}", runeName(next, byId, t))}</p>
             <div className="flex flex-wrap gap-2">
               <AetherButton disabled={busy} onClick={() => void act("fuse-" + it.id + "-1", (tk, key) => fuseRunes(tk, it.id, 1, key), t("runeFused", "Runas fundidas."))}>{t("runeFuseOne", "Fundir 1")}</AetherButton>

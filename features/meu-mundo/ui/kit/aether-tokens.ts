@@ -76,6 +76,40 @@ export const RARITY = {
 } as const
 export type Rarity = keyof typeof RARITY
 
+/**
+ * CLASSE DE RARIDADE (decisão do Alex, 2026-11-17): a raridade que o jogador VÊ, em letras de gacha,
+ * da mais fraca à mais forte. Quem decide a classe é o servidor (`rank` no catálogo e no recibo,
+ * `src/utils/mmItems/rules/rank.js`); `rarity` (common…legendary) ficou só por dentro (orçamento e sorteio).
+ * Divina ainda não tem item: fica pronta na escala.
+ */
+export const RANK = {
+  E: { color: "#A9A397", glow: "#A9A397", labelKey: "rankE", label: "E" },
+  D: { color: "#4BE38A", glow: "#4BE38A", labelKey: "rankD", label: "D" },
+  C: { color: "#2FD6C8", glow: "#2FD6C8", labelKey: "rankC", label: "C" },
+  B: { color: "#3FA9FF", glow: "#3FA9FF", labelKey: "rankB", label: "B" },
+  A: { color: "#A05CFF", glow: "#A05CFF", labelKey: "rankA", label: "A" },
+  S: { color: "#FF8A1F", glow: "#FFA54D", labelKey: "rankS", label: "S" },
+  SS: { color: "#FF3B4E", glow: "#FF6B78", labelKey: "rankSS", label: "SS" },
+  SSR: { color: "#FF4FD8", glow: "#FF8BE6", labelKey: "rankSSR", label: "SSR" },
+  legendary: { color: "#F2B705", glow: "#FFD23F", labelKey: "rankLegendary", label: "Lendária" },
+  divine: { color: "#EAF6FF", glow: "#9EE7FF", labelKey: "rankDivine", label: "Divina" },
+} as const
+export type Rank = keyof typeof RANK
+/** Ordem da escala (0 = E … 9 = Divina). */
+export const RANKS = Object.keys(RANK) as Rank[]
+export const RANK_ORDER = Object.fromEntries(RANKS.map((r, i) => [r, i])) as Record<Rank, number>
+/** Recibo antigo (sem `rank`): a classe pela raridade interna, igual ao servidor. */
+const RANK_BY_RARITY: Record<string, Rank> = { common: "E", uncommon: "D", rare: "B", epic: "S", legendary: "legendary", mythic: "divine" }
+/** Classe de um item ou linha de recibo: a que o servidor mandou; sem ela, pela raridade. */
+export function rankOf(x: { rank?: string | null; rarity?: string | null } | null | undefined): Rank {
+  if (x?.rank && x.rank in RANK) return x.rank as Rank
+  return RANK_BY_RARITY[x?.rarity || ""] || "E"
+}
+/** Cor de moldura: aceita classe (E…Divina) ou raridade antiga (desenhos que não são item). */
+export function toneOf(r: Rank | Rarity | null | undefined): { color: string; glow: string } {
+  return (r && (RANK as Record<string, { color: string; glow: string }>)[r]) || (r && RARITY[r as Rarity]) || RANK.E
+}
+
 /** clip-path de canto chanfrado (os quatro cantos). */
 export function chamfer(c: number): string {
   return `polygon(${c}px 0, calc(100% - ${c}px) 0, 100% ${c}px, 100% calc(100% - ${c}px), calc(100% - ${c}px) 100%, ${c}px 100%, 0 calc(100% - ${c}px), 0 ${c}px)`

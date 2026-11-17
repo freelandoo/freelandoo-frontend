@@ -9,7 +9,7 @@
 // Nome, raridade, quantidade e preço ficam FORA da arte (texto do card).
 
 import { useState, type ReactNode } from "react"
-import { AE, RARITY, type Rarity } from "./aether-tokens"
+import { AE, toneOf, type Rank, type Rarity } from "./aether-tokens"
 
 export type ItemCategory =
   | "food"
@@ -174,7 +174,8 @@ export function ItemImage({
 }: {
   src?: string | null
   category: ItemCategory
-  rarity?: Rarity
+  /** Classe (E…Divina) ou raridade antiga: só pinta o desenho de reserva. */
+  rarity?: Rank | Rarity
   alt: string
   /** largura/altura do quadro (1 = quadrado). */
   ratio?: number
@@ -190,7 +191,7 @@ export function ItemImage({
     setShownSrc(src)
     setState(src ? "loading" : "fail")
   }
-  const tone = RARITY[rarity]?.color || AE.brass
+  const tone = toneOf(rarity)?.color || AE.brass
   const showArt = state !== "ok"
   return (
     <div

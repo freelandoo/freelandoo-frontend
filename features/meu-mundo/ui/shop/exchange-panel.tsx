@@ -7,7 +7,7 @@ import { useMemo, useState } from "react"
 import { exchangeGear, type GearBag, type GearCatalog, type GearItem } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
 import { AetherTabs } from "../kit/aether-carousel"
-import { AE, RARITY } from "../kit/aether-tokens"
+import { AE, RANK, rankOf } from "../kit/aether-tokens"
 import { nameOf, type GearAction, type GearTr } from "../gear/gear-card"
 
 export function ExchangePanel({ catalog, bag, t, act, busy }: { catalog: GearCatalog; bag: GearBag; t: GearTr; act: GearAction; busy: boolean }) {
@@ -33,7 +33,7 @@ export function ExchangePanel({ catalog, bag, t, act, busy }: { catalog: GearCat
             <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-3" style={{ background: AE.steel, boxShadow: "inset 0 0 0 1px " + AE.brassLine }}>
               <span className="min-w-0 text-[13px]" style={{ color: AE.text }}>
                 {Object.entries(o.gives).map(([id, n]) => (
-                  <span key={id} style={{ color: byId.has(id) ? RARITY[(byId.get(id) as GearItem).rarity].color : AE.text }}>{n}× {label(id)} </span>
+                  <span key={id} style={{ color: byId.has(id) ? RANK[rankOf(byId.get(id) as GearItem)].color : AE.text }}>{n}× {label(id)} </span>
                 ))}
               </span>
               <AetherButton disabled={busy || !can} onClick={() => void act("exchange-" + o.id, (tk, key) => exchangeGear(tk, o.id, 1, key), t("exchangeDone", "Troca feita."))}>

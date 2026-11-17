@@ -264,7 +264,7 @@ export interface Receipt {
     coins?: number
   }
   /** E3: fragmento traz `progress` (quanto tem / quanto pede o item `of`). */
-  items: { id: string; qty: number; rarity?: string; progress?: { of: string; have: number; need: number } }[]
+  items: { id: string; qty: number; rarity?: string; /** classe de raridade (E…Divina), do servidor */ rank?: string; progress?: { of: string; have: number; need: number } }[]
   at: string
 }
 /** F2 (lore v2): o nível do TREINADOR é da conta (não zera ao trocar de personagem). */
@@ -339,6 +339,8 @@ export type GearCategory =
   | "weapon" | "shield" | "armor" | "accessory" | "material" | "recipe" | "quest" | "cosmetic"
   | "offhand" | "relic" | "fragment" | "rune" | "consumable" | "currency"
 export type GearRarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic"
+/** Classe de raridade que o jogador vê (servidor: `src/utils/mmItems/rules/rank.js`). */
+export type GearRank = "E" | "D" | "C" | "B" | "A" | "S" | "SS" | "SSR" | "legendary" | "divine"
 /** Trilha E6 (A4): os 8 slots. O servidor ainda aceita os nomes de antes (shield/armor/acc1/acc2) no equip. */
 export type GearSlot = "weapon" | "offhand" | "helm" | "chest" | "gloves" | "boots" | "amulet" | "relic"
 export interface GearItem {
@@ -355,7 +357,10 @@ export interface GearItem {
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
   shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | null
   name: string
+  /** Raridade interna (orçamento, sorteio, engastes); a tela mostra `rank`. */
   rarity: GearRarity
+  /** Classe de raridade visível (2026-11-17): E · D · C · B · A · S · SS · SSR · legendary · divine. */
+  rank?: GearRank
   /** Trilha E1: 1…6 pela raridade (Mítica = 6). */
   tier?: number
   price: number | null
@@ -728,7 +733,7 @@ export const saveEventConfig = (token: string, event: string, active: boolean, h
 export interface Collection {
   total: number
   found: number
-  items: { id: string | null; category: GearCategory; rarity: GearRarity; found: boolean; at?: string | null; hidden?: boolean; name?: string }[]
+  items: { id: string | null; category: GearCategory; rarity: GearRarity; rank?: GearRank; found: boolean; at?: string | null; hidden?: boolean; name?: string }[]
   chests: { id: string; where: "bairro" | "centro"; places: string[]; opened: boolean; openedAt: string | null }[]
 }
 export const getCollection = (token: string) => call<Collection>(token, "GET", "/gear/collection")
@@ -856,6 +861,7 @@ export interface DomainLootRow {
   id: string
   name: string
   rarity: string
+  rank?: string
   qty: [number, number]
   /** Chance (0–1) das linhas de sorteio. */
   p?: number

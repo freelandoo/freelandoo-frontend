@@ -14220,7 +14220,18 @@
     "gincanaHowGe2": "Las estalactitas se balancean sobre los puentes: espera a que pasen.",
     "gincanaHowGe3": "Las placas se mueven de lado: espera a la siguiente.",
     "gincanaHowGe4": "El hielo fino se rompe justo después de que alguien lo pisa.",
-    "gincanaHowGe5": "Las bolas de nieve bajan la rampa: esquívalas hasta la cima."
+    "gincanaHowGe5": "Las bolas de nieve bajan la rampa: esquívalas hasta la cima.",
+    "rankE": "E",
+    "rankD": "D",
+    "rankC": "C",
+    "rankB": "B",
+    "rankA": "A",
+    "rankS": "S",
+    "rankSS": "SS",
+    "rankSSR": "SSR",
+    "rankLegendary": "Legendaria",
+    "rankDivine": "Divina",
+    "rankClassOf": "Clase {r}"
   },
   "Sports": {
     "eyebrow": "Deportes",

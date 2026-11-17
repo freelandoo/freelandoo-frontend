@@ -8,6 +8,13 @@
 // Espelho dos ids `espada_*` com `shop: "weapons"` em src/utils/meuMundoGear.js.
 
 const DIR = "/meu-mundo/armas/v2"
+/**
+ * Pasta das miniaturas das abas da loja (e das armas de linha). As novas, com o selo da classe de
+ * raridade no canto inferior esquerdo (`MEU MUNDO 3D/arte/armas-thumb/gpt/`), entram numa PASTA NOVA
+ * com os MESMOS nomes de arquivo (`<id-curto>.webp`, `arco-…`, `fogo-…`, `escudo-…`) e só esta linha
+ * muda (o cache do navegador não segura a velha).
+ */
+const THUMB = `${DIR}/thumb`
 
 /** Cor do rastro do golpe: [principal, borda]. */
 const COLORS: Record<string, [string, string]> = {
@@ -79,7 +86,7 @@ const GOD_BOWS: Record<string, [string, string]> = {
   aeryn: ["#FFC23D", "#FFF2C0"],
 }
 const bowOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
-  c ? { file: `${DIR}/arco-${k}-m69k.glb`, thumb: `${DIR}/thumb/arco-${k}.webp`, main: c[0], edge: c[1] } : null
+  c ? { file: `${DIR}/arco-${k}-m69k.glb`, thumb: `${THUMB}/arco-${k}.webp`, main: c[0], edge: c[1] } : null
 
 /**
  * Trilha E8: as 9 armas de linha (fabricadas por fragmento) usam o modelo mais próximo da família
@@ -133,7 +140,7 @@ const GOD_GUNS: Record<string, [string, string]> = {
   noctis: ["#2FC2FF", "#CFEFFF"],
 }
 const gunOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
-  c ? { file: `${DIR}/fogo-${k}-m70k.glb`, thumb: `${DIR}/thumb/fogo-${k}.webp`, main: c[0], edge: c[1] } : null
+  c ? { file: `${DIR}/fogo-${k}-m70k.glb`, thumb: `${THUMB}/fogo-${k}.webp`, main: c[0], edge: c[1] } : null
 
 /** A arma de fogo da loja por id do item; null = não é da aba Guns. */
 export function shopGun(id: string | null | undefined): ShopSword | null {
@@ -152,7 +159,7 @@ const SHIELDS = new Set(["ferro", "rebites", "azul", "cravos", "sol", "prata", "
 /** O escudo da loja por id do item; null = sem escudo. */
 export function shopShield(id: string | null | undefined): { file: string; thumb: string } | null {
   const k = id?.startsWith("escudo_") ? id.slice(7) : ""
-  return SHIELDS.has(k) ? { file: `${DIR}/escudo-${k}-m68k.glb`, thumb: `${DIR}/thumb/escudo-${k}.webp` } : null
+  return SHIELDS.has(k) ? { file: `${DIR}/escudo-${k}-m68k.glb`, thumb: `${THUMB}/escudo-${k}.webp` } : null
 }
 
 export interface ShopSword {
@@ -165,10 +172,10 @@ export interface ShopSword {
 /** A arma pesada da loja por id do item; null = não é da aba Hammers. */
 export function shopHeavy(id: string | null | undefined): ShopSword | null {
   const line = id ? LINE_HEAVY[id] : undefined
-  if (line) { const god = godHeavy(line[0]); return god && { ...god, thumb: `${DIR}/thumb/${line[1]}.webp` } }
+  if (line) { const god = godHeavy(line[0]); return god && { ...god, thumb: `${THUMB}/${line[1]}.webp` } }
   const k = id?.startsWith("pesada_") ? id.slice(7) : ""
   const c = HEAVY_COLORS[k]
-  return c ? { file: `${DIR}/pesada-${k}-m67k.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
+  return c ? { file: `${DIR}/pesada-${k}-m67k.glb`, thumb: `${THUMB}/${k}.webp`, main: c[0], edge: c[1] } : null
 }
 
 /** Arma própria do deus (não está à venda): a skin luta com ela sem arma de loja equipada. */
@@ -188,5 +195,5 @@ const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.s
 export function shopSword(id: string | null | undefined): ShopSword | null {
   const k = key((id && LINE_SWORD[id]) || id)
   const c = COLORS[k]
-  return c ? { file: `${DIR}/espada-${k}-m66k.glb`, thumb: `${DIR}/thumb/${k}.webp`, main: c[0], edge: c[1] } : null
+  return c ? { file: `${DIR}/espada-${k}-m66k.glb`, thumb: `${THUMB}/${k}.webp`, main: c[0], edge: c[1] } : null
 }

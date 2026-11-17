@@ -20,7 +20,8 @@ import type { BodyId } from "../../types"
 import type { SkinStage } from "../../engine/skin-stage"
 import { playSample, preloadSamples, uiSound } from "../../engine/audio"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
-import { RARITY } from "../kit/aether-tokens"
+import { RANK, RANK_ORDER, rankOf } from "../kit/aether-tokens"
+import { RankSeal } from "../kit/rank-seal"
 import { gearThumb, nameOf, percentage } from "../gear/gear-card"
 import { anton } from "../hud/fight-plate"
 import { TYPE } from "../kit/type-scale"
@@ -103,8 +104,8 @@ function candidates(catalog: GearCatalog, bag: GearBag, slot: GearSlot) {
     if (!item || item.slot !== slot || seen.has(id) || own.qty <= 0) continue
     rows.push({ item, inst: null, plus: own.level || 0, here: bag.equipped[slot] === id, elsewhere: false })
   }
-  const rank = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
-  return rows.sort((a, b) => Number(b.here) - Number(a.here) || rank.indexOf(b.item.rarity) - rank.indexOf(a.item.rarity) || b.plus - a.plus)
+  // classe de raridade (E…Divina) maior primeiro
+  return rows.sort((a, b) => Number(b.here) - Number(a.here) || RANK_ORDER[rankOf(b.item)] - RANK_ORDER[rankOf(a.item)] || b.plus - a.plus)
 }
 
 export function EquipPage({
@@ -227,7 +228,7 @@ export function EquipPage({
     const item = id ? byId.get(id) : null
     const inst = gear?.bag.instances?.find((i) => i.equippedHere && i.equippedSlot === s)
     const plus = inst?.plus ?? (id ? gear?.bag.owned[id]?.level || 0 : 0)
-    const tone = item ? RARITY[item.rarity].color : "rgba(232,182,91,0.45)"
+    const tone = item ? RANK[rankOf(item)].color : "rgba(232,182,91,0.45)"
     const on = slot === s
     return (
       <button
@@ -385,7 +386,8 @@ export function EquipPage({
           {list.length === 0 && <p className="text-[13px]" style={{ color: EVO.mudo }}>{t("eqNone", "Você ainda não tem peça para esta casa.")}</p>}
           <ul className={`grid gap-1.5 ${compact ? "" : "min-h-0 overflow-y-auto pr-1"}`}>
             {list.map((row) => {
-              const r = RARITY[row.item.rarity]
+              const rank = rankOf(row.item)
+              const r = RANK[rank]
               const b = row.item.bonus ?? {}
               return (
                 <li key={row.inst?.id ?? row.item.id}>
@@ -397,10 +399,11 @@ export function EquipPage({
                     style={{ background: row.here ? "rgba(255,226,166,0.10)" : "rgba(12,15,20,0.5)", boxShadow: `inset 0 0 0 1px ${row.here ? "#FFE2A6" : "rgba(232,182,91,0.28)"}`, borderRadius: 10 }}
                   >
                     <span className="block h-12 w-12 shrink-0 overflow-hidden" style={{ borderRadius: 8 }}>
-                      <ItemImage src={gearThumb(row.item)} category={thumbCategory(row.item)} rarity={row.item.rarity} alt="" ratio={1} />
+                      <ItemImage src={gearThumb(row.item)} category={thumbCategory(row.item)} rarity={rank} alt="" ratio={1} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-semibold" style={{ color: r.color }}>
+                        <span className="mr-1.5 inline-block align-middle"><RankSeal rank={rank} t={t} size="sm" /></span>
                         {nameOf(row.item, t)}
                         {row.plus > 0 ? ` +${row.plus}` : ""}
                       </span>

@@ -20,7 +20,7 @@ import { useTranslations } from "@/components/i18n/I18nProvider"
 import { applyGearItem, equipGear, getInventory, getWallets, recycleGear, type GearItem, type GearSlot, type Receipt } from "../../data"
 import type { InventoryResult } from "../../types"
 import { TopBar } from "../kit/top-bar"
-import { AE, RARITY, chamfer } from "../kit/aether-tokens"
+import { AE, RANK, chamfer, rankOf, type Rank } from "../kit/aether-tokens"
 import { AetherButton } from "../kit/aether-modal"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { TX } from "../kit/type-scale"
@@ -46,7 +46,8 @@ interface Cell {
   key: string
   name: string
   qty: number | null
-  rarity: keyof typeof RARITY | null
+  /** Classe de raridade (E…Divina): a faixa embaixo da casa. */
+  rarity: Rank | null
   equipped: boolean
   fresh: boolean
   gear?: GearItem
@@ -133,7 +134,7 @@ export default function BagPanel({
         const own = bag.owned[g.id]
         if (!own) continue
         if (onlySlot && g.slot !== onlySlot) continue
-        out[tabOfGear(g)].push({ key: "g:" + g.id, name: nameOf(g, t), qty: g.stack ? own.qty : null, rarity: g.rarity, equipped: equipped.has(g.id), fresh: false, gear: g })
+        out[tabOfGear(g)].push({ key: "g:" + g.id, name: nameOf(g, t), qty: g.stack ? own.qty : null, rarity: rankOf(g), equipped: equipped.has(g.id), fresh: false, gear: g })
       }
     }
     for (const s of slots) {
@@ -298,7 +299,7 @@ export default function BagPanel({
 /** Uma casa da grade: arte, quantidade, "E" de equipado, "novo" e a faixa da raridade embaixo. */
 function CellButton({ cell, active, onClick }: { cell: Cell; active: boolean; onClick: () => void }) {
   const t = useTranslations("MeuMundo")
-  const rc = cell.rarity ? RARITY[cell.rarity].color : AE.brassLine
+  const rc = cell.rarity ? RANK[cell.rarity].color : AE.brassLine
   return (
     <button
       type="button"
@@ -312,7 +313,7 @@ function CellButton({ cell, active, onClick }: { cell: Cell; active: boolean; on
       <span className="absolute inset-0 grid place-items-center p-1">
         {cell.gear ? <GearThumb item={cell.gear} /> : cell.slot ? <SlotThumb slot={cell.slot} /> : null}
       </span>
-      {/* faixa da raridade */}
+      {/* faixa da classe de raridade */}
       <span aria-hidden className="absolute inset-x-0 bottom-0 h-1" style={{ background: rc }} />
       {cell.qty != null && cell.qty > 1 && (
         <span className={`${TX.label} absolute bottom-1.5 right-1 font-bold tabular-nums`} style={{ color: AE.text, textShadow: "0 1px 0 #000, 0 0 3px #000" }}>

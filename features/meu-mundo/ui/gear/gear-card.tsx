@@ -3,7 +3,8 @@
 import type { ReactNode } from "react"
 import type { ApiResult, GearBag, GearItem, GearOut } from "../../data"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
-import { AE, RARITY } from "../kit/aether-tokens"
+import { AE, rankOf } from "../kit/aether-tokens"
+import { RankSeal } from "../kit/rank-seal"
 import { teko } from "../status/evo-skin"
 import { shopBow, shopGun, shopHeavy, shopShield, shopSword } from "../../engine/shop-swords"
 
@@ -49,17 +50,15 @@ export function gearLock(item: GearItem, bag: GearBag | null, t: GearTr): string
 export function GearItemCard({ item, t, subtitle, lines, children }: {
   item: GearItem; t: GearTr; subtitle?: string; lines?: string[]; children?: ReactNode
 }) {
-  const rarity = RARITY[item.rarity]
+  const rank = rankOf(item)
   return (
     <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
       <div className="shrink-0">
-        <ItemImage src={gearThumb(item)} category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={item.rarity} alt={nameOf(item, t)} ratio={16 / 7} />
+        <ItemImage src={gearThumb(item)} category={(item.category === "shield" ? "armor" : item.category) as ItemCategory} rarity={rank} alt={nameOf(item, t)} ratio={16 / 7} />
       </div>
       <div className="flex items-start justify-between gap-2">
         <h4 className={teko.className + " text-[24px] font-semibold uppercase leading-tight"} style={{ color: AE.text }}>{nameOf(item, t)}</h4>
-        <span className="shrink-0 px-1.5 py-1 text-[10px] font-bold uppercase" style={{ color: rarity.color, boxShadow: "inset 0 0 0 1px " + rarity.color }}>
-          {t(rarity.labelKey, rarity.label)}
-        </span>
+        <RankSeal rank={rank} t={t} />
       </div>
       {subtitle && <p className="text-[12px]" style={{ color: AE.muted }}>{subtitle}</p>}
       {item.set && <p className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>{t("gearSetLine", "Conjunto {name}").replace("{name}", t("gearSet_" + item.set, item.set))}</p>}

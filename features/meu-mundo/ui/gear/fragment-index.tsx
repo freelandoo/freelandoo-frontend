@@ -3,9 +3,10 @@
 // com o que sobra. Busca por arma, região, chefão e raridade. O servidor diz tudo (catálogo + mochila);
 // aqui só se filtra e desenha.
 import { useMemo, useState } from "react"
-import { convertFragments, type GearBag, type GearItem, type GearRarity } from "../../data"
+import { convertFragments, type GearBag, type GearItem } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
-import { AE, RARITY } from "../kit/aether-tokens"
+import { AE, RANK, RANKS, rankOf, type Rank } from "../kit/aether-tokens"
+import { RankSeal } from "../kit/rank-seal"
 import { nameOf, type GearAction, type GearTr } from "./gear-card"
 
 const REGIONS = ["floresta", "canion", "gelo", "fabrica", "vulcao", "orbital", "hall", "rua", "paint"] as const
@@ -28,12 +29,12 @@ export function FragmentIndex({ items, byId, bag, t, busy, act }: {
 }) {
   const [query, setQuery] = useState("")
   const [region, setRegion] = useState<string>("all")
-  const [rarity, setRarity] = useState<GearRarity | "all">("all")
+  const [rarity, setRarity] = useState<Rank | "all">("all")
   const [bossOnly, setBossOnly] = useState(false)
   const fragments = useMemo(() => items.filter(item => item.category === "fragment" && item.fragment), [items])
   const rows = fragments.filter(item => {
     if (region !== "all" && item.origin?.region !== region) return false
-    if (rarity !== "all" && item.rarity !== rarity) return false
+    if (rarity !== "all" && rankOf(item) !== rarity) return false
     if (bossOnly && item.origin?.kind !== "boss") return false
     if (!query.trim()) return true
     const target = byId.get(item.fragment!.of)
@@ -51,9 +52,9 @@ export function FragmentIndex({ items, byId, bag, t, busy, act }: {
           <option value="all">{t("fragAllRegions", "Todas as regiões")}</option>
           {REGIONS.filter(r => fragments.some(f => f.origin?.region === r)).map(r => <option key={r} value={r}>{regionName(r, t)}</option>)}
         </select>
-        <select value={rarity} onChange={event => setRarity(event.target.value as GearRarity | "all")} aria-label={t("fragRarity", "Raridade")} className="min-h-11 min-w-0 px-2 text-[13px]" style={select}>
+        <select value={rarity} onChange={event => setRarity(event.target.value as Rank | "all")} aria-label={t("fragRarity", "Raridade")} className="min-h-11 min-w-0 px-2 text-[13px]" style={select}>
           <option value="all">{t("fragAllRarities", "Todas as raridades")}</option>
-          {(Object.keys(RARITY) as GearRarity[]).filter(r => fragments.some(f => f.rarity === r)).map(r => <option key={r} value={r}>{t(RARITY[r].labelKey, RARITY[r].label)}</option>)}
+          {RANKS.filter(r => fragments.some(f => rankOf(f) === r)).map(r => <option key={r} value={r}>{t("rankClassOf", "Classe {r}").replace("{r}", t(RANK[r].labelKey, RANK[r].label))}</option>)}
         </select>
         <label className="flex min-h-11 items-center gap-2 text-[13px] sm:col-span-2" style={{ color: AE.text }}>
           <input type="checkbox" checked={bossOnly} onChange={event => setBossOnly(event.target.checked)} className="h-5 w-5" />
@@ -70,7 +71,8 @@ export function FragmentIndex({ items, byId, bag, t, busy, act }: {
           // sobra: tudo, se a arma já é sua; senão, o que passa do necessário
           const spare = done ? have : Math.max(0, have - frag.need)
           const pct = Math.min(1, have / frag.need)
-          const color = RARITY[item.rarity].color
+          const rank = rankOf(item)
+          const color = RANK[rank].color
           const boss = bossName(item.origin?.boss ?? null, t)
           return (
             <li key={item.id} className="grid gap-2 p-3" style={{ background: AE.steel, boxShadow: "inset 0 0 0 1px " + AE.brassLine }}>
@@ -81,7 +83,7 @@ export function FragmentIndex({ items, byId, bag, t, busy, act }: {
                     {frag.set ? t("fragForSet", "Peças do conjunto {name}").replace("{name}", t("gearSet_" + frag.set, frag.set)) : target ? t("fragForItem", "Para: {name}").replace("{name}", nameOf(target, t)) : null}
                   </p>
                 </div>
-                <span className="shrink-0 px-1.5 py-1 text-[10px] font-bold uppercase" style={{ color, boxShadow: "inset 0 0 0 1px " + color }}>{t(RARITY[item.rarity].labelKey, RARITY[item.rarity].label)}</span>
+                <RankSeal rank={rank} t={t} />
               </div>
               {item.origin && <p className="text-[12px]" style={{ color: AE.goldSoft }}>
                 {regionName(item.origin.region, t)}{boss ? " · " + t("fragBossLine", "chefão: {name}").replace("{name}", boss) : item.origin.kind === "sector" ? " · " + t("fragSectors", "setores 7 a 10") : ""}

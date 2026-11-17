@@ -10,7 +10,7 @@
 import type { CSSProperties } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { Receipt } from "../../data"
-import { RARITY, type Rarity } from "../kit/aether-tokens"
+import { RANK, rankOf } from "../kit/aether-tokens"
 import { FLOAT_COLOR, SP } from "../kit/steam/steam-tokens"
 import { cinzel, teko } from "../status/evo-skin"
 import { ATTR_META, VITAL_META, fmtDelta, toneOf } from "./reward-grammar"
@@ -58,7 +58,7 @@ export function ReceiptLines({ receipt, delay = 550 }: { receipt: Receipt; delay
   if (coins > 0) lines.push({ key: "coins", icon: "◉", label: t("rewardCoins", "Moedas"), value: `+${coins}`, color: "#F2B705" })
   for (const it of receipt.items || []) {
     if (it.qty <= 0) continue
-    const r = RARITY[(it.rarity as Rarity) || "common"] || RARITY.common
+    const r = RANK[rankOf(it)]
     // E3: fragmento mostra quanto falta para o item ("×3 · 42/60")
     const progress = it.progress && it.progress.need > 0 ? ` · ${Math.min(it.progress.have, it.progress.need)}/${it.progress.need}` : ""
     lines.push({ key: `i-${it.id}`, icon: it.progress ? "◈" : "◆", label: t(`gear_${it.id}`, it.id), value: `×${it.qty}${progress}`, color: r.color })

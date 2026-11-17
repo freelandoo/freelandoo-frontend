@@ -22,7 +22,7 @@ import { buyGear, getCharacters, getLife, getMonsters, postLifeBuy, type GearIte
 import type { BodyId, CharactersResult, LifeFull, LifeItem } from "../../types"
 import { AetherButton, AetherModal } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
-import { AE, RARITY } from "../kit/aether-tokens"
+import { AE, rankOf } from "../kit/aether-tokens"
 import type { ItemCategory } from "../kit/item-image"
 import { bonusLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
 import { useWorkshop } from "../gear/use-workshop"
@@ -168,7 +168,7 @@ export default function ShopPanel({
           const owned = !item.stack && !!bag.owned[item.id]
           const price = item.price || 0
           const poor = bag.coins < price
-          const r = RARITY[item.rarity]
+          const rank = rankOf(item)
           return {
             key: item.id,
             label: nameOf(item, t),
@@ -176,9 +176,10 @@ export default function ShopPanel({
               <ShopCard
                 img={gearThumb(item)}
                 category={(item.category === "shield" ? "armor" : item.category) as ItemCategory}
-                rarity={item.rarity}
+                rarity={rank}
+                rank={rank}
+                t={t}
                 title={nameOf(item, t)}
-                tag={t(r.labelKey, r.label)}
                 badge={t("gearPrice", "{p} moedas").replace("{p}", String(price))}
                 subtitle={item.level > 1 ? t("shopFromLevel", "A partir do nível {n}").replace("{n}", String(item.level)) : undefined}
                 lines={bonusLines(item.bonus, t).map((text) => ({ text, tone: "good" as const }))}

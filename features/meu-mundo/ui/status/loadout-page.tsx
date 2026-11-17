@@ -15,7 +15,8 @@ import type { ReactNode } from "react"
 import type { GearBag, GearCatalog, GearItem, GearSlot } from "../../data"
 import type { CharactersResult, LifeFull } from "../../types"
 import type { GearBonus } from "../../laminas/sim/fight"
-import { RARITY } from "../kit/aether-tokens"
+import { RANK, rankOf } from "../kit/aether-tokens"
+import { RankSeal } from "../kit/rank-seal"
 import { nameOf, percentage } from "../gear/gear-card"
 import { Bar, EVO, Tag, archivo, teko } from "./evo-skin"
 
@@ -129,7 +130,8 @@ export function Equipped({ data, t, onPickSlot }: { data: LoadoutData; t: Tr; on
         const item = id ? byId.get(id) : null
         const lv = id ? bag.owned[id]?.level || 0 : 0
         const b = item ? pieceBonus(bag, s, item) : {}
-        const r = item ? RARITY[item.rarity] : null
+        const rank = item ? rankOf(item) : null
+        const r = rank ? RANK[rank] : null
         return (
           <div key={s} className="border-b pb-2" style={{ borderColor: EVO.linha }}>
             <div className="flex items-baseline justify-between gap-2">
@@ -142,9 +144,12 @@ export function Equipped({ data, t, onPickSlot }: { data: LoadoutData; t: Tr; on
                 <H>{slotName(s, t)}</H>
               )}
               {item ? (
-                <span className={`${archivo.className} min-w-0 truncate text-[15px] font-semibold`} style={{ color: r?.color ?? EVO.branco }}>
-                  {nameOf(item, t)}
-                  {lv > 0 ? ` +${lv}` : ""}
+                <span className="flex min-w-0 items-baseline gap-1.5">
+                  {rank && <RankSeal rank={rank} t={t} size="sm" />}
+                  <span className={`${archivo.className} min-w-0 truncate text-[15px] font-semibold`} style={{ color: r?.color ?? EVO.branco }}>
+                    {nameOf(item, t)}
+                    {lv > 0 ? ` +${lv}` : ""}
+                  </span>
                 </span>
               ) : (
                 <span className={`${archivo.className} text-[14px]`} style={{ color: EVO.mudo }}>

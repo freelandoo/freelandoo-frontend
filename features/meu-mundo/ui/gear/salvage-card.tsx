@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react"
 import { lockGear, salvageGear, transmuteGear, type GearBag, type GearCatalog, type GearInstance, type GearItem } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
-import { AE, RARITY } from "../kit/aether-tokens"
+import { AE, RANK, rankOf } from "../kit/aether-tokens"
 import { GearItemCard, nameOf, type GearAction, type GearTr } from "./gear-card"
 import { gradeName } from "./refinement-card"
 
@@ -30,7 +30,7 @@ export function SalvageCard({ item, inst, bag, byId, t, act, busy, confirmTier }
       </AetherButton>
       {confirm ? <>
         <p className="text-[12px] font-semibold" style={{ color: precious ? AE.bad : AE.goldSoft }}>
-          {precious ? t("salvageConfirmRare", "Peça {rarity}: desmontar não tem volta. Confirmar?").replace("{rarity}", t(RARITY[item.rarity].labelKey, RARITY[item.rarity].label)) : t("salvageConfirm", "Desmontar esta cópia?")}
+          {precious ? t("salvageConfirmRare", "Peça {rarity}: desmontar não tem volta. Confirmar?").replace("{rarity}", t("rankClassOf", "Classe {r}").replace("{r}", t(RANK[rankOf(item)].labelKey, RANK[rankOf(item)].label))) : t("salvageConfirm", "Desmontar esta cópia?")}
         </p>
         <AetherButton busy={busy} onClick={() => { setConfirm(false); void act("salvage-" + inst.id, (tk, key) => salvageGear(tk, item.id, inst.id, key, true), t("salvageDone", "Desmontada.")) }}>{t("gearConfirm", "Confirmar")}</AetherButton>
         <AetherButton tone="secondary" disabled={busy} onClick={() => setConfirm(false)}>{t("gearCancel", "Voltar")}</AetherButton>
