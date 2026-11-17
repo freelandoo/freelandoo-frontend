@@ -13665,7 +13665,16 @@
     "rankSSR": "SSR",
     "rankLegendary": "Lendária",
     "rankDivine": "Divina",
-    "rankClassOf": "Classe {r}"
+    "rankClassOf": "Classe {r}",
+    "gearStatHp": "HP",
+    "gearStatAtk": "Força",
+    "gearStatDef": "Defesa",
+    "gearStatAcc": "Acerto",
+    "gearStatSpd": "Esquiva",
+    "gearStatStam": "Fôlego",
+    "gearStatDmg": "Dano",
+    "gearStatNumber": "Número",
+    "gearStatPercent": "Porcentagem"
   },
   "Sports": {
     "eyebrow": "Esportes",

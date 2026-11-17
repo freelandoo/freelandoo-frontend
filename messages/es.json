@@ -14231,7 +14231,16 @@
     "rankSSR": "SSR",
     "rankLegendary": "Legendaria",
     "rankDivine": "Divina",
-    "rankClassOf": "Clase {r}"
+    "rankClassOf": "Clase {r}",
+    "gearStatHp": "PV",
+    "gearStatAtk": "Fuerza",
+    "gearStatDef": "Defensa",
+    "gearStatAcc": "Precisión",
+    "gearStatSpd": "Evasión",
+    "gearStatStam": "Aliento",
+    "gearStatDmg": "Daño",
+    "gearStatNumber": "Número",
+    "gearStatPercent": "Porcentaje"
   },
   "Sports": {
     "eyebrow": "Deportes",

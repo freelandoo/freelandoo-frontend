@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { ApiResult, GearBag, GearItem, GearOut } from "../../data"
+import type { ApiResult, ClassStatKey, GearBag, GearClassStats, GearItem, GearOut } from "../../data"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { AE, rankOf } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
@@ -31,6 +31,32 @@ export function bonusLines(bonus: GearItem["bonus"], t: GearTr): string[] {
 }
 
 /** Miniatura do item de loja (as abas do Arsenal); null = desenho da categoria. */
+const STAT_LABEL: Record<ClassStatKey, [string, string]> = {
+  hp: ["gearStatHp", "HP"], atk: ["gearStatAtk", "Força"], def: ["gearStatDef", "Defesa"], acc: ["gearStatAcc", "Acerto"],
+  spd: ["gearStatSpd", "Esquiva"], stam: ["gearStatStam", "Fôlego"], dmg: ["gearStatDmg", "Dano"],
+}
+const statLabel = (k: ClassStatKey, t: GearTr) => t(STAT_LABEL[k][0], STAT_LABEL[k][1])
+const pctText = (v: number) => (Math.round(v * 100) / 100).toLocaleString("pt-BR") + "%"
+
+/** Status da classe: o número inteiro dividido nos status e a porcentagem dividida nas chaves. */
+export function ClassStats({ stats, t }: { stats?: GearClassStats | null; t: GearTr }) {
+  if (!stats) return null
+  const flat = Object.entries(stats.flat) as [ClassStatKey, number][]
+  const pct = Object.entries(stats.pct) as [ClassStatKey, number][]
+  return (
+    <div className="grid grid-cols-2 gap-2 text-[12px]">
+      <div className="grid content-start gap-0.5 rounded-md p-2" style={{ background: AE.well }}>
+        <span className="text-[11px] font-semibold uppercase" style={{ color: AE.muted }}>{t("gearStatNumber", "Número")} · {stats.number.toLocaleString("pt-BR")}</span>
+        {flat.map(([k, v]) => <span key={k} className="font-semibold" style={{ color: AE.text }}>+{v.toLocaleString("pt-BR")} {statLabel(k, t)}</span>)}
+      </div>
+      <div className="grid content-start gap-0.5 rounded-md p-2" style={{ background: AE.well }}>
+        <span className="text-[11px] font-semibold uppercase" style={{ color: AE.muted }}>{t("gearStatPercent", "Porcentagem")} · {pctText(stats.percent)}</span>
+        {pct.map(([k, v]) => <span key={k} className="font-semibold" style={{ color: AE.aether }}>+{pctText(v)} {statLabel(k, t)}</span>)}
+      </div>
+    </div>
+  )
+}
+
 export function gearThumb(item: GearItem): string | null {
   return (item.shop === "weapons" ? shopSword(item.id) : item.shop === "hammers" ? shopHeavy(item.id) : item.shop === "shields" ? shopShield(item.id) : item.shop === "bows" ? shopBow(item.id) : item.shop === "guns" ? shopGun(item.id) : null)?.thumb ?? null
 }
@@ -61,6 +87,7 @@ export function GearItemCard({ item, t, subtitle, lines, children }: {
         <RankSeal rank={rank} t={t} />
       </div>
       {subtitle && <p className="text-[12px]" style={{ color: AE.muted }}>{subtitle}</p>}
+      <ClassStats stats={item.stats} t={t} />
       {item.set && <p className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>{t("gearSetLine", "Conjunto {name}").replace("{name}", t("gearSet_" + item.set, item.set))}</p>}
       {!!lines?.length && <ul className="grid gap-1 text-[13px] font-semibold" style={{ color: AE.aether }}>{lines.map(line => <li key={line}>{line}</li>)}</ul>}
       {item.description && <p className="text-[12px]" style={{ color: AE.muted }}>{t("gearDesc_" + item.id, item.description)}</p>}

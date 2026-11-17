@@ -342,6 +342,16 @@ export type GearRarity = "common" | "uncommon" | "rare" | "epic" | "legendary" |
 /** Classe de raridade que o jogador vê (servidor: `src/utils/mmItems/rules/rank.js`). */
 export type GearRank = "E" | "D" | "C" | "B" | "A" | "S" | "SS" | "SSR" | "legendary" | "divine"
 /** Trilha E6 (A4): os 8 slots. O servidor ainda aceita os nomes de antes (shield/armor/acc1/acc2) no equip. */
+/** Status da classe (servidor: `src/utils/mmItems/rules/classStats.js`): número inteiro + %, divididos pelo tipo. */
+export type ClassStatKey = "hp" | "atk" | "def" | "acc" | "spd" | "stam" | "dmg"
+export interface GearClassStats {
+  kind: string
+  rank: GearRank
+  number: number
+  percent: number
+  flat: Partial<Record<ClassStatKey, number>>
+  pct: Partial<Record<ClassStatKey, number>>
+}
 export type GearSlot = "weapon" | "offhand" | "helm" | "chest" | "gloves" | "boots" | "amulet" | "relic"
 export interface GearItem {
   id: string
@@ -361,6 +371,8 @@ export interface GearItem {
   rarity: GearRarity
   /** Classe de raridade visível (2026-11-17): E · D · C · B · A · S · SS · SSR · legendary · divine. */
   rank?: GearRank
+  /** Status da classe (2026-11-17): número + porcentagem divididos pelo tipo da peça. */
+  stats?: GearClassStats | null
   /** Trilha E1: 1…6 pela raridade (Mítica = 6). */
   tier?: number
   price: number | null
