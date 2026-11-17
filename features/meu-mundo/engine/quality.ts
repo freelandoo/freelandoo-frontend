@@ -118,7 +118,8 @@ export const QUALITY: Record<QualityTier, QualityProfile> = {
   high: {
     tier: "high", maxRatio: 1.5, minRatio: 0.75, fogStart: 70, fogEnd: 165, maxZ: 260, avatarLod: 24, avatarCut: 165, tagCut: 40, propCell: 32, propCellWide: 32, propCut: [[0.08, 55], [0.2, 90]], avatarSkin: 1024,
     sky: { tex: 2048, segments: 48, fx: true }, vegetation: 1, particles: 1, maxParticles: 1500, fxLive: 20, fxLayers: true,
-    bloom: "margin", shadows: { contact: "all", map: 1024 }, lodScale: 1.25, resolution: "high",
+    // 2026-11-17 (Alex): sem a sombra REAL comprida no chão; todos só com a bola de contato
+    bloom: "margin", shadows: { contact: "all", map: 0 }, lodScale: 1.25, resolution: "high",
   },
 }
 
