@@ -24,10 +24,10 @@ export function categoryOf(it: LifeItem): FridgeCategory {
 }
 
 /**
- * Foto do card: `public/meu-mundo/geladeira/v1/<id>.webp` (420×560). Arte original (PNG) e
- * prompts em MEU MUNDO 3D/arte/geladeira-v2.
+ * Foto do card: `public/meu-mundo/geladeira/v2/<id>.webp` (512×768, 2:3, selo da classe no canto —
+ * 17/11). Arte original em MEU MUNDO 3D/arte/comidas-thumb (a v1 4:3 em arte/geladeira-v2).
  */
-export const thumbOf = (id: string) => `/meu-mundo/geladeira/v1/${id}.webp`
+export const thumbOf = (id: string) => `/meu-mundo/geladeira/v2/${id}.webp`
 
 export interface CategoryCard {
   id: FridgeCategory
