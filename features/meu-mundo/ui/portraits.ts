@@ -116,26 +116,28 @@ export const BASE_OF: Record<Emotion, BaseEmotion> = {
 }
 
 const ALL6: Emotion[] = BASE_EMOTIONS
-/** As 12 (2026-11-15: as 6 novas chegaram; pipeline/build_emotions_single.py). */
+/** As 12 (2026-11-15: as 6 novas chegaram; pipeline/build_emotions_single.py). 2026-11-17: deuses e skins
+ * (Aurion, Golem e Cavaleiro sem boca); falta a Íris inteira e 3 do Morkhan. */
 const ALL12: Emotion[] = EMOTIONS
 /** Quais lâminas existem (o mesmo que retratos/v3/emo/manifest.json). */
 const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
   aeryn: ALL12,
   aurion: ALL12,
-  cavaleiro: ALL6,
-  ciborgue: ALL6,
-  garras: ALL6,
-  golem: ALL6,
+  cavaleiro: ALL12,
+  ciborgue: ALL12,
+  garras: ALL12,
+  golem: ALL12,
   iris: ALL6,
-  kragor: ALL6,
-  maru: ALL6,
-  morkhan: ALL6,
-  noctis: ALL6,
+  kragor: ALL12,
+  maru: ALL12,
+  // faltam medo, susto e deboche do Morkhan (caem na antiga mais perto)
+  morkhan: [...BASE_EMOTIONS, "laughing", "hungry", "determined"],
+  noctis: ALL12,
   raposa: ALL12,
   vampira: ALL12,
   vampira_adulta: ALL12,
   vampiro: ALL12,
-  zephyra: ALL6,
+  zephyra: ALL12,
   // 2026-11-03 (2ª leva): vampiro adulto e as três raposas
   vampiro_adulto: ALL12,
   raposa_f: ALL12,
