@@ -9,7 +9,7 @@
 // da referência do Alex) com o personagem na emoção do aviso (6 emoções).
 // Cada card: retrato (expressão do personagem padrão, retrato da skin, ou a
 // identidade da plataforma em comunicados), mensagem, ação e fechar. Entra
-// descendo, fica 15 s (a barra encolhe; pausa com o ponteiro em cima ou foco
+// descendo, fica 3 s (a barra encolhe; pausa com o ponteiro em cima ou foco
 // dentro), sai subindo. No máximo 1 card no celular e 2 no computador; o
 // resto espera ou vai só para o sino. Sair da tela NÃO marca como lido.
 // Não bloqueia o jogo: só o card recebe toque (pointer-events).

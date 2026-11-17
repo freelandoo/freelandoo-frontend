@@ -17,9 +17,10 @@ import { myClan } from "../../classes"
 import { needWords } from "../status/life-voice"
 import { EMOTIONS, EMOTION_OF, type Emotion, type Expression } from "../portraits"
 
-export const CARD_MS = 15_000
-/** Fala do personagem (uma frase curta): sai mais rápido, para a próxima caber. */
-export const CHATTER_CARD_MS = 8_000
+// 2026-11-17 (Alex): todo card fica 3 s (eram 15 s, e 8 s na fala) — o sino guarda.
+export const CARD_MS = 3_000
+/** Fala do personagem (uma frase curta): mesmo tempo dos outros cards. */
+export const CHATTER_CARD_MS = 3_000
 /** Tempo de tela de um card. */
 export const cardMs = (c: { notice: Pick<MMNotice, "kind" | "code"> | null }) => (c.notice?.kind === "life" && c.notice.code === "chatter" ? CHATTER_CARD_MS : CARD_MS)
 /** Grupo de repetição de um aviso: a fala do personagem agrupa por assunto (banter.ts cuida da espera). */
