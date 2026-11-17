@@ -3,7 +3,7 @@ import { useState } from "react"
 import { forgeGear, type GearBag, type GearItem, type GearRecipe } from "../../data"
 import { AetherButton } from "../kit/aether-modal"
 import { AE } from "../kit/aether-tokens"
-import { GearItemCard, bonusLines, nameOf, type GearAction, type GearTr } from "./gear-card"
+import { GearItemCard, itemLines, nameOf, type GearAction, type GearTr } from "./gear-card"
 
 export function ForgeCard({ item, recipe, bag, byId, t, busy, act }: {
   item: GearItem; recipe: GearRecipe; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; busy: boolean; act: GearAction
@@ -15,7 +15,7 @@ export function ForgeCard({ item, recipe, bag, byId, t, busy, act }: {
   const parts = Object.entries(recipe.needs).filter(([id]) => byId.get(id)?.component)
   const completed = parts.filter(([id, qty]) => (bag.owned[id]?.qty || 0) >= qty).length
   return (
-    <GearItemCard item={item} t={t} subtitle={t("forgeRecipePrice", "{n} moedas · nível {level}").replace("{n}", String(recipe.coins)).replace("{level}", String(recipe.level))} lines={bonusLines(item.bonus, t)}>
+    <GearItemCard item={item} t={t} subtitle={t("forgeRecipePrice", "{n} moedas · nível {level}").replace("{n}", String(recipe.coins)).replace("{level}", String(recipe.level))} lines={itemLines(item, t)}>
       {recipe.kind === "assembly" && <p className="text-[14px] font-bold" style={{ color: AE.goldSoft }}>{t("forgeAssemblyProgress", "Partes prontas: {ready}/{total}").replace("{ready}", String(completed)).replace("{total}", String(parts.length))}</p>}
       <ul className="grid gap-1 text-[12px]" aria-label={t("forgeRequired", "Materiais necessários")}>
         {Object.entries(recipe.needs).map(([id, qty]) => {

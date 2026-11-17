@@ -17,7 +17,7 @@ import type { CharactersResult, LifeFull } from "../../types"
 import type { GearBonus } from "../../laminas/sim/fight"
 import { RANK, rankOf } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
-import { nameOf, percentage } from "../gear/gear-card"
+import { classStatLines, nameOf, percentage } from "../gear/gear-card"
 import { Bar, EVO, Tag, archivo, teko } from "./evo-skin"
 
 type Tr = (key: string, fallback: string) => string
@@ -159,12 +159,18 @@ export function Equipped({ data, t, onPickSlot }: { data: LoadoutData; t: Tr; on
             </div>
             {item && (
               <div className="mt-1 flex flex-wrap gap-1.5">
-                {BONUS_KEYS.filter((k) => b[k]).map((k) => (
-                  <Tag key={k} tone="bom">
-                    {bonusName(k, t)} +{percentage(b[k] || 0)}
-                  </Tag>
-                ))}
-                {!BONUS_KEYS.some((k) => b[k]) && <Tag tone="mudo">{t("lkNoBonus", "sem bônus")}</Tag>}
+                {item.stats
+                  ? classStatLines(item.stats, t).map((line) => (
+                      <Tag key={line} tone="bom">
+                        {line}
+                      </Tag>
+                    ))
+                  : BONUS_KEYS.filter((k) => b[k]).map((k) => (
+                      <Tag key={k} tone="bom">
+                        {bonusName(k, t)} +{percentage(b[k] || 0)}
+                      </Tag>
+                    ))}
+                {!item.stats && !BONUS_KEYS.some((k) => b[k]) && <Tag tone="mudo">{t("lkNoBonus", "sem bônus")}</Tag>}
               </div>
             )}
           </div>

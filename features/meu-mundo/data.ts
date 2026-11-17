@@ -507,7 +507,10 @@ export interface GearBag {
   /** E9: a bancada de cada cópia (próximo passo garantido). */
   /** E9/E10/E11: próximo passo garantido, próximo grau e o que a desmontagem devolve. */
   forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null; ascend?: StepView; awaken?: StepView & { bonus?: Partial<GearBonus> }; enchant?: EnchantView }>
+  /** R3: só o que se faz na peça (aprimoramento, refino, conjunto, runas, despertar, encanto). */
   bonus: GearBonus
+  /** R3 (2026-11-17): status da classe somados das peças vestidas (número + %). */
+  classGear?: { flat: Partial<Record<ClassStatKey, number>>; pct: Partial<Record<ClassStatKey, number>> }
   /** E7: bônus de cada slot vestido pela régua (plus e grau da cópia). */
   pieces?: Partial<Record<GearSlot, Partial<GearBonus>>>
   pendingProposals?: RefinementProposal[]

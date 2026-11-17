@@ -39,6 +39,18 @@ const STAT_LABEL: Record<ClassStatKey, [string, string]> = {
 const statLabel = (k: ClassStatKey, t: GearTr) => t(STAT_LABEL[k][0], STAT_LABEL[k][1])
 const pctText = (v: number) => (Math.round(v * 100) / 100).toLocaleString("pt-BR") + "%"
 
+/** Status da classe em linhas curtas ("+864 Força", "+27,5% Dano"): número primeiro, depois a %. */
+export function classStatLines(stats: Pick<GearClassStats, "flat" | "pct"> | null | undefined, t: GearTr): string[] {
+  if (!stats) return []
+  const flat = (Object.entries(stats.flat) as [ClassStatKey, number][]).filter(([, v]) => v > 0).map(([k, v]) => `+${Math.round(v).toLocaleString("pt-BR")} ${statLabel(k, t)}`)
+  const pct = (Object.entries(stats.pct) as [ClassStatKey, number][]).filter(([, v]) => v > 0).map(([k, v]) => `+${pctText(v)} ${statLabel(k, t)}`)
+  return [...flat, ...pct]
+}
+/** Linhas de um item: status da classe se tiver (arma, escudo, proteção…); senão o bônus antigo (runa etc.). */
+export function itemLines(item: GearItem, t: GearTr): string[] {
+  return item.stats ? classStatLines(item.stats, t) : bonusLines(item.bonus, t)
+}
+
 /** Status da classe: o número inteiro dividido nos status e a porcentagem dividida nas chaves. */
 export function ClassStats({ stats, t }: { stats?: GearClassStats | null; t: GearTr }) {
   if (!stats) return null

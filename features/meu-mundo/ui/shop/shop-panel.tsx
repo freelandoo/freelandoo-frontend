@@ -24,7 +24,7 @@ import { AetherButton, AetherModal } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
 import { AE, rankOf } from "../kit/aether-tokens"
 import type { ItemCategory } from "../kit/item-image"
-import { bonusLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
+import { itemLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
 import { useWorkshop } from "../gear/use-workshop"
 import { effectText } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
@@ -183,7 +183,7 @@ export default function ShopPanel({
                 title={nameOf(item, t)}
                 badge={t("gearPrice", "{p} moedas").replace("{p}", String(price))}
                 subtitle={item.level > 1 ? t("shopFromLevel", "A partir do nível {n}").replace("{n}", String(item.level)) : undefined}
-                lines={bonusLines(item.bonus, t).map((text) => ({ text, tone: "good" as const }))}
+                lines={itemLines(item, t).map((text) => ({ text, tone: "good" as const }))}
                 note={lock ?? undefined}
               >
                 {owned ? (

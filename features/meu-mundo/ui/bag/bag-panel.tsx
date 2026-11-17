@@ -24,7 +24,7 @@ import { AE, RANK, chamfer, rankOf, type Rank } from "../kit/aether-tokens"
 import { AetherButton } from "../kit/aether-modal"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { TX } from "../kit/type-scale"
-import { GearItemCard, bonusLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
+import { GearItemCard, itemLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
 import { useWorkshop } from "../gear/use-workshop"
 import { SlotDetail, SlotThumb } from "../items/items-panel"
 import { buildSlots, slotName, type Slot } from "../items/item-catalog"
@@ -426,7 +426,7 @@ function Detail({
         item={item}
         t={t}
         subtitle={own ? t("forgeOwnedCount", "Na mochila: {n}").replace("{n}", String(own.qty)) + (own.level ? " · +" + own.level : "") : undefined}
-        lines={bonusLines(item.bonus, t)}
+        lines={itemLines(item, t)}
       >
         {lock && <p className={TX.label} style={{ color: AE.bad }}>{lock}</p>}
         {actions.length > 0 && <div className="mt-auto grid gap-2">{actions}</div>}

@@ -7,7 +7,7 @@ import { equipGear, recycleGear, applyGearItem, type GearCategory, type GearItem
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
 import { AE } from "../kit/aether-tokens"
-import { GearItemCard, bonusLines, gearLock, nameOf, type GearTr } from "./gear-card"
+import { GearItemCard, itemLines, gearLock, nameOf, type GearTr } from "./gear-card"
 import { ForgeCard } from "./forge-card"
 import { RefinementCard } from "./refinement-card"
 import { useWorkshop } from "./use-workshop"
@@ -68,7 +68,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
       const slots = slotsFor(item)
       const lock = locked(item)
       return (
-        <GearItemCard item={item} t={t} subtitle={own ? t("forgeOwnedCount", "Na mochila: {n}").replace("{n}", String(own.qty)) + (own.level ? " · +" + own.level : "") : t("forgeNotOwned", "Ainda não adquirido")} lines={bonusLines(item.bonus, t)}>
+        <GearItemCard item={item} t={t} subtitle={own ? t("forgeOwnedCount", "Na mochila: {n}").replace("{n}", String(own.qty)) + (own.level ? " · +" + own.level : "") : t("forgeNotOwned", "Ainda não adquirido")} lines={itemLines(item, t)}>
           {guide && item.assemblyParts?.length ? <p className="text-[13px] font-bold" style={{ color: AE.goldSoft }}>{t("forgePartCount", "{n} partes diferentes para montar").replace("{n}", String(item.assemblyParts.length))}</p> : null}
           {lock && <p className="text-[12px]" style={{ color: AE.bad }}>{lock}</p>}
           {pending(item.id) ? <AetherButton disabled={!!busy} onClick={() => changeTab("refine")}>{t("refinePending", "Resolver refinamento pendente")}</AetherButton> : own && slots.length ? (

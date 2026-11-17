@@ -22,7 +22,7 @@ import { playSample, preloadSamples, uiSound } from "../../engine/audio"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { RANK, RANK_ORDER, rankOf } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
-import { gearThumb, nameOf, percentage } from "../gear/gear-card"
+import { classStatLines, gearThumb, nameOf, percentage } from "../gear/gear-card"
 import { anton } from "../hud/fight-plate"
 import { TYPE } from "../kit/type-scale"
 import { EVO, Tag, archivo, teko } from "./evo-skin"
@@ -351,7 +351,12 @@ export function EquipPage({
             {t("eqHint", "Toque numa casa em volta do personagem para escolher a peça.")}
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {total.length === 0 && <Tag tone="mudo">{t("lkNoBonus", "sem bônus")}</Tag>}
+            {classStatLines(gear.bag.classGear, t).map((line) => (
+              <Tag key={"c" + line} tone="bom">
+                {line}
+              </Tag>
+            ))}
+            {total.length === 0 && !classStatLines(gear.bag.classGear, t).length && <Tag tone="mudo">{t("lkNoBonus", "sem bônus")}</Tag>}
             {total.map((k) => (
               <Tag key={k} tone="bom">
                 {keyName(k, t)} +{percentage(gear.bag.bonus[k] || 0)}
@@ -408,11 +413,17 @@ export function EquipPage({
                         {row.plus > 0 ? ` +${row.plus}` : ""}
                       </span>
                       <span className="mt-0.5 flex flex-wrap gap-1">
-                        {KEYS.filter((k) => b[k]).map((k) => (
-                          <Tag key={k} tone="bom">
-                            {keyName(k, t)} +{percentage(b[k] || 0)}
-                          </Tag>
-                        ))}
+                        {row.item.stats
+                          ? classStatLines(row.item.stats, t).map((line) => (
+                              <Tag key={line} tone="bom">
+                                {line}
+                              </Tag>
+                            ))
+                          : KEYS.filter((k) => b[k]).map((k) => (
+                              <Tag key={k} tone="bom">
+                                {keyName(k, t)} +{percentage(b[k] || 0)}
+                              </Tag>
+                            ))}
                         {row.elsewhere && <Tag tone="mudo">{t("eqElsewhere", "com outro personagem")}</Tag>}
                       </span>
                     </span>
