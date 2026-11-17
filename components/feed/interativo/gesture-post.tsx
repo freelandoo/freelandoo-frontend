@@ -459,6 +459,10 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
         e.stopPropagation()
       }
     }
+    // Arrastar nativo da imagem/vídeo (mouse no PC; toque longo no Chrome do
+    // Android) mostrava uma cópia pequena e translúcida do post e ainda
+    // cancelava o ponteiro no meio do gesto. O post nunca é arrastável.
+    const onDragStart = (e: Event) => e.preventDefault()
 
     el.addEventListener("pointerdown", onDown)
     el.addEventListener("pointermove", onMove)
@@ -466,7 +470,9 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
     el.addEventListener("pointercancel", onCancel)
     el.addEventListener("contextmenu", onContext)
     el.addEventListener("click", onClickCapture, true)
+    el.addEventListener("dragstart", onDragStart, true)
     return () => {
+      el.removeEventListener("dragstart", onDragStart, true)
       clearTimers()
       el.removeEventListener("pointerdown", onDown)
       el.removeEventListener("pointermove", onMove)
@@ -505,7 +511,7 @@ function GesturePostImpl({ postId, children, enabled, targets, onThrow, onSave, 
       />
       <motion.div
         ref={ref}
-        className="relative z-[1] select-none"
+        className="relative z-[1] select-none [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] [&_video]:[-webkit-user-drag:none]"
         style={{ x, y, rotate, scale, opacity, zIndex: phase === "idle" ? 1 : 40 }}
       >
         {/* sombra dura + contorno amarelo enquanto solto */}
