@@ -1096,15 +1096,18 @@ function statOrigin(key: StatRow["key"], life: LifeFull, adv: AdvXp | null | und
   const at = life.character.attributes as unknown as Record<string, number> & { floors?: Record<string, number> }
   const level = adv?.level ?? 1
   const stats = { strength: at.strength, speed: at.speed, intelligence: at.intelligence, dexterity: at.dexterity ?? 0 }
-  const gear = loadout?.gear?.bag.bonus
-  const base = heroSheet(life.avatar, 1, stats)
-  const lv = heroSheet(life.avatar, level, stats)
-  const full = heroSheet(life.avatar, level, stats, gear || undefined)
+  // a ficha da luta nova (status da classe): sem peça = classGear vazio
+  const bag = loadout?.gear?.bag
+  const none = { flat: {}, pct: {} }
+  const base = heroSheet(life.avatar, 1, stats, undefined, undefined, none)
+  const lv = heroSheet(life.avatar, level, stats, undefined, undefined, none)
+  const full = heroSheet(life.avatar, level, stats, bag?.bonus, undefined, bag?.classGear ?? none)
   const sign = (n: number) => (Math.round(n) > 0 ? `+${Math.round(n)}` : Math.round(n) < 0 ? String(Math.round(n)) : "—")
   if (key === "hp") {
     return [
       [t("lkBase", "Personagem"), String(Math.round(base.hp))],
       [t("lkLevelFight2", "Nível"), sign(lv.hp - base.hp)],
+      [t("lkGear", "Equipamento"), sign(full.hp - lv.hp)],
     ]
   }
   if (key === "def" || key === "atk") {
@@ -1125,6 +1128,7 @@ function statOrigin(key: StatRow["key"], life: LifeFull, adv: AdvXp | null | und
       [t("lkBase", "Personagem"), String(Math.round(key === "str" ? zero.acc : zero.spd))],
       [t("lkTrained", "Treino"), `${sign(trainedV)}%`],
       [t("lkLevelFight2", "Nível"), lvAttr ? `${sign(lvAttr)}%` : "—"],
+      [t("lkGear", "Equipamento"), sign(key === "str" ? full.acc - lv.acc : full.spd - lv.spd)],
       [t("lkFloor", "Piso"), floorV],
     ]
   }
@@ -1137,7 +1141,7 @@ function statOrigin(key: StatRow["key"], life: LifeFull, adv: AdvXp | null | und
 
 function SheetPage(props: PageProps) {
   const { life, t, adv, loadout, compact } = props
-  const rows = useStatRows(life, adv?.level, t)
+  const rows = useStatRows(life, adv?.level, t, loadout?.gear?.bag)
   const [pick, setPick] = useState<StatRow["key"] | null>(null)
   const c = life.character
   if (c.status === "dead") return compact ? <DeadPageC {...props} /> : <DeadPage {...props} />
@@ -1158,7 +1162,7 @@ function SheetPage(props: PageProps) {
   )
   const right = (
     <>
-      <StatBars life={life} level={adv?.level} t={t} small onPick={setPick} />
+      <StatBars life={life} level={adv?.level} t={t} small onPick={setPick} bag={loadout?.gear?.bag} />
       <MiniPlate title={t("lkEquipped", "Equipado")}>
         <Equipped data={data} t={t} onPickSlot={props.act.openBag} />
       </MiniPlate>

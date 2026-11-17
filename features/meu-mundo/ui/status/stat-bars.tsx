@@ -19,6 +19,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target, Zap } from "lucide-react"
 import type { LifeFull } from "../../types"
+import type { GearBag } from "../../data"
 import { useLocale } from "@/components/i18n/I18nProvider"
 import { heroSheet } from "../../laminas/sim/fight"
 import { anton } from "../hud/fight-plate"
@@ -108,19 +109,28 @@ export interface StatRow {
 // hp = o rosa da barra de vida da luta (fight-plate)
 const COLORS = { hp: "#FF168A", def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
 
-/** As 6 linhas, na ordem pedida. `level` = nível de aventura (sem = nível 1). */
-export function useStatRows(life: LifeFull, level: number | undefined, t: Tr): StatRow[] {
+/**
+ * Status FINAL da ficha, o mesmo que a luta nova usa (2026-11-17): (personagem + nível + número das peças)
+ * × (1 + equipamento) × (1 + % da classe). Sem a mochila carregada = sem peça.
+ */
+export function finalSheet(life: LifeFull, level: number | undefined, bag?: GearBag | null) {
+  return heroSheet(life.avatar, level ?? 1, life.character.attributes, bag?.bonus, undefined, bag?.classGear ?? { flat: {}, pct: {} })
+}
+
+/** As 6 linhas, na ordem pedida. `level` = nível de aventura (sem = nível 1). `bag` = a mochila (peças vestidas). */
+export function useStatRows(life: LifeFull, level: number | undefined, t: Tr, bag?: GearBag | null): StatRow[] {
   const at = life.character.attributes
-  const h = heroSheet(life.avatar, level ?? 1, at)
+  const h = finalSheet(life, level, bag)
   return [
     // pedido do Alex (11/11): o HP mora aqui, com defesa e ataque (saiu do cabeçalho)
     { key: "hp", icon: <Heart />, label: t("stHp", "HP"), value: Math.round(h.hp) },
     { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(h.def) },
-    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), value: Math.round(h.atk) },
-    { key: "str", icon: <Target />, label: t("atStrength", "Acuracidade"), value: h.acc },
+    // nomes iguais aos das armas (Alex, 2026-11-17): Força, Acerto, Esquiva
+    { key: "atk", icon: <Swords />, label: t("gearStatAtk", "Força"), value: Math.round(h.atk) },
+    { key: "str", icon: <Target />, label: t("gearStatAcc", "Acerto"), value: Math.round(h.acc) },
     { key: "int", icon: <Brain />, label: t("atIntelligence", "Inteligência"), value: at.intelligence },
     { key: "dex", icon: <Crosshair />, label: t("attrDexterity", "Destreza"), value: at.dexterity ?? 0 },
-    { key: "spd", icon: <Feather />, label: t("atSpeed", "Velocidade"), value: h.spd },
+    { key: "spd", icon: <Feather />, label: t("gearStatSpd", "Esquiva"), value: Math.round(h.spd) },
   ]
 }
 
@@ -176,8 +186,8 @@ function StatLine({ row, small }: { row: StatRow; small: boolean }) {
 }
 
 /** As 6 barras, uma embaixo da outra. */
-export function StatBars({ life, level, t, small = false, onPick }: { life: LifeFull; level?: number; t: Tr; small?: boolean; onPick?: (key: StatRow["key"]) => void }) {
-  const rows = useStatRows(life, level, t)
+export function StatBars({ life, level, t, small = false, onPick, bag }: { life: LifeFull; level?: number; t: Tr; small?: boolean; onPick?: (key: StatRow["key"]) => void; bag?: GearBag | null }) {
+  const rows = useStatRows(life, level, t, bag)
   return (
     <div className="grid" style={{ rowGap: small ? 6 : 8 }}>
       {rows.map((r) =>

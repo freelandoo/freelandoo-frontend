@@ -386,10 +386,10 @@ export function VersusScreen({ me, foe, sheet, onStart }: { me: VersusSide; foe:
   }, [])
   const rows = [
     { key: "hp", icon: <Heart />, label: t("vsLife", "Vida"), a: sheet.me.hp, b: sheet.foe.hp, color: "#FF315A" },
-    { key: "atk", icon: <Swords />, label: t("stAttack", "Ataque"), a: sheet.me.atk, b: sheet.foe.atk, color: "#FF4569" },
+    { key: "atk", icon: <Swords />, label: t("gearStatAtk", "Força"), a: sheet.me.atk, b: sheet.foe.atk, color: "#FF4569" },
     { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), a: sheet.me.def, b: sheet.foe.def, color: "#28B9FF" },
-    { key: "acc", icon: <Target />, label: t("atStrength", "Acuracidade"), a: sheet.me.acc, b: sheet.foe.acc, color: "#FFAD24" },
-    { key: "spd", icon: <Feather />, label: t("atSpeed", "Velocidade"), a: sheet.me.spd, b: sheet.foe.spd, color: "#FFE14B" },
+    { key: "acc", icon: <Target />, label: t("gearStatAcc", "Acerto"), a: sheet.me.acc, b: sheet.foe.acc, color: "#FFAD24" },
+    { key: "spd", icon: <Feather />, label: t("gearStatSpd", "Esquiva"), a: sheet.me.spd, b: sheet.foe.spd, color: "#FFE14B" },
   ]
   const lvl = (n: number) => t("laminasFoeLevel", "Nv. {n}").replace("{n}", String(n))
   const foeSide = sheet.count > 1 ? { ...foe, name: `${foe.name} ×${sheet.count}` } : foe
