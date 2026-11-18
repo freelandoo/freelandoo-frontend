@@ -52,6 +52,8 @@ export interface RemoteState {
   wd?: boolean
   /** Indisposto (mm3d-28): a vida diz "unwell"; só muda a pose. */
   sk?: boolean
+  /** Poder transbordando (2026-11-18, power.ts isOverpowered): 0 não · 1 faísca vermelha (Vampiro) · 2 verde (Raposa). */
+  ov?: number
 }
 
 /** Carro de uma casa (chave = número do lote). driver = sessionId ou "". */

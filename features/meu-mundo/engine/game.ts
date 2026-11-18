@@ -46,6 +46,7 @@ import { placeRider } from "./ride"
 import { STEP, MAX_STEPS, IDLE_DRIVE, createVehicle, stepVehicle, paramsFor, sanitizeTuning, type DriveInput, type Tuning, type VehicleState } from "./vehicle"
 import { CarReconciler, DRIVE_EVERY, quantizeDrive, sameDrive } from "./car-sync"
 import { ResolutionGovernor, resolveQuality, type QualityChoice, type QualityProfile } from "./quality"
+import { PowerSurge } from "./power-surge"
 import { attachInput, clearInput, createInputState, driveAxis, moveAxis, wantsRun, type InputState } from "./input"
 import {
   BODY_IDS,
@@ -473,6 +474,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   })
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
+  // Poder transbordando (2026-11-18): faísca vermelha/verde por onde anda quem passou do teto do nível
+  const surge = new PowerSurge(scene, quality.particles)
   const gainFx = setGainFx(gainPillar)
   // mm3d-60r: o mapa (radar + modal) desta cena e onde eu estou
   const mapOf = (l: SceneLabels) =>
@@ -515,6 +518,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     const r = remotes.get(sid)
     if (!r) return
     if (select.release(sid)) opts.onPlayerGone?.(sid)
+    surge.drop(sid)
     r.dispose()
     remotes.delete(sid)
   }
@@ -624,6 +628,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (carFromMessage === null) setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         local.char.unwell = !!p.sk
+        surge.set("me", p.car ? 0 : p.ov, local.char.holder)
         if (!!p.wd !== winded) {
           winded = !!p.wd
           opts.onWinded?.(winded)
@@ -658,6 +663,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       r.char.setVisible(!p.car || rk !== "car")
       r.char.tired = (p.pace ?? 1) < 1 || !!p.wd
       r.char.unwell = !!p.sk
+      surge.set(sid, p.car ? 0 : p.ov, r.char.holder)
       r.setTarget(p.x, p.z, p.facing, (p.car ? 0 : Math.max(0, Math.min(2, p.move))) as MoveState)
     })
     for (const sid of remotes.keys()) if (!seen.has(sid)) dropRemote(sid)
@@ -839,6 +845,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
 
   scene.onBeforeRenderObservable.add(() => {
     const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
+    surge.step(dt)
     let intent: Intent = { x: 0, z: 0, run: false }
     if (!input.blocked) {
       if (input.camDX || input.camDY) {
@@ -1187,6 +1194,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       dropMap()
       gainFx()
       gainPillar.dispose()
+      surge.dispose()
       statueGlow.dispose()
       select.dispose()
       for (const r of remotes.values()) r.dispose()
