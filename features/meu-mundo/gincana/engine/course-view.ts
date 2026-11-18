@@ -564,8 +564,47 @@ export class CourseView {
     for (const q of course.pushers) {
       const pg = new SoftGeo()
       // o que empurra é perigo: listra diagonal amarela e preta (na cidade, as faixas de antes)
-      pg.roundBox(q.hx * 2, q.h, q.hz * 2, 0.25, at(0, q.h / 2, 0), city ? (x) => (Math.floor((x + q.hx) / 0.7) % 2 ? C[1] : darker(C[6], 0.7)) : (x, y, z) => (Math.floor((x + z + y) / 0.6 + 100) % 2 ? HAZ_Y : HAZ_K), 6)
-      pg.roundBox(q.hx * 2 + 0.2, 0.3, q.hz * 2 + 0.2, 0.1, at(0, q.h, 0), C[0], 4)
+      if (theme.deco === "factory") {
+        // V-Fábrica (ref. v3): prensa num carro — cabeça listrada de perigo, carcaça verde-petróleo com
+        // friso de latão, engrenagem de latão nas duas faces e o pistão cromado subindo até o pórtico
+        const TEAL: RGB = [0.14, 0.34, 0.34]
+        const BRASS: RGB = [0.78, 0.56, 0.24]
+        const W = q.hx * 2
+        const D = q.hz * 2
+        for (let k = 0; k < 6; k++) pg.box(W / 6, 0.8, D, at(-W / 2 + (k + 0.5) * (W / 6), 0.4, 0), k % 2 ? HAZ_K : HAZ_Y)
+        pg.box(W + 0.12, 0.14, D + 0.12, at(0, 0.84, 0), BRASS)
+        pg.box(W - 0.2, q.h - 0.9, D - 0.2, at(0, 0.9 + (q.h - 0.9) / 2, 0), (_x, y) => (y > (q.h - 0.9) / 2 - 0.12 ? mix(TEAL, WHITE, 0.3) : TEAL))
+        for (const fz of [-1, 1]) {
+          const gz = fz * (D / 2 - 0.05)
+          pg.cylinder(1.3, 0.16, at(0, 0.9 + (q.h - 0.9) / 2, gz, 0, Math.PI / 2, 0), BRASS, 14)
+          pg.cylinder(0.4, 0.22, at(0, 0.9 + (q.h - 0.9) / 2, gz, 0, Math.PI / 2, 0), [0.32, 0.22, 0.12], 8)
+          for (let t = 0; t < 8; t++) {
+            const a = (t / 8) * Math.PI * 2
+            pg.box(0.26, 0.22, 0.16, at(Math.cos(a) * 0.72, 0.9 + (q.h - 0.9) / 2 + Math.sin(a) * 0.72, gz, 0, 0, a), BRASS)
+          }
+        }
+        const rodH = 3.9
+        pg.cylinder(0.72, rodH, at(0, q.h + rodH / 2, 0), (_x, y) => (Math.abs(y - rodH * 0.3) < 0.12 ? [0.3, 0.3, 0.32] : [0.78, 0.8, 0.84]), 12)
+        pg.cylinder(1.1, 0.4, at(0, q.h + 0.2, 0), BRASS, 12)
+        pg.box(1.4, 0.7, 1.2, at(0, q.h + rodH - 0.1, 0), TEAL)
+        // o pórtico fixo por onde o carro corre (colunas FORA da arena: ninguém atravessa)
+        const gg = new SoftGeo()
+        const span = (q.ax + q.hx) * 2 + 6
+        const by = q.y + q.h + rodH + 0.35
+        gg.box(span, 0.7, 1.4, at(q.x, by, q.z), (_x, y) => (y > 0.2 ? mix(TEAL, WHITE, 0.25) : TEAL))
+        gg.box(span, 0.12, 0.3, at(q.x, by - 0.4, q.z - 0.35), BRASS)
+        gg.box(span, 0.12, 0.3, at(q.x, by - 0.4, q.z + 0.35), BRASS)
+        for (const sx of [-1, 1]) {
+          const px = q.x + sx * (span / 2 - 0.4)
+          gg.box(1, by - q.y + 4, 1, at(px, q.y + (by - q.y) / 2 - 2, q.z), TEAL)
+          for (let k = 0; k < 4; k++) gg.box(1.05, 0.5, 1.05, at(px, q.y + 0.25 + k * 1.2, q.z), k % 2 ? HAZ_K : HAZ_Y)
+          gg.cylinder(1.4, 0.4, at(px, by + 0.5, q.z), BRASS, 10)
+        }
+        this.meshes.push(gg.build("gincana-press-gantry", scene, toy, true))
+      } else {
+        pg.roundBox(q.hx * 2, q.h, q.hz * 2, 0.25, at(0, q.h / 2, 0), city ? (x) => (Math.floor((x + q.hx) / 0.7) % 2 ? C[1] : darker(C[6], 0.7)) : (x, y, z) => (Math.floor((x + z + y) / 0.6 + 100) % 2 ? HAZ_Y : HAZ_K), 6)
+        pg.roundBox(q.hx * 2 + 0.2, 0.3, q.hz * 2 + 0.2, 0.1, at(0, q.h, 0), C[0], 4)
+      }
       const m = pg.build("gincana-pusher", scene, theme.deco === "orbital" ? this.glowMat : toy, false)
       m.position.set(q.x, q.y, q.z)
       this.pusherMeshes.push(m)
@@ -900,12 +939,16 @@ export class CourseView {
         const col: RGB = v >= 3 ? [1, 0.82, 0.18] : [0.86, 0.6, 0.26]
         const gg = new SoftGeo()
         // de pé (o eixo em z): anel com 10 dentes e o miolo
-        gg.cylinder(1.1 * s, 0.26, at(0, 0, 0, Math.PI / 2, 0, 0), col, 20)
-        gg.cylinder(0.42 * s, 0.34, at(0, 0, 0, Math.PI / 2, 0, 0), mix(col, WHITE, 0.4), 12)
+        // V-Fábrica: aro vazado com quatro raios e miolo escuro (peça de latão, não um disco chapado)
+        gg.torus(1.0 * s, 0.24 * s, at(0, 0, 0, 0, Math.PI / 2, 0), col, 20)
+        gg.cylinder(0.4 * s, 0.34, at(0, 0, 0, 0, Math.PI / 2, 0), darker(col, 0.5), 10)
+        gg.cylinder(0.18 * s, 0.4, at(0, 0, 0, 0, Math.PI / 2, 0), mix(col, WHITE, 0.5), 6)
+        for (let r = 0; r < 4; r++) gg.box(0.14 * s, 0.62 * s, 0.16, at(Math.cos((r / 4) * Math.PI * 2) * 0.3 * s, Math.sin((r / 4) * Math.PI * 2) * 0.3 * s, 0, 0, 0, (r / 4) * Math.PI * 2 - Math.PI / 2), mix(col, WHITE, 0.15))
         for (let k = 0; k < 10; k++) {
           const a = (k / 10) * Math.PI * 2
           gg.roundBox(0.28 * s, 0.3 * s, 0.24, 0.05, at(Math.cos(a) * 0.62 * s, Math.sin(a) * 0.62 * s, 0, 0, 0, a), col, 3)
         }
+        // acesa (é o alvo da prova: precisa ler no chão escuro); o vazado e o miolo escuro dão a forma de peça
         const base = gg.build(`gincana-gem-${v}`, scene, this.glowMat, false)
         base.setEnabled(true)
         base.isVisible = false
@@ -1319,7 +1362,7 @@ export class CourseView {
     const stage = !city0 && (p.s === 0 || p.s === 6) && p.c === 6
     const d0 = this.theme.deco
     // piso escuro onde o rejunte acende (Orbital = ardósia roxa, Forja = ferro), gelo puxado para o ciano
-    const tint = (c: RGB): RGB => (d0 === "forest" ? mix(c, [0.1, 0.34, 0.32], 0.3) : d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : c)
+    const tint = (c: RGB): RGB => (d0 === "forest" ? mix(c, [0.1, 0.34, 0.32], 0.3) : d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : d0 === "factory" ? mix(c, [0.19, 0.2, 0.22], 0.78) : c)
     // Floresta: todo o chão no verde-azulado da referência (a cor da peça só puxa um pouco)
     const top = d0 === "forest" ? mix(C[5], C[p.c], stage ? 0 : 0.18) : stage ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
     // Floresta (ref. v3): moldura magenta em toda a pista
@@ -1478,7 +1521,12 @@ export class CourseView {
       for (let j = 0, lz = -L / 2 + 0.15 + T / 2; lz <= L / 2 - 0.15 - T / 2 + 0.01; lz += T, j++) {
         const h = hgt(i, j)
         // quadrado = cilindro de 4 lados girado 45°: base (T-0,1)·√2, topo menor (chanfro)
-        g.cylinder((T - 0.1) * Math.SQRT2, h, Matrix.RotationY(Math.PI / 4).multiply(Matrix.Translation(lx, 0.03 + h / 2, lz)).multiply(frame), tone(i, j), 4, (T - 0.26) * Math.SQRT2)
+        // V-Fábrica (ref. v3): chapa de aço em três tons, uma em cada sete de cobre, e rebites de latão nos cantos
+        const copper = d === "factory" && Math.abs(Math.sin(i * 7.31 + j * 3.17 + p.z)) % 1 < 0.14
+        g.cylinder((T - 0.1) * Math.SQRT2, h, Matrix.RotationY(Math.PI / 4).multiply(Matrix.Translation(lx, 0.03 + h / 2, lz)).multiply(frame), copper ? [0.56, 0.3, 0.18] : tone(i, j), 4, (T - 0.26) * Math.SQRT2)
+        if (d === "factory") {
+          for (const cx of [-1, 1]) for (const cz of [-1, 1]) g.cylinder(0.16, 0.06, Matrix.Translation(lx + cx * (T / 2 - 0.3), 0.03 + h + 0.02, lz + cz * (T / 2 - 0.3)).multiply(frame), [0.82, 0.62, 0.3], 5, 0.1)
+        }
       }
     }
   }
