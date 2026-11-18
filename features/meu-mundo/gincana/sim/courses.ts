@@ -279,89 +279,55 @@ function courseFloresta(): Course {
 
 // ═══ canion — Cânion ═════════════════════════════════════════════════════════
 
-function courseCanion(): Course {
-  const k = new CourseKit()
-  kitStart(k)
-  // ── 1. pedras flutuantes que andam de lado ──
-  k.box(0, 19, 7, 3, 0, 1, 1)
-  const FLOAT = [25.1, 30.7, 36.3, 41.9]
-  const floats: number[] = []
-  for (let i = 0; i < FLOAT.length; i++) {
-    const p = k.box(0, FLOAT[i], 3, 2.5, i % 2 ? 0 : 2, 1, 1, 0, 1.2)
-    k.pads[p].mx = 4.5
-    k.pads[p].mw = 1.0
-    k.pads[p].mph = i * 1.3
-    floats.push(p)
-  }
-  k.box(0, 51, 7, 6, 0, 1, 1)
-  // ── 2. pêndulos de pedra sobre duas pontes ──
-  for (const x of [-3.5, 3.5]) k.beam(x, 56.5, x, 94.5, 1.8, 2, 1, 2)
-  let ph = 0
-  for (const z of [63, 71, 79, 87]) {
-    for (const x of [-3.5, 3.5]) {
-      k.swing(x, z, DECK + 9, 7.4, 1.25, 0.95, 2.0, ph)
-      ph += 1.7
+/**
+ * Gincana 3 (2026-11-18): PEDRAS QUE CAEM — sobrevivência no Cânion. Quatro
+ * andares de pedras hexagonais flutuando sobre o abismo (15, 11, 7 e 3 m). Pedra
+ * pisada treme 1 s e cai para sempre; quem cai do andar de baixo está FORA.
+ * Acaba quando só sobra a vaga (metade) em pé ou em 2 min. Pular poupa pedra:
+ * no ar ninguém derruba nada.
+ */
+const STONE_FLOORS = [DECK + 12, DECK + 8, DECK + 4, DECK] as const
+const STONE_R = 18
+const STONE_GAP = 2.4
+
+/** Centros da colmeia de um andar (a de baixo deslocada meia pedra, para quem cai de um buraco achar chão). */
+export function stoneCells(floor: number) {
+  const out: [number, number][] = []
+  const dz = (STONE_GAP * Math.sqrt(3)) / 2
+  const shift = floor % 2 ? STONE_GAP / 2 : 0
+  for (let r = -10; r <= 10; r++) {
+    for (let c = -9; c <= 9; c++) {
+      const x = c * STONE_GAP + (r % 2 ? STONE_GAP / 2 : 0) + shift
+      const z = r * dz
+      if (Math.hypot(x, z) <= STONE_R - 0.5 * floor) out.push([x, z])
     }
   }
-  // ── 3. portões que empurram ──
-  k.box(0, 118, 8, 24, 0, 1, 3)
-  const W = [1.3, 1.6, 1.1, 1.8]
-  ;[110, 118, 126, 134].forEach((z, i) => k.pusher(0, z, 2.6, 1.1, 2.2, 5.2, 0, W[i], i * 1.2))
-  // ── 4. desfiladeiro: vigas em zigue-zague, pistões de rocha ──
-  k.beam(0, 141.6, -4, 153, 2.0, 2, 1, 4)
-  k.disc(-4, 153, 1.8, 1, 0, 4)
-  k.beam(-4, 153, 4, 165, 2.0, 2, 1, 4)
-  k.disc(4, 165, 1.8, 1, 0, 4)
-  k.beam(4, 165, 0, 177, 2.0, 2, 1, 4)
-  for (const [mx, mz, x0] of [[-2, 147.3, 9], [0, 159, -9], [2, 171, -9]] as [number, number, number][]) {
-    const dir = x0 > 0 ? -1 : 1
-    k.glove(x0, mz, DECK + 1, dir, Math.abs(x0 - mx) + 1.2, 1.15, 2.8, mz * 0.37)
-    k.post(x0, mz, 1.0, -1, DECK + 2.2, 6)
-  }
-  k.box(0, 181, 6, 4, 0, 1, 4)
-  // ── 5. avalanche ──
-  const z0 = 185
-  const finishZ = kitFinish(k, z0, 0.9, 8, 1.25)
-  for (const [x, z] of [[0, 51], [-3.5, 59], [3.5, 59], [0, 98], [-5, 122], [5, 122], [0, 139], [0, 181]] as [number, number][]) k.logo(x, z)
+  return out
+}
+
+function courseCanion(): Course {
+  const k = new CourseKit()
+  STONE_FLOORS.forEach((y, f) => {
+    for (const [x, z] of stoneCells(f)) {
+      const ring = Math.floor(Math.hypot(x, z) / 4.6)
+      const pair = [[2, 1], [0, 1], [5, 2], [6, 2]][f]
+      k.tile(x, z, 1.27, pair[ring % 2], 1, y)
+    }
+  })
+  const top = STONE_FLOORS[0]
   return k.done({
     id: "canion",
-    checkpoints: [
-      { x: 0, z: -3.5, y: DECK, w: 7 },
-      { x: 0, z: 51, y: DECK, w: 6 },
-      { x: 0, z: 98, y: DECK, w: 6 },
-      { x: 0, z: 139, y: DECK, w: 6 },
-      { x: 0, z: 181, y: DECK, w: 5 },
-    ],
-    finishZ,
-    finishY: DECK + 6,
-    sections: [22, 57, 102, 141.6, z0],
-    minFinish: 22,
-    route: (r) =>
-      routeOf((add) => {
-        const side = r(1) < 0.5 ? -1 : 1
-        add(side * 1.2, 10)
-        add(side * 0.8, 15.5)
-        add(0, 19)
-        add(0, 21.6)
-        for (let i = 0; i < FLOAT.length; i++) add(0, FLOAT[i], floats[i])
-        add(0, 46.5)
-        add(0, 50)
-        const L = r(2) < 0.5 ? -3.5 : 3.5
-        add(L * 0.6, 54)
-        for (let z = 57; z <= 94; z += 3) add(L, z)
-        add(L * 0.5, 97)
-        add(0, 100)
-        for (let z = 104; z <= 139; z += 2) add(0, z)
-        add(0, 141.8)
-        add(-2, 147.3)
-        add(-4, 153)
-        add(0, 159)
-        add(4, 165)
-        add(2, 171)
-        add(0, 177)
-        add(0, 180)
-        routeFinish(add, z0, finishZ)
-      }),
+    mode: "survive",
+    qualify: 0.5,
+    limit: 120,
+    tileTime: { warn: 1.0, gone: 1e6 },
+    checkpoints: [{ x: 0, z: 1.3, y: top, w: 6 }],
+    // arena: ninguém "chega" (a linha fica fora e no alto)
+    finishZ: 40,
+    finishY: 90,
+    sections: [],
+    minFinish: 1e6,
+    route: () => [{ x: 0, z: 0 }],
   })
 }
 

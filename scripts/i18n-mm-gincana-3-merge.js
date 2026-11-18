@@ -1,5 +1,5 @@
 // Meu Mundo 3D — Gincana 3 (2026-11-18): cada fase é um TIPO de prova
-// (corrida, sobrevivência, coleta, rei do pedaço). G3-1: Maré do Pântano (Floresta).
+// (corrida, sobrevivência, coleta, rei do pedaço). G3-1: Maré do Pântano (Floresta); G3-2: Pedras que Caem (Cânion).
 // Namespace "MeuMundo". Idempotente, fill-if-absent (as fatias seguintes acrescentam aqui).
 // Rodar: node scripts/i18n-mm-gincana-3-merge.js
 const fs = require("fs")
@@ -58,6 +58,42 @@ const MEU_MUNDO = {
   gincanaPlaceScore: ["{n}º lugar", "Place {n}", "{n}º lugar"],
   gincanaSurvived: ["Você ficou em pé!", "You stayed standing!", "¡Quedaste en pie!"],
   gincanaOutTag: ["fora", "out", "fuera"],
+  // menu
+  gincanaKicker3: ["Party game · 7 provas diferentes", "Party game · 7 different events", "Party game · 7 pruebas distintas"],
+  gincanaPitch3: [
+    "Oito jogadores e uma prova diferente em cada fase: corrida, sobrevivência, coleta e rei do topo. Só a vaga classifica.",
+    "Eight players and a different event in every stage: race, survival, collecting and king of the hill. Only the top spots qualify.",
+    "Ocho jugadores y una prueba distinta en cada fase: carrera, supervivencia, recolección y rey de la cima. Solo los cupos clasifican.",
+  ],
+  // G3-2 Cânion: Pedras que Caem
+  gincanaEvCanion: ["Pedras que Caem", "Falling Stones", "Piedras que Caen"],
+  gincanaPhCanionPitch3: [
+    "Quatro andares de pedras sobre o abismo: cada pedra pisada cai. Fique em pé até sobrar só a vaga.",
+    "Four floors of stones over the abyss: every stone you step on falls. Stay standing until only the spots are left.",
+    "Cuatro pisos de piedras sobre el abismo: cada piedra pisada cae. Quédate en pie hasta que solo queden los cupos.",
+  ],
+  gincanaSecCs1: ["Pedra pisada", "Stepped stone", "Piedra pisada"],
+  gincanaSecCs2: ["Pular", "Jump", "Saltar"],
+  gincanaSecCs3: ["Andares", "Floors", "Pisos"],
+  gincanaSecCs4: ["Empurrão", "Shove", "Empujón"],
+  gincanaSecCs5: ["Vaga", "Spots", "Cupos"],
+  gincanaHowCs1: [
+    "A pedra que você pisa treme e cai em 1 segundo: não fique parado.",
+    "The stone you step on shakes and falls in 1 second: don't stand still.",
+    "La piedra que pisas tiembla y cae en 1 segundo: no te quedes quieto.",
+  ],
+  gincanaHowCs2: ["No ar você não derruba pedra: pular poupa o chão.", "In the air you don't drop stones: jumping saves the floor.", "En el aire no tiras piedras: saltar ahorra suelo."],
+  gincanaHowCs3: ["Caiu num buraco? Há mais três andares embaixo.", "Fell through a hole? There are three more floors below.", "¿Caíste por un hueco? Hay tres pisos más abajo."],
+  gincanaHowCs4: [
+    "Agarre e mergulhe nos outros para derrubá-los num buraco.",
+    "Grab and dive into others to knock them into a hole.",
+    "Agarra y lánzate contra los demás para tirarlos a un hueco.",
+  ],
+  gincanaHowCs5: [
+    "Quem cai do último andar está fora. Sobrando só a vaga, acabou.",
+    "Whoever falls from the bottom floor is out. When only the spots are left, it's over.",
+    "Quien cae del último piso queda fuera. Cuando solo quedan los cupos, se acabó.",
+  ],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

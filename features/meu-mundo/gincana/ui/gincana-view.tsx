@@ -213,7 +213,7 @@ function Menu({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: TEAL }}>
-              {t("gincanaKicker2", "Corrida de obstáculos · 7 fases")}
+              {t("gincanaKicker3", "Party game · 7 provas diferentes")}
             </div>
             <h1 className="mt-1.5 text-[34px] font-black italic leading-none tracking-tight max-[759px]:text-[27px]">
               <span style={{ color: YELLOW }}>GIN</span>
@@ -221,7 +221,7 @@ function Menu({
               <span style={{ color: TEAL }}>NA</span>
             </h1>
             <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("gincanaPitch2", "Oito na largada e só seis classificam: quando a vaga enche, a prova fecha. Caiu? Volta ao último posto e segue.")}
+              {t("gincanaPitch3", "Oito jogadores e uma prova diferente em cada fase: corrida, sobrevivência, coleta e rei do topo. Só a vaga classifica.")}
             </p>
           </div>
           <BackToCity onExit={onExit} className="pointer-events-auto" />
@@ -518,7 +518,7 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
             </div>
             {/* celular: o trecho e o tempo que falta aqui (a faixa do topo não cabe) */}
             <div className="hidden items-center gap-1.5 max-[759px]:flex">
-              {hud.section > 0 && hud.section < 6 && (
+              {hud.mode === "race" && hud.section > 0 && hud.section < 6 && (
                 <span className="rounded-full px-2 py-0.5 text-[11px] font-black italic" style={{ background: YELLOW, color: "#3a1d6e" }}>
                   {hud.section}. {sections[hud.section]}
                 </span>
@@ -579,7 +579,7 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
           </div>
           {/* trecho e tempo que falta */}
           <div className="pointer-events-none absolute left-1/2 flex -translate-x-1/2 flex-col items-center gap-1 max-[759px]:hidden" style={{ top: SAFE.top }}>
-            <div className="flex items-center gap-1 rounded-full px-2 py-1" style={{ background: glass }}>
+            <div className="flex items-center gap-1 rounded-full px-2 py-1" style={{ background: glass, display: hud.mode === "race" ? undefined : "none" }}>
               {sections.slice(1, 6).map((s, i) => {
                 const on = hud.section === i + 1
                 const done = hud.section > i + 1

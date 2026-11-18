@@ -682,7 +682,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
   const prevY = b.y
   b.y += b.vy * dt
   // no chão sobe degrau; caindo, pega uma beirinha (borda que ficou um pouco acima do pé)
-  const reach = wasGround ? Math.max(prevY, b.y) + T.stepUp : b.vy <= 0 ? b.y + 0.25 : Math.max(prevY, b.y) + 0.02
+  // caindo rápido (andar de baixo, 6 m) o passo anda ~0,3 m: o chão cruzado neste passo também pega (Gincana 3)
+  const reach = wasGround ? Math.max(prevY, b.y) + T.stepUp : b.vy <= 0 ? Math.max(b.y + 0.25, prevY) : Math.max(prevY, b.y) + 0.02
   const g = groundUnder(w, b.x, b.z, reach)
   if (b.vy <= 0 && g.y > -Infinity && b.y <= g.y + (wasGround ? 0.06 : 0)) {
     b.y = g.y

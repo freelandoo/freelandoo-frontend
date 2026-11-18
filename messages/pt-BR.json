@@ -14376,7 +14376,21 @@
     "gincanaOutTitle": "Fora da prova!",
     "gincanaPlaceScore": "{n}º lugar",
     "gincanaSurvived": "Você ficou em pé!",
-    "gincanaOutTag": "fora"
+    "gincanaOutTag": "fora",
+    "gincanaKicker3": "Party game · 7 provas diferentes",
+    "gincanaPitch3": "Oito jogadores e uma prova diferente em cada fase: corrida, sobrevivência, coleta e rei do topo. Só a vaga classifica.",
+    "gincanaEvCanion": "Pedras que Caem",
+    "gincanaPhCanionPitch3": "Quatro andares de pedras sobre o abismo: cada pedra pisada cai. Fique em pé até sobrar só a vaga.",
+    "gincanaSecCs1": "Pedra pisada",
+    "gincanaSecCs2": "Pular",
+    "gincanaSecCs3": "Andares",
+    "gincanaSecCs4": "Empurrão",
+    "gincanaSecCs5": "Vaga",
+    "gincanaHowCs1": "A pedra que você pisa treme e cai em 1 segundo: não fique parado.",
+    "gincanaHowCs2": "No ar você não derruba pedra: pular poupa o chão.",
+    "gincanaHowCs3": "Caiu num buraco? Há mais três andares embaixo.",
+    "gincanaHowCs4": "Agarre e mergulhe nos outros para derrubá-los num buraco.",
+    "gincanaHowCs5": "Quem cai do último andar está fora. Sobrando só a vaga, acabou."
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, type RoutePoint } from "./course"
+import { GINCANA, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, type Course, type RoutePoint } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -51,6 +51,90 @@ export function newBrain(w: RunWorld, seed: number, slot: number): BotBrain {
   return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, lastZ: -99, waited: 0, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
 }
 
+/**
+ * Gincana 3: o computador numa ARENA. Pedras que caem: vai para uma pedra firme
+ * do mesmo andar, perto e com muitas vizinhas firmes (lugar para continuar), e
+ * os mais hábeis pulam o tempo todo (no ar não derruba pedra). Tudo pela
+ * semente e pelo tempo, igual na sala e no aparelho.
+ */
+/** Vizinhas de cada pedra (mesmo andar, até 2,6 m), calculadas uma vez por percurso. */
+const TILE_NB = new WeakMap<Course, number[][]>()
+function tileNeighbors(C: Course) {
+  let nb = TILE_NB.get(C)
+  if (nb) return nb
+  nb = C.tiles.map((q, i) => {
+    const out: number[] = []
+    for (let j = 0; j < C.tiles.length; j++) {
+      const p = C.tiles[j]
+      if (j !== i && Math.abs(p.y - q.y) < 0.1 && Math.hypot(p.x - q.x, p.z - q.z) < 2.6) out.push(j)
+    }
+    return out
+  })
+  TILE_NB.set(C, nb)
+  return nb
+}
+
+function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIntent {
+  const C = w.course
+  const t = w.t
+  let tx = b.x
+  let tz = b.z
+  if (C.tiles.length) {
+    const firm = (i: number) => w.tiles[i] < 0 && Math.abs(C.tiles[i].y - b.y) < 0.5
+    const cur = br.tile
+    const reached = cur >= 0 && Math.hypot(C.tiles[cur].x - b.x, C.tiles[cur].z - b.z) < 0.8
+    if (b.ground && (cur < 0 || reached || !firm(cur))) {
+      let best = -1
+      let bestScore = -Infinity
+      const noise = 0.4 + (1 - br.skill) * 2.5
+      for (let i = 0; i < C.tiles.length; i++) {
+        if (!firm(i)) continue
+        const q = C.tiles[i]
+        const d = Math.hypot(q.x - b.x, q.z - b.z)
+        if (d < 1.8 || d > 7.5) continue
+        let n = 0
+        for (const j of tileNeighbors(C)[i]) if (firm(j)) n++
+        const score = n - d * 0.25 - Math.hypot(q.x, q.z) * 0.06 + botRand(br.seed, br.slot * 13 + i, Math.floor(t)) * noise
+        if (score > bestScore) {
+          bestScore = score
+          best = i
+        }
+      }
+      // nada perto: a pedra firme mais perto do andar, longe que seja
+      if (best < 0) {
+        let bd = Infinity
+        for (let i = 0; i < C.tiles.length; i++) {
+          if (!firm(i)) continue
+          const d = Math.hypot(C.tiles[i].x - b.x, C.tiles[i].z - b.z)
+          if (d < bd) {
+            bd = d
+            best = i
+          }
+        }
+      }
+      br.tile = best
+    }
+    if (br.tile >= 0) {
+      tx = C.tiles[br.tile].x
+      tz = C.tiles[br.tile].z
+    }
+    // pula para poupar pedra (os mais hábeis quase sempre)
+    if (b.ground && br.jumpCool <= 0 && botRand(br.seed, br.slot, Math.floor(t * 4)) < br.skill * 1.2 - 0.25) {
+      it.jump = true
+      br.jumpCool = 0.2
+    }
+  }
+  const dx = tx - b.x
+  const dz = tz - b.z
+  const d = Math.hypot(dx, dz)
+  const go = br.pace * Math.min(1, d / 0.8)
+  if (d > 1e-3) {
+    it.mx = (dx / d) * go
+    it.mz = (dz / d) * go
+  }
+  return it
+}
+
 /** Escolhe a porta da fileira à frente: aberta (alguém passou) > desconhecida mais perto > a sorteada. */
 function pickDoor(br: BotBrain, b: Runner, w: RunWorld, row: number) {
   const C = w.course
@@ -76,6 +160,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   const it: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
   br.jumpCool = Math.max(0, br.jumpCool - dt)
   if (b.mode !== MODE.RUN || w.t < 0) return it
+  // Gincana 3: arena (sobrevivência, coleta, zona) — sem rota
+  if (C.mode !== "race") return arenaIntent(br, b, w, it)
   const t = w.t
   // próximo ponto: o primeiro adiante (as rotas só andam para +z)
   let wi = 0

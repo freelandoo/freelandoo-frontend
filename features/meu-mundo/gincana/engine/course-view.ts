@@ -205,8 +205,12 @@ export class CourseView {
       for (let x = x0 + 1.1; x < x1; x += 2.2) st.torus(1.0, 0.16, at(x, py + 0.35, z, 0, 0, Math.PI / 2), YELLOW, 16)
     }
     // pórticos da largada e da chegada (engrenagem na cidade, na forja e na fábrica; arco aceso nos outros)
-    this.arch(st, glow, 8.4, DECK)
-    this.arch(st, glow, course.finishZ, course.finishY)
+    // Gincana 3: arena (sobrevivência, coleta, zona) não tem largada nem chegada
+    const arena = course.mode !== "race"
+    if (!arena) {
+      this.arch(st, glow, 8.4, DECK)
+      this.arch(st, glow, course.finishZ, course.finishY)
+    }
     if (city) {
       // rebites de latão na borda de cada disco
       for (const p of course.pads) {
@@ -221,7 +225,7 @@ export class CourseView {
       }
     }
     // faixa xadrez da chegada
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < (arena ? 0 : 14); i++) {
       for (let j = 0; j < 2; j++) {
         st.roundBox(1.2, 0.06, 0.6, 0.03, at(-8.4 + i * 1.3, course.finishY + 0.03, course.finishZ - 0.3 + j * 0.62), (i + j) % 2 ? WHITE : [0.08, 0.08, 0.1], 4)
       }
@@ -473,7 +477,9 @@ export class CourseView {
     }
 
     // logo da Freelandoo girando sobre o arco da chegada
-    this.logos = buildLogos(scene, [{ id: 1, at: new Vector3(0, course.finishY + 9.6, course.finishZ) }], low, 1.6)
+    // o logo grande: em cima da chegada; na arena, no alto, atrás do meio
+    const topY = Math.max(DECK, ...course.tiles.map((q) => q.y), ...course.pads.map((p) => p.y))
+    this.logos = buildLogos(scene, [{ id: 1, at: course.mode === "race" ? new Vector3(0, course.finishY + 9.6, course.finishZ) : new Vector3(0, topY + 12, 26) }], low, 1.6)
 
     // ── dia e noite: relógio de Brasília (ou a noite fixa do tema) ──
     this.timer = setInterval(() => this.applyTime(), 20000)
@@ -890,7 +896,7 @@ export class CourseView {
     const C = this.course
     const tt = Math.max(0, t)
     if (C.rise) this.water.position.y = Math.max(0, riseAt(C, tt))
-    this.gate.setEnabled(t < 0)
+    this.gate.setEnabled(t < 0 && C.mode === "race")
     for (let i = 0; i < C.sweepers.length; i++) this.sweepNodes[i].rotation.y = sweeperAngle(C.sweepers[i], tt)
     for (let i = 0; i < C.pendulums.length; i++) {
       const p = C.pendulums[i]

@@ -14942,7 +14942,21 @@
     "gincanaOutTitle": "¡Fuera de la prueba!",
     "gincanaPlaceScore": "{n}º lugar",
     "gincanaSurvived": "¡Quedaste en pie!",
-    "gincanaOutTag": "fuera"
+    "gincanaOutTag": "fuera",
+    "gincanaKicker3": "Party game · 7 pruebas distintas",
+    "gincanaPitch3": "Ocho jugadores y una prueba distinta en cada fase: carrera, supervivencia, recolección y rey de la cima. Solo los cupos clasifican.",
+    "gincanaEvCanion": "Piedras que Caen",
+    "gincanaPhCanionPitch3": "Cuatro pisos de piedras sobre el abismo: cada piedra pisada cae. Quédate en pie hasta que solo queden los cupos.",
+    "gincanaSecCs1": "Piedra pisada",
+    "gincanaSecCs2": "Saltar",
+    "gincanaSecCs3": "Pisos",
+    "gincanaSecCs4": "Empujón",
+    "gincanaSecCs5": "Cupos",
+    "gincanaHowCs1": "La piedra que pisas tiembla y cae en 1 segundo: no te quedes quieto.",
+    "gincanaHowCs2": "En el aire no tiras piedras: saltar ahorra suelo.",
+    "gincanaHowCs3": "¿Caíste por un hueco? Hay tres pisos más abajo.",
+    "gincanaHowCs4": "Agarra y lánzate contra los demás para tirarlos a un hueco.",
+    "gincanaHowCs5": "Quien cae del último piso queda fuera. Cuando solo quedan los cupos, se acabó."
   },
   "Sports": {
     "eyebrow": "Deportes",

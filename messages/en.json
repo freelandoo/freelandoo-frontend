@@ -14962,7 +14962,21 @@
     "gincanaOutTitle": "You're out!",
     "gincanaPlaceScore": "Place {n}",
     "gincanaSurvived": "You stayed standing!",
-    "gincanaOutTag": "out"
+    "gincanaOutTag": "out",
+    "gincanaKicker3": "Party game · 7 different events",
+    "gincanaPitch3": "Eight players and a different event in every stage: race, survival, collecting and king of the hill. Only the top spots qualify.",
+    "gincanaEvCanion": "Falling Stones",
+    "gincanaPhCanionPitch3": "Four floors of stones over the abyss: every stone you step on falls. Stay standing until only the spots are left.",
+    "gincanaSecCs1": "Stepped stone",
+    "gincanaSecCs2": "Jump",
+    "gincanaSecCs3": "Floors",
+    "gincanaSecCs4": "Shove",
+    "gincanaSecCs5": "Spots",
+    "gincanaHowCs1": "The stone you step on shakes and falls in 1 second: don't stand still.",
+    "gincanaHowCs2": "In the air you don't drop stones: jumping saves the floor.",
+    "gincanaHowCs3": "Fell through a hole? There are three more floors below.",
+    "gincanaHowCs4": "Grab and dive into others to knock them into a hole.",
+    "gincanaHowCs5": "Whoever falls from the bottom floor is out. When only the spots are left, it's over."
   },
   "Sports": {
     "eyebrow": "Sports",
