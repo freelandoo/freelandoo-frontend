@@ -25,6 +25,8 @@ export const GINCANA = {
   // mm3d-47b: mais rápido e mais seco (o Alex achou lento e o pulo mole)
   gravity: 30,
   run: 8.2,
+  /** Esteira (Gincana 3, pedido do Alex 18/11): forte — parado, ela leva você; contra ela anda a 2,7 m/s. */
+  belt: 5.5,
   accel: 58,
   /** Controle no ar (fração da aceleração do chão). */
   airControl: 0.72,

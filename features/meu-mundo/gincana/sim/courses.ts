@@ -22,7 +22,7 @@
 // (engine/course-view.ts + engine/phase-themes.ts); aqui só a regra. Fase nova
 // = uma função aqui + a entrada em COURSES + o tema + GINCANA_PHASES.
 
-import { CourseKit, DECK, type Course, type GincanaPhase, type RoutePoint } from "./course"
+import { CourseKit, DECK, GINCANA, type Course, type GincanaPhase, type RoutePoint } from "./course"
 
 /** Largada (2 filas de 4) e a ponte larga: igual em todas as fases. */
 function kitStart(k: CourseKit) {
@@ -405,9 +405,9 @@ function courseFabrica(): Course {
   k.box(0, 0, 12, 12, 2, 1, 1, 0, 1.6)
   // esteiras (um tico acima do chão para valerem): a da esquerda leva para a frente, a da direita para trás
   const beltL = k.box(-8, 0, 1.6, 12, 0, 1, 1, 0, 1.6, DECK + 0.05)
-  k.pads[beltL].bz = 3
+  k.pads[beltL].bz = GINCANA.belt
   const beltR = k.box(8, 0, 1.6, 12, 0, 1, 1, 0, 1.6, DECK + 0.05)
-  k.pads[beltR].bz = -3
+  k.pads[beltR].bz = -GINCANA.belt
   // plataforma do meio (a dourada fica nela)
   k.disc(0, 0, 2.6, 4, 1, 1, DECK + 1)
   // prensas que deslizam de lado
