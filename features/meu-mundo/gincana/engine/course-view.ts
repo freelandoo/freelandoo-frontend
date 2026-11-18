@@ -25,7 +25,7 @@ import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildLogos, type LogoView } from "../../corrida/engine/logos"
-import { DECK, riseAt, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
+import { DECK, riseAt, wallsAt, type WallWave, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
 import type { RunWorld } from "../sim/body"
 import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
 import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
@@ -60,6 +60,11 @@ export class CourseView {
   private readonly ballBase: Mesh | null = null
   private readonly movers: { mesh: Mesh; p: Pad }[] = []
   private readonly pusherMeshes: Mesh[] = []
+  /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
+  private readonly wallSegs: InstancedMesh[] = []
+  private readonly wallLows: InstancedMesh[] = []
+  private readonly wallBases: Mesh[] = []
+  private readonly wallTmp: WallWave[] = []
   private readonly doorMeshes: InstancedMesh[] = []
   private doorBase: Mesh | null = null
   private readonly doorShake: number[] = []
@@ -415,6 +420,42 @@ export class CourseView {
       const m = pg.build("gincana-pusher", scene, theme.deco === "orbital" ? this.glowMat : toy, false)
       m.position.set(q.x, q.y, q.z)
       this.pusherMeshes.push(m)
+    }
+
+    // ── Gincana 3: paredes de brasa (pedaços listrados de perigo com a borda acesa) ──
+    if (course.walls) {
+      const Wl = course.walls
+      const n = Math.round((2 * Wl.hw) / Wl.seg)
+      const sg = new SoftGeo()
+      // brasa clara (o vão precisa se ler de longe): listras laranja e vermelho-escuro, borda amarela
+      const EMBER: RGB = [1, 0.5, 0.12]
+      const COAL: RGB = [0.42, 0.1, 0.05]
+      sg.roundBox(Wl.seg - 0.08, Wl.tall, 0.7, 0.12, at(0, Wl.tall / 2, 0), (_x, y) => (Math.floor(y / 0.55) % 2 ? EMBER : COAL), 4)
+      sg.roundBox(Wl.seg, 0.3, 0.9, 0.1, at(0, Wl.tall, 0), HAZ_Y, 4)
+      const segBase = sg.build("gincana-wall", scene, toy, false)
+      const lg = new SoftGeo()
+      lg.roundBox(Wl.hw * 2, Wl.low, 0.7, 0.12, at(0, Wl.low / 2, 0), (x) => (Math.floor((x + 50) / 1.1) % 2 ? HAZ_Y : HAZ_K), 4)
+      lg.roundBox(Wl.hw * 2 + 0.2, 0.22, 0.9, 0.08, at(0, Wl.low, 0), EMBER, 4)
+      const lowBase = lg.build("gincana-wall-low", scene, toy, false)
+      for (const base of [segBase, lowBase]) {
+        base.setEnabled(true)
+        base.isVisible = false
+        this.wallBases.push(base)
+      }
+      // ondas ao mesmo tempo na arena: o caminho inteiro na velocidade mais lenta, mais uma
+      const waves = Math.ceil((Wl.z0 - Wl.z1) / Wl.v0 / (Wl.every * 0.55)) + 1
+      for (let k = 0; k < waves * n; k++) {
+        const m = segBase.createInstance(`gincana-wall-${k}`)
+        m.isPickable = false
+        m.setEnabled(false)
+        this.wallSegs.push(m)
+      }
+      for (let k = 0; k < waves; k++) {
+        const m = lowBase.createInstance(`gincana-wall-low-${k}`)
+        m.isPickable = false
+        m.setEnabled(false)
+        this.wallLows.push(m)
+      }
     }
 
     // ── portas (todas iguais por fora: as de verdade tombam quando alguém passa) ──
@@ -965,6 +1006,31 @@ export class CourseView {
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
       m.mesh.rotation.y = m.p.k === 0 ? m.p.spin * tt : padRot(m.p, tt)
     }
+    if (C.walls) {
+      const Wl = C.walls
+      const n = Math.round((2 * Wl.hw) / Wl.seg)
+      let si = 0
+      let li = 0
+      for (const v of wallsAt(C, world.seed, t, this.wallTmp)) {
+        if (v.kind === 1) {
+          const m = this.wallLows[li++]
+          if (m) {
+            m.setEnabled(true)
+            m.position.set(0, Wl.y, v.z)
+          }
+          continue
+        }
+        for (let j = 0; j < n; j++) {
+          if (v.gaps.includes(j)) continue
+          const m = this.wallSegs[si++]
+          if (!m) break
+          m.setEnabled(true)
+          m.position.set(-Wl.hw + (j + 0.5) * Wl.seg, Wl.y, v.z)
+        }
+      }
+      for (; si < this.wallSegs.length; si++) this.wallSegs[si].setEnabled(false)
+      for (; li < this.wallLows.length; li++) this.wallLows[li].setEnabled(false)
+    }
     for (let i = 0; i < C.pushers.length; i++) {
       const P = pusherAt(C.pushers[i], tt)
       this.pusherMeshes[i].position.x = P.x
@@ -1020,6 +1086,9 @@ export class CourseView {
     this.ballBase?.dispose()
     for (const m of this.movers) m.mesh.dispose()
     for (const m of this.pusherMeshes) m.dispose()
+    for (const m of this.wallSegs) m.dispose()
+    for (const m of this.wallLows) m.dispose()
+    for (const m of this.wallBases) m.dispose()
     for (const m of this.doorMeshes) m.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

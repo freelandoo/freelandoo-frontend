@@ -14988,7 +14988,19 @@
     "gincanaHowOv2": "The bar at chest height: dive to slide under it.",
     "gincanaHowOv3": "The disc spins slowly and carries you. The edge is the void.",
     "gincanaHowOv4": "Grab and dive into others to throw them into the bar.",
-    "gincanaHowOv5": "The bars speed up until the end. When only the spots are left, it's over."
+    "gincanaHowOv5": "The bars speed up until the end. When only the spots are left, it's over.",
+    "gincanaEvForja": "Ember Walls",
+    "gincanaPhForjaPitch3": "Ember walls sweep across the arena over the lava: find the gap or jump the low wall, or the wall pushes you into the lava.",
+    "gincanaSecFw1": "The gap",
+    "gincanaSecFw2": "Two gaps",
+    "gincanaSecFw3": "Low wall",
+    "gincanaSecFw4": "In pairs",
+    "gincanaSecFw5": "Spots",
+    "gincanaHowFw1": "Every wall has a hole: stand in front of it before the wall arrives.",
+    "gincanaHowFw2": "Sometimes there are two gaps: go to the nearest one.",
+    "gincanaHowFw3": "The low wall has no gap: jump at the right time.",
+    "gincanaHowFw4": "After 40 s the walls come in pairs and faster.",
+    "gincanaHowFw5": "Whoever the wall pushes off falls into the lava. When only the spots are left, it's over."
   },
   "Sports": {
     "eyebrow": "Sports",

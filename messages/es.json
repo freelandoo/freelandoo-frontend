@@ -14968,7 +14968,19 @@
     "gincanaHowOv2": "La barra a la altura del pecho: lánzate para pasar por debajo.",
     "gincanaHowOv3": "El disco gira despacio y te lleva. El borde es el vacío.",
     "gincanaHowOv4": "Agarra y lánzate contra los demás para tirarlos a la barra.",
-    "gincanaHowOv5": "Las barras aceleran hasta el final. Cuando solo quedan los cupos, se acabó."
+    "gincanaHowOv5": "Las barras aceleran hasta el final. Cuando solo quedan los cupos, se acabó.",
+    "gincanaEvForja": "Muros de Brasa",
+    "gincanaPhForjaPitch3": "Muros de brasa cruzan la arena sobre la lava: encuentra el hueco o salta el muro bajo, o el muro te empuja a la lava.",
+    "gincanaSecFw1": "El hueco",
+    "gincanaSecFw2": "Dos huecos",
+    "gincanaSecFw3": "Muro bajo",
+    "gincanaSecFw4": "En pares",
+    "gincanaSecFw5": "Cupos",
+    "gincanaHowFw1": "Cada muro tiene un hueco: ponte frente a él antes de que llegue.",
+    "gincanaHowFw2": "A veces hay dos huecos: ve al más cercano.",
+    "gincanaHowFw3": "El muro bajo no tiene hueco: salta en el momento justo.",
+    "gincanaHowFw4": "Después de 40 s los muros vienen en pares y más rápido.",
+    "gincanaHowFw5": "A quien el muro empuja fuera cae a la lava. Cuando solo quedan los cupos, se acabó."
   },
   "Sports": {
     "eyebrow": "Deportes",

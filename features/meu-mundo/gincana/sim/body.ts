@@ -28,6 +28,8 @@ import {
   sweeperAngle,
   sweeperW,
   tileUp,
+  wallsAt,
+  type WallWave,
   type Course,
   type Pad,
 } from "./course"
@@ -268,6 +270,9 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
   return { y: best, tile, pad, bounce }
 }
 
+/** Ondas de parede do passo (reaproveitado: nada de lixo a 60 Hz). */
+const WALL_TMP: WallWave[] = []
+
 /** Beira encontrada ao bater de lado: tampo e normal para fora. */
 interface Ledge {
   top: number
@@ -372,6 +377,28 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
     // empurra para trás (de onde veio) — as portas da mesma fileira se encostam: nunca de lado
     b.z = d.z + Math.sign(b.z - d.z || -1) * (T + R)
     b.vz = 0
+  }
+  // Gincana 3: paredes de brasa — o pedaço sólido empurra para o lado de onde a pessoa está (o vão deixa passar)
+  if (C.walls) {
+    const Wl = C.walls
+    const TH = 0.35
+    for (const v of wallsAt(C, w.seed, w.t, WALL_TMP)) {
+      if (Math.abs(b.z - v.z) >= TH + R || Math.abs(b.x) > Wl.hw + R) continue
+      if (b.y >= Wl.y + (v.kind === 1 ? Wl.low : Wl.tall) || b.y + H <= Wl.y) continue
+      let hit = v.kind === 1
+      if (!hit) {
+        const n = Math.round((2 * Wl.hw) / Wl.seg)
+        for (let j = 0; j < n && !hit; j++) {
+          if (v.gaps.includes(j)) continue
+          const L = -Wl.hw + j * Wl.seg
+          if (b.x + R * 0.8 > L && b.x - R * 0.8 < L + Wl.seg) hit = true
+        }
+      }
+      if (!hit) continue
+      const side = Math.sign(b.z - v.z) || -1
+      b.z = v.z + side * (TH + R)
+      if (side < 0 && b.vz > -v.v) b.vz = -v.v
+    }
   }
   // blocos que andam e empurram
   for (const q of C.pushers) {

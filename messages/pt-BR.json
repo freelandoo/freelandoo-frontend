@@ -14402,7 +14402,19 @@
     "gincanaHowOv2": "A barra na altura do peito: mergulhe para passar por baixo.",
     "gincanaHowOv3": "O disco gira devagar e leva você junto. A beira é o vazio.",
     "gincanaHowOv4": "Agarre e mergulhe nos outros para jogá-los na barra.",
-    "gincanaHowOv5": "As barras aceleram até o fim. Sobrando só a vaga, acabou."
+    "gincanaHowOv5": "As barras aceleram até o fim. Sobrando só a vaga, acabou.",
+    "gincanaEvForja": "Paredes de Brasa",
+    "gincanaPhForjaPitch3": "Paredes de brasa atravessam a arena sobre a lava: ache o vão ou pule a mureta, ou a parede joga você na lava.",
+    "gincanaSecFw1": "O vão",
+    "gincanaSecFw2": "Dois vãos",
+    "gincanaSecFw3": "Mureta",
+    "gincanaSecFw4": "Em pares",
+    "gincanaSecFw5": "Vaga",
+    "gincanaHowFw1": "Cada parede tem um buraco: fique na frente dele antes de ela chegar.",
+    "gincanaHowFw2": "Às vezes são dois vãos: vá ao mais perto.",
+    "gincanaHowFw3": "A mureta baixa não tem vão: pule na hora.",
+    "gincanaHowFw4": "Depois de 40 s as paredes vêm em pares e mais rápidas.",
+    "gincanaHowFw5": "Quem a parede empurra para fora cai na lava. Sobrando só a vaga, acabou."
   },
   "Sports": {
     "eyebrow": "Esportes",

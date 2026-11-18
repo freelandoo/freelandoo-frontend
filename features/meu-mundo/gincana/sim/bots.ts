@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, type Course, type RoutePoint } from "./course"
+import { GINCANA, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -106,6 +106,9 @@ function barJump(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
   }
 }
 
+/** Ondas de parede vistas pelo computador (reaproveitado). */
+const BOT_WALLS: WallWave[] = []
+
 /** Vizinhas de cada pedra (mesmo andar, até 2,6 m), calculadas uma vez por percurso. */
 const TILE_NB = new WeakMap<Course, number[][]>()
 function tileNeighbors(C: Course) {
@@ -171,6 +174,35 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
     if (b.ground && br.jumpCool <= 0 && botRand(br.seed, br.slot, Math.floor(t * 4)) < br.skill * 1.2 - 0.25) {
       it.jump = true
       br.jumpCool = 0.2
+    }
+  }
+  // Paredes de Brasa: fica na frente da arena; a próxima onda chegando, vai para o vão (ou pula a mureta)
+  if (C.walls) {
+    const Wl = C.walls
+    const list = wallsAt(C, w.seed, t, BOT_WALLS)
+    let next: WallWave | null = null
+    for (const v of list) if (v.z > b.z - 0.1 && (!next || v.z < next.z)) next = v
+    tx = Math.max(-Wl.hw + 2, Math.min(Wl.hw - 2, b.x))
+    tz = 2.5
+    if (next) {
+      const eta = (next.z - b.z) / next.v
+      // os menos hábeis percebem tarde e às vezes escolhem o vão errado
+      const notice = 2.6 - (1 - br.skill) * 1.6
+      if (next.kind === 1) {
+        const err = (botRand(br.seed, br.slot * 17, next.i) - 0.5) * (1 - br.skill) * 0.35
+        if (b.ground && br.jumpCool <= 0 && eta < 0.22 + err && eta > 0.02) {
+          it.jump = true
+          br.jumpCool = 0.5
+        }
+      } else if (eta < notice) {
+        const n = Math.round((2 * Wl.hw) / Wl.seg)
+        let g = next.gaps[0]
+        for (const q of next.gaps) if (Math.abs(-Wl.hw + (q + 0.5) * Wl.seg - b.x) < Math.abs(-Wl.hw + (g + 0.5) * Wl.seg - b.x)) g = q
+        if (next.i >= 3 && botRand(br.seed, br.slot * 19, next.i) < (1 - br.skill) * 0.35) g = g > 0 && (g === n - 1 || botRand(br.seed, br.slot * 23, next.i) < 0.5) ? g - 1 : g + 1
+        tx = -Wl.hw + (g + 0.5) * Wl.seg
+        // parado no vão esperando a parede passar
+        tz = b.z
+      }
     }
   }
   // arena sem pedras (Varredura): um lugar a ~5 m do eixo, que muda de tempo em tempo

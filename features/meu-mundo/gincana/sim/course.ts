@@ -262,6 +262,36 @@ export interface Gem {
   back: number
 }
 
+/**
+ * Gincana 3: ondas de PAREDE que atravessam a arena de z0 para z1 (Paredes de
+ * Brasa). Uma onda sai a cada `every` s (a partir de t0) e anda mais rápido
+ * com o tempo (v0 → v1 em `ramp` s). A semente decide cada onda: parede alta
+ * com um vão, com dois vãos, ou mureta baixa (pula). Pedaços de `seg` m.
+ */
+export interface Walls {
+  hw: number
+  z0: number
+  z1: number
+  y: number
+  every: number
+  t0: number
+  v0: number
+  v1: number
+  ramp: number
+  seg: number
+  tall: number
+  low: number
+}
+
+/** Uma onda de parede agora: onde está (z), a velocidade, o tipo (0 = um vão, 1 = mureta, 2 = dois vãos) e os pedaços abertos. */
+export interface WallWave {
+  i: number
+  z: number
+  v: number
+  kind: 0 | 1 | 2
+  gaps: number[]
+}
+
 /** Zona do rei do pedaço: círculo (x, z, r) com o chão em y. */
 export interface Zone {
   x: number
@@ -281,6 +311,7 @@ export interface Course {
   rise: Rise | null
   gems: Gem[]
   zone: Zone | null
+  walls: Walls | null
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -391,6 +422,7 @@ export class CourseKit {
     limit?: number
     rise?: Rise
     zone?: Zone
+    walls?: Walls
   }): Course {
     return {
       id: o.id,
@@ -400,6 +432,7 @@ export class CourseKit {
       rise: o.rise ?? null,
       gems: this.gems,
       zone: o.zone ?? null,
+      walls: o.walls ?? null,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,
@@ -513,6 +546,32 @@ export function doorsOpen(c: Course, seed: number): Uint8Array {
       idx[j] = tmp
     }
     for (let k = 0; k < Math.min(c.doorOpen[row], idx.length); k++) out[idx[k]] = 1
+  }
+  return out
+}
+
+/** Ondas de parede na arena no tempo t (Paredes de Brasa); `out` é reaproveitado. */
+export function wallsAt(c: Course, seed: number, t: number, out: WallWave[]) {
+  out.length = 0
+  const W = c.walls
+  if (!W || t < W.t0) return out
+  const span = (W.z0 - W.z1) / W.v0
+  const i1 = Math.floor((t - W.t0) / W.every)
+  const i0 = Math.max(0, Math.floor((t - W.t0 - span) / W.every))
+  const n = Math.round((2 * W.hw) / W.seg)
+  for (let i = i0; i <= i1; i++) {
+    // depois de 40 s as ímpares chegam logo atrás da anterior (pares de paredes)
+    const T = W.t0 + i * W.every - (i % 2 && W.t0 + i * W.every > 40 ? W.every * 0.45 : 0)
+    const v = W.v0 + (W.v1 - W.v0) * Math.min(1, T / W.ramp)
+    const z = W.z0 - v * (t - T)
+    if (z < W.z1 || z > W.z0) continue
+    const h = courseHash(seed ^ 0x3c6ef372, i)
+    // as duas primeiras são de aquecimento (um vão); depois a semente escolhe
+    const roll = i < 2 ? 0 : h % 6
+    const kind: 0 | 1 | 2 = roll === 5 ? 1 : roll >= 3 ? 2 : 0
+    const g1 = (h >>> 3) % n
+    const gaps = kind === 1 ? [] : kind === 2 ? [g1, (g1 + 3 + ((h >>> 9) % (n - 5))) % n] : [g1]
+    out.push({ i, z, v, kind, gaps })
   }
   return out
 }

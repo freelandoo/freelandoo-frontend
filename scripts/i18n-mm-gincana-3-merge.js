@@ -122,6 +122,35 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
+  // G3-4 Forja: Paredes de Brasa
+  gincanaEvForja: ["Paredes de Brasa", "Ember Walls", "Muros de Brasa"],
+  gincanaPhForjaPitch3: [
+    "Paredes de brasa atravessam a arena sobre a lava: ache o vão ou pule a mureta, ou a parede joga você na lava.",
+    "Ember walls sweep across the arena over the lava: find the gap or jump the low wall, or the wall pushes you into the lava.",
+    "Muros de brasa cruzan la arena sobre la lava: encuentra el hueco o salta el muro bajo, o el muro te empuja a la lava.",
+  ],
+  gincanaSecFw1: ["O vão", "The gap", "El hueco"],
+  gincanaSecFw2: ["Dois vãos", "Two gaps", "Dos huecos"],
+  gincanaSecFw3: ["Mureta", "Low wall", "Muro bajo"],
+  gincanaSecFw4: ["Em pares", "In pairs", "En pares"],
+  gincanaSecFw5: ["Vaga", "Spots", "Cupos"],
+  gincanaHowFw1: [
+    "Cada parede tem um buraco: fique na frente dele antes de ela chegar.",
+    "Every wall has a hole: stand in front of it before the wall arrives.",
+    "Cada muro tiene un hueco: ponte frente a él antes de que llegue.",
+  ],
+  gincanaHowFw2: ["Às vezes são dois vãos: vá ao mais perto.", "Sometimes there are two gaps: go to the nearest one.", "A veces hay dos huecos: ve al más cercano."],
+  gincanaHowFw3: ["A mureta baixa não tem vão: pule na hora.", "The low wall has no gap: jump at the right time.", "El muro bajo no tiene hueco: salta en el momento justo."],
+  gincanaHowFw4: [
+    "Depois de 40 s as paredes vêm em pares e mais rápidas.",
+    "After 40 s the walls come in pairs and faster.",
+    "Después de 40 s los muros vienen en pares y más rápido.",
+  ],
+  gincanaHowFw5: [
+    "Quem a parede empurra para fora cai na lava. Sobrando só a vaga, acabou.",
+    "Whoever the wall pushes off falls into the lava. When only the spots are left, it's over.",
+    "A quien el muro empuja fuera cae a la lava. Cuando solo quedan los cupos, se acabó.",
+  ],
   gincanaHowOv5: [
     "As barras aceleram até o fim. Sobrando só a vaga, acabou.",
     "The bars speed up until the end. When only the spots are left, it's over.",

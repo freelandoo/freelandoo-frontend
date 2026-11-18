@@ -365,69 +365,28 @@ function courseOrbital(): Course {
 
 // ═══ forja — Forja ═══════════════════════════════════════════════════════════
 
+/**
+ * Gincana 3 (2026-11-18): PAREDES DE BRASA — sobrevivência na Forja. Uma
+ * arena quadrada de 22 m sobre a lava; ondas de parede de brasa vêm da frente
+ * e atravessam tudo: parede alta com um ou dois vãos (ache o buraco) ou
+ * mureta baixa (pule). Quem a parede empurra para fora cai na lava e está
+ * FORA. As ondas ficam mais rápidas; acaba quando sobra a vaga ou em 100 s.
+ */
 function courseForja(): Course {
   const k = new CourseKit()
-  kitStart(k)
-  // ── 1. martelos ──
-  k.box(0, 19, 7, 3, 0, 1, 1)
-  k.box(0, 40, 7, 18, 0, 1, 1)
-  ;[29, 38, 47].forEach((z, row) => [-4, 0, 4].forEach((x, col) => k.swing(x, z, DECK + 9, 7.4, 1.1, 0.9, 2.3, row * 1.4 + col * 2.1)))
-  // ── 2. pistões dos dois lados ──
-  k.box(0, 81, 7, 23, 0, 1, 2)
-  for (let i = 0; i < 5; i++) {
-    const z = 66 + i * 8
-    k.glove(-9.4, z, DECK + 1, 1, 8.2, 1.15, 2.4, i * 0.9)
-    k.glove(9.4, z, DECK + 1, -1, 8.2, 1.15, 2.4, i * 0.9 + 1.2)
-    k.post(-9.4, z, 1.0, -1, DECK + 2.2, 4)
-    k.post(9.4, z, 1.0, -1, DECK + 2.2, 4)
-  }
-  // ── 3. esteiras de lado sobre a lava ──
-  k.box(0, 108, 7, 4, 0, 1, 3)
-  ;[118, 130, 142].forEach((z, i) => {
-    const b = k.box(0, z, 4, 6, 4, 0, 3)
-    k.pads[b].bx = i % 2 ? -3 : 3
-  })
-  k.box(0, 152, 7, 4, 0, 1, 3)
-  // ── 4. grade que cai ──
-  for (let r = 0; r < 9; r++) for (let c = 0; c < 5; c++) k.tile((c - 2) * 2.9, 158.5 + r * 2.9, 1.3, (r + c) % 2 ? 2 : 0)
-  k.box(0, 187, 7, 4, 0, 1, 4)
-  // ── 5. rochas derretidas ──
-  const z0 = 191
-  const finishZ = kitFinish(k, z0, 0.95, 7.5, 1.2)
-  for (const [x, z] of [[0, 56], [0, 61], [0, 108], [-2.5, 118], [2.5, 130], [-2.5, 142], [0, 152], [0, 187]] as [number, number][]) k.logo(x, z)
+  k.box(0, 0, 11, 11, 0, 1, 1, 0, 1.6)
   return k.done({
     id: "forja",
-    checkpoints: [
-      { x: 0, z: -3.5, y: DECK, w: 7 },
-      { x: 0, z: 61, y: DECK, w: 6 },
-      { x: 0, z: 108, y: DECK, w: 6 },
-      { x: 0, z: 152, y: DECK, w: 6 },
-      { x: 0, z: 187, y: DECK, w: 5.5 },
-    ],
-    finishZ,
-    finishY: DECK + 6,
-    sections: [22, 58, 112, 156, z0],
-    minFinish: 22,
-    route: (r) =>
-      routeOf((add) => {
-        const side = r(1) < 0.5 ? -1 : 1
-        add(side * 1.2, 10)
-        add(side * 0.8, 15.5)
-        const L = [-2, 2, -6, 6][Math.floor(r(2) * 4)]
-        for (let z = 20; z <= 56; z += 2) add(L, z)
-        add(0, 59)
-        const F = [-0.2, 0.2, -5.5, 5.5][Math.floor(r(3) * 4)]
-        for (let z = 62; z <= 103; z += 2.5) add(F, z)
-        add(0, 106)
-        add(0, 110)
-        for (let z = 113; z <= 148; z += 1.5) add(0, z)
-        add(0, 152)
-        add(0, 156)
-        for (let i = 0; i < 9; i++) add(0, 158.5 + i * 2.9)
-        add(0, 185)
-        add(0, 188)
-        routeFinish(add, z0, finishZ)
-      }),
+    mode: "survive",
+    qualify: 0.5,
+    limit: 100,
+    walls: { hw: 11, z0: 13, z1: -14, y: DECK, every: 3.2, t0: 2, v0: 3.4, v1: 11, ramp: 60, seg: 2.2, tall: 3.2, low: 0.9 },
+    checkpoints: [{ x: 0, z: -2, y: DECK, w: 6 }],
+    finishZ: 40,
+    finishY: 90,
+    sections: [],
+    minFinish: 1e6,
+    route: () => [{ x: 0, z: 0 }],
   })
 }
 
