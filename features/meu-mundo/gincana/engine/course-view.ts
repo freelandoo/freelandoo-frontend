@@ -25,7 +25,7 @@ import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildLogos, type LogoView } from "../../corrida/engine/logos"
-import { DECK, riseAt, wallsAt, type WallWave, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
+import { DECK, drumAngle, riseAt, wallsAt, type WallWave, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
 import type { RunWorld } from "../sim/body"
 import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
 import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
@@ -70,6 +70,8 @@ export class CourseView {
   private readonly gemBases: Mesh[] = []
   /** Gincana 3: o anel aceso do topo (Rei do Iceberg). */
   private zoneRing: Mesh | null = null
+  /** Gincana 3: anéis do Rolo de Gelo (um nó por anel, gira em z). */
+  private readonly drumNodes: { node: TransformNode; d: number; r: number }[] = []
   private readonly doorMeshes: InstancedMesh[] = []
   private doorBase: Mesh | null = null
   private readonly doorShake: number[] = []
@@ -573,6 +575,62 @@ export class CourseView {
         this.wallLows.push(m)
       }
     }
+
+    // ── Gincana 3: Rolo de Gelo — cada anel é uma casca de placas de gelo (sem as do buraco), com aros
+    // escuros nas juntas, geada clara nas quinas e a boca do buraco acesa (aviso de perigo) ──
+    course.drums.forEach((d, di) => {
+      let z0 = d.z0
+      d.rings.forEach((ring, ri) => {
+        const node = new TransformNode(`gincana-drum-${di}-${ri}`, scene)
+        node.position.set(d.x, d.y, z0 + ring.len / 2)
+        const g = new SoftGeo()
+        const gl = new SoftGeo()
+        const N = 56
+        const inHole = (m: number) =>
+          ring.holes.some((h) => {
+            let da = (m - h.a) % (Math.PI * 2)
+            if (da > Math.PI) da -= Math.PI * 2
+            if (da < -Math.PI) da += Math.PI * 2
+            return Math.abs(da) < h.half
+          })
+        // gelo saturado (a luz da noite puxa para o cinza): base azul, placa sim placa não mais funda
+        const ICE_A: RGB = [0.32, 0.66, 0.96]
+        const ICE_B: RGB = [0.2, 0.5, 0.86]
+        for (let k = 0; k < N; k++) {
+          const m = ((k + 0.5) / N) * Math.PI * 2
+          if (inHole(m)) continue
+          const seg = ((Math.PI * 2) / N) * d.R
+          // placa tangente ao cilindro (sin m em x, cos m em y): normal para fora
+          const px = Math.sin(m) * (d.R - 0.3)
+          const py = Math.cos(m) * (d.R - 0.3)
+          g.roundBox(seg + 0.02, 0.6, ring.len - 0.24, 0.08, at(px, py, 0, 0, 0, -m), (k + ri) % 3 === 0 ? ICE_B : ICE_A, 2)
+          // geada clara por cima de cada placa (em listras finas)
+          gl.roundBox(seg * 0.5, 0.04, ring.len - 0.7, 0.02, at(Math.sin(m) * d.R, Math.cos(m) * d.R, 0, 0, 0, -m), k % 2 ? [0.5, 0.78, 0.95] : [0.62, 0.86, 1], 1)
+          // boca do buraco: placa de perigo acesa nas duas beiras
+          if (inHole(m + (Math.PI * 2) / N) || inHole(m - (Math.PI * 2) / N)) gl.roundBox(seg * 0.9, 0.08, ring.len - 0.3, 0.02, at(Math.sin(m) * (d.R + 0.04), Math.cos(m) * (d.R + 0.04), 0, 0, 0, -m), [1, 0.35, 0.55], 1)
+        }
+        // aros escuros nas juntas (a costura dos anéis) e o miolo
+        for (const ez of [-ring.len / 2, ring.len / 2]) g.torus(d.R * 2 + 0.1, 0.22, at(0, 0, ez, 0, Math.PI / 2, 0), [0.18, 0.3, 0.46], 48)
+        g.cylinder(1.2, ring.len, at(0, 0, 0, 0, Math.PI / 2, 0), [0.2, 0.32, 0.5], 12)
+        // setas de giro pintadas nas placas (para que lado o anel anda)
+        const sgn = Math.sign(ring.w)
+        for (let k = 0; k < 4; k++) {
+          const m = (k / 4) * Math.PI * 2 + 0.4
+          if (inHole(m)) continue
+          gl.roundBox(0.25, 0.04, 1.1, 0.02, at(Math.sin(m) * (d.R + 0.03), Math.cos(m) * (d.R + 0.03), 0, sgn * 0.6, 0, -m), [1, 0.82, 0.2], 1)
+        }
+        const mesh = g.build(`gincana-drum-m-${di}-${ri}`, scene, this.toy, false)
+        mesh.parent = node
+        this.meshes.push(mesh)
+        if (gl.vertexCount) {
+          const gm = gl.build(`gincana-drum-g-${di}-${ri}`, scene, this.glowMat, false)
+          gm.parent = node
+          this.meshes.push(gm)
+        }
+        this.drumNodes.push({ node, d: di, r: ri })
+        z0 += ring.len
+      })
+    })
 
     // ── Gincana 3: o topo que vale ponto (anel aceso na beira + coroa no meio) ──
     if (course.zone) {
@@ -1365,6 +1423,8 @@ export class CourseView {
       m.mesh.rotation.y = m.p.k === 0 ? m.p.spin * tt : padRot(m.p, tt)
     }
     if (this.zoneRing) this.zoneRing.scaling.y = 1 + Math.sin(clock * 3) * 0.25
+    // anéis do Rolo de Gelo: o material no ângulo m fica em θ = m + giro (rotation.z = −giro)
+    for (const dn of this.drumNodes) dn.node.rotation.z = -drumAngle(C.drums[dn.d].rings[dn.r], tt)
     // engrenagens: some quando pega, volta crescendo; no ar gira e balança
     for (let i = 0; i < C.gems.length; i++) {
       const g = C.gems[i]

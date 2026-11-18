@@ -443,42 +443,43 @@ function courseFabrica(): Course {
 // ═══ gelo — Mar de Gelo ══════════════════════════════════════════════════════
 
 /**
- * Gincana 3 (2026-11-18): REI DO ICEBERG — zona no Mar de Gelo. Um iceberg
- * redondo de 24 m que escorrega, e no meio o TOPO (1 m acima: pule ou suba
- * na beira). Cada segundo em pé no topo vale 1 ponto. No topo gira uma barra
- * baixa (pule) que acelera; na beira dois blocos de gelo deslizam e empurram
- * para o mar. Mergulhar em alguém empurra. Caiu no mar: volta à beira, só
- * perdeu tempo. Em 70 s, classifica a metade de cima (com ponto).
+ * Gincana 3 (2026-11-18, plano das 10 fases): ROLO DE GELO — sobrevivência no Mar de Gelo. Um cilindro de
+ * gelo deitado (raio 7 m, 30 m de comprido) feito de 5 anéis; cada anel gira no seu sentido (e cada vez mais
+ * rápido) e tem buracos que passam por baixo de quem está em cima. O chão anda de lado e escorrega para fora
+ * na curva: corra contra o giro e troque de anel quando um buraco vier. Caiu no mar = FORA. Acaba quando
+ * sobra a vaga (metade) ou em 100 s.
  */
+export const ROLL_R = 7
+export const ROLL_TOP = DECK + 4
 function courseGelo(): Course {
   const k = new CourseKit()
-  const floe = k.disc(0, 0, 12, 7, 6, 1)
-  k.pads[floe].f = 0.3
-  const top = k.disc(0, 0, ICE_TOP_R, 6, 7, 1, DECK + ICE_TOP_H)
-  k.pads[top].f = 0.45
-  // pilar da coroa (eixo da barra: ninguém fica no eixo)
-  k.post(0, 0, 0.75, DECK + ICE_TOP_H, DECK + ICE_TOP_H + 1.1, 6)
-  // barra baixa no topo: um braço, acelera até o fim
-  k.sweep(0, 0, DECK + ICE_TOP_H + 0.5, ICE_TOP_R + 0.4, 0.3, 0.55, 0, false, 0.012, 1.5)
-  // blocos de gelo que deslizam na beira (esquerda e direita, ao contrário; a largada fica livre)
-  k.pusher(8.2, 0, 1.5, 1.5, 1.8, 0, 6.5, 0.62, 0)
-  k.pusher(-8.2, 0, 1.5, 1.5, 1.8, 0, 6.5, 0.62, Math.PI)
+  const W = [0.3, -0.34, 0.38, -0.32, 0.36, -0.29]
+  k.drum(
+    0,
+    0,
+    ROLL_TOP - ROLL_R,
+    ROLL_R,
+    W.map((w, i) => ({
+      len: 5,
+      w,
+      // os buracos começam embaixo (o primeiro chega ao topo depois de ~8 s); dois anéis têm 3
+      holes: (i % 3 === 1 ? [0, 2.1, 4.2] : [0, 3.1]).map((o) => ({ a: Math.PI + o + i * 0.7, half: 0.17 + (i % 2) * 0.03 })),
+    })),
+    0.6,
+  )
   return k.done({
     id: "gelo",
-    mode: "zone",
+    mode: "survive",
     qualify: 0.5,
-    limit: 70,
-    zone: { x: 0, z: 0, r: ICE_TOP_R - 0.2, y: DECK + ICE_TOP_H },
-    checkpoints: [{ x: 0, z: -6.6, y: DECK, w: 6 }],
+    limit: 100,
+    checkpoints: [{ x: 0, z: 16.3, y: ROLL_TOP, w: 3.4 }],
     finishZ: 40,
     finishY: 90,
     sections: [],
     minFinish: 1e6,
-    route: () => [{ x: 0, z: 0 }],
+    route: () => [{ x: 0, z: 15 }],
   })
 }
-const ICE_TOP_R = 4.2
-const ICE_TOP_H = 1
 
 /** Todas as fases (montadas uma vez). */
 export const COURSES: Record<GincanaPhase, Course> = {

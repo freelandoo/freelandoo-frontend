@@ -122,31 +122,22 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
-  // G3-6 Gelo: Rei do Iceberg
-  gincanaEvGelo: ["Rei do Iceberg", "King of the Iceberg", "Rey del Iceberg"],
-  gincanaPhGeloPitch3: [
-    "Fique no topo do iceberg: cada segundo lá em cima vale um ponto. Em 70 segundos, quem fica mais é rei.",
-    "Stay on top of the iceberg: every second up there is worth a point. In 70 seconds, whoever stays longest is king.",
-    "Quédate en la cima del iceberg: cada segundo allí arriba vale un punto. En 70 segundos, quien más se quede es rey.",
+  // G3-9 Gelo: Rolo de Gelo (troca o Rei do Iceberg da G3-6; o nome muda pelo OVERRIDE)
+  gincanaPhGeloPitch4: [
+    "Seis anéis de gelo giram sob os seus pés, cada um para um lado e cada vez mais rápido. Os buracos passam: quem cai no mar está fora.",
+    "Six rings of ice spin under your feet, each one a different way and faster and faster. The holes come around: whoever falls into the sea is out.",
+    "Seis anillos de hielo giran bajo tus pies, cada uno hacia un lado y cada vez más rápido. Los agujeros pasan: quien cae al mar queda fuera.",
   ],
-  gincanaSecGk1: ["O topo", "The top", "La cima"],
-  gincanaSecGk2: ["Barra", "Bar", "Barra"],
-  gincanaSecGk3: ["Blocos de gelo", "Ice blocks", "Bloques de hielo"],
-  gincanaSecGk4: ["Empurrão", "Shove", "Empujón"],
-  gincanaSecGk5: ["Mar", "Sea", "Mar"],
-  gincanaHowGk1: ["Cada segundo em pé dentro do anel do topo vale 1 ponto.", "Every second standing inside the ring on top is worth 1 point.", "Cada segundo de pie dentro del anillo de la cima vale 1 punto."],
-  gincanaHowGk2: ["Uma barra baixa gira no topo e acelera: pule quando ela vier.", "A low bar spins on top and speeds up: jump when it comes.", "Una barra baja gira en la cima y acelera: salta cuando venga."],
-  gincanaHowGk3: ["Na beira, blocos de gelo deslizam e empurram para o mar.", "At the edge, ice blocks slide and push you into the sea.", "En el borde, bloques de hielo se deslizan y te empujan al mar."],
-  gincanaHowGk4: [
-    "Mergulhe em quem está no topo para tirar do lugar. O gelo escorrega!",
-    "Dive into whoever is on top to knock them off. The ice is slippery!",
-    "Lánzate contra quien esté en la cima para sacarlo. ¡El hielo resbala!",
-  ],
-  gincanaHowGk5: [
-    "Caiu no mar? Volta à beira, só perdeu tempo. Classifica a metade de cima.",
-    "Fell into the sea? Back to the edge, you only lost time. The top half qualifies.",
-    "¿Caíste al mar? Vuelves al borde, solo perdiste tiempo. Clasifica la mitad de arriba.",
-  ],
+  gincanaSecGr1: ["Anéis", "Rings", "Anillos"],
+  gincanaSecGr2: ["Buracos", "Holes", "Agujeros"],
+  gincanaSecGr3: ["Giro", "Spin", "Giro"],
+  gincanaSecGr4: ["Vizinhos", "Neighbors", "Vecinos"],
+  gincanaSecGr5: ["Mar gelado", "Icy sea", "Mar helado"],
+  gincanaHowGr1: ["O rolo é feito de seis anéis; cada um gira para um lado.", "The roller is made of six rings; each one spins a different way.", "El rodillo tiene seis anillos; cada uno gira hacia un lado."],
+  gincanaHowGr2: ["Os buracos dão a volta e passam por cima: pule ou mude de anel antes.", "The holes come around over the top: jump or switch rings first.", "Los agujeros dan la vuelta y pasan por arriba: salta o cambia de anillo antes."],
+  gincanaHowGr3: ["O giro arrasta você de lado e fica mais rápido com o tempo.", "The spin drags you sideways and gets faster over time.", "El giro te arrastra de lado y se acelera con el tiempo."],
+  gincanaHowGr4: ["Mergulhe em quem está perto para jogá-lo num buraco.", "Dive into whoever is close to knock them into a hole.", "Lánzate contra quien esté cerca para tirarlo a un agujero."],
+  gincanaHowGr5: ["Caiu no mar gelado? Está fora. Sobrando só a vaga, acabou.", "Fell into the icy sea? You are out. When only the spots are left, it is over.", "¿Caíste al mar helado? Quedas fuera. Cuando solo quedan los cupos, se acabó."],
   // G3-5 Fábrica: Caça às Engrenagens
   gincanaEvFabrica: ["Caça às Engrenagens", "Gear Hunt", "Caza de Engranajes"],
   gincanaPhFabricaPitch3: [
@@ -208,6 +199,11 @@ const MEU_MUNDO = {
   ],
 }
 
+// valor que mudou (fatia nova sobre fatia velha): sobrescreve
+const OVERRIDE = {
+  gincanaEvGelo: ["Rolo de Gelo", "Ice Roller", "Rodillo de Hielo"],
+}
+
 const LOCALES = ["pt-BR", "en", "es"]
 let added = 0
 for (const [i, locale] of LOCALES.entries()) {
@@ -216,6 +212,12 @@ for (const [i, locale] of LOCALES.entries()) {
   json.MeuMundo = json.MeuMundo || {}
   for (const [key, vals] of Object.entries(MEU_MUNDO)) {
     if (json.MeuMundo[key] === undefined) {
+      json.MeuMundo[key] = vals[i]
+      added++
+    }
+  }
+  for (const [key, vals] of Object.entries(OVERRIDE)) {
+    if (json.MeuMundo[key] !== vals[i]) {
       json.MeuMundo[key] = vals[i]
       added++
     }

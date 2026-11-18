@@ -16,6 +16,8 @@ import {
   DECK,
   GINCANA,
   doorsOpen,
+  drumAt,
+  drumSpeed,
   gloveAt,
   onTile,
   padRot,
@@ -94,6 +96,8 @@ export interface Runner {
   pz: number
   /** Plataforma embaixo no último passo (−1 = nenhuma/coluna/ladrilho): leva quem está em cima. */
   pad: number
+  /** Cilindro embaixo (Rolo de Gelo; −1 = nenhum): arrasta para o lado. */
+  drum: number
   /** Atrito do chão embaixo (gelo < 1). */
   fric: number
   /** Agarrando a vaga (−1 = ninguém), há quanto tempo e a espera para agarrar de novo. */
@@ -192,6 +196,7 @@ export function newRunner(course: Course, slot: number): Runner {
     py: p.y,
     pz: p.z,
     pad: -1,
+    drum: -1,
     fric: 1,
     grab: -1,
     grabT: 0,
@@ -267,7 +272,19 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
       bounce = 0
     }
   }
-  return { y: best, tile, pad, bounce }
+  // cilindros por último: só ganham se forem o chão mais alto
+  let drum = -1
+  for (let i = 0; i < C.drums.length; i++) {
+    const g = drumAt(C.drums[i], x, z, w.t)
+    if (g && g.top <= reach && g.top > best) {
+      best = g.top
+      tile = -1
+      pad = -1
+      bounce = 0
+      drum = i
+    }
+  }
+  return { y: best, tile, pad, bounce, drum }
 }
 
 /** Ondas de parede do passo (reaproveitado: nada de lixo a 60 Hz). */
@@ -544,12 +561,23 @@ export function respawn(b: Runner, course: Course) {
   b.shield = GINCANA.shieldT
   b.hitCool = 0
   b.pad = -1
+  b.drum = -1
   b.fric = 1
   b.grab = -1
 }
 
 /** Leva quem está em cima da plataforma que anda, do disco que gira e da esteira. */
 function carry(b: Runner, w: RunWorld, dt: number) {
+  if (b.ground && b.drum >= 0) {
+    // cilindro: o chão anda de lado (w·R·cos θ) e a curva escorrega para fora
+    const d = w.course.drums[b.drum]
+    const g = d ? drumAt(d, b.x, b.z, w.t) : null
+    if (d && g) {
+      b.x += drumSpeed(d.rings[g.ring], w.t) * (g.top - d.y) * dt
+      b.x += Math.sin(g.th) * 3.2 * dt
+    }
+    return
+  }
   if (!b.ground || b.pad < 0) return
   const p = w.course.pads[b.pad]
   if (!p) return
@@ -619,6 +647,7 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
       b.y = b.cy1
       const g = groundUnder(w, b.x, b.z, b.y + 0.1)
       b.pad = g.pad
+      b.drum = g.drum
     }
     return
   }
@@ -718,7 +747,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     b.y = g.y
     b.vy = 0
     b.pad = g.pad
-    b.fric = g.pad >= 0 ? C.pads[g.pad].f : 1
+    b.drum = g.drum
+    b.fric = g.pad >= 0 ? C.pads[g.pad].f : g.drum >= 0 ? C.drums[g.drum].f : 1
     if (!b.ground) {
       b.ground = true
       // pousou: mergulho vira deslize; derrubado fica no chão o resto do tempo
@@ -747,11 +777,13 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     b.y = g.y
     b.vy = 0
     b.pad = g.pad
+    b.drum = g.drum
   } else {
     if (b.ground) b.vy = Math.min(b.vy, 0)
     b.ground = false
     b.air += dt
     b.pad = -1
+    b.drum = -1
   }
 
   // relógio dos estados sem controle

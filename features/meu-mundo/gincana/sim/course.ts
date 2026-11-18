@@ -294,6 +294,65 @@ export interface WallWave {
   gaps: number[]
 }
 
+/**
+ * Gincana 3 (Rolo de Gelo): anel de um cilindro deitado (eixo em z). Gira em volta do eixo a `w` rad/s
+ * (positivo = o topo anda para +x), acelerando devagar; `holes` = buracos (ângulo do material e meia
+ * largura, em rad). Ângulo 0 do material = topo no tempo 0.
+ */
+export interface DrumRing {
+  len: number
+  w: number
+  holes: { a: number; half: number }[]
+}
+
+/** Cilindro deitado feito de anéis em fila (de z0 para +z). Eixo na altura y, raio R. */
+export interface Drum {
+  x: number
+  z0: number
+  y: number
+  R: number
+  f: number
+  rings: DrumRing[]
+}
+
+/** Quanto o anel girou até t (acelera: o dobro da velocidade aos 80 s). */
+export function drumAngle(r: DrumRing, t: number) {
+  return r.w * (t + (t * t) / 160)
+}
+
+/** Velocidade do giro do anel em t (rad/s). */
+export function drumSpeed(r: DrumRing, t: number) {
+  return r.w * (1 + t / 80)
+}
+
+const DRUM_EDGE = 0.93
+
+/**
+ * O chão do cilindro em (x, z) no tempo t: topo, anel e o ângulo da superfície (0 = topo, + = lado +x).
+ * null = fora dele ou em cima de um buraco.
+ */
+export function drumAt(d: Drum, x: number, z: number, t: number) {
+  const dx = x - d.x
+  if (Math.abs(dx) > d.R * DRUM_EDGE || z < d.z0) return null
+  let zz = d.z0
+  for (let k = 0; k < d.rings.length; k++) {
+    const r = d.rings[k]
+    if (z <= zz + r.len) {
+      const th = Math.asin(dx / d.R)
+      const mat = th - drumAngle(r, t)
+      for (const h of r.holes) {
+        let da = (mat - h.a) % (Math.PI * 2)
+        if (da > Math.PI) da -= Math.PI * 2
+        if (da < -Math.PI) da += Math.PI * 2
+        if (Math.abs(da) < h.half) return null
+      }
+      return { top: d.y + Math.sqrt(d.R * d.R - dx * dx), ring: k, th }
+    }
+    zz += r.len
+  }
+  return null
+}
+
 /** Zona do rei do pedaço: círculo (x, z, r) com o chão em y. */
 export interface Zone {
   x: number
@@ -314,6 +373,8 @@ export interface Course {
   gems: Gem[]
   zone: Zone | null
   walls: Walls | null
+  /** Gincana 3: cilindros que giram (Rolo de Gelo). */
+  drums: Drum[]
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -356,6 +417,10 @@ export class CourseKit {
   ramp: Ramp | null = null
   balls: Balls | null = null
   readonly gems: Gem[] = []
+  readonly drums: Drum[] = []
+  drum(x: number, z0: number, y: number, R: number, rings: DrumRing[], f = 0.6) {
+    this.drums.push({ x, z0, y, R, f, rings })
+  }
   gem(x: number, z: number, y: number, v: number, t0: number, back: number) {
     this.gems.push({ x, z, y, v, t0, back })
   }
@@ -435,6 +500,7 @@ export class CourseKit {
       gems: this.gems,
       zone: o.zone ?? null,
       walls: o.walls ?? null,
+      drums: this.drums,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,

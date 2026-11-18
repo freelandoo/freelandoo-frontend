@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, drumAt, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -251,8 +251,54 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
       br.jumpCool = 0.5 + (1 - br.skill) * 0.6
     }
   }
+  // Rolo de Gelo: procura o ponto (5 de lado × o anel e os vizinhos) que fica livre por mais tempo,
+  // descontado o tempo para chegar lá (quem é bom enxerga mais longe); pula o buraco que chega no pé
+  if (C.drums.length) {
+    const d = C.drums[0]
+    const sight = 1.6 + br.skill * 2.4
+    const zOf: number[] = []
+    let z0 = d.z0
+    let here = 0
+    for (let q = 0; q < d.rings.length; q++) {
+      zOf.push(z0 + d.rings[q].len / 2)
+      if (b.z >= z0 && b.z <= z0 + d.rings[q].len) here = q
+      z0 += d.rings[q].len
+    }
+    let bestScore = -Infinity
+    for (let q = Math.max(0, here - 1); q <= Math.min(d.rings.length - 1, here + 1); q++) {
+      for (let px = -3; px <= 3; px += 1.5) {
+        const x = d.x + px
+        const z = zOf[q] + ((br.slot % 4) - 1.5) * 0.6
+        const travel = Math.hypot(x - b.x, z - b.z) / GINCANA.run
+        // o caminho até lá (o meio) também precisa estar de pé agora
+        if (!drumAt(d, (x + b.x) / 2, (z + b.z) / 2, t + travel / 2)) continue
+        let sf = sight + 0.5
+        for (let s = travel; s <= sight; s += 0.15) {
+          if (!drumAt(d, x, z, t + s)) {
+            sf = s
+            break
+          }
+        }
+        const sc = sf - travel - Math.abs(px) * 0.08 + (q === here ? 0.3 : 0) + botRand(br.seed, br.slot * 9 + q * 5 + px, Math.floor(t / 2)) * 0.4 * (1.4 - br.skill)
+        if (sc > bestScore) {
+          bestScore = sc
+          tx = x
+          tz = z
+        }
+      }
+    }
+    if (bestScore === -Infinity) {
+      tx = d.x
+      tz = zOf[here]
+    }
+    // buraco já debaixo do pé: pula
+    if (b.ground && br.jumpCool <= 0 && !drumAt(d, b.x, b.z, t + 0.12)) {
+      it.jump = true
+      br.jumpCool = 0.6
+    }
+  }
   // arena sem pedras (Varredura): um lugar a ~5 m do eixo, que muda de tempo em tempo
-  if (!C.tiles.length && !C.gems.length && !C.zone && C.sweepers.length) {
+  if (!C.tiles.length && !C.gems.length && !C.zone && !C.drums.length && C.sweepers.length) {
     const a = botRand(br.seed, br.slot, 500 + Math.floor(t / 6)) * Math.PI * 2
     const rr = 3.5 + botRand(br.seed, br.slot, 600 + Math.floor(t / 6)) * 3.5
     tx = C.sweepers[0].x + Math.sin(a) * rr
