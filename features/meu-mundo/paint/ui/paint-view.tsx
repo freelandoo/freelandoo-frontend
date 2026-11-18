@@ -14,11 +14,11 @@
 // mm3d-76 (pedido do Alex): MODO → MAPA → PARTIDA. Depois do modo vem a
 // seleção de mapa (ui/map-select.tsx, 6 mapas); no multiplayer o cartão é o
 // voto e a espera mostra a contagem (a sala apura). Recorde por mapa no aparelho.
+// 18/11 (pedido do Alex): mesmo layout da Antigravidade — a entrada é a seleção de mapa
+// (ui/kit/stage-select.tsx) com os modos no rodapé; a explicação das tintas foi para o "?".
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
-import { ArrowBigUp, Cat, DoorOpen, Loader2, Skull, Sparkles, Swords, Trophy, User, Users, X } from "lucide-react"
-import { TrainButton } from "../../ui/kit/train-button"
-import { BackToCity } from "../../ui/kit/back-to-city"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { ArrowBigUp, Cat, DoorOpen, Loader2, Skull, Sparkles, Trophy, User, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import type { BodyId } from "../../types"
 import { MM } from "../../ui/hud/tokens"
@@ -64,8 +64,7 @@ export interface PaintViewProps {
 }
 
 type Stage =
-  | { kind: "menu" }
-  | { kind: "maps"; mode: PaintMode }
+  | { kind: "maps" }
   | { kind: "joining"; mode: Exclude<PaintMode, "solo">; map: string; ac: AbortController }
   | { kind: "game"; port: PaintPort; key: number; mode: PaintMode }
 
@@ -75,7 +74,7 @@ const ALL_COLORS: PaintColor[] = [0, 1, 2, 3]
 
 export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
   const t = useTranslations("MeuMundo")
-  const [stage, setStage] = useState<Stage>({ kind: "menu" })
+  const [stage, setStage] = useState<Stage>({ kind: "maps" })
   const [error, setError] = useState<string | null>(null)
   const [lobby, setLobby] = useState<{ n: number; cap: number; until: number } | null>(null)
   const [votes, setVotes] = useState<Record<string, number>>({})
@@ -116,55 +115,39 @@ export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
         }
         if (!port) {
           setError(t("paintJoinFail2", "A sala não abriu agora. Tente de novo."))
-          setStage({ kind: "maps", mode })
+          setStage({ kind: "maps" })
           return
         }
         setStage({ kind: "game", port, key: ++seq.current, mode })
       } catch {
         if (ac.signal.aborted) return
         setError(t("paintJoinFail2", "A sala não abriu agora. Tente de novo."))
-        setStage({ kind: "maps", mode })
+        setStage({ kind: "maps" })
       }
     },
     [join, t],
   )
-  const modeLabel = (m: PaintMode) => (m === "solo" ? t("paintModeSolo", "Treinar") : m === "1v1" ? "1 × 1" : m === "2v2" ? "2 × 2" : "3 × 3")
 
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#e6edf3" }}>
       {stage.kind === "game" ? (
-        <PaintGameScreen key={stage.key} port={stage.port} body={body} look={look} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "maps", mode: stage.mode })} />
-      ) : stage.kind === "maps" || stage.kind === "joining" ? (
+        <PaintGameScreen key={stage.key} port={stage.port} body={body} look={look} net={stage.port.mode === "solo" ? "online" : net} onLeave={() => setStage({ kind: "maps" })} />
+      ) : (
         <PaintMapSelect
-          mode={stage.mode}
-          modeLabel={modeLabel(stage.mode)}
+          joiningMode={stage.kind === "joining" ? stage.mode : null}
           joining={stage.kind === "joining" ? stage.map : null}
+          versus={!!join}
           lobby={lobby}
           votes={votes}
           stale={net === "stale"}
           error={error}
-          onBack={() => {
-            setError(null)
-            setStage({ kind: "menu" })
-          }}
-          onRun={(map) => void play(stage.mode, map)}
+          help={<PaintHelp />}
+          onPlay={(mode, map) => void play(mode, map)}
           onVote={(map) => roomApi.current?.vote(map)}
           onCancel={() => {
             if (stage.kind !== "joining") return
             stage.ac.abort()
-            setStage({ kind: "maps", mode: stage.mode })
-          }}
-        />
-      ) : (
-        <PaintMenu
-          joining={null}
-          lobby={null}
-          onCancel={() => {}}
-          versus={!!join}
-          error={error}
-          onPlay={(mode) => {
-            setError(null)
-            setStage({ kind: "maps", mode })
+            setStage({ kind: "maps" })
           }}
           onExit={onExit}
         />
@@ -175,124 +158,43 @@ export function PaintView({ body, look = "", onExit, join }: PaintViewProps) {
 
 // ═══ menu ════════════════════════════════════════════════════════════════════
 
-function PaintMenu({
-  joining,
-  lobby,
-  onCancel,
-  versus,
-  error,
-  onPlay,
-  onExit,
-}: {
-  joining: PaintMode | null
-  lobby: { n: number; cap: number } | null
-  onCancel: () => void
-  versus: boolean
-  error: string | null
-  onPlay: (m: PaintMode) => void
-  onExit: () => void
-}) {
+/** Como jogar (o "?" da seleção de mapa): as quatro tintas, os gatinhos, o Guardião e o Morkhan. */
+function PaintHelp() {
   const t = useTranslations("MeuMundo")
-  const modes: { mode: PaintMode; icon: ReactNode; title: string; sub: string }[] = [
-    // 2026-11-08 (regra do Alex): só 1×1, 2×2 e 3×3; vaga vazia depois de 20 s vira computador (o texto não diz, pedido do Alex)
-    { mode: "1v1", icon: <Swords className="h-5 w-5" />, title: "1 × 1", sub: t("paintMode1Sub", "Um contra um") },
-    { mode: "2v2", icon: <Users className="h-5 w-5" />, title: "2 × 2", sub: t("paintMode2Sub", "Duplas") },
-    { mode: "3v3", icon: <Users className="h-5 w-5" />, title: "3 × 3", sub: t("paintMode3Sub", "Times de três") },
-  ]
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: "linear-gradient(180deg, #e9f0f6 0%, #f4ece0 100%)" }}>
-      <div className="w-full max-w-[520px] rounded-none p-5 text-left max-[759px]:p-4" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-1.5">
-              {PAINT_COLORS.map((c) => (
-                <span key={c} className="inline-block h-3 w-3 rounded-full" style={{ background: c }} />
-              ))}
-            </div>
-            <h1 className="mt-2 text-[28px] font-extrabold leading-none tracking-tight max-[759px]:text-[24px]">PAINT</h1>
-            <p className="mt-2 text-[14px] leading-snug" style={{ color: MM.muted }}>
-              {t("paintPitch", "Suba pelas ilhas pintando o caminho, ache os gatinhos e abra o portal do chefão.")}
-            </p>
-          </div>
-          <BackToCity onExit={onExit} className="pointer-events-auto" />
-        </div>
-
-        <ul className="mt-4 grid grid-cols-2 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
-          {ALL_COLORS.map((c) => (
-            <li key={c} className="flex items-start gap-2 rounded-none p-2.5" style={{ background: MM.card }}>
-              <Bubble c={c} size={22} />
-              <span>
-                <b style={{ color: MM.text }}>{t(COLOR_KEYS[c], COLOR_FALLBACK[c])}</b>
-                <br />
-                {c === 0
-                  ? t("paintHowBridge", "Segure mirando o vão: a ponte cresce.")
-                  : c === 1
-                    ? t("paintHowHarm", "Tira sangue do outro time e apaga a tinta dele.")
-                    : c === 2
-                      ? t("paintHowStep", "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.")
-                      : t("paintHowWallJelly", "Muro de gelatina: quem bate nele voa para trás. Jogue no adversário quando ele pular! Ícone da Freelandoo: +{n}.").replace("{n}", String(TUNING.wallGive))}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-2 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
-          {t("paintHowGoalGuardian", "20 gatinhos do seu time abrem o portal no topo. Na ilha do Guardião vence quem der mais dano — perdeu para ele (ou caiu de lá), acabou a partida para você.")}
-        </p>
-        <p className="mt-1 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
-          {t("paintHowMorkhan", "Completou os 20? O Morkhan surge atrás de você e tenta te jogar das ilhas: caiu, os gatinhos voltam ao mapa e o portal fecha. Corra para o portal!")}
-        </p>
-
-        <TrainButton onTrain={() => onPlay("solo")} className="mt-4 w-full" />
-        <div className="mt-2 grid grid-cols-3 gap-2 max-[420px]:grid-cols-1">
-          {modes.map((m) => {
-            const busy = joining === m.mode
-            const off = (m.mode !== "solo" && !versus) || (!!joining && !busy)
-            return (
-              <button
-                key={m.mode}
-                type="button"
-                disabled={off}
-                onClick={() => onPlay(m.mode)}
-                className="flex min-h-[64px] items-center gap-3 rounded-none px-3.5 text-left transition-transform active:scale-[0.98]"
-                style={{
-                  background: m.mode === "solo" ? MM.rubyFill : MM.card,
-                  border: `1px solid ${m.mode === "solo" ? MM.rubyBorder : MM.border}`,
-                  color: off ? MM.disabledText : MM.text,
-                }}
-              >
-                <span className="shrink-0" style={{ color: m.mode === "solo" ? "#fff" : MM.gold }}>
-                  {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : m.icon}
-                </span>
-                <span>
-                  <span className="block text-[16px] font-bold leading-tight">{m.title}</span>
-                  <span className="block text-[12px] leading-tight" style={{ color: off ? MM.disabledText : MM.muted }}>
-                    {busy
-                      ? lobby
-                        ? t("paintWaiting", "Esperando jogadores {n}/{k}").replace("{n}", String(lobby.n)).replace("{k}", String(lobby.cap))
-                        : t("paintJoining", "Procurando sala…")
-                      : m.mode !== "solo" && !versus
-                        ? t("paintSoon", "Em breve")
-                        : m.sub}
-                  </span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        <p className="mt-2 text-[12px] leading-snug" style={{ color: MM.muted }}>
-          {t("paintModeBotsNote", "Espera até 20 segundos")}
-        </p>
-        {joining && (
-          <button type="button" onClick={onCancel} className="mt-3 w-full rounded-none py-2.5 text-[14px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>
-            {t("paintCancel", "Cancelar")}
-          </button>
-        )}
-        {error && (
-          <p role="alert" className="mt-3 text-[13px]" style={{ color: MM.danger }}>
-            {error}
-          </p>
-        )}
+    <div style={{ color: MM.text }}>
+      <div className="flex items-center gap-1.5">
+        {PAINT_COLORS.map((c) => (
+          <span key={c} className="inline-block h-3 w-3 rounded-full" style={{ background: c }} />
+        ))}
       </div>
+      <p className="mt-2 text-[14px] leading-snug" style={{ color: MM.muted }}>
+        {t("paintPitch", "Suba pelas ilhas pintando o caminho, ache os gatinhos e abra o portal do chefão.")}
+      </p>
+      <ul className="mt-3 grid grid-cols-2 gap-2 text-[12.5px] leading-snug max-[759px]:grid-cols-1" style={{ color: MM.muted }}>
+        {ALL_COLORS.map((c) => (
+          <li key={c} className="flex items-start gap-2 rounded-none p-2.5" style={{ background: MM.card }}>
+            <Bubble c={c} size={22} />
+            <span>
+              <b style={{ color: MM.text }}>{t(COLOR_KEYS[c], COLOR_FALLBACK[c])}</b>
+              <br />
+              {c === 0
+                ? t("paintHowBridge", "Segure mirando o vão: a ponte cresce.")
+                : c === 1
+                  ? t("paintHowHarm", "Tira sangue do outro time e apaga a tinta dele.")
+                  : c === 2
+                    ? t("paintHowStep", "Atire no chão (ou no pé, pulando): pise nela e seja lançado para cima.")
+                    : t("paintHowWallJelly", "Muro de gelatina: quem bate nele voa para trás. Jogue no adversário quando ele pular! Ícone da Freelandoo: +{n}.").replace("{n}", String(TUNING.wallGive))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
+        {t("paintHowGoalGuardian", "20 gatinhos do seu time abrem o portal no topo. Na ilha do Guardião vence quem der mais dano — perdeu para ele (ou caiu de lá), acabou a partida para você.")}
+      </p>
+      <p className="mt-1 text-[12.5px] leading-snug" style={{ color: MM.muted }}>
+        {t("paintHowMorkhan", "Completou os 20? O Morkhan surge atrás de você e tenta te jogar das ilhas: caiu, os gatinhos voltam ao mapa e o portal fecha. Corra para o portal!")}
+      </p>
     </div>
   )
 }

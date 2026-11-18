@@ -67,7 +67,7 @@ export interface RouteArt {
   thumb: string
 }
 
-const THUMBS = "/meu-mundo/noturno/v3/rotas/"
+const THUMBS = "/meu-mundo/noturno/rotas-v2/" // 18/11: do ChatGPT (MEU MUNDO 3D/arte/minijogos-thumb)
 
 const ART: Record<RunPhase, Omit<RouteArt, "id" | "thumb">> = {
   floresta: {

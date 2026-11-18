@@ -15,6 +15,7 @@
 // Domínio; phase-themes.ts); recorde por fase; na prova, quantos já
 // classificaram (a vaga fecha a prova) e o AGARRAR (F/Ctrl; botão no celular,
 // segurando); no fim, classificou ou eliminado.
+// 18/11: o MENU usa a tela comum dos minijogos (layout da Antigravidade, phase-select.tsx).
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Crown, Flag, Loader2, Star, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
@@ -33,6 +34,7 @@ import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 import { GodVoice } from "../../ui/quest/god-voice"
 import { GINCANA_THEMES, themeOf, type GincanaTheme } from "../engine/phase-themes"
 import { MemSymbol } from "./mem-symbol"
+import { GincanaPhaseSelect } from "./phase-select"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type GincanaJoin = (
@@ -214,161 +216,10 @@ function Lobby({ list, until, onCancel }: { list: GincanaLobbyEntry[]; until: nu
 }
 
 // ═══ menu ════════════════════════════════════════════════════════════════════
+// 18/11: a escolha de fase no layout da Antigravidade mora em phase-select.tsx.
 
-function Menu({
-  phase,
-  onPhase,
-  onPlay,
-  onShow,
-  onExit,
-  multi,
-  error,
-}: {
-  phase: string
-  onPhase: (p: string) => void
-  onPlay: (multi: boolean) => void
-  onShow: () => void
-  onExit: () => void
-  multi: boolean
-  error: string | null
-}) {
-  const t = useTranslations("MeuMundo")
-  const theme = themeOf(phase)
-  const sections = useSections(theme)
-  const [rec, setRec] = useState<number | null>(null)
-  useEffect(() => setRec(loadRecord(phase)), [phase])
-  const TIP_COLORS = [ORANGE, "#8A4DFF", PINK, "#63E05A", TEAL]
-  const tips = theme.tips.map(([k, v], i) => ({ c: TIP_COLORS[i], title: sections[i + 1], text: t(k, v) }))
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-4" style={{ background: BG }}>
-      <div className="w-full max-w-[580px] rounded-none p-5 text-left max-[759px]:p-4 [@media(max-height:520px)]:p-3" style={{ background: MM.surface, color: MM.text, boxShadow: MM.shadow, border: `1px solid ${MM.border}` }}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: TEAL }}>
-              {t("gincanaKicker10", "Party game · 10 provas diferentes")}
-            </div>
-            <h1 className="mt-1.5 text-[34px] font-black italic leading-none tracking-tight max-[759px]:text-[27px]">
-              <span style={{ color: YELLOW }}>GIN</span>
-              <span style={{ color: PINK }}>CA</span>
-              <span style={{ color: TEAL }}>NA</span>
-            </h1>
-            <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("gincanaPitch10", "Oito jogadores e uma prova diferente em cada fase: corrida, sobrevivência, coleta, memória e a final da coroa. Só a vaga classifica.")}
-            </p>
-          </div>
-          <BackToCity onExit={onExit} className="pointer-events-auto" />
-        </div>
-
-        {/* fases: a de sempre e uma por Domínio */}
-        <div role="radiogroup" aria-label={t("gincanaPhases", "Fases")} className="mt-3 grid grid-cols-5 gap-1 max-[420px]:grid-cols-4">
-          {GINCANA_THEMES.map((th) => {
-            const on = th.id === phase
-            return (
-              <button
-                key={th.id}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                onClick={() => onPhase(th.id)}
-                className="flex min-h-[64px] flex-col items-start justify-between rounded-none px-1.5 py-1 text-left transition-transform active:scale-[0.97]"
-                style={{ background: `linear-gradient(150deg, ${th.bg[0]}, ${th.bg[1]})`, border: `1.5px solid ${on ? th.accent : MM.border}`, boxShadow: on ? `0 0 14px ${th.accent}66` : "none" }}
-              >
-                <span className="text-[10px] font-black tabular-nums" style={{ color: th.accent }}>
-                  {th.num}
-                </span>
-                <span className="text-[11px] font-black italic leading-tight text-white">{t(th.nameKey, th.name)}</span>
-              </button>
-            )
-          })}
-        </div>
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <b className="text-[15px] font-black italic" style={{ color: theme.accent }}>
-            {t(theme.nameKey, theme.name)}
-          </b>
-          <span className="text-[12px]" style={{ color: MM.muted }}>
-            {t(theme.domainKey, theme.domain)}
-          </span>
-          <span className="inline-flex items-center gap-[1px]" aria-label={`${theme.difficulty}/5`}>
-            {Array.from({ length: 5 }, (_, i) => (
-              <Star key={i} className="h-3 w-3" style={{ color: i < theme.difficulty ? YELLOW : "rgba(255,255,255,0.22)" }} fill={i < theme.difficulty ? YELLOW : "transparent"} />
-            ))}
-          </span>
-        </div>
-        <p className="mt-0.5 text-[13px] font-black uppercase italic tracking-[0.06em]" style={{ color: YELLOW }}>
-          {t(theme.event[0], theme.event[1])}
-        </p>
-        <p className="mt-0.5 text-[12.5px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t(theme.pitchKey, theme.pitch)}
-        </p>
-
-        <ul className="mt-3 grid grid-cols-5 gap-1.5 max-[759px]:grid-cols-1 max-[759px]:gap-1 [@media(max-height:620px)]:hidden">
-          {tips.map((x, i) => (
-            <li key={i} className="rounded-none p-2.5 text-[12px] leading-snug max-[759px]:flex max-[759px]:items-baseline max-[759px]:gap-2 max-[759px]:py-1.5" style={{ background: MM.card, color: MM.muted, border: `1px solid ${MM.border}` }}>
-              <b className="block text-[12.5px] max-[759px]:shrink-0" style={{ color: x.c }}>
-                {i + 1}. {x.title}
-              </b>
-              <span className="max-[759px]:text-[11.5px]">{x.text}</span>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-3 rounded-none px-2.5 py-2 text-[12.5px] leading-snug [@media(max-height:620px)]:hidden" style={{ background: "rgba(242,183,5,0.1)", color: MM.muted, border: `1px solid ${MM.goldBorder}` }}>
-          <b style={{ color: YELLOW }}>{t("gincanaHowLogoTitle", "Logo da Freelandoo")}</b> · {t("gincanaHowLogo", "Pegou: brilha e corre 50% mais rápido por alguns segundos.")}
-        </p>
-        <div className="mt-3 flex items-center gap-2 text-[13px]" style={{ color: MM.muted }}>
-          <Trophy className="h-4 w-4" style={{ color: MM.gold }} />
-          {rec ? t("gincanaRecord", "Seu recorde: {t}").replace("{t}", fmt(rec)) : t("gincanaNoRecord", "Ainda sem recorde neste aparelho.")}
-        </div>
-
-        {error && (
-          <p className="mt-3 flex items-center gap-2 rounded-none px-3 py-2 text-[13px]" style={{ background: "rgba(110,16,34,0.5)", color: "#ffd5dc" }} role="alert">
-            <WifiOff className="h-4 w-4 shrink-0" /> {error}
-          </p>
-        )}
-
-        <div className={`mt-4 grid gap-2 [@media(max-height:520px)]:mt-2.5 ${multi ? "grid-cols-2" : "grid-cols-1"}`}>
-          <TrainButton onTrain={() => onPlay(false)} sub={t("mmTrainSubBots", "Contra o computador · sem esperar")} className="w-full" />
-          {multi && (
-            <button
-              type="button"
-              onClick={() => onPlay(true)}
-              className="flex w-full flex-col items-center justify-center rounded-none px-3 py-2.5 transition-transform active:scale-[0.98]"
-              style={{ background: MM.card, border: `1.5px solid ${TEAL}`, color: MM.text }}
-            >
-              <span className="flex items-center gap-2 text-[18px] font-black italic tracking-wide max-[420px]:text-[15px]">
-                <Users className="h-5 w-5 shrink-0" style={{ color: TEAL }} /> {t("gincanaModeMulti", "Multiplayer")}
-              </span>
-              <span className="text-[11px] leading-tight [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-                {t("gincanaModeMultiSub", "Espera até 1 minuto · até 8")}
-              </span>
-            </button>
-          )}
-        </div>
-        {/* o programa: rodadas sorteadas até a final da coroa */}
-        <button
-          type="button"
-          onClick={onShow}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-none px-3 py-2 transition-transform active:scale-[0.98]"
-          style={{ background: "rgba(242,183,5,0.12)", border: `1.5px solid ${YELLOW}`, color: MM.text }}
-        >
-          <Crown className="h-5 w-5 shrink-0" style={{ color: YELLOW }} />
-          <span className="flex flex-col items-start leading-tight">
-            <span className="text-[16px] font-black italic tracking-wide">{t("gincanaShow", "Programa completo")}</span>
-            <span className="text-[11px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("gincanaShowSub", "4 rodadas sorteadas até a final da coroa · contra o computador")}
-            </span>
-          </span>
-        </button>
-
-        <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("gincanaKeys2", "WASD ou setas andam · Espaço pula · Shift ou E mergulha · segure F ou Ctrl para agarrar · arraste para girar a câmera")}
-        </p>
-        <p className="mt-3 hidden text-[12px] leading-snug max-[759px]:block [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-          {t("gincanaTouchHelp2", "Joystick anda · PULAR, MERGULHAR e AGARRAR (segure) na direita · arraste a tela para girar a câmera")}
-        </p>
-      </div>
-    </div>
-  )
+function Menu(props: { phase: string; onPhase: (p: string) => void; onPlay: (multi: boolean) => void; onShow?: () => void; onExit: () => void; multi: boolean; error: string | null }) {
+  return <GincanaPhaseSelect {...props} record={loadRecord} fmt={fmt} />
 }
 
 // ═══ prova ═══════════════════════════════════════════════════════════════════

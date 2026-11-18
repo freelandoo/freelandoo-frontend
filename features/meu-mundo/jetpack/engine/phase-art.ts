@@ -31,7 +31,7 @@ export interface PhaseArt {
   /** 1–5 (estrelas de dificuldade do cartão). */
   difficulty: 1 | 2 | 3 | 4 | 5
   tags: PhaseTag[]
-  /** Miniatura (public/meu-mundo/jetpack/fases/). */
+  /** Miniatura (public/meu-mundo/jetpack/fases-v2/, 18/11 do ChatGPT: MEU MUNDO 3D/arte/minijogos-thumb). */
   thumb: string | null
   accent: string
   /** Degradê do cartão quando a miniatura não carrega. */
@@ -40,7 +40,7 @@ export interface PhaseArt {
   stars: [number, number, number]
 }
 
-const THUMBS = "/meu-mundo/jetpack/fases/"
+const THUMBS = "/meu-mundo/jetpack/fases-v2/"
 
 export const PHASE_ART: readonly PhaseArt[] = [
   {
