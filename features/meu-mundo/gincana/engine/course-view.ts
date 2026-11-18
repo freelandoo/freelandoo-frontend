@@ -777,6 +777,15 @@ export class CourseView {
       const SLATE: RGB = [0.19, 0.17, 0.16]
       const BRASS: RGB = [0.66, 0.46, 0.16]
       tg.roundBox(S, 0.7, S, 0.12, at(0, -0.35, 0), (x, y, z) => (y < -0.25 ? darker(SLATE, 0.6) : mix(SLATE, [0.3, 0.27, 0.24], (Math.sin(x * 3.1) * Math.cos(z * 2.7) + 1) * 0.25)), 6)
+      // V-Centro: o corpo do ladrilho em pedra de cantaria (clara em cima, escura no pé) com cinta de latão
+      // e rebites — não uma chapa preta; embaixo, o "pião" curto de pedra
+      tg.box(S - 0.04, 0.9, S - 0.04, at(0, -1.15, 0), (_x, y) => mix([0.24, 0.2, 0.17], [0.56, 0.5, 0.42], y + 0.45))
+      tg.box(S + 0.02, 0.16, S + 0.02, at(0, -0.78, 0), BRASS)
+      for (const sx of [-1, 1]) for (const u of [-0.3, 0, 0.3]) {
+        tg.box(0.1, 0.1, 0.06, at(u * S, -0.78, sx * (S / 2 + 0.02)), [0.9, 0.74, 0.38])
+        tg.box(0.06, 0.1, 0.1, at(sx * (S / 2 + 0.02), -0.78, u * S), [0.9, 0.74, 0.38])
+      }
+      tg.cylinder(S * 0.7, 1.1, at(0, -2.15, 0, Math.PI / 4), (_x, y) => mix([0.16, 0.13, 0.12], [0.36, 0.3, 0.26], y + 0.55), 4, S * 1.05)
       for (const s of [-1, 1]) {
         tg.roundBox(S - 0.1, 0.1, 0.2, 0.04, at(0, 0.03, s * (S / 2 - 0.12)), BRASS, 3)
         tg.roundBox(0.2, 0.1, S - 0.1, 0.04, at(s * (S / 2 - 0.12), 0.03, 0), BRASS, 3)
@@ -829,12 +838,22 @@ export class CourseView {
       const tw = new SoftGeo()
       const BRICK: RGB = [0.42, 0.2, 0.14]
       tw.roundBox(6.4, 3.2, 6.4, 0.2, at(0, M.y - 1.6, TZ), [0.3, 0.28, 0.26], 4)
-      tw.roundBox(5, 17, 5, 0.15, at(0, M.y + 8.5, TZ), (x, y, z) => {
-        const row = Math.floor((y + 40) / 0.5)
-        const brick = Math.floor((x + z + (row % 2) * 0.45 + 40) / 0.9)
-        const v = ((row * 7 + brick * 13) % 3) * 0.06
-        return y > 7.8 || y < -7.8 ? [0.62, 0.56, 0.48] : mix(BRICK, [0.55, 0.3, 0.2], v * 2)
-      }, 6)
+      // V-Centro: o fuste em FIADAS de tijolo de verdade (a pintura por vértice não aparecia: a caixa não
+      // tem vértice no meio) — núcleo de argamassa escura e fiadas de 0,5 m em três tons, saltando 2 cm
+      tw.box(4.92, 17, 4.92, at(0, M.y + 8.5, TZ), [0.2, 0.14, 0.12])
+      const TONES: RGB[] = [BRICK, mix(BRICK, [0.62, 0.34, 0.22], 0.5), darker(BRICK, 0.82)]
+      for (let r = 0; r < 34; r++) {
+        const y = M.y + 0.25 + r * 0.5
+        const stoneBand = r < 2 || r > 31
+        tw.box(5 + (r % 2) * 0.04, 0.44, 5 + ((r + 1) % 2) * 0.04, at(0, y, TZ), stoneBand ? [0.62, 0.56, 0.48] : TONES[(r * 7) % 3])
+      }
+      // janelas em arco com caixilho de latão (três em cima, três embaixo) e a moldura escura
+      for (const wy of [M.y + 5.4, M.y + 17.6]) {
+        for (const wx of [-1.3, 0, 1.3]) {
+          tw.box(0.86, 1.7, 0.1, at(wx, wy, TZ - 2.53), [0.16, 0.12, 0.1])
+          tw.cylinder(0.86, 0.1, at(wx, wy + 0.85, TZ - 2.53, 0, Math.PI / 2, 0), [0.16, 0.12, 0.1], 10)
+        }
+      }
       // cintas de pedra clara, pilastras de latão nas quinas
       for (const y of [M.y + 3, M.y + 8.6, M.y + 16]) tw.roundBox(5.4, 0.4, 5.4, 0.1, at(0, y, TZ), [0.66, 0.6, 0.52], 3)
       for (const sx of [-1, 1]) for (const sz of [-1, 1]) tw.cylinder(0.34, 17, at(sx * 2.5, M.y + 8.5, TZ + sz * 2.5), BRASS, 8)
