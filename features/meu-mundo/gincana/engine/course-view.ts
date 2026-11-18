@@ -156,7 +156,7 @@ export class CourseView {
     const wm = new StandardMaterial("gincana-water-mat", scene)
     wm.diffuseTexture = this.waterTex
     this.waterMat = wm
-    wm.specularColor = theme.fluid.kind === "water" || theme.fluid.kind === "ice" || theme.fluid.kind === "oil" ? new Color3(0.5, 0.55, 0.6) : new Color3(0, 0, 0)
+    wm.specularColor = theme.fluid.kind === "water" || theme.fluid.kind === "swamp" || theme.fluid.kind === "ice" || theme.fluid.kind === "oil" ? new Color3(0.5, 0.55, 0.6) : new Color3(0, 0, 0)
     wm.specularPower = 90
     if (theme.fluid.glow > 0) wm.emissiveTexture = this.waterTex
     this.water = CreateGround("gincana-sea", { width: 1100, height: 1100, subdivisions: 1 }, scene)
@@ -191,6 +191,13 @@ export class CourseView {
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(col, darker(col, 0.8), 0.8, 0), 20)
         if (!city) st.cylinder(q.r * 2 + 0.12, 0.9, at(q.x, DECK + 0.45, q.z), stripesY(HAZ_Y, HAZ_K, 0.5, 0.5), 20)
         st.sphere(q.r * 2.1, at(q.x, q.y1, q.z), col, 12, 1, 0.6, 1)
+      } else if (q.r > 0.7 && theme.deco === "forest") {
+        // Floresta (ref. v3): barril de perigo — faixas diagonais amarelo/preto, aros escuros e a tampa acesa
+        st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), (x, y, z) => (Math.floor((Math.atan2(z, x) * 1.6 + y * 6) + 100) % 2 ? HAZ_Y : HAZ_K), 24)
+        for (const yy of [0.3, h * 0.5, h - 0.25]) st.torus(q.r * 2 + 0.08, 0.12, at(q.x, q.y0 + yy, q.z), [0.1, 0.1, 0.12], 20)
+        st.cylinder(q.r * 2.3, 0.04, at(q.x, q.y0 + 0.02, q.z), [0.03, 0.08, 0.07], 16)
+        glow.cylinder(q.r * 1.6, 0.12, at(q.x, q.y1 + 0.05, q.z), [1, 0.9, 0.5], 18)
+        glow.torus(q.r * 1.9, 0.08, at(q.x, q.y1 + 0.02, q.z), [1, 0.62, 0.2], 18)
       } else if (q.r > 0.7) {
         // pilar do carrossel: bala listrada com topo redondo
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(YELLOW, ORANGE, 0.45), 24)
@@ -207,6 +214,32 @@ export class CourseView {
       const py = row[0].py
       const x0 = Math.min(...row.map((p) => p.x)) - 5.5
       const x1 = Math.max(...row.map((p) => p.x)) + 5.5
+      if (theme.deco === "forest") {
+        // Floresta: dois troncos e um GALHO grosso de trave, com musgo, folhas e flores acesas penduradas
+        const bark = (x: number, y: number, zz: number): RGB => {
+          const g = Math.sin(Math.atan2(zz, x) * 8 + y * 0.6)
+          return g > 0.5 ? [0.16, 0.1, 0.07] : g < -0.55 ? [0.42, 0.28, 0.2] : [0.28, 0.18, 0.13]
+        }
+        for (const x of [x0, x1]) {
+          st.tube(new Vector3(x, -1, z), new Vector3(x + Math.sign((x0 + x1) / 2 - x) * 0.4, py + 0.6, z + 0.2), 0.55, bark, 9)
+          st.sphere(1.6, at(x, py + 0.9, z), [0.14, 0.4, 0.24], 7, 1, 0.7, 1)
+        }
+        const N = 8
+        for (let k = 0; k < N; k++) {
+          const xa = x0 + ((x1 - x0) * k) / N
+          const xb = x0 + ((x1 - x0) * (k + 1)) / N
+          st.tube(new Vector3(xa, py + 0.35 + Math.sin(k) * 0.12, z), new Vector3(xb, py + 0.35 + Math.sin(k + 1) * 0.12, z), 0.42, bark, 8)
+          st.sphere(1.1, at((xa + xb) / 2, py + 0.85, z + (k % 2 ? 0.2 : -0.2)), k % 2 ? [0.16, 0.44, 0.26] : [0.1, 0.32, 0.2], 6, 1.4, 0.5, 1)
+          if (k % 2 === 1) {
+            for (let f = 0; f < 5; f++) {
+              const a = (f / 5) * Math.PI * 2
+              glow.sphere(0.4, at((xa + xb) / 2 + Math.cos(a) * 0.26, py + 0.15 + Math.sin(a) * 0.26, z - 0.55), [1, 0.38, 0.84], 5, 1, 1, 0.45)
+            }
+            glow.sphere(0.22, at((xa + xb) / 2, py + 0.15, z - 0.62), [1, 0.92, 0.6], 4)
+          }
+        }
+        continue
+      }
       for (const x of [x0, x1]) {
         st.cylinder(0.9, py + 1.5, at(x, (py + 1.5) / 2 - 1, z), stripesY(IRON, YELLOW, 1.1, 0), 16)
         st.sphere(1.3, at(x, py + 0.6, z), YELLOW, 12)
@@ -256,7 +289,8 @@ export class CourseView {
     }
     if (city) this.cityExtras(st)
     else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low)
-    buildTargets(st, glow, theme.deco, this.neon, low)
+    // alvos de programa de TV: fora da Floresta (a referência não tem)
+    if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)
     const stat = st.build("gincana-course", scene, toy, true)
     this.meshes.push(stat)
     if (glow.vertexCount) {
@@ -290,9 +324,30 @@ export class CourseView {
       const bg = new SoftGeo()
       const len = s.both ? s.len * 2 : s.len
       const off = s.both ? 0 : s.len / 2
-      bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city ? stripesY(ORANGE, WHITE, 0.55, 0) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
-      bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
-      if (!city) {
+      if (theme.deco === "forest") {
+        // Floresta (ref. v3): a barra é uma RAIZ retorcida (casca em sulcos, cipó enrolado, folhas) — mesma grossura da regra
+        const bark = (x: number, y: number, z: number): RGB => {
+          const g = Math.sin(Math.atan2(y, x) * 5 + z * 1.4)
+          return g > 0.5 ? [0.2, 0.11, 0.07] : g < -0.5 ? [0.52, 0.33, 0.2] : [0.36, 0.22, 0.13]
+        }
+        const z0 = s.both ? -s.len : 0
+        const N = Math.round(len / 0.9)
+        const pt = (k: number) => new Vector3(Math.sin(k * 0.9) * 0.12, Math.cos(k * 1.3) * 0.1, z0 + (k / N) * len)
+        for (let k = 0; k < N; k++) bg.tube(pt(k), pt(k + 1), s.r + 0.05 - (k % 2) * 0.03, bark, 9)
+        for (let k = 1; k < N; k += 2) {
+          const p = pt(k)
+          bg.torus((s.r + 0.08) * 2, 0.06, at(p.x, p.y, p.z, 0, Math.PI / 2, k), [0.2, 0.5, 0.2], 10)
+          if (k % 4 === 1) bg.sphere(0.5, at(p.x + 0.3, p.y + s.r + 0.1, p.z), [0.2, 0.55, 0.26], 5, 1, 0.3, 1.6)
+        }
+        for (const e of s.both ? [-s.len, s.len] : [s.len]) bg.sphere((s.r + 0.05) * 2.6, at(0, 0, e), bark, 9, 1, 0.9, 0.8)
+        // o eixo: barril de perigo (faixas diagonais amarelo/preto, aros escuros, tampa acesa)
+        bg.cylinder(1.9, 1.2, at(0, 0, 0), (x, y, z) => (Math.floor((Math.atan2(z, x) * 1.6 + y * 3.2) + 100) % 2 ? HAZ_Y : HAZ_K), 20)
+        for (const yy of [-0.55, 0.55]) bg.torus(1.95, 0.1, at(0, yy, 0), [0.12, 0.12, 0.14], 20)
+      } else {
+        bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city ? stripesY(ORANGE, WHITE, 0.55, 0) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
+        bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
+      }
+      if (!city && theme.deco !== "forest") {
         // v2: o eixo é uma máquina (tambor com faixa de perigo e tampa) e cada ponta da barra tem um batente
         bg.cylinder(2.3, 0.9, at(0, -0.75, 0), stripesY(darker(C[4], 0.8), C[4], 0.3, 0), 20)
         bg.cylinder(2.5, 0.28, at(0, -0.3, 0), stripesY(HAZ_Y, HAZ_K, 0.5, 0.6), 20)
@@ -311,13 +366,38 @@ export class CourseView {
     for (const p of course.pendulums) {
       const pg = new SoftGeo()
       if (city) pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), IRON, 8)
-      else {
+      else if (theme.deco === "forest") {
+        // cipó trançado (dois fios que se cruzam) no lugar da corrente
+        const n = Math.max(6, Math.round((p.len - p.R) / 0.5))
+        for (const ph of [0, Math.PI]) {
+          for (let k = 0; k < n; k++) {
+            const y0 = -k * ((p.len - p.R) / n)
+            const y1 = -(k + 1) * ((p.len - p.R) / n)
+            pg.tube(new Vector3(Math.sin(k * 1.2 + ph) * 0.09, y0, Math.cos(k * 1.2 + ph) * 0.09), new Vector3(Math.sin((k + 1) * 1.2 + ph) * 0.09, y1, Math.cos((k + 1) * 1.2 + ph) * 0.09), 0.08, k % 3 ? [0.24, 0.34, 0.14] : [0.32, 0.24, 0.12], 5)
+          }
+        }
+        for (let k = 1; k < n; k += 3) pg.sphere(0.45, at(0.15, -k * ((p.len - p.R) / n), 0.1, k), [0.2, 0.5, 0.24], 5, 1, 0.3, 1.6)
+      } else {
         // v2: corrente de elos (alternando o giro) no lugar da haste lisa
         const n = Math.max(4, Math.round((p.len - p.R) / 0.42))
         for (let k = 0; k < n; k++) pg.torus(0.42, 0.11, at(0, -0.21 - k * 0.42, 0, k % 2 ? Math.PI / 2 : 0, 0, Math.PI / 2), k % 2 ? IRON : darker(IRON, 0.8), 6)
       }
-      pg.cylinder(0.5, 0.3, at(0, -p.len + p.R * 1.02, 0), YELLOW, 12)
-      if (theme.deco === "forge") {
+      if (theme.deco !== "forest") pg.cylinder(0.5, 0.3, at(0, -p.len + p.R * 1.02, 0), YELLOW, 12)
+      if (theme.deco === "forest") {
+        // coco: fibra em faixas (escuro/claro), os três "olhos" e um tufo de folhas no nó do cipó
+        pg.sphere(p.R * 2, at(0, -p.len, 0), (x, y, z) => {
+          const f = Math.sin(Math.atan2(z, x) * 13 + y * 3)
+          return f > 0.5 ? [0.26, 0.15, 0.08] : f < -0.5 ? [0.56, 0.38, 0.2] : [0.42, 0.26, 0.13]
+        }, 16, 1, 1.08, 1)
+        for (let k = 0; k < 3; k++) {
+          const a = (k / 3) * Math.PI * 2
+          pg.sphere(p.R * 0.3, at(Math.cos(a) * p.R * 0.28, -p.len - p.R * 0.98, Math.sin(a) * p.R * 0.28), [0.1, 0.05, 0.03], 6, 1, 0.5, 1)
+        }
+        for (let k = 0; k < 5; k++) {
+          const a = (k / 5) * Math.PI * 2
+          pg.sphere(p.R * 0.9, at(Math.cos(a) * p.R * 0.45, -p.len + p.R * 1.05, Math.sin(a) * p.R * 0.45, -a, 0, 0.5), [0.18, 0.46, 0.22], 6, 1.3, 0.25, 0.5)
+        }
+      } else if (theme.deco === "forge") {
         // martelo: cabeça de ferro com faixa de brasa
         pg.roundBox(p.R * 2.6, p.R * 1.6, p.R * 1.6, 0.2, at(0, -p.len, 0), (x) => (Math.abs(x) > p.R * 1.05 ? [0.75, 0.3, 0.08] : SP.iron), 6)
       } else if (theme.deco === "ice") {
@@ -362,7 +442,21 @@ export class CourseView {
       if (baseKey.has(key)) continue
       const col = C[t.c]
       const tg = new SoftGeo()
-      if (t.k === 1) {
+      if (theme.deco === "forest") {
+        // folha gigante (ref. v3): nervura central clara, veios em espinha, beira mais clara, pecíolo atrás;
+        // duas cores (verde e verde-limão) pela cor do ladrilho
+        const leaf: RGB = t.c === 1 ? [0.56, 0.66, 0.2] : [0.2, 0.54, 0.3]
+        const W = t.h * 2.2
+        tg.sphere(W, at(0, -0.12, 0), (x, y, z) => {
+          if (y < -0.02) return darker(leaf, 0.55)
+          const r = Math.hypot(x / (W / 2), z / (W * 0.58))
+          if (Math.abs(x) < 0.06) return mix(leaf, [0.9, 1, 0.7], 0.55)
+          const vein = Math.abs(Math.sin(z * 4.2 - Math.abs(x) * 3.2)) < 0.14
+          const c = mix(leaf, [0.8, 0.95, 0.5], Math.max(0, r - 0.75) * 1.6)
+          return vein ? mix(c, [0.85, 1, 0.6], 0.35) : c
+        }, 16, 1, 0.16, 1.18)
+        tg.cylinder(0.14, 0.9, at(0, -0.1, -W * 0.62, 0, Math.PI / 2, 0), [0.3, 0.42, 0.16], 5)
+      } else if (t.k === 1) {
         tg.cylinder(t.h * 2.06, 0.55, at(0, -0.275, 0, Math.PI / 6), col, 6)
         tg.cylinder(t.h * 1.5, 0.06, at(0, 0.005, 0, Math.PI / 6), mix(col, WHITE, 0.35), 6)
       } else {
@@ -388,7 +482,24 @@ export class CourseView {
       const R = course.balls.R
       const bb = new SoftGeo()
       const paint = this.ballPaint()
-      bb.sphere(R * 2, at(0, 0, 0), paint, 18)
+      if (theme.deco === "forest") {
+        // Floresta (ref. v3): TRONCO rolando de lado (eixo em x, gira em x como a bola): casca em sulcos,
+        // pontas de madeira clara com anéis e um aro listrado de perigo em cada ponta; nó e musgo na casca
+        const Lg = 2.3
+        bb.cylinder(R * 2, Lg, at(0, 0, 0, 0, 0, Math.PI / 2), (x, y, z) => {
+          const g = Math.sin(Math.atan2(z, x) * 11 + y * 2)
+          return g > 0.55 ? [0.18, 0.1, 0.06] : g < -0.6 ? [0.5, 0.32, 0.18] : [0.36, 0.22, 0.12]
+        }, 16)
+        for (const sx of [-1, 1]) {
+          bb.cylinder(R * 1.9, 0.06, at(sx * (Lg / 2 + 0.02), 0, 0, 0, 0, Math.PI / 2), (x, _y, z) => {
+            const r = Math.hypot(x, z)
+            return Math.sin(r * 9) > 0.4 ? [0.66, 0.44, 0.24] : [0.86, 0.66, 0.4]
+          }, 16)
+          bb.torus(R * 2 + 0.04, 0.16, at(sx * (Lg / 2 - 0.12), 0, 0, 0, 0, Math.PI / 2), (x, y, z) => (Math.floor(Math.atan2(z, y) * 2.5 + 100) % 2 ? HAZ_Y : HAZ_K), 18)
+        }
+        bb.sphere(0.5, at(0.3, R * 0.92, 0.2), [0.24, 0.14, 0.08], 6, 1, 0.5, 1)
+        bb.sphere(0.9, at(-0.4, 0.2, R * 0.9), [0.18, 0.46, 0.22], 6, 1.2, 0.6, 0.4)
+      } else bb.sphere(R * 2, at(0, 0, 0), paint, 18)
       const glowing = theme.deco === "orbital" || theme.deco === "forge"
       this.ballBase = bb.build("gincana-ball", scene, glowing ? this.glowMat : toy, false)
       this.ballBase.isVisible = false
@@ -588,7 +699,43 @@ export class CourseView {
     g.strokeStyle = F.streak
     g.fillStyle = F.streak
     g.lineCap = "round"
-    if (F.kind === "void") {
+    if (F.kind === "swamp") {
+      // pântano aceso (Floresta, ref. v3): fundo esmeralda escuro, manchas que brilham, ondas claras em anel e algas escuras
+      const blot = (x: number, y: number, r: number, c0: string) => {
+        const gr = g.createRadialGradient(x, y, 0, x, y, r)
+        gr.addColorStop(0, c0)
+        gr.addColorStop(1, "rgba(0,0,0,0)")
+        g.fillStyle = gr
+        for (const ox of [-256, 0, 256]) for (const oy of [-256, 0, 256]) g.fillRect(x - r + ox, y - r + oy, r * 2, r * 2)
+      }
+      for (let i = 0; i < 9; i++) blot((i * 89) % 256, (i * 151) % 256, 40 + (i % 3) * 18, "rgba(30,210,110,0.55)")
+      for (let i = 0; i < 6; i++) blot((i * 113 + 40) % 256, (i * 71 + 90) % 256, 30 + (i % 2) * 14, "rgba(2,20,12,0.6)")
+      g.strokeStyle = F.streak
+      g.lineWidth = 0.9
+      for (let i = 0; i < 12; i++) {
+        const x = (i * 97 + 13) % 256
+        const y = (i * 61 + 29) % 256
+        const r = 4 + (i % 4) * 2.5
+        // anéis concêntricos que esmaecem para fora (a onda de algo que caiu)
+        for (let k = 0; k < 3; k++) {
+          g.globalAlpha = (0.55 - k * 0.16) * (0.7 + (i % 3) * 0.15)
+          g.beginPath()
+          g.ellipse(x, y, r * (1 + k * 0.7), r * (1 + k * 0.7) * 0.8, 0, 0, Math.PI * 2)
+          g.stroke()
+        }
+      }
+      // brilho de superfície: traços curtos e finos
+      g.globalAlpha = 0.4
+      for (let i = 0; i < 40; i++) {
+        const x = (i * 53 + 7) % 256
+        const y = (i * 131 + 3) % 256
+        g.beginPath()
+        g.moveTo(x, y)
+        g.lineTo(x + 5 + (i % 3) * 3, y)
+        g.stroke()
+      }
+      g.globalAlpha = 1
+    } else if (F.kind === "void") {
       // estrelas / poeira
       for (let i = 0; i < 70; i++) {
         const r = i % 9 === 0 ? 1.6 : 0.8
@@ -623,8 +770,8 @@ export class CourseView {
     tex.update(false)
     tex.wrapU = Texture.WRAP_ADDRESSMODE
     tex.wrapV = Texture.WRAP_ADDRESSMODE
-    tex.uScale = F.kind === "lava" ? 40 : 70
-    tex.vScale = F.kind === "lava" ? 40 : 70
+    tex.uScale = F.kind === "lava" ? 40 : F.kind === "swamp" ? 34 : 70
+    tex.vScale = F.kind === "lava" ? 40 : F.kind === "swamp" ? 34 : 70
     return tex
   }
 
@@ -655,13 +802,75 @@ export class CourseView {
       gearArch(this.stage.ctx, 0, y, z, 0, 15.2, 7.4, 1.15)
       return
     }
+    if (d === "forest") {
+      this.forestArch(st, glow, z, y)
+      return
+    }
     const C = this.C
     for (const s of [-1, 1]) {
       st.cylinder(1.2, 7.6, at(s * 7.6, y + 3.8, z), stripesY(C[4], C[7], 0.8, 0), 12)
       glow.sphere(1.1, at(s * 7.6, y + 8, z), C[1], 8)
     }
     st.roundBox(16.4, 0.9, 1.2, 0.3, at(0, y + 7.4, z), C[4], 4)
-    glow.roundBox(15, 0.3, 1.3, 0.1, at(0, y + 7.1, z), d === "orbital" ? [0.4, 0.9, 1] : d === "ice" ? [0.7, 0.95, 1] : d === "forest" ? [0.5, 1, 0.7] : [1, 0.7, 0.3], 2)
+    glow.roundBox(15, 0.3, 1.3, 0.1, at(0, y + 7.1, z), d === "orbital" ? [0.4, 0.9, 1] : d === "ice" ? [0.7, 0.95, 1] : [1, 0.7, 0.3], 2)
+  }
+
+  /**
+   * Floresta (ref. v3): arco de cipó — dois troncos retorcidos (casca em gomos, raízes no pé), o cipó em
+   * arco trançado (duas voltas), tufos de folha e flores acesas (rosa com miolo claro) com vaga-lumes.
+   */
+  private forestArch(st: SoftGeo, glow: SoftGeo, z: number, y: number) {
+    const BARK = (x: number, yy: number, zz: number): RGB => {
+      const n = Math.sin(Math.atan2(zz, x) * 7 + yy * 0.9)
+      return n > 0.45 ? [0.17, 0.1, 0.08] : n < -0.6 ? [0.42, 0.28, 0.2] : [0.3, 0.19, 0.13]
+    }
+    const LEAF: RGB[] = [[0.08, 0.32, 0.2], [0.12, 0.42, 0.26], [0.2, 0.55, 0.3]]
+    const R = 7.6
+    for (const s of [-1, 1]) {
+      // tronco em 4 gomos que torcem para dentro, mais largo no pé
+      let px = s * R
+      let pz = z
+      for (let k = 0; k < 4; k++) {
+        const nx = s * (R - 0.25 * k) + Math.sin(k * 2.1 + s) * 0.25
+        const nz = z + Math.cos(k * 1.7 + s) * 0.3
+        st.tube(new Vector3(px, y + k * 1.9 - 0.2, pz), new Vector3(nx, y + (k + 1) * 1.9, nz), 0.62 - k * 0.07, BARK, 9)
+        px = nx
+        pz = nz
+      }
+      // raízes abertas no chão
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2 + 0.4 * s
+        st.tube(new Vector3(s * R, y + 1.2, z), new Vector3(s * R + Math.cos(a) * 1.5, y - 0.1, z + Math.sin(a) * 1.5), 0.24, BARK, 6)
+      }
+      st.cylinder(2.6, 0.02, at(s * R, y + 0.012, z), [0.04, 0.1, 0.08], 12)
+    }
+    // o cipó: duas tranças em arco (de tronco a tronco), com folhas e flores
+    const arc = (u: number, ph: number, rr: number) => {
+      const a = Math.PI * u
+      return new Vector3(-Math.cos(a) * (R - 0.8) + Math.sin(u * 30 + ph) * rr, y + 7 + Math.sin(a) * 2.2 + Math.cos(u * 30 + ph) * rr, z + Math.sin(u * 30 + ph + 1) * rr)
+    }
+    const N = 28
+    for (const ph of [0, Math.PI]) {
+      for (let i = 0; i < N; i++) st.tube(arc(i / N, ph, 0.22), arc((i + 1) / N, ph, 0.22), 0.16, [0.22, 0.3, 0.14], 6)
+    }
+    for (let i = 0; i <= 16; i++) {
+      const u = i / 16
+      const c = arc(u, 0, 0)
+      const leaf = LEAF[i % 3]
+      st.sphere(1.1 + (i % 3) * 0.25, at(c.x, c.y + 0.1, c.z + ((i % 2) - 0.5) * 0.5), leaf, 7, 1, 0.55, 1)
+      // folhas penduradas
+      if (i % 2 === 0) st.sphere(0.55, at(c.x + 0.3, c.y - 0.45 - (i % 4) * 0.08, c.z - 0.2), LEAF[(i + 1) % 3], 5, 1, 1.3, 0.5)
+      if (i % 3 === 1) {
+        // flor acesa: 5 pétalas rosa + miolo claro (na frente do cipó)
+        const fz = c.z - 0.75
+        for (let k = 0; k < 5; k++) {
+          const a = (k / 5) * Math.PI * 2
+          glow.sphere(0.5, at(c.x + Math.cos(a) * 0.34, c.y + Math.sin(a) * 0.34, fz), [1, 0.36, 0.82], 5, 1, 1, 0.45)
+        }
+        glow.sphere(0.28, at(c.x, c.y, fz - 0.08), [1, 0.92, 0.6], 5)
+      }
+      if (i % 4 === 2) glow.sphere(0.13, at(c.x - 0.4, c.y - 1.1, c.z - 1), [1, 0.95, 0.4], 4)
+    }
   }
 
   /** Boias, faróis e o resto do canal da cidade (a cara de antes). */
@@ -751,13 +960,16 @@ export class CourseView {
     const stage = !city0 && (p.s === 0 || p.s === 6) && p.c === 6
     const d0 = this.theme.deco
     // piso escuro onde o rejunte acende (Orbital = ardósia roxa, Forja = ferro), gelo puxado para o ciano
-    const tint = (c: RGB): RGB => (d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : c)
-    const top = stage ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
-    const rim = C[p.rim]
+    const tint = (c: RGB): RGB => (d0 === "forest" ? mix(c, [0.1, 0.34, 0.32], 0.3) : d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : c)
+    // Floresta: todo o chão no verde-azulado da referência (a cor da peça só puxa um pouco)
+    const top = d0 === "forest" ? mix(C[5], C[p.c], stage ? 0 : 0.18) : stage ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
+    // Floresta (ref. v3): moldura magenta em toda a pista
+    const rim: RGB = d0 === "forest" ? [0.78, 0.16, 0.56] : C[p.rim]
     const body = darker(top, 0.62)
     const city = this.theme.deco === "city"
     const { pavers, cobble } = this.stage.ctx
     const ice = p.f < 0.7
+    if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (p.k === 0) {
       g.cylinder(p.r * 2, 0.5, at(p.x, p.y - 0.25, p.z), top, 48)
       if (city && !dyn) {
@@ -914,6 +1126,7 @@ export class CourseView {
 
   /** Frades acolchoados nas bordas da largada e da chegada: poste da cor da borda, gomo claro, chapéu amarelo aceso. */
   private bollards(g: SoftGeo, glow: SoftGeo, p: Pad) {
+    if (this.theme.deco === "forest") return this.forestRails(g, glow, p)
     const C = this.C
     const post = C[p.rim]
     const band = mix(post, C[7], 0.6)
@@ -940,6 +1153,103 @@ export class CourseView {
     }
   }
 
+  /**
+   * Floresta (ref. v3): cerca de programa de TV — postes quadrados magenta com chapéu claro e filete aceso,
+   * corrimão amarelo grosso (claro em cima, laranja embaixo) e um segundo tubo baixo; sombra no pé.
+   */
+  private forestRails(g: SoftGeo, glow: SoftGeo, p: Pad) {
+    const MAG: RGB = [0.72, 0.1, 0.5]
+    const MAG_HI: RGB = [0.95, 0.42, 0.78]
+    const RAIL = (_x: number, y: number): RGB => (y > 0.04 ? [1, 0.84, 0.22] : [0.96, 0.52, 0.1])
+    const frame = at(p.x, 0, p.z, p.rot)
+    const L = (lx: number, y: number, lz: number) => Matrix.Translation(lx, y, lz).multiply(frame)
+    for (const sx of [-1, 1]) {
+      const lx = sx * (p.hx - 0.4)
+      const zs: number[] = []
+      for (let lz = -p.hz + 0.5; lz <= p.hz - 0.4; lz += 2.6) zs.push(lz)
+      for (const lz of zs) {
+        // sombra de contato, poste, cinta clara, chapéu
+        g.cylinder(0.95, 0.02, L(lx, p.y + 0.012, lz), [0.05, 0.12, 0.1], 10)
+        g.roundBox(0.46, 1.15, 0.46, 0.08, L(lx, p.y + 0.575, lz), (_x, y) => (y < -0.45 ? darker(MAG, 0.7) : Math.abs(y - 0.2) < 0.06 ? MAG_HI : MAG), 4)
+        g.roundBox(0.58, 0.16, 0.58, 0.06, L(lx, p.y + 1.2, lz), MAG_HI, 3)
+        g.sphere(0.36, L(lx, p.y + 1.33, lz), [1, 0.84, 0.3], 8, 1, 0.8, 1)
+        glow.roundBox(0.04, 0.8, 0.48, 0.02, L(lx - sx * 0.24, p.y + 0.6, lz), [1, 0.45, 0.85], 1)
+      }
+      const z0 = zs[0]
+      const z1 = zs[zs.length - 1]
+      if (z1 <= z0) continue
+      const mid = (z0 + z1) / 2
+      g.roundBox(0.26, 0.26, z1 - z0, 0.12, L(lx, p.y + 1.02, mid), RAIL, 4)
+      g.roundBox(0.14, 0.14, z1 - z0, 0.06, L(lx, p.y + 0.5, mid), [0.96, 0.6, 0.14], 3)
+      glow.roundBox(0.06, 0.05, z1 - z0, 0.02, L(lx - sx * 0.13, p.y + 0.9, mid), [1, 0.5, 0.88], 1)
+    }
+    // cogumelos grandes nos quatro cantos (por fora da cerca)
+    const c = Math.cos(p.rot)
+    const s = Math.sin(p.rot)
+    for (const sx of [-1, 1])
+      for (const sz of [-1, 1]) {
+        const lx = sx * (p.hx + 0.9)
+        const lz = sz * (p.hz - 0.6)
+        this.mushroom(g, glow, p.x + lx * c + lz * s, p.z - lx * s + lz * c, p.y - 0.3, 1.25)
+      }
+  }
+
+  /**
+   * Cogumelo-lanterna da Floresta (ref. v3): talo aceso (branco quente embaixo → amarelo em cima), lamelas
+   * claras sob o chapéu, chapéu magenta em gradiente (borda clara) com pintas, e um broto ao lado.
+   */
+  private mushroom(g: SoftGeo, glow: SoftGeo, x: number, z: number, y: number, s: number) {
+    const h = 1.3 * s
+    g.cylinder(1.3 * s, 0.02, at(x, y + 0.012, z), [0.05, 0.12, 0.1], 10)
+    glow.cylinder(0.42 * s, h, at(x, y + h / 2, z), (_x, yy) => mix([1, 0.9, 0.62], [1, 0.72, 0.28], (yy + h / 2) / h), 10, 0.3 * s)
+    glow.cylinder(1.5 * s, 0.14 * s, at(x, y + h - 0.02, z), [1, 0.86, 0.66], 16, 0.5 * s)
+    const R = 1.75 * s
+    glow.sphere(R, at(x, y + h, z), (xx, yy, zz) => {
+      const r = Math.hypot(xx, zz) / (R / 2)
+      return yy < 0.05 * s ? [1, 0.84, 0.5] : mix([0.5, 0.05, 0.42], [1, 0.42, 0.8], Math.min(1, r * r * r))
+    }, 14, 1, 0.48, 1)
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 5) * Math.PI * 2 + x
+      glow.sphere(0.26 * s, at(x + Math.cos(a) * 0.5 * s, y + h + 0.3 * s, z + Math.sin(a) * 0.5 * s), [1, 0.88, 0.95], 5, 1, 0.4, 1)
+    }
+    // broto
+    const bx = x + 0.6 * s
+    const bz = z + 0.35 * s
+    glow.cylinder(0.16 * s, 0.45 * s, at(bx, y + 0.22 * s, bz), [1, 0.92, 0.75], 6)
+    glow.sphere(0.5 * s, at(bx, y + 0.46 * s, bz), [0.92, 0.3, 0.72], 8, 1, 0.55, 1)
+  }
+
+  /**
+   * Vitória-régia gigante (Floresta, ref. v3) — a plataforma que anda: folha verde com veios do miolo para a
+   * borda, o corte em cunha, a borda virada para cima (mais clara por fora, avermelhada por baixo) e uma flor de
+   * lótus acesa na beira de trás. Malha na origem (anda por update).
+   */
+  private lilyPad(g: SoftGeo, glow: SoftGeo, p: Pad) {
+    const R = p.r
+    const NOTCH = 0.22
+    g.cylinder(R * 2, 0.36, at(0, p.y - 0.18, 0), (x, _y, z) => {
+      const a = Math.atan2(z, x)
+      const r = Math.hypot(x, z) / R
+      if (Math.abs(a - Math.PI / 2) < NOTCH * (1 - r * 0.2) && r > 0.15) return [0.04, 0.2, 0.12]
+      const vein = Math.abs(Math.sin(a * 7)) < 0.12 && r > 0.12
+      const base = mix([0.16, 0.5, 0.26], [0.32, 0.68, 0.32], r)
+      return vein ? mix(base, [0.6, 0.86, 0.5], 0.5) : base
+    }, 36)
+    // borda virada para cima: verde claro por cima, avermelhada embaixo
+    g.torus(R * 2, 0.22, at(0, p.y + 0.04, 0), (_x, y): RGB => (y > 0 ? [0.4, 0.74, 0.34] : [0.56, 0.2, 0.22]), 36)
+    // por baixo: o caule grosso que some no pântano
+    g.cylinder(0.5, 2.4, at(0, p.y - 1.5, 0), [0.14, 0.3, 0.16], 8)
+    // lótus aceso na beira de trás (fora do miolo de pisar)
+    const fx = -R * 0.72
+    const fz = R * 0.45
+    for (let k = 0; k < 7; k++) {
+      const a = (k / 7) * Math.PI * 2
+      glow.sphere(0.5, at(fx + Math.cos(a) * 0.28, p.y + 0.3, fz + Math.sin(a) * 0.28, a, 0.7, 0), [1, 0.42, 0.86], 5, 0.5, 1, 1.4)
+    }
+    glow.sphere(0.3, at(fx, p.y + 0.35, fz), [1, 0.92, 0.5], 5)
+    glow.torus(R * 2 + 0.6, 0.06, at(0, p.y - 0.05, 0), [0.6, 1, 0.75], 24)
+  }
+
   /** Lateral do piso: listras diagonais largas de perigo, em dois tons do corpo. */
   private skirt(body: RGB) {
     const dark = darker(body, 0.7)
@@ -954,8 +1264,7 @@ export class CourseView {
         steamLamp(this.stage.ctx, x, z, { y, collide: false, gearSeed: Math.round(z) })
         return
       case "forest":
-        g.cylinder(0.25, 0.9, at(x, y + 0.45, z), [0.86, 0.84, 0.74], 6)
-        glow.sphere(0.9, at(x, y + 1, z), z % 2 > 1 ? [0.3, 0.95, 0.9] : [0.95, 0.35, 0.75], 8, 1, 0.5, 1)
+        this.mushroom(g, glow, x, z, y, 0.8 + (Math.abs(Math.round(z * 7)) % 3) * 0.15)
         return
       case "canyon":
         for (let k = 0; k < 3; k++) g.sphere(0.7 - k * 0.15, at(x, y + 0.3 + k * 0.5, z), this.C[(k + 2) % 3], 6, 1, 0.7, 1)

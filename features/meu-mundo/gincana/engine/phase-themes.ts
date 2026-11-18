@@ -36,7 +36,7 @@ export interface GincanaTheme {
   /** Paleta dos tampos e bordas (índices de GINCANA_COLORS). */
   palette: readonly RGB[]
   /** O que fica embaixo (y = 0): cor de dia e de noite, brilho próprio (lava/vazio) e os reflexos. */
-  fluid: { day: string; night: string; glow: number; streak: string; kind: "water" | "lava" | "void" | "oil" | "ice" }
+  fluid: { day: string; night: string; glow: number; streak: string; kind: "water" | "lava" | "void" | "oil" | "ice" | "swamp" }
   /** Céu: null = relógio de Brasília; número = noite fixa (0–1). */
   night: number | null
   deco: GincanaDeco
@@ -100,7 +100,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
     ],
     event: ["gincanaEvFloresta", "Maré do Pântano"],
     difficulty: 2,
-    accent: "#7CFFB0",
+    accent: "#FF4FD2",
     bg: ["#1f4a3a", "#08140f"],
     palette: [
       [0.28, 0.42, 0.2],
@@ -108,12 +108,12 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       [0.86, 0.3, 0.62],
       [0.2, 0.5, 0.46],
       [0.36, 0.22, 0.5],
-      [0.34, 0.6, 0.26],
+      [0.2, 0.5, 0.42],
       [0.18, 0.3, 0.42],
       [0.78, 0.86, 0.8],
     ],
-    fluid: { day: "#23a35a", night: "#0d6a3a", glow: 0.32, streak: "rgba(170,255,190,0.6)", kind: "water" },
-    night: 0.78,
+    fluid: { day: "#07402a", night: "#062e1f", glow: 0.62, streak: "rgba(150,255,190,0.75)", kind: "swamp" },
+    night: 0.95,
     deco: "forest",
   },
   {
