@@ -122,6 +122,31 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
+  // G3-5 Fábrica: Caça às Engrenagens
+  gincanaEvFabrica: ["Caça às Engrenagens", "Gear Hunt", "Caza de Engranajes"],
+  gincanaPhFabricaPitch3: [
+    "Engrenagens aparecem pela fábrica entre esteiras e prensas: pegue mais que os outros em 75 segundos.",
+    "Gears pop up around the factory between conveyors and presses: grab more than everyone else in 75 seconds.",
+    "Aparecen engranajes por la fábrica entre cintas y prensas: atrapa más que los demás en 75 segundos.",
+  ],
+  gincanaSecFg1: ["Engrenagem", "Gear", "Engranaje"],
+  gincanaSecFg2: ["Dourada", "Golden", "Dorado"],
+  gincanaSecFg3: ["Esteiras", "Conveyors", "Cintas"],
+  gincanaSecFg4: ["Prensas", "Presses", "Prensas"],
+  gincanaSecFg5: ["Óleo", "Oil", "Aceite"],
+  gincanaHowFg1: ["Cada engrenagem vale 1 e volta 7 segundos depois de pega.", "Each gear is worth 1 and comes back 7 seconds after it's taken.", "Cada engranaje vale 1 y vuelve 7 segundos después de tomarlo."],
+  gincanaHowFg2: ["A dourada, no alto do meio, vale 3: pule para pegar.", "The golden one, up in the middle, is worth 3: jump to grab it.", "El dorado, arriba en el centro, vale 3: salta para tomarlo."],
+  gincanaHowFg3: ["As esteiras levam você junto, cada uma para um lado.", "The conveyors carry you along, each one a different way.", "Las cintas te llevan, cada una hacia un lado."],
+  gincanaHowFg4: [
+    "As prensas deslizam de lado e derrubam quem está no caminho.",
+    "The presses slide sideways and knock down whoever is in the way.",
+    "Las prensas se deslizan de lado y derriban a quien esté en el camino.",
+  ],
+  gincanaHowFg5: [
+    "Caiu no óleo? Volta ao meio, só perdeu tempo. Classifica a metade de cima.",
+    "Fell into the oil? Back to the middle, you only lost time. The top half qualifies.",
+    "¿Caíste al aceite? Vuelves al centro, solo perdiste tiempo. Clasifica la mitad de arriba.",
+  ],
   // G3-4 Forja: Paredes de Brasa
   gincanaEvForja: ["Paredes de Brasa", "Ember Walls", "Muros de Brasa"],
   gincanaPhForjaPitch3: [

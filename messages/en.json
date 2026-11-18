@@ -15000,7 +15000,19 @@
     "gincanaHowFw2": "Sometimes there are two gaps: go to the nearest one.",
     "gincanaHowFw3": "The low wall has no gap: jump at the right time.",
     "gincanaHowFw4": "After 40 s the walls come in pairs and faster.",
-    "gincanaHowFw5": "Whoever the wall pushes off falls into the lava. When only the spots are left, it's over."
+    "gincanaHowFw5": "Whoever the wall pushes off falls into the lava. When only the spots are left, it's over.",
+    "gincanaEvFabrica": "Gear Hunt",
+    "gincanaPhFabricaPitch3": "Gears pop up around the factory between conveyors and presses: grab more than everyone else in 75 seconds.",
+    "gincanaSecFg1": "Gear",
+    "gincanaSecFg2": "Golden",
+    "gincanaSecFg3": "Conveyors",
+    "gincanaSecFg4": "Presses",
+    "gincanaSecFg5": "Oil",
+    "gincanaHowFg1": "Each gear is worth 1 and comes back 7 seconds after it's taken.",
+    "gincanaHowFg2": "The golden one, up in the middle, is worth 3: jump to grab it.",
+    "gincanaHowFg3": "The conveyors carry you along, each one a different way.",
+    "gincanaHowFg4": "The presses slide sideways and knock down whoever is in the way.",
+    "gincanaHowFg5": "Fell into the oil? Back to the middle, you only lost time. The top half qualifies."
   },
   "Sports": {
     "eyebrow": "Sports",

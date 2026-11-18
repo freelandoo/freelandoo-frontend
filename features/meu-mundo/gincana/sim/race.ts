@@ -198,7 +198,11 @@ export class GincanaRace {
     for (let k = 0; k < C.gems.length; k++) {
       const g = C.gems[k]
       if (this.t < g.t0 || (w.gems[k] >= 0 && this.t - w.gems[k] < g.back)) continue
-      for (let i = 0; i < this.runners.length; i++) {
+      // quem chega junto: a ordem roda a cada passo (ninguém leva sempre o empate)
+      const n = this.runners.length
+      const off = Math.floor(this.t * 60) % n
+      for (let q = 0; q < n; q++) {
+        const i = (q + off) % n
         const b = this.runners[i]
         if (this.gone[i] || b.out >= 0 || b.mode === MODE.WATER) continue
         if (Math.hypot(b.x - g.x, b.z - g.z) > 1.1 || b.y > g.y + 0.8 || b.y + GINCANA.bodyH < g.y - 0.4) continue

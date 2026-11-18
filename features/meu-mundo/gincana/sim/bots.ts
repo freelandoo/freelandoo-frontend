@@ -205,8 +205,40 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
       }
     }
   }
+  // Caça às Engrenagens: a engrenagem que vale mais pela distância (a dourada atrai); sobe na plataforma pulando
+  if (C.gems.length) {
+    let best = -1
+    let bestScore = -Infinity
+    for (let k = 0; k < C.gems.length; k++) {
+      const g = C.gems[k]
+      // a que vai voltar logo também serve (chega quando ela aparece)
+      const back = w.gems[k] < 0 ? g.t0 - t : w.gems[k] + g.back - t
+      const d = Math.hypot(g.x - b.x, g.z - b.z)
+      const wait = Math.max(0, back - d / GINCANA.run)
+      if (wait > 1.5) continue
+      const score = g.v / (d + 3 + wait * 6) + botRand(br.seed, br.slot * 7 + k, Math.floor(t / 2)) * 0.12 * (1.4 - br.skill)
+      if (score > bestScore) {
+        bestScore = score
+        best = k
+      }
+    }
+    if (best >= 0) {
+      const g = C.gems[best]
+      tx = g.x
+      tz = g.z
+      // está no alto (plataforma do meio): pula perto da beira
+      const d = Math.hypot(g.x - b.x, g.z - b.z)
+      if (g.y - 0.9 > b.y + 0.5 && d < 3.6 && b.ground && br.jumpCool <= 0) {
+        it.jump = true
+        br.jumpCool = 0.6
+      }
+    } else {
+      tx = 0
+      tz = 0
+    }
+  }
   // arena sem pedras (Varredura): um lugar a ~5 m do eixo, que muda de tempo em tempo
-  if (!C.tiles.length && C.sweepers.length) {
+  if (!C.tiles.length && !C.gems.length && C.sweepers.length) {
     const a = botRand(br.seed, br.slot, 500 + Math.floor(t / 6)) * Math.PI * 2
     const rr = 3.5 + botRand(br.seed, br.slot, 600 + Math.floor(t / 6)) * 3.5
     tx = C.sweepers[0].x + Math.sin(a) * rr

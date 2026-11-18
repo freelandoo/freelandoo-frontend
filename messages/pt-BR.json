@@ -14414,7 +14414,19 @@
     "gincanaHowFw2": "Às vezes são dois vãos: vá ao mais perto.",
     "gincanaHowFw3": "A mureta baixa não tem vão: pule na hora.",
     "gincanaHowFw4": "Depois de 40 s as paredes vêm em pares e mais rápidas.",
-    "gincanaHowFw5": "Quem a parede empurra para fora cai na lava. Sobrando só a vaga, acabou."
+    "gincanaHowFw5": "Quem a parede empurra para fora cai na lava. Sobrando só a vaga, acabou.",
+    "gincanaEvFabrica": "Caça às Engrenagens",
+    "gincanaPhFabricaPitch3": "Engrenagens aparecem pela fábrica entre esteiras e prensas: pegue mais que os outros em 75 segundos.",
+    "gincanaSecFg1": "Engrenagem",
+    "gincanaSecFg2": "Dourada",
+    "gincanaSecFg3": "Esteiras",
+    "gincanaSecFg4": "Prensas",
+    "gincanaSecFg5": "Óleo",
+    "gincanaHowFg1": "Cada engrenagem vale 1 e volta 7 segundos depois de pega.",
+    "gincanaHowFg2": "A dourada, no alto do meio, vale 3: pule para pegar.",
+    "gincanaHowFg3": "As esteiras levam você junto, cada uma para um lado.",
+    "gincanaHowFg4": "As prensas deslizam de lado e derrubam quem está no caminho.",
+    "gincanaHowFg5": "Caiu no óleo? Volta ao meio, só perdeu tempo. Classifica a metade de cima."
   },
   "Sports": {
     "eyebrow": "Esportes",

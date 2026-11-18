@@ -65,6 +65,9 @@ export class CourseView {
   private readonly wallLows: InstancedMesh[] = []
   private readonly wallBases: Mesh[] = []
   private readonly wallTmp: WallWave[] = []
+  /** Gincana 3: engrenagens da coleta (uma instância por ponto). */
+  private readonly gemMeshes: InstancedMesh[] = []
+  private readonly gemBases: Mesh[] = []
   private readonly doorMeshes: InstancedMesh[] = []
   private doorBase: Mesh | null = null
   private readonly doorShake: number[] = []
@@ -456,6 +459,34 @@ export class CourseView {
         m.setEnabled(false)
         this.wallLows.push(m)
       }
+    }
+
+    // ── Gincana 3: engrenagens (latão; a dourada, que vale 3, maior e amarela) ──
+    if (course.gems.length) {
+      const bases = new Map<number, Mesh>()
+      for (const v of [...new Set(course.gems.map((g) => g.v))]) {
+        const s = v >= 3 ? 1.35 : 1
+        const col: RGB = v >= 3 ? [1, 0.82, 0.18] : [0.86, 0.6, 0.26]
+        const gg = new SoftGeo()
+        // de pé (o eixo em z): anel com 10 dentes e o miolo
+        gg.cylinder(1.1 * s, 0.26, at(0, 0, 0, Math.PI / 2, 0, 0), col, 20)
+        gg.cylinder(0.42 * s, 0.34, at(0, 0, 0, Math.PI / 2, 0, 0), mix(col, WHITE, 0.4), 12)
+        for (let k = 0; k < 10; k++) {
+          const a = (k / 10) * Math.PI * 2
+          gg.roundBox(0.28 * s, 0.3 * s, 0.24, 0.05, at(Math.cos(a) * 0.62 * s, Math.sin(a) * 0.62 * s, 0, 0, 0, a), col, 3)
+        }
+        const base = gg.build(`gincana-gem-${v}`, scene, this.glowMat, false)
+        base.setEnabled(true)
+        base.isVisible = false
+        bases.set(v, base)
+        this.gemBases.push(base)
+      }
+      course.gems.forEach((g, i) => {
+        const m = bases.get(g.v)!.createInstance(`gincana-gem-i${i}`)
+        m.position.set(g.x, g.y, g.z)
+        m.isPickable = false
+        this.gemMeshes.push(m)
+      })
     }
 
     // ── portas (todas iguais por fora: as de verdade tombam quando alguém passa) ──
@@ -1006,6 +1037,20 @@ export class CourseView {
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
       m.mesh.rotation.y = m.p.k === 0 ? m.p.spin * tt : padRot(m.p, tt)
     }
+    // engrenagens: some quando pega, volta crescendo; no ar gira e balança
+    for (let i = 0; i < C.gems.length; i++) {
+      const g = C.gems[i]
+      const m = this.gemMeshes[i]
+      const took = world.gems[i]
+      const age = took < 0 ? tt - g.t0 : tt - took - g.back
+      const on = tt >= g.t0 && (took < 0 || age >= 0)
+      m.setEnabled(on)
+      if (!on) continue
+      const pop = Math.min(1, Math.max(0.2, age / 0.35))
+      m.scaling.setAll(pop)
+      m.position.y = g.y + Math.sin(clock * 2.4 + i) * 0.15
+      m.rotation.y = clock * 1.8 + i
+    }
     if (C.walls) {
       const Wl = C.walls
       const n = Math.round((2 * Wl.hw) / Wl.seg)
@@ -1089,6 +1134,8 @@ export class CourseView {
     for (const m of this.wallSegs) m.dispose()
     for (const m of this.wallLows) m.dispose()
     for (const m of this.wallBases) m.dispose()
+    for (const m of this.gemMeshes) m.dispose()
+    for (const m of this.gemBases) m.dispose()
     for (const m of this.doorMeshes) m.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

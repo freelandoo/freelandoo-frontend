@@ -14980,7 +14980,19 @@
     "gincanaHowFw2": "A veces hay dos huecos: ve al más cercano.",
     "gincanaHowFw3": "El muro bajo no tiene hueco: salta en el momento justo.",
     "gincanaHowFw4": "Después de 40 s los muros vienen en pares y más rápido.",
-    "gincanaHowFw5": "A quien el muro empuja fuera cae a la lava. Cuando solo quedan los cupos, se acabó."
+    "gincanaHowFw5": "A quien el muro empuja fuera cae a la lava. Cuando solo quedan los cupos, se acabó.",
+    "gincanaEvFabrica": "Caza de Engranajes",
+    "gincanaPhFabricaPitch3": "Aparecen engranajes por la fábrica entre cintas y prensas: atrapa más que los demás en 75 segundos.",
+    "gincanaSecFg1": "Engranaje",
+    "gincanaSecFg2": "Dorado",
+    "gincanaSecFg3": "Cintas",
+    "gincanaSecFg4": "Prensas",
+    "gincanaSecFg5": "Aceite",
+    "gincanaHowFg1": "Cada engranaje vale 1 y vuelve 7 segundos después de tomarlo.",
+    "gincanaHowFg2": "El dorado, arriba en el centro, vale 3: salta para tomarlo.",
+    "gincanaHowFg3": "Las cintas te llevan, cada una hacia un lado.",
+    "gincanaHowFg4": "Las prensas se deslizan de lado y derriban a quien esté en el camino.",
+    "gincanaHowFg5": "¿Caíste al aceite? Vuelves al centro, solo perdiste tiempo. Clasifica la mitad de arriba."
   },
   "Sports": {
     "eyebrow": "Deportes",
