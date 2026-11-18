@@ -14992,7 +14992,19 @@
     "gincanaHowFg2": "El dorado, arriba en el centro, vale 3: salta para tomarlo.",
     "gincanaHowFg3": "Las cintas te llevan, cada una hacia un lado.",
     "gincanaHowFg4": "Las prensas se deslizan de lado y derriban a quien esté en el camino.",
-    "gincanaHowFg5": "¿Caíste al aceite? Vuelves al centro, solo perdiste tiempo. Clasifica la mitad de arriba."
+    "gincanaHowFg5": "¿Caíste al aceite? Vuelves al centro, solo perdiste tiempo. Clasifica la mitad de arriba.",
+    "gincanaEvGelo": "Rey del Iceberg",
+    "gincanaPhGeloPitch3": "Quédate en la cima del iceberg: cada segundo allí arriba vale un punto. En 70 segundos, quien más se quede es rey.",
+    "gincanaSecGk1": "La cima",
+    "gincanaSecGk2": "Barra",
+    "gincanaSecGk3": "Bloques de hielo",
+    "gincanaSecGk4": "Empujón",
+    "gincanaSecGk5": "Mar",
+    "gincanaHowGk1": "Cada segundo de pie dentro del anillo de la cima vale 1 punto.",
+    "gincanaHowGk2": "Una barra baja gira en la cima y acelera: salta cuando venga.",
+    "gincanaHowGk3": "En el borde, bloques de hielo se deslizan y te empujan al mar.",
+    "gincanaHowGk4": "Lánzate contra quien esté en la cima para sacarlo. ¡El hielo resbala!",
+    "gincanaHowGk5": "¿Caíste al mar? Vuelves al borde, solo perdiste tiempo. Clasifica la mitad de arriba."
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -14426,7 +14426,19 @@
     "gincanaHowFg2": "A dourada, no alto do meio, vale 3: pule para pegar.",
     "gincanaHowFg3": "As esteiras levam você junto, cada uma para um lado.",
     "gincanaHowFg4": "As prensas deslizam de lado e derrubam quem está no caminho.",
-    "gincanaHowFg5": "Caiu no óleo? Volta ao meio, só perdeu tempo. Classifica a metade de cima."
+    "gincanaHowFg5": "Caiu no óleo? Volta ao meio, só perdeu tempo. Classifica a metade de cima.",
+    "gincanaEvGelo": "Rei do Iceberg",
+    "gincanaPhGeloPitch3": "Fique no topo do iceberg: cada segundo lá em cima vale um ponto. Em 70 segundos, quem fica mais é rei.",
+    "gincanaSecGk1": "O topo",
+    "gincanaSecGk2": "Barra",
+    "gincanaSecGk3": "Blocos de gelo",
+    "gincanaSecGk4": "Empurrão",
+    "gincanaSecGk5": "Mar",
+    "gincanaHowGk1": "Cada segundo em pé dentro do anel do topo vale 1 ponto.",
+    "gincanaHowGk2": "Uma barra baixa gira no topo e acelera: pule quando ela vier.",
+    "gincanaHowGk3": "Na beira, blocos de gelo deslizam e empurram para o mar.",
+    "gincanaHowGk4": "Mergulhe em quem está no topo para tirar do lugar. O gelo escorrega!",
+    "gincanaHowGk5": "Caiu no mar? Volta à beira, só perdeu tempo. Classifica a metade de cima."
   },
   "Sports": {
     "eyebrow": "Esportes",

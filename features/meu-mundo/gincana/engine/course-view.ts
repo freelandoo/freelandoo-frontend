@@ -68,6 +68,8 @@ export class CourseView {
   /** Gincana 3: engrenagens da coleta (uma instância por ponto). */
   private readonly gemMeshes: InstancedMesh[] = []
   private readonly gemBases: Mesh[] = []
+  /** Gincana 3: o anel aceso do topo (Rei do Iceberg). */
+  private zoneRing: Mesh | null = null
   private readonly doorMeshes: InstancedMesh[] = []
   private doorBase: Mesh | null = null
   private readonly doorShake: number[] = []
@@ -459,6 +461,22 @@ export class CourseView {
         m.setEnabled(false)
         this.wallLows.push(m)
       }
+    }
+
+    // ── Gincana 3: o topo que vale ponto (anel aceso na beira + coroa no meio) ──
+    if (course.zone) {
+      const Z = course.zone
+      const zg = new SoftGeo()
+      zg.torus(Z.r * 2, 0.16, at(0, 0, 0), [1, 0.82, 0.2], 64)
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2
+        zg.cylinder(0.12, 0.5, at(Math.cos(a) * 0.5, 1.35, Math.sin(a) * 0.5, 0, 0, 0), [1, 0.86, 0.3], 6, 0.02)
+      }
+      // a coroa fica em cima do pilar do meio
+      zg.torus(1.1, 0.14, at(0, 1.1, 0), [1, 0.86, 0.3], 24)
+      this.zoneRing = zg.build("gincana-zone", scene, this.glowMat, false)
+      this.zoneRing.position.set(Z.x, Z.y + 0.06, Z.z)
+      this.zoneRing.isPickable = false
     }
 
     // ── Gincana 3: engrenagens (latão; a dourada, que vale 3, maior e amarela) ──
@@ -1037,6 +1055,7 @@ export class CourseView {
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
       m.mesh.rotation.y = m.p.k === 0 ? m.p.spin * tt : padRot(m.p, tt)
     }
+    if (this.zoneRing) this.zoneRing.scaling.y = 1 + Math.sin(clock * 3) * 0.25
     // engrenagens: some quando pega, volta crescendo; no ar gira e balança
     for (let i = 0; i < C.gems.length; i++) {
       const g = C.gems[i]
@@ -1136,6 +1155,7 @@ export class CourseView {
     for (const m of this.wallBases) m.dispose()
     for (const m of this.gemMeshes) m.dispose()
     for (const m of this.gemBases) m.dispose()
+    this.zoneRing?.dispose()
     for (const m of this.doorMeshes) m.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

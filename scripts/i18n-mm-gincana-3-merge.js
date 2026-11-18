@@ -122,6 +122,31 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
+  // G3-6 Gelo: Rei do Iceberg
+  gincanaEvGelo: ["Rei do Iceberg", "King of the Iceberg", "Rey del Iceberg"],
+  gincanaPhGeloPitch3: [
+    "Fique no topo do iceberg: cada segundo lá em cima vale um ponto. Em 70 segundos, quem fica mais é rei.",
+    "Stay on top of the iceberg: every second up there is worth a point. In 70 seconds, whoever stays longest is king.",
+    "Quédate en la cima del iceberg: cada segundo allí arriba vale un punto. En 70 segundos, quien más se quede es rey.",
+  ],
+  gincanaSecGk1: ["O topo", "The top", "La cima"],
+  gincanaSecGk2: ["Barra", "Bar", "Barra"],
+  gincanaSecGk3: ["Blocos de gelo", "Ice blocks", "Bloques de hielo"],
+  gincanaSecGk4: ["Empurrão", "Shove", "Empujón"],
+  gincanaSecGk5: ["Mar", "Sea", "Mar"],
+  gincanaHowGk1: ["Cada segundo em pé dentro do anel do topo vale 1 ponto.", "Every second standing inside the ring on top is worth 1 point.", "Cada segundo de pie dentro del anillo de la cima vale 1 punto."],
+  gincanaHowGk2: ["Uma barra baixa gira no topo e acelera: pule quando ela vier.", "A low bar spins on top and speeds up: jump when it comes.", "Una barra baja gira en la cima y acelera: salta cuando venga."],
+  gincanaHowGk3: ["Na beira, blocos de gelo deslizam e empurram para o mar.", "At the edge, ice blocks slide and push you into the sea.", "En el borde, bloques de hielo se deslizan y te empujan al mar."],
+  gincanaHowGk4: [
+    "Mergulhe em quem está no topo para tirar do lugar. O gelo escorrega!",
+    "Dive into whoever is on top to knock them off. The ice is slippery!",
+    "Lánzate contra quien esté en la cima para sacarlo. ¡El hielo resbala!",
+  ],
+  gincanaHowGk5: [
+    "Caiu no mar? Volta à beira, só perdeu tempo. Classifica a metade de cima.",
+    "Fell into the sea? Back to the edge, you only lost time. The top half qualifies.",
+    "¿Caíste al mar? Vuelves al borde, solo perdiste tiempo. Clasifica la mitad de arriba.",
+  ],
   // G3-5 Fábrica: Caça às Engrenagens
   gincanaEvFabrica: ["Caça às Engrenagens", "Gear Hunt", "Caza de Engranajes"],
   gincanaPhFabricaPitch3: [

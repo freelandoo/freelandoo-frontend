@@ -15012,7 +15012,19 @@
     "gincanaHowFg2": "The golden one, up in the middle, is worth 3: jump to grab it.",
     "gincanaHowFg3": "The conveyors carry you along, each one a different way.",
     "gincanaHowFg4": "The presses slide sideways and knock down whoever is in the way.",
-    "gincanaHowFg5": "Fell into the oil? Back to the middle, you only lost time. The top half qualifies."
+    "gincanaHowFg5": "Fell into the oil? Back to the middle, you only lost time. The top half qualifies.",
+    "gincanaEvGelo": "King of the Iceberg",
+    "gincanaPhGeloPitch3": "Stay on top of the iceberg: every second up there is worth a point. In 70 seconds, whoever stays longest is king.",
+    "gincanaSecGk1": "The top",
+    "gincanaSecGk2": "Bar",
+    "gincanaSecGk3": "Ice blocks",
+    "gincanaSecGk4": "Shove",
+    "gincanaSecGk5": "Sea",
+    "gincanaHowGk1": "Every second standing inside the ring on top is worth 1 point.",
+    "gincanaHowGk2": "A low bar spins on top and speeds up: jump when it comes.",
+    "gincanaHowGk3": "At the edge, ice blocks slide and push you into the sea.",
+    "gincanaHowGk4": "Dive into whoever is on top to knock them off. The ice is slippery!",
+    "gincanaHowGk5": "Fell into the sea? Back to the edge, you only lost time. The top half qualifies."
   },
   "Sports": {
     "eyebrow": "Sports",

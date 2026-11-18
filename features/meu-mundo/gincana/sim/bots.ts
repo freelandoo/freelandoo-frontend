@@ -237,8 +237,22 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
       tz = 0
     }
   }
+  // Rei do Iceberg: vai para o topo (um lugar dentro dele que muda de tempo em tempo); pula na beira
+  if (C.zone) {
+    const Z = C.zone
+    const a = botRand(br.seed, br.slot, 700 + Math.floor(t / 4)) * Math.PI * 2
+    const rr = botRand(br.seed, br.slot, 800 + Math.floor(t / 4)) * (Z.r - 1.2)
+    tx = Z.x + Math.sin(a) * rr
+    tz = Z.z + Math.cos(a) * rr
+    const d = Math.hypot(Z.x - b.x, Z.z - b.z)
+    // ainda embaixo: pula perto da beira (o mais fraco erra a hora às vezes)
+    if (b.y < Z.y - 0.4 && d < Z.r + 1.4 + br.skill * 0.6 && b.ground && br.jumpCool <= 0) {
+      it.jump = true
+      br.jumpCool = 0.5 + (1 - br.skill) * 0.6
+    }
+  }
   // arena sem pedras (Varredura): um lugar a ~5 m do eixo, que muda de tempo em tempo
-  if (!C.tiles.length && !C.gems.length && C.sweepers.length) {
+  if (!C.tiles.length && !C.gems.length && !C.zone && C.sweepers.length) {
     const a = botRand(br.seed, br.slot, 500 + Math.floor(t / 6)) * Math.PI * 2
     const rr = 3.5 + botRand(br.seed, br.slot, 600 + Math.floor(t / 6)) * 3.5
     tx = C.sweepers[0].x + Math.sin(a) * rr
