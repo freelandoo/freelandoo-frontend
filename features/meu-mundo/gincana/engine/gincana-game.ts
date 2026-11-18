@@ -33,7 +33,7 @@ import { lerpAngle } from "../../engine/motion"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { BODY_IDS, type BodyId } from "../../types"
-import { GINCANA, riseAt, sectionAt, type GincanaMode } from "../sim/course"
+import { GINCANA, memState, memTarget, riseAt, sectionAt, type GincanaMode } from "../sim/course"
 import { ANIM, MODE, groundUnder, runnerAnim, type RunEvent, type RunIntent } from "../sim/body"
 import { GincanaRace } from "../sim/race"
 import { CourseView } from "./course-view"
@@ -84,6 +84,8 @@ export interface GincanaHud {
   alive: number
   pts: number
   riseGap: number
+  /** Relógio da Praça: rodada, fase (1 decore, 2 esconde, 3 chama, 4 cai, 5 volta), o símbolo chamado (−1 = ainda não) e quanto falta. */
+  mem: { r: number; ph: number; sym: number; left: number } | null
 }
 
 export type GincanaNotice =
@@ -375,6 +377,10 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       const s = seats.get(r.slot)!
       return { slot: r.slot, name: s.name, me: r.slot === me, bot: s.bot, fin: r.fin, progress: Math.max(0, Math.min(1, (r.dist + 4) / (C.finishZ + 4))), out: r.out >= 0, pts: r.pts }
     })
+  const memHud = (M: NonNullable<typeof C.memory>, tt: number) => {
+    const st = memState(M, tt)
+    return { r: st.r, ph: st.ph, sym: st.ph === 3 || st.ph === 4 ? memTarget(race.world.seed, st.r) : -1, left: st.left }
+  }
   const hud = (): GincanaHud => {
     const rows = board()
     const t = race.t
@@ -398,6 +404,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       alive: race.alive(),
       pts: Math.round(mine.pts * 10) / 10,
       riseGap: C.rise && mine.out < 0 && mine.fin < 0 ? mine.y - riseAt(C, Math.max(0, t)) : Infinity,
+      mem: C.memory ? memHud(C.memory, Math.max(0, t)) : null,
     }
   }
 

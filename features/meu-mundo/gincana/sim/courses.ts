@@ -482,6 +482,29 @@ function courseGelo(): Course {
 }
 
 /** Todas as fases (montadas uma vez). */
+/**
+ * Relógio da Praça (Gincana 3, memória): grade 5×5 na praça do Centro. Os ladrilhos mostram
+ * símbolos, apagam, o relógio da torre chama um e os ladrilhos dos outros caem por 3 s.
+ * As rodadas encurtam; quem cai está fora.
+ */
+export const MEM_GRID = { x: 0, z: 0, y: DECK, n: 5, size: 3.3, gap: 0.22, t0: 1.5 }
+function courseRelogio(): Course {
+  const k = new CourseKit()
+  return k.done({
+    id: "relogio",
+    mode: "survive",
+    qualify: 0.5,
+    limit: 100,
+    memory: MEM_GRID,
+    checkpoints: [{ x: 0, z: 1.3, y: DECK, w: 6 }],
+    finishZ: 40,
+    finishY: 90,
+    sections: [],
+    minFinish: 1e6,
+    route: () => [{ x: 0, z: 0 }],
+  })
+}
+
 export const COURSES: Record<GincanaPhase, Course> = {
   cidade: courseCidade(),
   floresta: courseFloresta(),
@@ -490,6 +513,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   forja: courseForja(),
   fabrica: courseFabrica(),
   gelo: courseGelo(),
+  relogio: courseRelogio(),
 }
 
 /** O percurso da fase (desconhecida = a de sempre). */

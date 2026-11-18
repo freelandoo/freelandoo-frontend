@@ -32,6 +32,7 @@ import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 import { GodVoice } from "../../ui/quest/god-voice"
 import { GINCANA_THEMES, themeOf, type GincanaTheme } from "../engine/phase-themes"
+import { MemSymbol } from "./mem-symbol"
 
 /** Entrar numa largada em grupo (null = a sala não abriu). */
 export type GincanaJoin = (
@@ -610,6 +611,25 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
             </button>
           </div>
 
+          {/* Relógio da Praça: decore / atenção / o símbolo chamado */}
+          {!result && hud.phase === "run" && hud.mem && hud.mem.ph >= 1 && hud.mem.ph <= 4 && (
+            <div className="pointer-events-none absolute inset-x-0 flex flex-col items-center gap-1" style={{ top: "22%" }}>
+              <span className="rounded-full px-3 py-0.5 text-[11px] font-black uppercase tracking-wider" style={{ background: "rgba(0,0,0,0.55)", color: "#F2B705" }}>
+                {t("gincanaMemRound", "Rodada {n}").replace("{n}", String(hud.mem.r + 1))}
+              </span>
+              {hud.mem.sym >= 0 ? (
+                <div className="flex flex-col items-center gap-1 rounded-2xl px-5 py-2" style={{ background: "rgba(10,8,6,0.62)" }}>
+                  <span className="text-[13px] font-black italic text-white">{t("gincanaMemCall", "O relógio chama:")}</span>
+                  <MemSymbol s={hud.mem.sym} size={isTouch ? 64 : 84} />
+                </div>
+              ) : (
+                <span className="rounded-2xl px-4 py-1.5 text-[18px] font-black italic text-white" style={{ background: "rgba(10,8,6,0.55)", textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}>
+                  {hud.mem.ph === 1 ? t("gincanaMemShow", "Decore os símbolos!") : t("gincanaMemHide", "Atenção…")}
+                  {hud.mem.ph === 1 && <span className="ml-2 tabular-nums text-[#F2B705]">{Math.ceil(hud.mem.left)}</span>}
+                </span>
+              )}
+            </div>
+          )}
           {hud.phase === "countdown" && (
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4">
               <span key={Math.ceil(hud.countdown)} className="text-[120px] font-black italic leading-none text-white" style={{ textShadow: "0 6px 28px rgba(58,29,110,0.55)", WebkitTextStroke: `3px ${PINK}` }}>

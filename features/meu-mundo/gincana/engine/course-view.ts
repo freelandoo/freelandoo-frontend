@@ -25,9 +25,10 @@ import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildLogos, type LogoView } from "../../corrida/engine/logos"
-import { DECK, drumAngle, riseAt, wallsAt, type WallWave, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
+import { DECK, drumAngle, memCall, memState, memSymbols, memTarget, memTile, riseAt, wallsAt, type WallWave, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
 import type { RunWorld } from "../sim/body"
 import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
+import { memSymbolGeo } from "./mem-symbols"
 import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
 import { postLantern, steamLamp } from "../../engine/steampunk/kit"
 import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
@@ -72,6 +73,13 @@ export class CourseView {
   private zoneRing: Mesh | null = null
   /** Gincana 3: anéis do Rolo de Gelo (um nó por anel, gira em z). */
   private readonly drumNodes: { node: TransformNode; d: number; r: number }[] = []
+  /** Gincana 3: Relógio da Praça — ladrilhos, símbolos [símbolo][ladrilho], o símbolo no mostrador e o ponteiro. */
+  private readonly memTiles: InstancedMesh[] = []
+  private readonly memSyms: InstancedMesh[][] = []
+  private readonly memFace: Mesh[] = []
+  private readonly memBases: Mesh[] = []
+  private memHand: TransformNode | null = null
+  private memCache: { seed: number; r: number; sym: Uint8Array } = { seed: -1, r: -1, sym: new Uint8Array(0) }
   private readonly doorMeshes: InstancedMesh[] = []
   private doorBase: Mesh | null = null
   private readonly doorShake: number[] = []
@@ -631,6 +639,105 @@ export class CourseView {
         z0 += ring.len
       })
     })
+
+    // ── Gincana 3: Relógio da Praça — ladrilhos de ardósia com moldura de latão e o vidro escuro onde o
+    // símbolo acende; atrás, a torre do relógio com o mostrador que chama o símbolo da rodada ──
+    if (course.memory) {
+      const M = course.memory
+      const S = M.size
+      const tg = new SoftGeo()
+      const SLATE: RGB = [0.19, 0.17, 0.16]
+      const BRASS: RGB = [0.66, 0.46, 0.16]
+      tg.roundBox(S, 0.7, S, 0.12, at(0, -0.35, 0), (x, y, z) => (y < -0.25 ? darker(SLATE, 0.6) : mix(SLATE, [0.3, 0.27, 0.24], (Math.sin(x * 3.1) * Math.cos(z * 2.7) + 1) * 0.25)), 6)
+      for (const s of [-1, 1]) {
+        tg.roundBox(S - 0.1, 0.1, 0.2, 0.04, at(0, 0.03, s * (S / 2 - 0.12)), BRASS, 3)
+        tg.roundBox(0.2, 0.1, S - 0.1, 0.04, at(s * (S / 2 - 0.12), 0.03, 0), BRASS, 3)
+        for (const u of [-1, 1]) tg.cylinder(0.16, 0.08, at(s * (S / 2 - 0.12), 0.08, u * (S / 2 - 0.12)), [0.9, 0.74, 0.38], 8)
+      }
+      // vidro escuro com aro interno de cobre (o símbolo acende em cima dele)
+      tg.roundBox(S * 0.74, 0.04, S * 0.74, 0.03, at(0, 0.01, 0), [0.06, 0.06, 0.08], 3)
+      for (const s of [-1, 1]) {
+        tg.roundBox(S * 0.78, 0.05, 0.06, 0.02, at(0, 0.02, s * S * 0.38), [0.55, 0.28, 0.16], 2)
+        tg.roundBox(0.06, 0.05, S * 0.78, 0.02, at(s * S * 0.38, 0.02, 0), [0.55, 0.28, 0.16], 2)
+      }
+      const tileBase = tg.build("gincana-mem-tile", scene, toy, false)
+      tileBase.isVisible = false
+      this.memBases.push(tileBase)
+      const N = M.n * M.n
+      for (let i = 0; i < N; i++) {
+        const q = memTile(M, i)
+        const inst = tileBase.createInstance("gincana-mem-" + i)
+        inst.position.set(q.x, M.y, q.z)
+        inst.isPickable = false
+        this.memTiles.push(inst)
+      }
+      for (let s = 0; s < 6; s++) {
+        const sg = new SoftGeo()
+        memSymbolGeo(sg, s, 1)
+        const sb = sg.build("gincana-mem-sym-" + s, scene, this.glowMat, false)
+        sb.isVisible = false
+        this.memBases.push(sb)
+        const row: InstancedMesh[] = []
+        for (let i = 0; i < N; i++) {
+          const q = memTile(M, i)
+          const inst = sb.createInstance("gincana-mem-sym-" + s + "-" + i)
+          inst.position.set(q.x, M.y + 0.07, q.z)
+          inst.isPickable = false
+          inst.setEnabled(false)
+          row.push(inst)
+        }
+        this.memSyms.push(row)
+        // o mesmo símbolo, grande, no mostrador (de pé, virado para a praça)
+        const fg = new SoftGeo()
+        memSymbolGeo(fg, s, 1.7)
+        const face = fg.build("gincana-mem-face-" + s, scene, this.glowMat, false)
+        face.rotation.x = -Math.PI / 2
+        face.setEnabled(false)
+        this.memFace.push(face)
+      }
+      // a torre do relógio (atrás da grade, sobre o canal)
+      const TZ = M.z + (M.n * (S + M.gap)) / 2 + 5.5
+      const FY = M.y + 12
+      const tw = new SoftGeo()
+      const BRICK: RGB = [0.42, 0.2, 0.14]
+      tw.roundBox(6.4, 3.2, 6.4, 0.2, at(0, M.y - 1.6, TZ), [0.3, 0.28, 0.26], 4)
+      tw.roundBox(5, 17, 5, 0.15, at(0, M.y + 8.5, TZ), (x, y, z) => {
+        const row = Math.floor((y + 40) / 0.5)
+        const brick = Math.floor((x + z + (row % 2) * 0.45 + 40) / 0.9)
+        const v = ((row * 7 + brick * 13) % 3) * 0.06
+        return y > 7.8 || y < -7.8 ? [0.62, 0.56, 0.48] : mix(BRICK, [0.55, 0.3, 0.2], v * 2)
+      }, 6)
+      // cintas de pedra clara, pilastras de latão nas quinas
+      for (const y of [M.y + 3, M.y + 8.6, M.y + 16]) tw.roundBox(5.4, 0.4, 5.4, 0.1, at(0, y, TZ), [0.66, 0.6, 0.52], 3)
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) tw.cylinder(0.34, 17, at(sx * 2.5, M.y + 8.5, TZ + sz * 2.5), BRASS, 8)
+      // mostrador: aro de latão, fundo creme, 12 marcas
+      tw.cylinder(5.6, 0.3, at(0, FY, TZ - 2.6, 0, Math.PI / 2, 0), BRASS, 32)
+      tw.cylinder(5.0, 0.32, at(0, FY, TZ - 2.62, 0, Math.PI / 2, 0), (x, _y, z) => mix([0.93, 0.88, 0.74], [0.8, 0.72, 0.56], Math.hypot(x, z) / 2.5), 32)
+      for (let h = 0; h < 12; h++) {
+        const a = (h / 12) * Math.PI * 2
+        tw.roundBox(h % 3 ? 0.12 : 0.22, h % 3 ? 0.4 : 0.6, 0.06, 0.02, at(Math.sin(a) * 2.15, FY + Math.cos(a) * 2.15, TZ - 2.8, 0, 0, -a), [0.12, 0.1, 0.08], 2)
+      }
+      // telhado de cobre esverdeado em pirâmide + agulha
+      tw.cylinder(7.6, 4.2, at(0, M.y + 19.2, TZ, Math.PI / 4), [0.22, 0.5, 0.42], 4, 0)
+      tw.cylinder(0.14, 2.6, at(0, M.y + 22.4, TZ), BRASS, 6)
+      // janelas acesas (âmbar) em cima e embaixo do mostrador
+      const tl = new SoftGeo()
+      for (const y of [M.y + 5.4, M.y + 15]) for (const x of [-1.1, 0, 1.1]) tl.roundBox(0.6, 1.3, 0.06, 0.05, at(x, y, TZ - 2.53), [1, 0.66, 0.24], 2)
+      for (let k = 0; k < 4; k++) tl.cylinder(0.3, 0.08, at(Math.sin(k * 1.57) * 2.45, FY + Math.cos(k * 1.57) * 2.45, TZ - 2.82, 0, Math.PI / 2, 0), [1, 0.8, 0.4], 8)
+      this.meshes.push(tw.build("gincana-mem-tower", scene, toy, true))
+      this.meshes.push(tl.build("gincana-mem-tower-lit", scene, this.glowMat, true))
+      for (const f of this.memFace) f.position.set(0, FY, TZ - 2.85)
+      // ponteiro (gira até o fim do chamado)
+      const hand = new TransformNode("gincana-mem-hand", scene)
+      hand.position.set(0, FY, TZ - 2.9)
+      const hg = new SoftGeo()
+      hg.roundBox(0.18, 2.2, 0.08, 0.04, at(0, 1.0, 0), [0.1, 0.08, 0.06], 2)
+      hg.cylinder(0.4, 0.12, at(0, 0, 0, 0, Math.PI / 2, 0), BRASS, 10)
+      const hm = hg.build("gincana-mem-hand-m", scene, toy, false)
+      hm.parent = hand
+      this.meshes.push(hm)
+      this.memHand = hand
+    }
 
     // ── Gincana 3: o topo que vale ponto (anel aceso na beira + coroa no meio) ──
     if (course.zone) {
@@ -1425,6 +1532,7 @@ export class CourseView {
     if (this.zoneRing) this.zoneRing.scaling.y = 1 + Math.sin(clock * 3) * 0.25
     // anéis do Rolo de Gelo: o material no ângulo m fica em θ = m + giro (rotation.z = −giro)
     for (const dn of this.drumNodes) dn.node.rotation.z = -drumAngle(C.drums[dn.d].rings[dn.r], tt)
+    if (C.memory) this.updateMemory(t, clock, world)
     // engrenagens: some quando pega, volta crescendo; no ar gira e balança
     for (let i = 0; i < C.gems.length; i++) {
       const g = C.gems[i]
@@ -1497,6 +1605,43 @@ export class CourseView {
     this.logos.tick(clock)
   }
 
+  /** Relógio da Praça: símbolos acesos só no "decore"; na queda, os errados despencam e voltam no fim. */
+  private updateMemory(t: number, clock: number, world: RunWorld) {
+    const M = this.course.memory!
+    const st = memState(M, Math.max(0, t))
+    const mc = this.memCache
+    if (mc.seed !== world.seed || mc.r !== st.r) {
+      mc.seed = world.seed
+      mc.r = st.r
+      mc.sym = memSymbols(M, world.seed, st.r)
+    }
+    const tgt = memTarget(world.seed, st.r)
+    for (let i = 0; i < this.memTiles.length; i++) {
+      const inst = this.memTiles[i]
+      const wrong = mc.sym[i] !== tgt
+      let y = M.y
+      let on = true
+      if (st.ph === 4 && wrong) {
+        const fall = 3 - st.left
+        if (fall < 0.9) y = M.y - 9 * fall * fall
+        else on = false
+      } else if (st.ph === 5 && wrong) y = M.y - 2.4 * Math.min(1, st.left / 0.8)
+      inst.setEnabled(on)
+      inst.position.y = y
+      for (let s = 0; s < 6; s++) {
+        const show = (st.ph === 1 && mc.sym[i] === s) || (st.ph === 4 && !wrong && s === tgt)
+        const si = this.memSyms[s][i]
+        si.setEnabled(show)
+        if (show) {
+          si.position.y = y + 0.07
+          si.scaling.setAll(st.ph === 4 ? 1 + Math.sin(clock * 8) * 0.06 : 1)
+        }
+      }
+    }
+    for (let s = 0; s < 6; s++) this.memFace[s].setEnabled((st.ph === 3 || st.ph === 4) && s === tgt)
+    if (this.memHand) this.memHand.rotation.z = st.ph === 3 ? -Math.PI * 2 * (1 - st.left / memCall(st.r)) : -clock * 0.2
+  }
+
   dispose() {
     clearInterval(this.timer)
     const w = window as unknown as { __mmSetHour?: (h: number | null) => void }
@@ -1525,6 +1670,12 @@ export class CourseView {
     for (const m of this.gemMeshes) m.dispose()
     for (const m of this.gemBases) m.dispose()
     this.zoneRing?.dispose()
+    for (const row of this.memSyms) for (const m of row) m.dispose()
+    for (const m of this.memTiles) m.dispose()
+    for (const m of this.memFace) m.dispose(false, true)
+    for (const m of this.memBases) m.dispose(false, true)
+    this.memHand?.dispose()
+    for (const dn of this.drumNodes) dn.node.dispose()
     for (const m of this.doorMeshes) m.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

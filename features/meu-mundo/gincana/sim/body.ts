@@ -19,6 +19,8 @@ import {
   drumAt,
   drumSpeed,
   gloveAt,
+  memIndexAt,
+  memUp,
   onTile,
   padRot,
   padShift,
@@ -268,6 +270,17 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
     if (q.y <= reach && q.y > best) {
       best = q.y
       tile = i
+      pad = -1
+      bounce = 0
+    }
+  }
+  // Relógio da Praça: o ladrilho sob o pé, se estiver de pé agora
+  const M = C.memory
+  if (M && M.y <= reach && M.y > best) {
+    const i = memIndexAt(M, x, z, EDGE)
+    if (i >= 0 && memUp(M, w.seed, i, w.t)) {
+      best = M.y
+      tile = -1
       pad = -1
       bounce = 0
     }

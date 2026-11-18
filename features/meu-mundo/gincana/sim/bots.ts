@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, drumAt, gloveAt, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -297,8 +297,37 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
       br.jumpCool = 0.6
     }
   }
+  // Relógio da Praça: decorando, passeia por um ladrilho sorteado da rodada; o relógio chamou, corre
+  // para o ladrilho mais perto do símbolo (depois de reagir). Às vezes "esquece" e vai para um errado:
+  // mais nas rodadas do fim e nos menos hábeis.
+  if (C.memory) {
+    const M = C.memory
+    const st = memState(M, t)
+    const N = M.n * M.n
+    const roam = memTile(M, Math.floor(botRand(br.seed, br.slot * 7, 900 + st.r * 3 + (st.ph >= 3 ? 1 : 0)) * N) % N)
+    tx = roam.x
+    tz = roam.z
+    const react = 0.25 + (1 - br.skill) * 0.9
+    const since = st.ph === 3 ? memCall(st.r) - st.left : st.ph === 4 ? 99 : -1
+    if (since >= react) {
+      const sym = memSymbols(M, w.seed, st.r)
+      const forget = 0.015 + st.r * 0.03 + (1 - br.skill) * 0.1
+      const target = botRand(br.seed, br.slot * 31, 950 + st.r) < forget ? (memTarget(w.seed, st.r) + 1 + Math.floor(botRand(br.seed, br.slot, 970 + st.r) * 5)) % 6 : memTarget(w.seed, st.r)
+      let bd = Infinity
+      for (let i = 0; i < N; i++) {
+        if (sym[i] !== target) continue
+        const q = memTile(M, i)
+        const dd = Math.hypot(q.x - b.x, q.z - b.z)
+        if (dd < bd) {
+          bd = dd
+          tx = q.x
+          tz = q.z
+        }
+      }
+    }
+  }
   // arena sem pedras (Varredura): um lugar a ~5 m do eixo, que muda de tempo em tempo
-  if (!C.tiles.length && !C.gems.length && !C.zone && !C.drums.length && C.sweepers.length) {
+  if (!C.tiles.length && !C.gems.length && !C.zone && !C.drums.length && !C.memory && C.sweepers.length) {
     const a = botRand(br.seed, br.slot, 500 + Math.floor(t / 6)) * Math.PI * 2
     const rr = 3.5 + botRand(br.seed, br.slot, 600 + Math.floor(t / 6)) * 3.5
     tx = C.sweepers[0].x + Math.sin(a) * rr

@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo"]
+export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo" | "relogio"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -175,6 +175,89 @@ export interface Glove {
   R: number
   period: number
   ph: number
+}
+
+/**
+ * Gincana 3 (Relógio da Praça): grade n×n de ladrilhos com símbolos. Cada rodada: os símbolos
+ * aparecem (show), somem (hide), o relógio chama um (call) e os ladrilhos dos OUTROS caem (drop),
+ * voltando no fim (back). Tudo pela semente e pelo tempo: nada guardado, a sala conta igual.
+ */
+export interface Memory {
+  x: number
+  z: number
+  y: number
+  n: number
+  /** lado do ladrilho e o vão entre eles */
+  size: number
+  gap: number
+  /** quando começa a primeira rodada */
+  t0: number
+}
+export const MEM_SYMBOLS = 6
+const MEM_HIDE = 1.2
+const MEM_DROP = 3
+const MEM_BACK = 0.8
+/** As rodadas encurtam: menos tempo para decorar e para correr. */
+export function memShow(r: number) {
+  return Math.max(2.4, 5 - 0.4 * r)
+}
+export function memCall(r: number) {
+  return Math.max(1.5, 3.2 - 0.3 * r)
+}
+/** Fase da rodada em t: 0 espera, 1 mostra, 2 esconde, 3 chama, 4 cai, 5 volta; `left` = quanto falta dela. */
+export function memState(m: Memory, t: number): { r: number; ph: number; left: number } {
+  if (t < m.t0) return { r: 0, ph: 0, left: m.t0 - t }
+  let s = t - m.t0
+  for (let r = 0; r < 500; r++) {
+    const parts = [memShow(r), MEM_HIDE, memCall(r), MEM_DROP, MEM_BACK]
+    for (let k = 0; k < parts.length; k++) {
+      if (s < parts[k]) return { r, ph: k + 1, left: parts[k] - s }
+      s -= parts[k]
+    }
+  }
+  return { r: 499, ph: 5, left: 0 }
+}
+/** Símbolo de cada ladrilho na rodada: embaralhado pela semente, todos os símbolos com 4–5 ladrilhos. */
+export function memSymbols(m: Memory, seed: number, r: number): Uint8Array {
+  const N = m.n * m.n
+  const idx: number[] = []
+  for (let i = 0; i < N; i++) idx.push(i)
+  for (let k = N - 1; k > 0; k--) {
+    const j = courseHash(seed ^ 0x2c1b3c6d, r * 977 + k) % (k + 1)
+    const tmp = idx[k]
+    idx[k] = idx[j]
+    idx[j] = tmp
+  }
+  const out = new Uint8Array(N)
+  for (let k = 0; k < N; k++) out[idx[k]] = k % MEM_SYMBOLS
+  return out
+}
+/** O símbolo que o relógio chama na rodada. */
+export function memTarget(seed: number, r: number) {
+  return courseHash(seed ^ 0x7f4a7c15, r * 131 + 7) % MEM_SYMBOLS
+}
+/** Centro do ladrilho i. */
+export function memTile(m: Memory, i: number) {
+  const pitch = m.size + m.gap
+  const c = (m.n - 1) / 2
+  return { x: m.x + ((i % m.n) - c) * pitch, z: m.z + (Math.floor(i / m.n) - c) * pitch }
+}
+/** Ladrilho sob (x, z) (−1 = vão ou fora), com folga `e`. */
+export function memIndexAt(m: Memory, x: number, z: number, e: number) {
+  const pitch = m.size + m.gap
+  const c = (m.n - 1) / 2
+  const ix = Math.round((x - m.x) / pitch + c)
+  const iz = Math.round((z - m.z) / pitch + c)
+  if (ix < 0 || iz < 0 || ix >= m.n || iz >= m.n) return -1
+  const i = iz * m.n + ix
+  const q = memTile(m, i)
+  return Math.abs(x - q.x) <= m.size / 2 + e && Math.abs(z - q.z) <= m.size / 2 + e ? i : -1
+}
+/** O ladrilho i está de pé em t? Só cai na fase 4, e só os que não têm o símbolo chamado. */
+export function memUp(m: Memory, seed: number, i: number, t: number) {
+  const st = memState(m, t)
+  if (st.ph !== 4) return true
+  return memSymbols(m, seed, st.r)[i] === memTarget(seed, st.r)
 }
 
 /** Ladrilho que cai `warn` s depois de pisado e volta depois de `gone`; k 0 = quadrado (meia largura h), 1 = hexágono (raio h). */
@@ -375,6 +458,8 @@ export interface Course {
   walls: Walls | null
   /** Gincana 3: cilindros que giram (Rolo de Gelo). */
   drums: Drum[]
+  /** Gincana 3: a grade do Relógio da Praça. */
+  memory: Memory | null
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -490,6 +575,7 @@ export class CourseKit {
     rise?: Rise
     zone?: Zone
     walls?: Walls
+    memory?: Memory
   }): Course {
     return {
       id: o.id,
@@ -501,6 +587,7 @@ export class CourseKit {
       zone: o.zone ?? null,
       walls: o.walls ?? null,
       drums: this.drums,
+      memory: o.memory ?? null,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,

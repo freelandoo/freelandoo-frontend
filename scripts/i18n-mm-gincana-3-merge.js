@@ -122,6 +122,28 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
+  // G3-10 Relógio da Praça (memória)
+  gincanaPhRelogio: ["Praça do Relógio", "Clock Square", "Plaza del Reloj"],
+  gincanaEvRelogio: ["Relógio da Praça", "Square Clock", "Reloj de la Plaza"],
+  gincanaPhRelogioPitch: [
+    "Decore os símbolos dos ladrilhos: o relógio da torre chama um e todos os outros caem. Quem cai está fora.",
+    "Memorize the symbols on the tiles: the tower clock calls one and all the others drop. Whoever falls is out.",
+    "Memoriza los símbolos de las baldosas: el reloj de la torre llama uno y todas las demás caen. Quien cae queda fuera.",
+  ],
+  gincanaSecRl1: ["Decore", "Memorize", "Memoriza"],
+  gincanaSecRl2: ["O relógio", "The clock", "El reloj"],
+  gincanaSecRl3: ["Corra", "Run", "Corre"],
+  gincanaSecRl4: ["Rodadas", "Rounds", "Rondas"],
+  gincanaSecRl5: ["O canal", "The canal", "El canal"],
+  gincanaHowRl1: ["Os ladrilhos mostram seis símbolos por alguns segundos e apagam.", "The tiles show six symbols for a few seconds and then go dark.", "Las baldosas muestran seis símbolos unos segundos y se apagan."],
+  gincanaHowRl2: ["O relógio da torre (e a tela) chama um símbolo.", "The tower clock (and the screen) calls one symbol.", "El reloj de la torre (y la pantalla) llama un símbolo."],
+  gincanaHowRl3: ["Corra para um ladrilho daquele símbolo: os outros caem.", "Run to a tile with that symbol: the others drop.", "Corre a una baldosa con ese símbolo: las demás caen."],
+  gincanaHowRl4: ["A cada rodada os símbolos trocam de lugar e o tempo encurta.", "Every round the symbols move around and the time gets shorter.", "En cada ronda los símbolos cambian de lugar y el tiempo se acorta."],
+  gincanaHowRl5: ["Caiu no canal? Está fora. Sobrando só a vaga, acabou.", "Fell into the canal? You are out. When only the spots are left, it is over.", "¿Caíste al canal? Quedas fuera. Cuando solo quedan los cupos, se acabó."],
+  gincanaMemShow: ["Decore os símbolos!", "Memorize the symbols!", "¡Memoriza los símbolos!"],
+  gincanaMemHide: ["Atenção…", "Get ready…", "Atención…"],
+  gincanaMemCall: ["O relógio chama:", "The clock calls:", "El reloj llama:"],
+  gincanaMemRound: ["Rodada {n}", "Round {n}", "Ronda {n}"],
   // G3-9 Gelo: Rolo de Gelo (troca o Rei do Iceberg da G3-6; o nome muda pelo OVERRIDE)
   gincanaPhGeloPitch4: [
     "Seis anéis de gelo giram sob os seus pés, cada um para um lado e cada vez mais rápido. Os buracos passam: quem cai no mar está fora.",
