@@ -57,6 +57,55 @@ export function newBrain(w: RunWorld, seed: number, slot: number): BotBrain {
  * os mais hábeis pulam o tempo todo (no ar não derruba pedra). Tudo pela
  * semente e pelo tempo, igual na sala e no aparelho.
  */
+/**
+ * Barra chegando: prevê onde estarei (velocidade de agora) e onde a barra
+ * estará; pula ~0,15 s antes do contato — ou, se a barra é ALTA (na altura do
+ * peito, Gincana 3), mergulha por baixo, de frente para o eixo. Erro pela habilidade.
+ */
+function barJump(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
+  const C = w.course
+  const t = w.t
+  if (!b.ground || br.jumpCool > 0) return
+  const vx = b.vx + (it.mx * GINCANA.run - b.vx) * 0.5
+  const vz = b.vz + (it.mz * GINCANA.run - b.vz) * 0.5
+  for (let i = 0; i < C.sweepers.length; i++) {
+    const s = C.sweepers[i]
+    if (Math.hypot(b.x - s.x, b.z - s.z) > s.len + 5) continue
+    const high = s.y - s.r - b.y > 0.9
+    let tc = -1
+    for (let k = 1; k <= 30 && tc < 0; k++) {
+      const h = k * 0.02
+      const px = b.x + vx * h - s.x
+      const pz = b.z + vz * h - s.z
+      const a = sweeperAngle(s, t + h)
+      const dx = Math.sin(a)
+      const dz = Math.cos(a)
+      const along = Math.max(s.both ? -s.len : 0, Math.min(s.len, px * dx + pz * dz))
+      if (Math.abs(along) < 0.9) continue
+      if (Math.hypot(px - dx * along, pz - dz * along) < s.r + GINCANA.bodyR + 0.08) tc = h
+    }
+    if (tc < 0) continue
+    const span = s.both ? Math.PI : Math.PI * 2
+    const pass = Math.floor(sweeperAngle(s, t) / span)
+    const err = (botRand(br.seed, br.slot * 31 + i, pass) - 0.5) * (1 - br.skill) * 0.3
+    if (high) {
+      // mergulha um pouco antes (o mergulho leva ~0,1 s para baixar), de frente para o eixo
+      if (tc < 0.3 + err && tc > 0.06) {
+        const ex = s.x - b.x
+        const ez = s.z - b.z
+        const d = Math.hypot(ex, ez) || 1
+        it.mx = ex / d
+        it.mz = ez / d
+        it.dive = true
+        br.jumpCool = 0.9
+      }
+    } else if (tc < 0.2 + err && tc > 0.04) {
+      it.jump = true
+      br.jumpCool = 0.7
+    }
+  }
+}
+
 /** Vizinhas de cada pedra (mesmo andar, até 2,6 m), calculadas uma vez por percurso. */
 const TILE_NB = new WeakMap<Course, number[][]>()
 function tileNeighbors(C: Course) {
@@ -124,6 +173,13 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
       br.jumpCool = 0.2
     }
   }
+  // arena sem pedras (Varredura): um lugar a ~5 m do eixo, que muda de tempo em tempo
+  if (!C.tiles.length && C.sweepers.length) {
+    const a = botRand(br.seed, br.slot, 500 + Math.floor(t / 6)) * Math.PI * 2
+    const rr = 3.5 + botRand(br.seed, br.slot, 600 + Math.floor(t / 6)) * 3.5
+    tx = C.sweepers[0].x + Math.sin(a) * rr
+    tz = C.sweepers[0].z + Math.cos(a) * rr
+  }
   const dx = tx - b.x
   const dz = tz - b.z
   const d = Math.hypot(dx, dz)
@@ -132,6 +188,7 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
     it.mx = (dx / d) * go
     it.mz = (dz / d) * go
   }
+  barJump(br, b, w, it)
   return it
 }
 
@@ -379,35 +436,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   } else if (go > 0) br.waited = Math.max(0, br.waited - dt * 0.5)
 
   // barra chegando: pula na hora (com o erro da habilidade)
-  if (b.ground && br.jumpCool <= 0) {
-    // prevê onde estarei (velocidade de agora) e onde a barra estará: pula ~0,15 s antes do contato
-    const vx = b.vx + (it.mx * GINCANA.run - b.vx) * 0.5
-    const vz = b.vz + (it.mz * GINCANA.run - b.vz) * 0.5
-    for (let i = 0; i < C.sweepers.length; i++) {
-      const s = C.sweepers[i]
-      if (Math.hypot(b.x - s.x, b.z - s.z) > s.len + 5) continue
-      let tc = -1
-      for (let k = 1; k <= 30 && tc < 0; k++) {
-        const h = k * 0.02
-        const px = b.x + vx * h - s.x
-        const pz = b.z + vz * h - s.z
-        const a = sweeperAngle(s, t + h)
-        const dx = Math.sin(a)
-        const dz = Math.cos(a)
-        const along = Math.max(s.both ? -s.len : 0, Math.min(s.len, px * dx + pz * dz))
-        if (Math.abs(along) < 0.9) continue
-        if (Math.hypot(px - dx * along, pz - dz * along) < s.r + GINCANA.bodyR + 0.08) tc = h
-      }
-      if (tc < 0) continue
-      const span = s.both ? Math.PI : Math.PI * 2
-      const pass = Math.floor((s.w * t + s.a0) / span)
-      const err = (botRand(br.seed, br.slot * 31 + i, pass) - 0.5) * (1 - br.skill) * 0.3
-      if (tc < 0.2 + err && tc > 0.04) {
-        it.jump = true
-        br.jumpCool = 0.7
-      }
-    }
-  }
+  barJump(br, b, w, it)
   // ladrilho tremendo embaixo: pula para o próximo
   if (b.ground && br.jumpCool <= 0) {
     for (let i = 0; i < C.tiles.length; i++) {

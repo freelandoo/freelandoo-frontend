@@ -333,79 +333,33 @@ function courseCanion(): Course {
 
 // ═══ orbital — Cidade Orbital ════════════════════════════════════════════════
 
+/**
+ * Gincana 3 (2026-11-18): VARREDURA — sobrevivência na Cidade Orbital. Um disco
+ * no vazio que gira devagar e duas barras: a BAIXA (rente ao chão) se pula; a
+ * ALTA (na altura do peito, girando para o outro lado) só passa quem MERGULHA
+ * por baixo. As duas aceleram até o fim. Quem cai do disco está fora. Acaba
+ * quando sobra a vaga (metade) ou em 100 s.
+ */
 function courseOrbital(): Course {
   const k = new CourseKit()
-  kitStart(k)
-  // ── 1. esteiras para trás, com caixas no caminho ──
-  k.box(0, 19, 7, 3, 6, 7, 1)
-  const belt = k.box(0, 35, 6, 13, 6, 3, 1)
-  k.pads[belt].bz = -3.2
-  for (const [x, z] of [[-3, 28], [2.5, 32], [-1, 37], [3.5, 41], [-3.5, 44.5]] as [number, number][]) k.post(x, z, 0.65, DECK, DECK + 1.2, 7)
-  k.box(0, 52, 7, 4, 6, 7, 1)
-  // ── 2. anéis que giram ──
-  const SPIN = [0.55, -0.75, 0.65]
-  ;[63.5, 77.5, 91.5].forEach((z, i) => {
-    const d = k.disc(0, z, 7.5, i === 1 ? 4 : 6, 7, 2)
-    k.pads[d].spin = SPIN[i]
-  })
-  k.post(0, 77.5, 0.7, DECK, DECK + 2.2, 7)
-  k.sweep(0, 77.5, DECK + 0.55, 7.7, 0.3, 1.45, 0, false)
-  k.box(0, 103, 7, 4, 6, 7, 2)
-  // ── 3. hexágonos que somem ──
-  for (let r = 0; r < 13; r++) {
-    for (let c = 0; c < 5; c++) {
-      const x = (c - 2) * 2.9 + (r % 2 ? 1.45 : -1.45) * 0.5
-      k.tile(x, 109.6 + r * 2.55, 1.45, (r + c) % 3 === 0 ? 4 : 6, 1)
-    }
-  }
-  k.box(0, 146, 7, 4, 6, 7, 3)
-  // ── 4. barreiras de energia ──
-  k.box(0, 173, 6, 23, 6, 7, 4)
-  ;[[159, 1.3, 0], [173, -1.5, 0.8], [187, 1.2, 1.6]].forEach(([z, w, a0]) => {
-    k.sweep(0, z, DECK + 0.55, 6.3, 0.3, w, a0, true)
-    k.post(0, z, 0.8, DECK, DECK + 2.2, 7)
-  })
-  k.pusher(0, 166, 1.4, 1.0, 2.4, 4.4, 0, 1.5, 0)
-  k.pusher(0, 180, 1.4, 1.0, 2.4, 4.4, 0, 1.9, 2.1)
-  k.box(0, 200, 7, 4, 6, 7, 4)
-  // ── 5. esferas rolando ──
-  const z0 = 204
-  const finishZ = kitFinish(k, z0, 0.95, 7.5, 1.15)
-  for (const [x, z] of [[0, 52], [-4, 49], [4, 49], [0, 103], [0, 146], [-4, 166], [4, 180], [0, 200]] as [number, number][]) k.logo(x, z)
+  const floor = k.disc(0, 0, 11, 6, 7, 1)
+  k.pads[floor].spin = 0.16
+  k.post(0, 0, 1.1, DECK, DECK + 3.2, 4)
+  // barra baixa (pular): dois braços
+  k.sweep(0, 0, DECK + 0.55, 11.6, 0.36, 0.85, 0, true, 0.02, 2.5)
+  // barra alta (mergulhar): um braço, ao contrário, na altura do peito
+  k.sweep(0, 0, DECK + 1.4, 11.6, 0.3, -0.6, Math.PI / 2, false, 0.014, 1.7)
   return k.done({
     id: "orbital",
-    checkpoints: [
-      { x: 0, z: -3.5, y: DECK, w: 7 },
-      { x: 0, z: 52, y: DECK, w: 6 },
-      { x: 0, z: 103, y: DECK, w: 6 },
-      { x: 0, z: 146, y: DECK, w: 6 },
-      { x: 0, z: 200, y: DECK, w: 5.5 },
-    ],
-    finishZ,
-    finishY: DECK + 6,
-    sections: [22, 56, 107, 150, z0],
-    minFinish: 22,
-    tileTime: { warn: 0.55, gone: 5 },
-    route: (r) =>
-      routeOf((add) => {
-        const side = r(1) < 0.5 ? -1 : 1
-        add(side * 1.2, 10)
-        add(side * 0.8, 15.5)
-        add(0, 20)
-        const F = [-1.5, 1, 5, -5][Math.floor(r(2) * 4)]
-        for (let z = 24; z <= 47; z += 2.5) add(F, z)
-        add(0, 50)
-        for (let z = 54; z <= 99; z += 1.6) add(0, z)
-        add(0, 103)
-        add(0, 107.5)
-        for (let i = 0; i < 13; i++) add(0, 109.6 + i * 2.55)
-        add(0, 143.5)
-        add(0, 147)
-        const B = r(3) < 0.5 ? -1 : 1
-        for (let z = 151; z <= 197; z += 2) add(B * (z > 166 && z < 180 ? -3.4 : 3.4), z)
-        add(0, 201)
-        routeFinish(add, z0, finishZ)
-      }),
+    mode: "survive",
+    qualify: 0.5,
+    limit: 100,
+    checkpoints: [{ x: 0, z: -6.5, y: DECK, w: 6 }],
+    finishZ: 40,
+    finishY: 90,
+    sections: [],
+    minFinish: 1e6,
+    route: () => [{ x: 0, z: 0 }],
   })
 }
 

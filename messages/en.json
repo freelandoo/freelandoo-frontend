@@ -14976,7 +14976,19 @@
     "gincanaHowCs2": "In the air you don't drop stones: jumping saves the floor.",
     "gincanaHowCs3": "Fell through a hole? There are three more floors below.",
     "gincanaHowCs4": "Grab and dive into others to knock them into a hole.",
-    "gincanaHowCs5": "Whoever falls from the bottom floor is out. When only the spots are left, it's over."
+    "gincanaHowCs5": "Whoever falls from the bottom floor is out. When only the spots are left, it's over.",
+    "gincanaEvOrbital": "Sweeper",
+    "gincanaPhOrbitalPitch3": "A disc over the void and two bars spinning faster and faster: jump the low one, dive under the high one.",
+    "gincanaSecOv1": "Low bar",
+    "gincanaSecOv2": "High bar",
+    "gincanaSecOv3": "Disc",
+    "gincanaSecOv4": "Shove",
+    "gincanaSecOv5": "Spots",
+    "gincanaHowOv1": "The bar at floor level: jump at the right time.",
+    "gincanaHowOv2": "The bar at chest height: dive to slide under it.",
+    "gincanaHowOv3": "The disc spins slowly and carries you. The edge is the void.",
+    "gincanaHowOv4": "Grab and dive into others to throw them into the bar.",
+    "gincanaHowOv5": "The bars speed up until the end. When only the spots are left, it's over."
   },
   "Sports": {
     "eyebrow": "Sports",

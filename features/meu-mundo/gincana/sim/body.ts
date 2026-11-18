@@ -26,6 +26,7 @@ import {
   riseAt,
   spawnAt,
   sweeperAngle,
+  sweeperW,
   tileUp,
   type Course,
   type Pad,
@@ -424,7 +425,8 @@ export function knock(b: Runner, kx: number, ky: number, kz: number, by: "bar" |
 function hazards(b: Runner, w: RunWorld, out: RunEvent[] | null) {
   const C = w.course
   const R = GINCANA.bodyR
-  const H = GINCANA.bodyH
+  // Gincana 3: mergulhando/deslizando o corpo fica baixo (0,7 m) e passa por baixo da barra alta
+  const H = b.mode === MODE.DIVE || b.mode === MODE.SLIDE ? GINCANA.lowH : GINCANA.bodyH
   const t = w.t
   for (const s of C.sweepers) {
     const cx = b.x - s.x
@@ -442,7 +444,7 @@ function hazards(b: Runner, w: RunWorld, out: RunEvent[] | null) {
     const gap = Math.hypot(b.x - px, b.z - pz)
     if (gap >= R + s.r) continue
     // velocidade da barra no ponto: ω × r (perpendicular à barra)
-    const sp = s.w * along
+    const sp = sweeperW(s, t) * along
     let tx = Math.cos(a) * Math.sign(sp || 1)
     let tz = -Math.sin(a) * Math.sign(sp || 1)
     if (Math.abs(along) < 0.6) {

@@ -14390,7 +14390,19 @@
     "gincanaHowCs2": "No ar você não derruba pedra: pular poupa o chão.",
     "gincanaHowCs3": "Caiu num buraco? Há mais três andares embaixo.",
     "gincanaHowCs4": "Agarre e mergulhe nos outros para derrubá-los num buraco.",
-    "gincanaHowCs5": "Quem cai do último andar está fora. Sobrando só a vaga, acabou."
+    "gincanaHowCs5": "Quem cai do último andar está fora. Sobrando só a vaga, acabou.",
+    "gincanaEvOrbital": "Varredura",
+    "gincanaPhOrbitalPitch3": "Um disco no vazio e duas barras que giram cada vez mais rápido: pule a baixa, mergulhe por baixo da alta.",
+    "gincanaSecOv1": "Barra baixa",
+    "gincanaSecOv2": "Barra alta",
+    "gincanaSecOv3": "Disco",
+    "gincanaSecOv4": "Empurrão",
+    "gincanaSecOv5": "Vaga",
+    "gincanaHowOv1": "A barra rente ao chão: pule na hora certa.",
+    "gincanaHowOv2": "A barra na altura do peito: mergulhe para passar por baixo.",
+    "gincanaHowOv3": "O disco gira devagar e leva você junto. A beira é o vazio.",
+    "gincanaHowOv4": "Agarre e mergulhe nos outros para jogá-los na barra.",
+    "gincanaHowOv5": "As barras aceleram até o fim. Sobrando só a vaga, acabou."
   },
   "Sports": {
     "eyebrow": "Esportes",

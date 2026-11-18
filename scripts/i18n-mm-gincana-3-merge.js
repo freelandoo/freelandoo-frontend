@@ -94,6 +94,39 @@ const MEU_MUNDO = {
     "Whoever falls from the bottom floor is out. When only the spots are left, it's over.",
     "Quien cae del último piso queda fuera. Cuando solo quedan los cupos, se acabó.",
   ],
+  // G3-3 Orbital: Varredura
+  gincanaEvOrbital: ["Varredura", "Sweeper", "Barrido"],
+  gincanaPhOrbitalPitch3: [
+    "Um disco no vazio e duas barras que giram cada vez mais rápido: pule a baixa, mergulhe por baixo da alta.",
+    "A disc over the void and two bars spinning faster and faster: jump the low one, dive under the high one.",
+    "Un disco sobre el vacío y dos barras que giran cada vez más rápido: salta la baja, lánzate por debajo de la alta.",
+  ],
+  gincanaSecOv1: ["Barra baixa", "Low bar", "Barra baja"],
+  gincanaSecOv2: ["Barra alta", "High bar", "Barra alta"],
+  gincanaSecOv3: ["Disco", "Disc", "Disco"],
+  gincanaSecOv4: ["Empurrão", "Shove", "Empujón"],
+  gincanaSecOv5: ["Vaga", "Spots", "Cupos"],
+  gincanaHowOv1: ["A barra rente ao chão: pule na hora certa.", "The bar at floor level: jump at the right time.", "La barra a ras del suelo: salta en el momento justo."],
+  gincanaHowOv2: [
+    "A barra na altura do peito: mergulhe para passar por baixo.",
+    "The bar at chest height: dive to slide under it.",
+    "La barra a la altura del pecho: lánzate para pasar por debajo.",
+  ],
+  gincanaHowOv3: [
+    "O disco gira devagar e leva você junto. A beira é o vazio.",
+    "The disc spins slowly and carries you. The edge is the void.",
+    "El disco gira despacio y te lleva. El borde es el vacío.",
+  ],
+  gincanaHowOv4: [
+    "Agarre e mergulhe nos outros para jogá-los na barra.",
+    "Grab and dive into others to throw them into the bar.",
+    "Agarra y lánzate contra los demás para tirarlos a la barra.",
+  ],
+  gincanaHowOv5: [
+    "As barras aceleram até o fim. Sobrando só a vaga, acabou.",
+    "The bars speed up until the end. When only the spots are left, it's over.",
+    "Las barras aceleran hasta el final. Cuando solo quedan los cupos, se acabó.",
+  ],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

@@ -35,6 +35,8 @@ export const GINCANA = {
   jumpBuffer: 0.15,
   bodyR: 0.4,
   bodyH: 1.7,
+  /** Gincana 3: altura do corpo mergulhando/deslizando (passa por baixo da barra alta). */
+  lowH: 0.7,
   stepUp: 0.45,
   /** Mergulho: para a frente, um pouco para cima; depois desliza e levanta. */
   diveV: 11.5,
@@ -144,6 +146,9 @@ export interface Sweeper {
   w: number
   a0: number
   both: boolean
+  /** Gincana 3: acelera (rad/s², no sentido do giro) até wMax (rad/s); 0 = velocidade fixa. */
+  acc: number
+  wMax: number
 }
 
 /** Bola de pêndulo que balança no eixo x, pendurada em (x, py, z). */
@@ -346,8 +351,9 @@ export class CourseKit {
   post(x: number, z: number, r: number, y0: number, y1: number, c: number, b = 0) {
     this.posts.push({ x, z, r, y0, y1, c, b })
   }
-  sweep(x: number, z: number, y: number, len: number, r: number, w: number, a0: number, both: boolean) {
-    this.sweepers.push({ x, z, y, len, r, w, a0, both })
+  sweep(x: number, z: number, y: number, len: number, r: number, w: number, a0: number, both: boolean, acc = 0, wMax = 0) {
+    this.sweepers.push({ x, z, y, len, r, w, a0, both, acc, wMax })
+    return this.sweepers.length - 1
   }
   swing(x: number, z: number, py: number, len: number, R: number, amp: number, w: number, ph: number) {
     this.pendulums.push({ x, z, py, len, R, amp, w, ph })
@@ -420,7 +426,18 @@ export class CourseKit {
 // ── o que se mexe ────────────────────────────────────────────────────────────
 
 export function sweeperAngle(s: Sweeper, t: number) {
-  return s.a0 + s.w * t
+  if (!s.acc) return s.a0 + s.w * t
+  // acelera até wMax e segue nela
+  const sg = Math.sign(s.w || 1)
+  const w0 = Math.abs(s.w)
+  const tc = Math.max(0, Math.min(t, (s.wMax - w0) / s.acc))
+  return s.a0 + sg * (w0 * t + 0.5 * s.acc * tc * tc + s.acc * tc * (t - tc))
+}
+
+/** Velocidade do giro da barra no tempo t (rad/s, com sinal). */
+export function sweeperW(s: Sweeper, t: number) {
+  if (!s.acc) return s.w
+  return Math.sign(s.w || 1) * Math.min(s.wMax, Math.abs(s.w) + s.acc * Math.max(0, t))
 }
 
 /** Centro da bola do pêndulo e velocidade em x. */
