@@ -15032,7 +15032,20 @@
     "gincanaHowPp2": "El carrusel tiene dos barras a ras del suelo: salta en el momento justo.",
     "gincanaHowPp3": "En las últimas filas abren menos puertas. ¿Chocaste? Prueba la de al lado.",
     "gincanaHowPp4": "Vigas estrechas y bolas de péndulo: espera a que pase la bola.",
-    "gincanaHowPp5": "Los barriles bajan por la rampa: esquívalos hasta la cima."
+    "gincanaHowPp5": "Los barriles bajan por la rampa: esquívalos hasta la cima.",
+    "gincanaPhFeira": "Mercado del Centro",
+    "gincanaEvFeira": "Mercado Rodante",
+    "gincanaPhFeiraPitch": "Cintas fuertes en el mercado: la rampa baja contra ti y los puestos sueltan sandías. Después, doble sentido, martillos y cintas de lado.",
+    "gincanaSecFr1": "Rampa rodante",
+    "gincanaSecFr2": "Doble sentido",
+    "gincanaSecFr3": "Martillos",
+    "gincanaSecFr4": "Cintas de lado",
+    "gincanaSecFr5": "Subida",
+    "gincanaHowFr1": "La rampa es una cinta que baja: no te detengas. Las sandías ruedan por los carriles.",
+    "gincanaHowFr2": "Una cinta te lleva hacia adelante, la otra hacia atrás. Las prensas te empujan a la de atrás.",
+    "gincanaHowFr3": "Los martillos se balancean en el camino: pasa cuando el tuyo vuelva.",
+    "gincanaHowFr4": "Cada franja tira hacia un lado: corre recto y corrige.",
+    "gincanaHowFr5": "La última subida lleva a la meta."
   },
   "Sports": {
     "eyebrow": "Deportes",

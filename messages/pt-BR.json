@@ -14466,7 +14466,20 @@
     "gincanaHowPp2": "O carrossel tem duas barras rente ao chão: pule na hora certa.",
     "gincanaHowPp3": "Nas últimas fileiras abrem menos portas. Bateu? Tente a vizinha.",
     "gincanaHowPp4": "Vigas estreitas e bolas de pêndulo: espere a bola passar.",
-    "gincanaHowPp5": "Barris descem a rampa: desvie até o topo."
+    "gincanaHowPp5": "Barris descem a rampa: desvie até o topo.",
+    "gincanaPhFeira": "Feira do Centro",
+    "gincanaEvFeira": "Feira Rolante",
+    "gincanaPhFeiraPitch": "Esteiras fortes na feira: a rampa desce contra você e as barracas soltam melancias. Depois, mão dupla, martelos e esteiras de lado.",
+    "gincanaSecFr1": "Rampa rolante",
+    "gincanaSecFr2": "Mão dupla",
+    "gincanaSecFr3": "Martelos",
+    "gincanaSecFr4": "Esteiras de lado",
+    "gincanaSecFr5": "Subida",
+    "gincanaHowFr1": "A rampa é uma esteira que desce: não pare. Melancias rolam pelas faixas.",
+    "gincanaHowFr2": "Uma esteira leva para a frente, a outra para trás. As prensas empurram para a de trás.",
+    "gincanaHowFr3": "Martelos balançam no caminho: passe quando o seu voltar.",
+    "gincanaHowFr4": "Cada faixa puxa para um lado: corra reto e corrija.",
+    "gincanaHowFr5": "A última subida leva à chegada."
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -15052,7 +15052,20 @@
     "gincanaHowPp2": "The carousel has two bars low to the ground: jump at the right time.",
     "gincanaHowPp3": "Fewer doors open in the last rows. Bumped? Try the next one.",
     "gincanaHowPp4": "Narrow beams and pendulum balls: wait for the ball to pass.",
-    "gincanaHowPp5": "Barrels roll down the ramp: dodge your way to the top."
+    "gincanaHowPp5": "Barrels roll down the ramp: dodge your way to the top.",
+    "gincanaPhFeira": "Downtown Market",
+    "gincanaEvFeira": "Rolling Market",
+    "gincanaPhFeiraPitch": "Strong conveyors at the market: the ramp runs down against you and the stalls drop watermelons. Then two-way belts, hammers and sideways belts.",
+    "gincanaSecFr1": "Rolling ramp",
+    "gincanaSecFr2": "Two-way",
+    "gincanaSecFr3": "Hammers",
+    "gincanaSecFr4": "Sideways belts",
+    "gincanaSecFr5": "Climb",
+    "gincanaHowFr1": "The ramp is a conveyor running down: don't stop. Watermelons roll down the lanes.",
+    "gincanaHowFr2": "One belt carries you forward, the other back. The presses push you onto the back one.",
+    "gincanaHowFr3": "Hammers swing across the path: go when yours swings back.",
+    "gincanaHowFr4": "Each strip pulls you to one side: run straight and correct.",
+    "gincanaHowFr5": "The last climb leads to the finish."
   },
   "Sports": {
     "eyebrow": "Sports",

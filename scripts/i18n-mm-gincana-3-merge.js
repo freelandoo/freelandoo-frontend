@@ -122,6 +122,28 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
+  // G3-12 Feira Rolante
+  gincanaPhFeira: ["Feira do Centro", "Downtown Market", "Mercado del Centro"],
+  gincanaEvFeira: ["Feira Rolante", "Rolling Market", "Mercado Rodante"],
+  gincanaPhFeiraPitch: [
+    "Esteiras fortes na feira: a rampa desce contra você e as barracas soltam melancias. Depois, mão dupla, martelos e esteiras de lado.",
+    "Strong conveyors at the market: the ramp runs down against you and the stalls drop watermelons. Then two-way belts, hammers and sideways belts.",
+    "Cintas fuertes en el mercado: la rampa baja contra ti y los puestos sueltan sandías. Después, doble sentido, martillos y cintas de lado.",
+  ],
+  gincanaSecFr1: ["Rampa rolante", "Rolling ramp", "Rampa rodante"],
+  gincanaSecFr2: ["Mão dupla", "Two-way", "Doble sentido"],
+  gincanaSecFr3: ["Martelos", "Hammers", "Martillos"],
+  gincanaSecFr4: ["Esteiras de lado", "Sideways belts", "Cintas de lado"],
+  gincanaSecFr5: ["Subida", "Climb", "Subida"],
+  gincanaHowFr1: ["A rampa é uma esteira que desce: não pare. Melancias rolam pelas faixas.", "The ramp is a conveyor running down: don't stop. Watermelons roll down the lanes.", "La rampa es una cinta que baja: no te detengas. Las sandías ruedan por los carriles."],
+  gincanaHowFr2: [
+    "Uma esteira leva para a frente, a outra para trás. As prensas empurram para a de trás.",
+    "One belt carries you forward, the other back. The presses push you onto the back one.",
+    "Una cinta te lleva hacia adelante, la otra hacia atrás. Las prensas te empujan a la de atrás.",
+  ],
+  gincanaHowFr3: ["Martelos balançam no caminho: passe quando o seu voltar.", "Hammers swing across the path: go when yours swings back.", "Los martillos se balancean en el camino: pasa cuando el tuyo vuelva."],
+  gincanaHowFr4: ["Cada faixa puxa para um lado: corra reto e corrija.", "Each strip pulls you to one side: run straight and correct.", "Cada franja tira hacia un lado: corre recto y corrige."],
+  gincanaHowFr5: ["A última subida leva à chegada.", "The last climb leads to the finish.", "La última subida lleva a la meta."],
   // G3-11 Cidade: Portas da Prefeitura (o nome muda pelo OVERRIDE)
   gincanaPhCidadePitch3: [
     "A corrida de abertura: fileiras de portas da Prefeitura (só algumas abrem), o carrossel, pêndulos e a subida com barris.",

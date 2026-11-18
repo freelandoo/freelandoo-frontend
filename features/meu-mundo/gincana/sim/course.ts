@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo" | "relogio"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
+export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo" | "relogio" | "feira"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo", "relogio", "feira"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa

@@ -739,6 +739,42 @@ export class CourseView {
       this.memHand = hand
     }
 
+    // ── Gincana 3: Feira Rolante — barracas dos dois lados (balcão de madeira, toldo listrado, frutas
+    // empilhadas, lampião), em cima de estacas no canal; o toldo alterna vermelho e verde ──
+    if (theme.id === "feira") {
+      const bg = new SoftGeo()
+      const lit = new SoftGeo()
+      const WOOD: RGB = [0.42, 0.26, 0.14]
+      const AWN: RGB[] = [[0.78, 0.16, 0.12], [0.16, 0.5, 0.26], [0.86, 0.56, 0.12]]
+      const FRUIT: RGB[] = [[0.2, 0.52, 0.18], [1, 0.55, 0.1], [0.82, 0.12, 0.14], [0.95, 0.85, 0.2]]
+      const stall = (sx: number, z: number, y: number, n: number) => {
+        const x = sx * 9.6
+        for (const dz of [-1.6, 1.6]) bg.cylinder(0.35, y + 0.6, at(x + sx * 0.6, (y - 0.6) / 2, z + dz), [0.3, 0.2, 0.12], 6)
+        bg.roundBox(3.2, 0.3, 4.2, 0.06, at(x, y, z), [0.36, 0.3, 0.24], 3)
+        // balcão virado para a pista, com tábuas
+        bg.roundBox(1.2, 1.1, 3.8, 0.06, at(x - sx * 0.8, y + 0.7, z), (_x, yy) => (Math.floor((yy + 10) / 0.22) % 2 ? WOOD : darker(WOOD, 0.8)), 4)
+        for (const dz of [-1.9, 1.9]) for (const dx of [-1.4, 1.4]) bg.cylinder(0.14, 2.8, at(x + dx, y + 1.55, z + dz), WOOD, 6)
+        // toldo inclinado para a pista, listrado
+        const c = AWN[n % AWN.length]
+        bg.roundBox(3.6, 0.1, 4.6, 0.04, at(x - sx * 0.2, y + 3.1, z, 0, 0, sx * 0.28), (_x, _y, zz) => (Math.floor((zz + 20) / 0.55) % 2 ? c : [0.95, 0.92, 0.84]), 6)
+        // frutas no balcão (pilhas de 3 tipos)
+        for (let i = 0; i < 9; i++) {
+          const fz = z - 1.5 + (i % 3) * 1.5 + (Math.floor(i / 3) - 1) * 0.3
+          const f = FRUIT[(i + n) % FRUIT.length]
+          bg.sphere(i % 3 === 1 ? 0.55 : 0.36, at(x - sx * (0.7 + Math.floor(i / 3) * 0.25), y + 1.42 + Math.floor(i / 3) * 0.18, fz), f, 8)
+        }
+        // lampião na quina
+        bg.cylinder(0.08, 1.2, at(x - sx * 1.5, y + 3.5, z + 2.1), [0.15, 0.13, 0.12], 5)
+        lit.sphere(0.36, at(x - sx * 1.5, y + 2.9, z + 2.1), [1, 0.72, 0.3], 8)
+      }
+      const rampY = (z: number) => DECK + (3 * Math.max(0, Math.min(24.9, z - 15.1))) / 24.9
+      let n = 0
+      for (const z of [20, 28, 36]) for (const sx of [-1, 1]) stall(sx, z, rampY(z), n++)
+      for (const z of [56, 70]) for (const sx of [-1, 1]) stall(sx, z, DECK + 3, n++)
+      this.meshes.push(bg.build("gincana-feira-stalls", scene, toy, true))
+      this.meshes.push(lit.build("gincana-feira-lit", scene, this.glowMat, true))
+    }
+
     // ── Gincana 3: o topo que vale ponto (anel aceso na beira + coroa no meio) ──
     if (course.zone) {
       const Z = course.zone
@@ -881,12 +917,15 @@ export class CourseView {
       mat.emissiveColor = new Color3(0.35, 0.35, 0.35)
       mat.specularColor = new Color3(0, 0, 0)
       const w = p.bz !== 0 ? p.hx * 2 - 0.6 : p.hz * 2 - 0.6
-      const h = p.bz !== 0 ? p.hz * 2 - 0.4 : p.hx * 2 - 0.4
+      // rampa-esteira (Feira Rolante): o plano acompanha a subida
+      const rise = p.k === 2 ? p.y2 - p.y : 0
+      const h = p.bz !== 0 ? Math.hypot(p.hz * 2, rise) - 0.4 : p.hx * 2 - 0.4
       const mesh = CreateGround("gincana-belt-plane", { width: w, height: h }, scene)
       mesh.material = mat
-      mesh.position.set(p.x, p.y + 0.035, p.z)
+      mesh.position.set(p.x, (p.y + p.y2) / 2 + 0.035, p.z)
       // a seta do desenho aponta para +v: gira o plano para a direção da esteira
       mesh.rotation.y = Math.atan2(p.bx, p.bz) + Math.PI
+      if (rise) mesh.rotation.x = (p.bz < 0 ? -1 : 1) * Math.atan2(rise, p.hz * 2)
       mesh.isPickable = false
       this.belts.push({ tex, mat, mesh, speed: Math.hypot(p.bx, p.bz) / 2 })
     }
@@ -1002,6 +1041,8 @@ export class CourseView {
     if (d === "forge") return (x, y, z) => ((Math.sin(x * 5) + Math.sin(y * 4 + z * 3)) > 0.6 ? [1, 0.8, 0.3] : [0.85, 0.25, 0.05])
     if (d === "factory") return (_x, y) => (Math.abs(y) % 0.8 < 0.18 ? SP.iron : [0.72, 0.2, 0.14])
     if (d === "ice") return () => [0.94, 0.97, 1]
+    // Feira Rolante: melancia (listras verde-escuro e verde-claro ao longo do eixo)
+    if (this.theme.id === "feira") return (x, _y, z) => (Math.abs(Math.sin(Math.atan2(x, z) * 5)) < 0.42 ? [0.1, 0.36, 0.12] : [0.36, 0.66, 0.22])
     return (x, y) => {
       const a = Math.atan2(x, y) + Math.PI
       const k = Math.floor(a / (Math.PI / 3)) % 6
