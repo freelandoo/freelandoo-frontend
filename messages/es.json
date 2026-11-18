@@ -14910,7 +14910,12 @@
     "npc_padre_primeira_1": "Esta iglesia se mantuvo en pie toda la guerra. Zorro y Vampiro rezaban en el mismo banco, cada uno pidiendo el fin del otro.",
     "npc_padre_primeira_2": "Hoy se reza por la tregua. Quien reza aquí calma el espíritu, y los dioses de los juegos suelen escuchar a quien tiene paciencia.",
     "npc_padre_idle_1": "Habla bajo. Aquí hasta los dioses escuchan.",
-    "npc_padre_idle_2": "La paz también se entrena."
+    "npc_padre_idle_2": "La paz también se entrena.",
+    "eqRuneSockets": "Engastes",
+    "eqRuneNone": "sin engaste",
+    "eqRuneFree": "Engaste libre",
+    "eqRuneRemove": "Quitar la runa",
+    "eqRuneNoneOwned": "Sin runas en la mochila. Cambia fichas de los minijuegos o lucha en los Dominios."
   },
   "Sports": {
     "eyebrow": "Deportes",

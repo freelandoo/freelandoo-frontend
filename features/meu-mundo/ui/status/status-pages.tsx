@@ -30,7 +30,7 @@ import {
   Loader2,
 } from "lucide-react"
 import type { BodyId, LifeActivity, LifeAilment, LifeCharacter, LifeFull, LifeItem } from "../../types"
-import type { GearBag, GearSlot } from "../../data"
+import type { ApiResult, GearBag, GearOut, GearSlot } from "../../data"
 import { EquipPage } from "./equip-page"
 import { SheetStage } from "./sheet-stage"
 import { Bar, Chamfer, CountUp, EVO, Plate, Ring, archivo, cinzel, teko, toneFor } from "./evo-skin"
@@ -77,6 +77,8 @@ export interface PageActions {
   openBag?: (slot: GearSlot) => void
   /** Página Equipamentos: equipa (item) ou tira (null) e devolve a mochila nova; null = o servidor recusou. */
   equip?: (slot: GearSlot, item: string | null, instance?: string | null) => Promise<GearBag | null>
+  /** Ação da oficina na tela Equipamentos (engastar/tirar runa): chave de idempotência por tentativa; devolve a mochila nova. */
+  gearOp?: (run: (token: string, key: string) => Promise<ApiResult<GearOut>>, done?: string) => Promise<GearBag | null>
 }
 
 /** Nível de aventura e o XP dentro dele (mm3d-60g). */
@@ -1196,7 +1198,7 @@ function EquipStatusPage(props: PageProps) {
   const c = props.life.character
   if (c.status === "dead") return <SheetPage {...props} />
   return (
-    <EquipPage body={props.body} portrait={props.portrait} name={props.name} temper={characterTemper(c, props.t)} power={c.power ?? null} data={props.loadout ?? NO_LOADOUT} compact={props.compact} busy={props.act.busy} onEquip={props.act.equip} t={props.t} />
+    <EquipPage body={props.body} portrait={props.portrait} name={props.name} temper={characterTemper(c, props.t)} power={c.power ?? null} data={props.loadout ?? NO_LOADOUT} compact={props.compact} busy={props.act.busy} onEquip={props.act.equip} onGearOp={props.act.gearOp} t={props.t} />
   )
 }
 

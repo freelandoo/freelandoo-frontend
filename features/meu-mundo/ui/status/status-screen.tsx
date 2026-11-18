@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { advXpOf, equipGear, getAdventure, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer, type GearSlot } from "../../data"
+import { advXpOf, equipGear, getAdventure, type ApiResult, type GearOut, getCharacters, getGear, getLife, getWallets, postLifeActivity, postLifeBuy, postLifeNewcomer, type GearSlot } from "../../data"
 import type { BodyId, LifeFull } from "../../types"
 import { EVO, archivo } from "./evo-skin"
 import { MM } from "../hud/tokens"
@@ -186,6 +186,20 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
         const bag = r.data.bag
         setLoadout((prev) => ({ ...prev, gear: prev.gear ? { catalog: prev.gear.catalog, bag } : prev.gear }))
         void load() // o Poder do personagem muda com a peça
+        return bag
+      },
+      gearOp: async (fn: (token: string, key: string) => Promise<ApiResult<GearOut>>, done?: string) => {
+        const token = getToken()
+        if (!token) return null
+        const r = await fn(token, crypto.randomUUID())
+        if (!r.ok) {
+          say(r.error || t("stActionFail", "Não deu certo agora"))
+          return null
+        }
+        const bag = r.data.bag
+        setLoadout((prev) => ({ ...prev, gear: prev.gear ? { catalog: prev.gear.catalog, bag } : prev.gear }))
+        if (done) say(done)
+        void load() // a runa muda o Poder
         return bag
       },
     }),

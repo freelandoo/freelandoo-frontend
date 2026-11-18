@@ -14344,7 +14344,12 @@
     "npc_padre_primeira_1": "Esta igreja ficou de pé a guerra inteira. Raposa e Vampiro rezavam no mesmo banco, cada um pedindo o fim do outro.",
     "npc_padre_primeira_2": "Hoje se reza pela trégua. Quem reza aqui acalma o espírito, e os deuses dos jogos costumam ouvir quem tem paciência.",
     "npc_padre_idle_1": "Fala baixo. Aqui até os deuses escutam.",
-    "npc_padre_idle_2": "A paz também se treina."
+    "npc_padre_idle_2": "A paz também se treina.",
+    "eqRuneSockets": "Encaixes",
+    "eqRuneNone": "sem encaixe",
+    "eqRuneFree": "Encaixe livre",
+    "eqRuneRemove": "Tirar a runa",
+    "eqRuneNoneOwned": "Sem runas na mochila. Troque fichas dos minijogos ou lute nos Domínios."
   },
   "Sports": {
     "eyebrow": "Esportes",

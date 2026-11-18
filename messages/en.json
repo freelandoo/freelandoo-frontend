@@ -14930,7 +14930,12 @@
     "npc_padre_primeira_1": "This church stood through the whole war. Fox and Vampire prayed on the same pew, each asking for the other's end.",
     "npc_padre_primeira_2": "Today we pray for the truce. Whoever prays here calms the spirit, and the gods of the games tend to listen to the patient.",
     "npc_padre_idle_1": "Speak softly. Even the gods listen in here.",
-    "npc_padre_idle_2": "Peace takes training too."
+    "npc_padre_idle_2": "Peace takes training too.",
+    "eqRuneSockets": "Sockets",
+    "eqRuneNone": "no socket",
+    "eqRuneFree": "Free socket",
+    "eqRuneRemove": "Remove the rune",
+    "eqRuneNoneOwned": "No runes in your bag. Trade minigame tokens or fight in the Domains."
   },
   "Sports": {
     "eyebrow": "Sports",
