@@ -49,6 +49,9 @@ export interface GincanaResultRow {
   gone: boolean
   /** Classificou (chegou dentro da vaga). */
   q?: boolean
+  /** Gincana 3: pontos (coleta/zona) e quando ficou fora (−1 = não ficou). */
+  pts?: number
+  out?: number
 }
 export interface GincanaLobbyEntry {
   name: string

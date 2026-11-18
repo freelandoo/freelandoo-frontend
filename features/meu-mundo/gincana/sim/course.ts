@@ -76,6 +76,14 @@ export const GINCANA = {
 /** Paleta (índice = cor do tampo; as bordas usam a cor do par). Turquesa (3) é a cor do mar: nunca no tampo. */
 export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4DFF", "#63E05A", "#2F7BFF", "#FFFFFF"] as const
 
+/**
+ * Gincana 3 (2026-11-18): cada fase é um TIPO de prova (pedido do Alex: "as fases
+ * estão bem iguais"). race = corrida até a chegada; survive = último em pé (quem
+ * cai está fora); collect = quem pega mais engrenagens; zone = quem fica mais tempo
+ * na zona. Tudo sai da pose e do tempo: a sala conta igual ao aparelho.
+ */
+export type GincanaMode = "race" | "survive" | "collect" | "zone"
+
 /** As fases: a de sempre e uma por Domínio. */
 export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo"
 export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo"]
@@ -229,8 +237,45 @@ export interface RoutePoint {
   m?: number
 }
 
+/** Perigo que sobe (pântano, lava): nível y de y0 (em t0) a y1 (em t1); quem fica abaixo está fora. */
+export interface Rise {
+  y0: number
+  y1: number
+  t0: number
+  t1: number
+}
+
+/** Ponto onde aparece uma engrenagem (coleta): some quando alguém pega e volta depois de `back` s. */
+export interface Gem {
+  x: number
+  z: number
+  y: number
+  /** Quanto vale (a dourada vale 3). */
+  v: number
+  /** Aparece pela primeira vez neste tempo (s). */
+  t0: number
+  back: number
+}
+
+/** Zona do rei do pedaço: círculo (x, z, r) com o chão em y. */
+export interface Zone {
+  x: number
+  z: number
+  r: number
+  y: number
+}
+
 export interface Course {
   id: GincanaPhase
+  /** Tipo da prova (Gincana 3). */
+  mode: GincanaMode
+  /** Fração das vagas que classifica. */
+  qualify: number
+  /** Duração máxima da prova (s depois do "vai"). */
+  limit: number
+  rise: Rise | null
+  gems: Gem[]
+  zone: Zone | null
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -272,6 +317,10 @@ export class CourseKit {
   readonly logos: { x: number; z: number; y: number }[] = []
   ramp: Ramp | null = null
   balls: Balls | null = null
+  readonly gems: Gem[] = []
+  gem(x: number, z: number, y: number, v: number, t0: number, back: number) {
+    this.gems.push({ x, z, y, v, t0, back })
+  }
 
   /** Caixa (tampo em `y`). Devolve o índice (para pôr esteira, gelo, movimento). */
   box(x: number, z: number, hx: number, hz: number, c: number, rim: number, s: number, rot = 0, d = 1.4, y = DECK) {
@@ -289,7 +338,8 @@ export class CourseKit {
   }
   /** Rampa de z0 (y0) a z1 (y1), meia largura hx; com bolas opcionais. */
   slope(x: number, z0: number, z1: number, y0: number, y1: number, hx: number, c: number, rim: number, s: number) {
-    this.ramp = { x, z0, z1, y0, y1, hx }
+    // várias rampas (Gincana 3): só a primeira tem as bolas
+    if (!this.ramp) this.ramp = { x, z0, z1, y0, y1, hx }
     this.pads.push({ k: 2, x, z: (z0 + z1) / 2, r: 0, hx, hz: (z1 - z0) / 2, rot: 0, y: y0, y2: y1, d: 1.4, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0 })
     return this.pads.length - 1
   }
@@ -330,9 +380,20 @@ export class CourseKit {
     minFinish: number
     route: Course["route"]
     tileTime?: { warn: number; gone: number }
+    mode?: GincanaMode
+    qualify?: number
+    limit?: number
+    rise?: Rise
+    zone?: Zone
   }): Course {
     return {
       id: o.id,
+      mode: o.mode ?? "race",
+      qualify: o.qualify ?? GINCANA.qualify,
+      limit: o.limit ?? GINCANA.timeLimit,
+      rise: o.rise ?? null,
+      gems: this.gems,
+      zone: o.zone ?? null,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,
@@ -437,6 +498,21 @@ export function doorsOpen(c: Course, seed: number): Uint8Array {
     for (let k = 0; k < Math.min(c.doorOpen[row], idx.length); k++) out[idx[k]] = 1
   }
   return out
+}
+
+/** Nível do perigo que sobe no tempo t (−∞ sem perigo). */
+export function riseAt(c: Course, t: number) {
+  const R = c.rise
+  if (!R) return -Infinity
+  const u = Math.max(0, Math.min(1, (t - R.t0) / (R.t1 - R.t0)))
+  return R.y0 + (R.y1 - R.y0) * u
+}
+
+/** Tampo de uma plataforma em z (a rampa, k = 2, sobe de y em z − hz a y2 em z + hz). */
+export function padTop(p: Pad, z: number) {
+  if (p.k !== 2) return p.y
+  const u = Math.max(0, Math.min(1, (z - (p.z - p.hz)) / (2 * p.hz)))
+  return p.y + (p.y2 - p.y) * u
 }
 
 /** Altura do tampo da rampa em z. */

@@ -24,7 +24,7 @@
 
 import { GINCANA, ballsAt, onTile, type Course } from "./course"
 import { courseOf } from "./courses"
-import { ANIM, IDLE_INTENT, MODE, knock, newRunner, newWorld, runnerAnim, separate, stepRunner, type RunEvent, type RunIntent, type RunWorld, type Runner } from "./body"
+import { ANIM, IDLE_INTENT, MODE, fallOut, knock, newRunner, newWorld, runnerAnim, separate, stepRunner, type RunEvent, type RunIntent, type RunWorld, type Runner } from "./body"
 import { botIntent, newBrain, type BotBrain } from "./bots"
 
 export type RunnerCtl = "local" | "bot" | "remote"
@@ -55,13 +55,16 @@ export interface StandingRow {
   fin: number
   /** Distância percorrida (m) para quem não chegou. */
   dist: number
-  /** Classificou (chegou dentro da vaga). */
+  /** Classificou (chegou dentro da vaga / ficou em pé / pontos na vaga). */
   q: boolean
+  /** Gincana 3: pontos (coleta, zona) e quando ficou fora (−1 = não ficou). */
+  pts: number
+  out: number
 }
 
-/** Quantos classificam numa prova de `n` vagas. */
-export function qualifyOf(n: number) {
-  return Math.max(1, Math.ceil(n * GINCANA.qualify))
+/** Quantos classificam numa prova de `n` vagas (fração da fase). */
+export function qualifyOf(n: number, frac: number = GINCANA.qualify) {
+  return Math.max(1, Math.ceil(n * frac))
 }
 
 export class GincanaRace {
@@ -93,7 +96,19 @@ export class GincanaRace {
       this.brains.push(s.ctl === "bot" ? newBrain(this.world, this.seed, s.slot) : null)
       this.gone.push(false)
     }
-    this.quota = qualifyOf(seats.length)
+    this.quota = qualifyOf(seats.length, this.course.qualify)
+  }
+
+  /** Quantos ainda estão na prova (não saíram nem ficaram fora). */
+  alive() {
+    let n = 0
+    for (let i = 0; i < this.runners.length; i++) if (!this.gone[i] && this.runners[i].out < 0) n++
+    return n
+  }
+
+  /** Duração máxima desta prova (s). */
+  limit() {
+    return this.course.limit
   }
 
   runner(slot: number): Runner | null {
@@ -101,9 +116,9 @@ export class GincanaRace {
     return i === undefined ? null : this.runners[i]
   }
 
-  /** A vaga dos classificados encheu. */
+  /** A vaga dos classificados encheu (só na corrida). */
   closed() {
-    return this.order.length >= this.quota
+    return this.course.mode === "race" && this.order.length >= this.quota
   }
 
   /** Um passo fixo; `local` = intenção do corpo deste aparelho. */
@@ -162,6 +177,37 @@ export class GincanaRace {
         }
       }
     }
+    this.score(out, dt)
+  }
+
+  /**
+   * Gincana 3: engrenagens (coleta) e segundos na zona (rei do pedaço), de TODOS
+   * (os de fora também, pela pose): a sala conta igual ao aparelho.
+   */
+  private score(out: RunEvent[] | null, dt: number) {
+    const C = this.course
+    const w = this.world
+    if (C.mode === "zone" && C.zone) {
+      const Z = C.zone
+      for (let i = 0; i < this.runners.length; i++) {
+        const b = this.runners[i]
+        if (this.gone[i] || b.out >= 0 || b.mode === MODE.WATER || b.mode === MODE.KNOCK) continue
+        if (Math.abs(b.y - Z.y) < 0.7 && Math.hypot(b.x - Z.x, b.z - Z.z) <= Z.r) b.pts += dt
+      }
+    }
+    for (let k = 0; k < C.gems.length; k++) {
+      const g = C.gems[k]
+      if (this.t < g.t0 || (w.gems[k] >= 0 && this.t - w.gems[k] < g.back)) continue
+      for (let i = 0; i < this.runners.length; i++) {
+        const b = this.runners[i]
+        if (this.gone[i] || b.out >= 0 || b.mode === MODE.WATER) continue
+        if (Math.hypot(b.x - g.x, b.z - g.z) > 1.1 || b.y > g.y + 0.8 || b.y + GINCANA.bodyH < g.y - 0.4) continue
+        w.gems[k] = this.t
+        b.pts += g.v
+        out?.push({ type: "gem", slot: b.slot, i: k, v: g.v })
+        break
+      }
+    }
   }
 
   /** Segurar AGARRAR: pega a vaga da frente ao alcance; solta ao soltar, longe ou no tempo. */
@@ -170,7 +216,7 @@ export class GincanaRace {
     if (a.grab >= 0) {
       const v = this.runner(a.grab)
       a.grabT += dt
-      const far = !v || Math.hypot(v.x - a.x, v.z - a.z) > GINCANA.grabR + 0.9 || v.mode === MODE.WATER || v.mode === MODE.DONE
+      const far = !v || Math.hypot(v.x - a.x, v.z - a.z) > GINCANA.grabR + 0.9 || v.mode === MODE.WATER || v.mode === MODE.DONE || a.out >= 0
       if (!held || far || a.grabT > GINCANA.grabMax || a.mode !== MODE.RUN) {
         a.grab = -1
         a.grabCool = GINCANA.grabCool
@@ -224,6 +270,8 @@ export class GincanaRace {
     b.facing = p.f
     b.cp = p.cp
     b.grab = p.g === undefined || !Number.isFinite(p.g) ? -1 : p.g
+    // caiu agora: fica fora pela regra da fase (sobrevivência, perigo que sobe)
+    if (p.a === ANIM.WATER && b.mode !== MODE.WATER && b.out < 0 && fallOut(b, C, this.t)) b.out = this.t
     b.mode = p.a === ANIM.WATER ? MODE.WATER : p.a === ANIM.WIN ? MODE.DONE : p.a === ANIM.KNOCK ? MODE.KNOCK : p.a === ANIM.DIVE ? MODE.DIVE : MODE.RUN
     b.ground = p.a === ANIM.IDLE || p.a === ANIM.RUN || p.a === ANIM.WIN || p.a === ANIM.SLIDE || p.a === ANIM.RISE
     if (p.fin >= 0 && b.fin < 0 && !this.closed()) {
@@ -250,7 +298,7 @@ export class GincanaRace {
   pose(slot: number): RunnerPose | null {
     const b = this.runner(slot)
     if (!b) return null
-    return { x: b.x, y: b.y, z: b.z, f: b.facing, a: runnerAnim(b), cp: b.cp, fin: b.fin, g: b.grab }
+    return { x: b.x, y: b.y, z: b.z, f: b.facing, a: b.out >= 0 ? ANIM.WATER : runnerAnim(b), cp: b.cp, fin: b.fin, g: b.grab }
   }
 
   /** Progresso de quem não chegou (posto e z). */
@@ -259,29 +307,47 @@ export class GincanaRace {
     return Math.max(C.checkpoints[b.cp].z, Math.min(C.finishZ, b.z))
   }
 
-  /** Classificação: quem chegou pela ordem; o resto pela distância (posto e z). */
+  /**
+   * Classificação pelo tipo da prova. Corrida: quem chegou pela ordem; o resto
+   * pela distância; quem ficou fora no fim (o último a sair na frente).
+   * Sobrevivência: quem está em pé (todos classificam); depois quem ficou fora,
+   * do último ao primeiro. Coleta e zona: pelos pontos (classifica a vaga, com ponto).
+   */
   standings(): StandingRow[] {
     const C = this.course
-    const rows: StandingRow[] = []
-    this.order.forEach((slot, k) => {
-      const b = this.runner(slot)!
-      rows.push({ slot, fin: b.fin, dist: C.finishZ, q: k < this.quota })
-    })
-    const rest = this.runners
-      .filter((b) => b.fin < 0 || !this.order.includes(b.slot))
-      .map((b) => ({ slot: b.slot, fin: -1, dist: this.distOf(b), q: false }))
-      .sort((a, b) => b.dist - a.dist || a.slot - b.slot)
-    return rows.concat(rest)
+    const row = (b: Runner, q: boolean): StandingRow => ({ slot: b.slot, fin: b.fin, dist: b.fin >= 0 ? C.finishZ : this.distOf(b), q, pts: Math.round(b.pts * 10) / 10, out: b.out })
+    const byOut = (a: Runner, b: Runner) => b.out - a.out || a.slot - b.slot
+    if (C.mode === "collect" || C.mode === "zone") {
+      return [...this.runners].sort((a, b) => b.pts - a.pts || a.slot - b.slot).map((b, k) => row(b, k < this.quota && b.pts > 0))
+    }
+    if (C.mode === "survive") {
+      const up = this.runners.filter((b, i) => b.out < 0 && !this.gone[i])
+      const down = this.runners.filter((b, i) => b.out >= 0 || this.gone[i]).sort(byOut)
+      return up.map((b) => row(b, true)).concat(down.map((b) => row(b, false)))
+    }
+    const rows: StandingRow[] = this.order.map((slot, k) => row(this.runner(slot)!, k < this.quota))
+    const rest = this.runners.filter((b) => b.fin < 0 || !this.order.includes(b.slot))
+    const inRace = rest.filter((b) => b.out < 0).sort((a, b) => this.distOf(b) - this.distOf(a) || a.slot - b.slot)
+    const outRows = rest.filter((b) => b.out >= 0).sort(byOut)
+    return rows.concat(inRace.map((b) => row(b, false)), outRows.map((b) => row(b, false)))
   }
 
-  /** Acabou: a vaga encheu, todos os que contam chegaram (ou saíram) ou o tempo acabou. */
+  /**
+   * Acabou: o tempo da fase acabou; na corrida, a vaga encheu ou todos os que
+   * contam chegaram/ficaram fora/saíram; na sobrevivência, sobrou só a vaga ou
+   * todas as pessoas ficaram fora.
+   */
   over(): boolean {
-    if (this.t >= GINCANA.timeLimit || this.closed()) return true
+    const C = this.course
+    if (this.t >= C.limit || this.closed()) return true
+    if (C.mode === "collect" || C.mode === "zone") return false
+    if (C.mode === "survive" && this.alive() <= this.quota) return true
     let any = false
     for (let i = 0; i < this.runners.length; i++) {
       if (this.ctl[i] === "bot" || this.gone[i]) continue
       any = true
-      if (this.runners[i].fin < 0) return false
+      const b = this.runners[i]
+      if (C.mode === "race" ? b.fin < 0 && b.out < 0 : b.out < 0) return false
     }
     return any
   }

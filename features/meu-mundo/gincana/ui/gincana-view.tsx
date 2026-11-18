@@ -262,6 +262,9 @@ function Menu({
             ))}
           </span>
         </div>
+        <p className="mt-0.5 text-[13px] font-black uppercase italic tracking-[0.06em]" style={{ color: YELLOW }}>
+          {t(theme.event[0], theme.event[1])}
+        </p>
         <p className="mt-0.5 text-[12.5px] leading-snug [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
           {t(theme.pitchKey, theme.pitch)}
         </p>
@@ -416,6 +419,15 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
         case "eliminated":
           say(tt("gincanaEliminated", "Eliminado: a vaga encheu!"), "bad", 2200)
           break
+        case "out":
+          say(theme.id === "floresta" ? tt("gincanaOutSwamp", "O pântano te pegou! Fora da prova") : tt("gincanaOutFall", "Caiu! Fora da prova"), "bad", 2400)
+          break
+        case "rise":
+          say(tt("gincanaRiseNear", "O pântano está chegando: suba!"), "hot", 1300)
+          break
+        case "gem":
+          say(tt("gincanaGem", "+{n} engrenagem").replace("{n}", String(n.v)), "gold", 800)
+          break
         default:
           break
       }
@@ -517,8 +529,27 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
                 </span>
               )}
             </div>
+            {/* Gincana 3: o perigo que sobe (a quantos metros do pé) */}
+            {!result && hud.riseGap < 5 && (
+              <div className="rounded-full px-2.5 py-0.5 text-[11px] font-black italic tabular-nums" style={{ background: hud.riseGap < 2.5 ? "rgba(110,16,34,0.9)" : "rgba(40,90,40,0.85)", color: "#fff" }}>
+                {t("gincanaRiseGap", "Pântano a {m} m").replace("{m}", Math.max(0, hud.riseGap).toFixed(1))}
+              </div>
+            )}
+            {/* sobrevivência: quantos ainda em pé; coleta/zona: meus pontos */}
+            {!result && hud.mode === "survive" && (
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-black" style={{ background: glass, color: hud.alive <= hud.quota + 1 ? PINK : MM.text }}>
+                <Users className="h-3 w-3" style={{ color: TEAL }} />
+                {t("gincanaAlive", "Em pé {n} · vaga {q}").replace("{n}", String(hud.alive)).replace("{q}", String(hud.quota))}
+              </div>
+            )}
+            {!result && (hud.mode === "collect" || hud.mode === "zone") && (
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums" style={{ background: glass, color: YELLOW }}>
+                <Trophy className="h-3 w-3" />
+                {(hud.mode === "zone" ? t("gincanaZonePts", "{n} s no topo") : t("gincanaPts", "{n} pontos")).replace("{n}", String(Math.floor(hud.pts)))}
+              </div>
+            )}
             {/* quantos já classificaram (a vaga fecha a prova) */}
-            {!result && (
+            {!result && hud.mode === "race" && (
               <div className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-black" style={{ background: glass, color: hud.qualified >= hud.quota - 1 ? PINK : MM.text }}>
                 <Flag className="h-3 w-3" style={{ color: TEAL }} />
                 {t("gincanaQualified", "Classificados {n}/{q}").replace("{n}", String(hud.qualified)).replace("{q}", String(hud.quota))}
@@ -606,7 +637,7 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
             </div>
           )}
           {isTouch && !result && hud.phase !== "end" && <TouchControls gameRef={gameRef} />}
-          {result && <Results result={result.r} record={result.record} best={result.best} live={hud.board} quota={hud.quota} final={final} me={mp ? mp.start.me : 0} group={!!mp} onAgain={onAgain} onMenu={onMenu} />}
+          {result && <Results result={result.r} record={result.record} best={result.best} live={hud.board} quota={hud.quota} final={final} me={mp ? mp.start.me : 0} group={!!mp} onAgain={onAgain} onMenu={onMenu} mode={hud.mode} phaseId={theme.id} />}
         </>
       )}
 
@@ -714,7 +745,15 @@ function BoardStrip({ rows, glass }: { rows: BoardRow[]; glass: string }) {
         <li key={r.slot} className="flex items-center gap-1.5 text-[12px] leading-tight max-[759px]:text-[11px]" style={{ color: r.me ? YELLOW : MM.text }}>
           <span className="w-4 shrink-0 text-right font-black tabular-nums">{i + 1}</span>
           <span className="min-w-0 flex-1 truncate font-semibold">{r.name}</span>
-          {r.fin >= 0 ? (
+          {r.out ? (
+            <span className="shrink-0 text-[10px] font-black uppercase" style={{ color: PINK }}>
+              ✕
+            </span>
+          ) : r.pts > 0 ? (
+            <span className="shrink-0 text-[11px] font-black tabular-nums" style={{ color: YELLOW }}>
+              {Math.floor(r.pts)}
+            </span>
+          ) : r.fin >= 0 ? (
             <Flag className="h-3 w-3 shrink-0" style={{ color: TEAL }} />
           ) : (
             <span className="block h-1 w-8 shrink-0 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.15)" }}>
@@ -738,7 +777,11 @@ function Results({
   group,
   onAgain,
   onMenu,
+  mode,
+  phaseId,
 }: {
+  mode: GincanaHud["mode"]
+  phaseId: string
   result: GincanaResult
   record: boolean
   best: number | null
@@ -752,18 +795,29 @@ function Results({
 }) {
   const t = useTranslations("MeuMundo")
   const rows = final
-    ? final.map((r) => ({ slot: r.slot, name: r.name, fin: r.fin, gone: r.gone, me: r.slot === me, bot: r.bot }))
-    : live.map((r) => ({ slot: r.slot, name: r.name, fin: r.fin, gone: false, me: r.me, bot: r.bot }))
+    ? final.map((r) => ({ slot: r.slot, name: r.name, fin: r.fin, gone: r.gone, me: r.slot === me, bot: r.bot, out: (r.out ?? -1) >= 0, pts: r.pts ?? 0 }))
+    : live.map((r) => ({ slot: r.slot, name: r.name, fin: r.fin, gone: false, me: r.me, bot: r.bot, out: r.out, pts: r.pts }))
   const place = rows.findIndex((r) => r.me) + 1 || result.place
-  const running = final ? 0 : rows.filter((r) => r.fin < 0).length
-  const title =
-    result.time < 0
-      ? result.qualified
-        ? t("gincanaNoTime", "O tempo acabou!")
-        : t("gincanaOut", "Eliminado! A vaga encheu antes")
-      : place === 1
+  // ainda na prova (o quadro final da sala não chegou)
+  const running = final ? 0 : rows.filter((r) => r.fin < 0 && !r.out).length
+  const scored = mode === "collect" || mode === "zone"
+  const title = result.out
+    ? phaseId === "floresta"
+      ? t("gincanaOutSwampTitle", "O pântano te pegou!")
+      : t("gincanaOutTitle", "Fora da prova!")
+    : scored
+      ? place === 1
         ? t("gincanaWin", "1º lugar! Você venceu!")
-        : t("gincanaPlaceTitle", "Você chegou em {n}º").replace("{n}", String(place))
+        : t("gincanaPlaceScore", "{n}º lugar").replace("{n}", String(place))
+      : mode === "survive"
+        ? t("gincanaSurvived", "Você ficou em pé!")
+        : result.time < 0
+          ? result.qualified
+            ? t("gincanaNoTime", "O tempo acabou!")
+            : t("gincanaOut", "Eliminado! A vaga encheu antes")
+          : place === 1
+            ? t("gincanaWin", "1º lugar! Você venceu!")
+            : t("gincanaPlaceTitle", "Você chegou em {n}º").replace("{n}", String(place))
   return (
     <div className="absolute inset-0 grid place-items-center p-4" style={{ background: MM.scrim }}>
       <div className="w-full max-w-[420px] rounded-none p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
@@ -810,7 +864,9 @@ function Results({
                 <span className="shrink-0 text-[11px]" style={{ color: MM.muted }}>
                   {r.gone ? t("gincanaGone", "saiu") : r.bot ? t("gincanaCpu", "computador") : ""}
                 </span>
-                <span className="shrink-0 font-black italic tabular-nums">{r.fin >= 0 ? fmt(r.fin) : "—"}</span>
+                <span className="shrink-0 font-black italic tabular-nums" style={{ color: r.out ? PINK : undefined }}>
+                  {scored ? Math.floor(r.pts) : r.out ? t("gincanaOutTag", "fora") : r.fin >= 0 ? fmt(r.fin) : "—"}
+                </span>
               </li>
             ))}
           </ol>

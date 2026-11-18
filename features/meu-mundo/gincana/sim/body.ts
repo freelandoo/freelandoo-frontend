@@ -22,7 +22,8 @@ import {
   padShift,
   pendulumAt,
   pusherAt,
-  rampTop,
+  padTop,
+  riseAt,
   spawnAt,
   sweeperAngle,
   tileUp,
@@ -72,6 +73,10 @@ export interface Runner {
   cp: number
   /** Tempo da chegada (−1 = ainda correndo). */
   fin: number
+  /** Gincana 3: quando ficou FORA da prova (−1 = está nela). Fora = na água para sempre. */
+  out: number
+  /** Pontos (coleta: engrenagens; zona: segundos na zona). */
+  pts: number
   /** Velocidade de saída do último pulo (fase do voo para a animação). */
   launch: number
   /** s que o pulo apertado ainda vale (buffer: apertou um pouco antes de pousar). */
@@ -127,6 +132,8 @@ export interface RunWorld {
   open: Uint8Array
   /** Quando cada porta de verdade foi aberta (−1 = fechada). */
   doors: Float64Array
+  /** Gincana 3: quando cada engrenagem foi pega (−1 = nunca). */
+  gems: Float64Array
 }
 
 /** Acontecimentos de um passo (para som, aviso e animação). */
@@ -144,11 +151,13 @@ export type RunEvent =
   | { type: "climb"; slot: number }
   | { type: "door"; i: number; open: boolean; slot: number }
   | { type: "grab"; slot: number; other: number }
+  | { type: "out"; slot: number }
+  | { type: "gem"; slot: number; i: number; v: number }
 
 export const IDLE_INTENT: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
 
 export function newWorld(course: Course, seed: number, t: number): RunWorld {
-  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), doors: new Float64Array(course.doors.length).fill(-1) }
+  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), doors: new Float64Array(course.doors.length).fill(-1), gems: new Float64Array(course.gems.length).fill(-1) }
 }
 
 export function newRunner(course: Course, slot: number): Runner {
@@ -170,6 +179,8 @@ export function newRunner(course: Course, slot: number): Runner {
     hitCool: 0,
     cp: 0,
     fin: -1,
+    out: -1,
+    pts: 0,
     launch: GINCANA.jumpV,
     jumpBuf: 0,
     boost: 0,
@@ -225,7 +236,7 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
     } else {
       const L = padLocal(p, w.t, x, z)
       if (Math.abs(L.lx) > p.hx + EDGE || Math.abs(L.lz) > p.hz + EDGE) continue
-      top = p.k === 2 ? rampTop(C, z) : p.y
+      top = padTop(p, z)
     }
     if (top <= reach && top > best) {
       best = top
@@ -278,7 +289,7 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
     if (!ledge || top < ledge.top) ledge = { top, nx, nz }
   }
   for (const p of C.pads) {
-    const top = p.k === 2 ? rampTop(C, b.z) : p.y
+    const top = padTop(p, b.z)
     if (top <= lift || top - p.d >= b.y + H) continue
     if (p.k === 0) {
       const sh = padShift(p, w.t)
@@ -478,6 +489,17 @@ function hazards(b: Runner, w: RunWorld, out: RunEvent[] | null) {
   }
 }
 
+/**
+ * Caiu agora: fica FORA? Na sobrevivência sempre; com perigo que sobe, quando o
+ * posto de volta já estará embaixo dele quando voltar.
+ */
+export function fallOut(b: Runner, C: Course, t: number) {
+  if (C.mode === "survive") return true
+  if (!C.rise) return false
+  const p = C.checkpoints[Math.max(0, Math.min(C.checkpoints.length - 1, b.cp))]
+  return p.y < riseAt(C, t + GINCANA.respawnT) + 0.3
+}
+
 /** Volta ao último posto (caiu na água ou ficou preso). */
 export function respawn(b: Runner, course: Course) {
   const p = spawnAt(course, b.cp, b.slot)
@@ -540,9 +562,11 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
   if (b.mode === MODE.WATER) {
     b.timer -= dt
     b.vy = Math.max(-3, b.vy - T.gravity * dt)
-    b.y += b.vy * dt
+    b.y = Math.max(-6, b.y + b.vy * dt)
     b.vx *= 0.9
     b.vz *= 0.9
+    // fora da prova: fica no fundo
+    if (b.out >= 0) return
     if (b.timer <= 0) {
       respawn(b, C)
       out?.push({ type: "back", slot: b.slot })
@@ -712,12 +736,17 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     }
   }
 
-  if (b.y < T.waterY && b.mode !== MODE.DONE) {
+  // a água (ou o perigo que sobe: o pântano pega quem ficou com o pé embaixo)
+  if ((b.y < T.waterY || b.y < riseAt(C, w.t) - 0.15) && b.mode !== MODE.DONE) {
     b.mode = MODE.WATER
     b.timer = T.respawnT
     b.vy = Math.min(b.vy, -2)
     b.grab = -1
     out?.push({ type: "splash", slot: b.slot, x: b.x, z: b.z })
+    if (fallOut(b, C, w.t)) {
+      b.out = w.t
+      out?.push({ type: "out", slot: b.slot })
+    }
     return
   }
   if (b.mode === MODE.DONE) return

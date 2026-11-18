@@ -172,75 +172,107 @@ function courseCidade(): Course {
 
 // ═══ floresta — Floresta da Lua ══════════════════════════════════════════════
 
+/**
+ * Gincana 3 (2026-11-18): MARÉ DO PÂNTANO — subida pela Floresta da Lua com o
+ * pântano subindo atrás (0,3 m/s desde o "vai"). Quem o pântano alcança, ou cai
+ * quando o posto de volta já está embaixo dele, está FORA. Cinco andares:
+ * rampa dos troncos (3→9 m) · raízes que giram (9) · rampa curta e
+ * vitórias-régias que andam (9→14) · rampa dos cocos-pêndulo (14→20) · ponte de
+ * folhas que cai e a subida final (20→24).
+ */
 function courseFloresta(): Course {
   const k = new CourseKit()
   kitStart(k)
-  // ── 1. cogumelos: lançam quem pousa; entre eles, o pântano ──
-  k.box(0, 19, 7, 3, 5, 1, 1)
-  const ROWS = [25.8, 30, 34.2, 38.4, 42.6, 46.8]
-  for (let i = 0; i < ROWS.length; i++) for (const x of [-4.5, 0, 4.5]) k.post(x, ROWS[i], 1.9, -1.2, DECK - 0.25, i % 2 ? 2 : 4, 10.5)
-  k.box(0, 53, 7, 5, 5, 1, 1)
-  // ── 2. raízes que giram ──
-  k.disc(0, 66.5, 8.5, 4, 1, 2)
-  k.post(0, 66.5, 0.8, DECK, DECK + 2.4, 5)
-  k.sweep(0, 66.5, DECK + 0.55, 8.8, 0.34, 1.0, 0, true)
-  k.box(0, 79, 7, 4.5, 5, 1, 2)
-  for (const s of [-1, 1]) {
-    k.disc(6.5 * s, 90.5, 7, 4, 1, 2)
-    k.post(6.5 * s, 90.5, 0.8, DECK, DECK + 2.4, 5)
-    k.sweep(6.5 * s, 90.5, DECK + 0.55, 7.3, 0.34, s * 1.55, s > 0 ? 1.9 : 0.6, false)
+  const Y1 = DECK + 6
+  const Y2 = Y1 + 5
+  const Y3 = Y2 + 6
+  const Y4 = Y3 + 4
+  // ── 1. rampa dos troncos rolando ──
+  k.slope(0, 15, 51, DECK, Y1, 6, 5, 1, 1)
+  k.balls = { lanes: [-4.3, -1.45, 1.45, 4.3], every: 1.15, v: 6.5, R: 1.1, zEnd: 12 }
+  k.box(0, 55, 7, 4, 5, 1, 1, 0, 1.4, Y1)
+  // ── 2. raízes que giram (duas clareiras ligadas por pontes) ──
+  k.box(0, 61.5, 1.8, 2.5, 4, 1, 2, 0, 1.2, Y1)
+  const roots = (z: number, w: number, a0: number, both: boolean) => {
+    k.disc(0, z, 6.5, 4, 1, 2, Y1)
+    k.post(0, z, 0.8, Y1, Y1 + 2.4, 5)
+    k.sweep(0, z, Y1 + 0.55, 6.8, 0.34, w, a0, both)
   }
-  // ── 3. portas de cipó ──
-  k.box(0, 119.5, 8, 22.5, 5, 1, 3)
-  for (const z of [113, 123, 133]) k.doorRow(0, z, 5, 3.2, 3.4, 2)
-  // ── 4. ponte de folhas que cai ──
-  for (let r = 0; r < 10; r++) for (let c = 0; c < 3; c++) k.tile((c - 1) * 2.9, 143.6 + r * 2.9, 1.3, (r + c) % 2 ? 5 : 1)
-  k.box(0, 175, 7, 4, 5, 1, 4)
-  // ── 5. troncos rolando ──
-  const z0 = 179
-  const finishZ = kitFinish(k, z0, 1.05, 7, 1.1)
-  for (const [x, z] of [[0, 53], [0, 79], [0, 101], [-4.8, 118], [4.8, 128], [0, 138], [0, 175]] as [number, number][]) k.logo(x, z)
+  roots(70.5, 1.1, 0, true)
+  k.box(0, 79.5, 1.8, 2.5, 4, 1, 2, 0, 1.2, Y1)
+  roots(88.5, -1.6, 1.2, false)
+  k.box(0, 99, 6, 4, 5, 1, 2, 0, 1.4, Y1)
+  // ── 3. rampa curta e vitórias-régias que andam ──
+  k.slope(0, 103, 121, Y1, Y2, 4, 5, 1, 3)
+  k.box(0, 123, 4, 2, 5, 1, 3, 0, 1.2, Y2)
+  const LILY = [129, 134.5, 140]
+  const lilies: number[] = []
+  LILY.forEach((z, i) => {
+    const p = k.disc(0, z, 2.2, i % 2 ? 2 : 5, 1, 3, Y2)
+    k.pads[p].mx = 4
+    k.pads[p].mw = 1.1
+    k.pads[p].mph = i * 1.6
+    lilies.push(p)
+  })
+  k.box(0, 148, 6, 4, 5, 1, 3, 0, 1.4, Y2)
+  // ── 4. rampa dos cocos (pêndulos) ──
+  k.slope(0, 152, 176, Y2, Y3, 5, 5, 1, 4)
+  let ph = 0
+  for (const z of [158, 164, 170]) {
+    const top = Y2 + ((z - 152) / 24) * (Y3 - Y2)
+    for (const x of [-2.5, 2.5]) {
+      k.swing(x, z, top + 9, 7.4, 1.1, 0.95, 2.1, ph)
+      ph += 1.9
+    }
+  }
+  k.box(0, 180, 6, 4, 5, 1, 4, 0, 1.4, Y3)
+  // ── 5. ponte de folhas que cai e a subida final ──
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 3; c++) k.tile((c - 1) * 2.9, 186.6 + r * 2.9, 1.3, (r + c) % 2 ? 5 : 1, 0, Y3)
+  k.box(0, 209, 6, 3.5, 5, 1, 5, 0, 1.4, Y3)
+  k.slope(0, 212.5, 230.5, Y3, Y4, 5, 5, 1, 5)
+  k.box(0, 238, 9, 7.5, 1, 0, 6, 0, 1.6, Y4)
+  for (const [x, z, y] of [[0, 55, Y1], [0, 99, Y1], [-3, 148, Y2], [3, 148, Y2], [0, 180, Y3], [0, 209, Y3]] as [number, number, number][]) k.logo(x, z, y)
+  const finishZ = 238
   return k.done({
     id: "floresta",
+    mode: "race",
+    limit: 90,
+    // 3 s de folga; depois 0,34 m/s (a largada afoga aos ~12 s, o topo aos ~74 s)
+    rise: { y0: 0, y1: 26, t0: 3, t1: 79.5 },
     checkpoints: [
       { x: 0, z: -3.5, y: DECK, w: 7 },
-      { x: 0, z: 53, y: DECK, w: 6 },
-      { x: 0, z: 101, y: DECK, w: 6 },
-      { x: 0, z: 138, y: DECK, w: 7 },
-      { x: 0, z: 175, y: DECK, w: 5.5 },
+      { x: 0, z: 55, y: Y1, w: 6 },
+      { x: 0, z: 99, y: Y1, w: 5 },
+      { x: 0, z: 148, y: Y2, w: 5 },
+      { x: 0, z: 180, y: Y3, w: 5 },
     ],
     finishZ,
-    finishY: DECK + 6,
-    sections: [16, 58, 104, 142, z0],
+    finishY: Y4,
+    sections: [15, 59, 103, 152, 184],
     minFinish: 20,
     route: (r) =>
       routeOf((add) => {
         const side = r(1) < 0.5 ? -1 : 1
-        const L = [-4.5, 0, 4.5][Math.floor(r(2) * 3)]
         add(side * 1.2, 10)
-        add(side * 0.8, 15.5)
-        add(L * 0.7, 19)
-        add(L, 21.6)
-        for (const z of ROWS) add(L, z)
-        add(L * 0.5, 50)
-        add(0, 56)
-        add(side * 3.6, 61)
-        add(side * 4.4, 66.5)
-        add(side * 3, 72)
-        add(0, 76)
-        add(0, 80)
-        const D = r(3) < 0.5 ? -1 : 1
-        add(D * 3.5, 83)
-        add(D * 6.5, 86)
-        add(D * 6.5, 90.5)
-        add(D * 6.5, 95)
-        add(D * 3, 99.5)
-        for (const z of [104, 109, 113.6, 118, 123.6, 128, 133.6, 138]) add(0, z)
-        add(0, 141.6)
-        for (let i = 0; i < 10; i++) add(0, 143.6 + i * 2.9)
-        add(0, 173)
-        add(0, 177)
-        routeFinish(add, z0, finishZ)
+        add(0, 15.5)
+        for (let z = 18; z <= 50; z += 2.5) add(0, z)
+        for (const z of [53, 57, 60, 62.5]) add(0, z)
+        for (let z = 65; z <= 76; z += 2) add(0, z)
+        for (const z of [78, 80.5]) add(0, z)
+        for (let z = 83; z <= 94; z += 2) add(0, z)
+        for (const z of [97, 101]) add(0, z)
+        for (let z = 104; z <= 120; z += 2.5) add(0, z)
+        add(0, 122)
+        add(0, 124.5)
+        LILY.forEach((z, i) => add(0, z, lilies[i]))
+        for (const z of [145, 149, 151]) add(0, z)
+        const L = [-1.2, 0, 1.2][Math.floor(r(2) * 3)]
+        for (let z = 153; z <= 175; z += 2.5) add(L, z)
+        for (const z of [178, 182, 184.5]) add(0, z)
+        for (let i = 0; i < 7; i++) add(0, 186.6 + i * 2.9)
+        for (const z of [206.5, 210, 212]) add(0, z)
+        for (let z = 214; z <= 230; z += 2) add(0, z)
+        for (const z of [233, 236, finishZ + 3]) add(0, z)
       }),
   })
 }

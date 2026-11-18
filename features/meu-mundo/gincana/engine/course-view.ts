@@ -25,7 +25,7 @@ import { CreateGround } from "@babylonjs/core/Meshes/Builders/groundBuilder"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { buildLogos, type LogoView } from "../../corrida/engine/logos"
-import { DECK, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
+import { DECK, riseAt, ballsAt, gloveAt, padRot, padShift, pendulumAt, pusherAt, sweeperAngle, type Course, type Pad } from "../sim/course"
 import type { RunWorld } from "../sim/body"
 import { SoftGeo, at, hex, mix, stripesY, type RGB } from "./shapes"
 import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from "../../engine/steampunk/scenery"
@@ -153,7 +153,8 @@ export class CourseView {
     this.water.position.set(0, theme.fluid.kind === "void" ? -6 : 0, 130)
     this.water.material = wm
     this.water.isPickable = false
-    this.water.freezeWorldMatrix()
+    // Gincana 3: o pântano que sobe anda (update); o resto fica parado
+    if (!course.rise) this.water.freezeWorldMatrix()
 
     // ── o que não se mexe ──
     const st = new SoftGeo()
@@ -888,6 +889,7 @@ export class CourseView {
   update(t: number, clock: number, world: RunWorld) {
     const C = this.course
     const tt = Math.max(0, t)
+    if (C.rise) this.water.position.y = Math.max(0, riseAt(C, tt))
     this.gate.setEnabled(t < 0)
     for (let i = 0; i < C.sweepers.length; i++) this.sweepNodes[i].rotation.y = sweeperAngle(C.sweepers[i], tt)
     for (let i = 0; i < C.pendulums.length; i++) {

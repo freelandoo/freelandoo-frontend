@@ -33,7 +33,7 @@ import { lerpAngle } from "../../engine/motion"
 import { liveGamesBump } from "../../engine/game"
 import { ResolutionGovernor, frameCapMs, resolveQuality } from "../../engine/quality"
 import { BODY_IDS, type BodyId } from "../../types"
-import { GINCANA, sectionAt } from "../sim/course"
+import { GINCANA, riseAt, sectionAt, type GincanaMode } from "../sim/course"
 import { ANIM, MODE, groundUnder, runnerAnim, type RunEvent, type RunIntent } from "../sim/body"
 import { GincanaRace } from "../sim/race"
 import { CourseView } from "./course-view"
@@ -52,6 +52,9 @@ export interface BoardRow {
   fin: number
   /** 0–1 do caminho. */
   progress: number
+  /** Gincana 3: ficou fora da prova; pontos (coleta/zona). */
+  out: boolean
+  pts: number
 }
 
 export interface GincanaHud {
@@ -76,6 +79,11 @@ export interface GincanaHud {
   /** Agarrando alguém / sendo agarrado agora. */
   grabbing: boolean
   held: boolean
+  /** Gincana 3: tipo da prova, quantos ainda estão nela, meus pontos e quanto falta (m) para o perigo que sobe me pegar (Infinity = sem perigo). */
+  mode: GincanaMode
+  alive: number
+  pts: number
+  riseGap: number
 }
 
 export type GincanaNotice =
@@ -91,14 +99,20 @@ export type GincanaNotice =
   | { kind: "held" }
   | { kind: "climb" }
   | { kind: "eliminated" }
+  | { kind: "out" }
+  | { kind: "gem"; v: number }
+  | { kind: "rise" }
 
 export interface GincanaResult {
   place: number
   total: number
   /** s da chegada (−1 = o tempo acabou antes). */
   time: number
-  /** Chegou dentro da vaga. */
+  /** Chegou dentro da vaga (ou ficou em pé / pontos na vaga, pelo tipo da prova). */
   qualified: boolean
+  /** Gincana 3: ficou fora da prova; meus pontos. */
+  out: boolean
+  pts: number
 }
 
 export interface GincanaGameOptions {
@@ -355,15 +369,12 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   const camLook = new Vector3(0, 0, 0)
   let camReady = false
 
-  const board = (): BoardRow[] => {
-    const rows = race.runners.map((b) => {
-      const s = seats.get(b.slot)!
-      const z = b.fin >= 0 ? C.finishZ : race.distOf(b)
-      return { slot: b.slot, name: s.name, me: b.slot === me, bot: s.bot, fin: b.fin, progress: Math.max(0, Math.min(1, (z + 4) / (C.finishZ + 4))) }
+  // placar pela MESMA regra da sala (Gincana 3: corrida, sobrevivência, coleta e zona)
+  const board = (): BoardRow[] =>
+    race.standings().map((r) => {
+      const s = seats.get(r.slot)!
+      return { slot: r.slot, name: s.name, me: r.slot === me, bot: s.bot, fin: r.fin, progress: Math.max(0, Math.min(1, (r.dist + 4) / (C.finishZ + 4))), out: r.out >= 0, pts: r.pts }
     })
-    rows.sort((a, b) => (a.fin >= 0 && b.fin >= 0 ? a.fin - b.fin : a.fin >= 0 ? -1 : b.fin >= 0 ? 1 : b.progress - a.progress))
-    return rows
-  }
   const hud = (): GincanaHud => {
     const rows = board()
     const t = race.t
@@ -371,7 +382,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       phase: t < 0 ? "countdown" : ended ? "end" : "run",
       countdown: Math.max(0, -t),
       time: Math.max(0, t),
-      timeLeft: Math.max(0, GINCANA.timeLimit - Math.max(0, t)),
+      timeLeft: Math.max(0, race.limit() - Math.max(0, t)),
       place: rows.findIndex((r) => r.me) + 1,
       total: rows.length,
       section: sectionAt(C, mine.z),
@@ -383,10 +394,15 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       qualified: Math.min(race.quota, race.order.length),
       grabbing: mine.grab >= 0,
       held: mine.held > 0,
+      mode: C.mode,
+      alive: race.alive(),
+      pts: Math.round(mine.pts * 10) / 10,
+      riseGap: C.rise && mine.out < 0 && mine.fin < 0 ? mine.y - riseAt(C, Math.max(0, t)) : Infinity,
     }
   }
 
   let wasHeld = false
+  let riseWarned = false
   const onEvents = () => {
     for (const e of events) {
       if (e.type === "tile") continue
@@ -430,6 +446,13 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
           audio.logo()
           opts.onNotice?.({ kind: "logo" })
           break
+        case "out":
+          opts.onNotice?.({ kind: "out" })
+          break
+        case "gem":
+          audio.logo()
+          opts.onNotice?.({ kind: "gem", v: e.v })
+          break
         case "cp":
           audio.checkpoint()
           opts.onNotice?.({ kind: "cp", cp: e.cp })
@@ -470,8 +493,8 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     ended = true
     const rows = board()
     const place = rows.findIndex((r) => r.me) + 1
-    const k = race.order.indexOf(me)
-    opts.onEnd?.({ place, total: rows.length, time: mine.fin, qualified: mine.fin >= 0 && k >= 0 && k < race.quota })
+    const mineRow = race.standings().find((r) => r.slot === me)
+    opts.onEnd?.({ place, total: rows.length, time: mine.fin, qualified: !!mineRow?.q, out: mine.out >= 0, pts: Math.round(mine.pts * 10) / 10 })
   }
 
   const frame = (ms: number) => {
@@ -524,8 +547,15 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     const heldNow = mine.held > 0
     if (heldNow && !wasHeld) opts.onNotice?.({ kind: "held" })
     wasHeld = heldNow
-    if (!ended && (mine.fin >= 0 || race.t >= GINCANA.timeLimit || race.closed())) {
-      if (mine.fin < 0) opts.onNotice?.({ kind: race.closed() ? "eliminated" : "timeout" })
+    // o perigo que sobe chegou perto (a 2,5 m do pé): um aviso por subida
+    if (C.rise && mine.out < 0 && mine.fin < 0 && race.t > 0) {
+      const near = mine.y - riseAt(C, race.t) < 2.5 && mine.mode !== MODE.WATER
+      if (near && !riseWarned) opts.onNotice?.({ kind: "rise" })
+      riseWarned = near
+    }
+    // fim para mim: cheguei, fiquei fora, a vaga encheu, o tempo da fase acabou ou a prova (sobrevivência/coleta/zona) acabou
+    if (!ended && (mine.fin >= 0 || mine.out >= 0 || race.t >= race.limit() || race.closed() || (C.mode !== "race" && race.over()))) {
+      if (mine.fin < 0 && mine.out < 0 && C.mode === "race") opts.onNotice?.({ kind: race.closed() ? "eliminated" : "timeout" })
       finishGame()
     }
 
@@ -610,7 +640,8 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     // suavização que não depende da taxa de quadros (exponencial)
     const kXZ = 1 - Math.exp(-dt * 14)
     const kY = 1 - Math.exp(-dt * 5)
-    const footY = Math.max(me3.vy, mine.mode === MODE.WATER ? DECK_CAM - 2 : -99)
+    // na água a câmera não desce junto (com o pântano subindo, fica acima dele)
+    const footY = Math.max(me3.vy, mine.mode === MODE.WATER ? Math.max(DECK_CAM - 2, riseAt(C, Math.max(0, race.t)) + 3) : -99)
     if (!camReady) {
       camAt.set(me3.vx, footY, me3.vz)
       camReady = true

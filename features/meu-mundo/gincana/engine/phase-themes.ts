@@ -26,6 +26,8 @@ export interface GincanaTheme {
   sections: readonly (readonly [string, string])[]
   /** Dica de cada trecho 1…5. */
   tips: readonly (readonly [string, string])[]
+  /** Gincana 3: o nome da PROVA (cada fase é um tipo de prova). */
+  event: readonly [string, string]
   /** 1–5 (estrelas no cartão). */
   difficulty: number
   accent: string
@@ -61,6 +63,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       ["gincanaHow4", "O piso treme e cai logo depois que alguém pisa."],
       ["gincanaHow5", "Bolas gigantes descem a rampa: desvie até o topo."],
     ],
+    event: ["gincanaEvCidade", "Corrida do Canal"],
     difficulty: 2,
     accent: "#19C6D1",
     bg: ["#1d4f6e", "#0b1b2b"],
@@ -85,16 +88,17 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
     name: "Floresta da Lua",
     domainKey: "gincanaDomFloresta",
     domain: "Domínio da Floresta",
-    pitchKey: "gincanaPhFlorestaPitch",
-    pitch: "Cogumelos que lançam, raízes que giram e portas de cipó: só algumas abrem.",
-    sections: [SEC0, ["gincanaSecFl1", "Cogumelos"], ["gincanaSecFl2", "Raízes"], ["gincanaSecFl3", "Portas de cipó"], ["gincanaSecFl4", "Ponte de folhas"], ["gincanaSecFl5", "Troncos"], SEC6],
+    pitchKey: "gincanaPhFlorestaPitch3",
+    pitch: "Suba a árvore gigante antes que o pântano pegue você: quem ele alcança está fora.",
+    sections: [SEC0, ["gincanaSecFm1", "Troncos"], ["gincanaSecFm2", "Raízes"], ["gincanaSecFm3", "Vitórias-régias"], ["gincanaSecFm4", "Cocos"], ["gincanaSecFm5", "Ponte de folhas"], SEC6],
     tips: [
-      ["gincanaHowFl1", "Pule no primeiro cogumelo: eles lançam você para o próximo."],
-      ["gincanaHowFl2", "Raízes giram rente ao chão: pule na hora certa."],
-      ["gincanaHowFl3", "Só algumas portas abrem: siga quem já passou."],
-      ["gincanaHowFl4", "As folhas caem logo depois que alguém pisa."],
-      ["gincanaHowFl5", "Troncos rolam ladeira abaixo: desvie até o topo."],
+      ["gincanaHowFm1", "Troncos rolam ladeira abaixo: desvie e não pare, o pântano já está subindo."],
+      ["gincanaHowFm2", "Raízes giram rente ao chão: pule na hora certa."],
+      ["gincanaHowFm3", "As vitórias-régias andam de lado: pule quando a próxima chegar."],
+      ["gincanaHowFm4", "Cocos balançam sobre a rampa: passe quando o da sua faixa voltar."],
+      ["gincanaHowFm5", "As folhas caem logo depois que alguém pisa. O topo é a chegada."],
     ],
+    event: ["gincanaEvFloresta", "Maré do Pântano"],
     difficulty: 2,
     accent: "#7CFFB0",
     bg: ["#1f4a3a", "#08140f"],
@@ -129,6 +133,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       ["gincanaHowCa4", "Vigas em zigue-zague e pistões de rocha dos lados."],
       ["gincanaHowCa5", "Pedras rolam ladeira abaixo: desvie até o topo."],
     ],
+    event: ["gincanaEvRace", "Corrida de obstáculos"],
     difficulty: 3,
     accent: "#FF9A4D",
     bg: ["#6e3418", "#1e0c06"],
@@ -163,6 +168,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       ["gincanaHowOr4", "Barras de energia giram e blocos deslizam: pule e espere."],
       ["gincanaHowOr5", "Esferas descem a rampa: desvie até o topo."],
     ],
+    event: ["gincanaEvRace", "Corrida de obstáculos"],
     difficulty: 4,
     accent: "#3FD8FF",
     bg: ["#1a2a6e", "#05081c"],
@@ -197,6 +203,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       ["gincanaHowFo4", "A grade cai logo depois que alguém pisa."],
       ["gincanaHowFo5", "Rochas derretidas descem a rampa: desvie até o topo."],
     ],
+    event: ["gincanaEvRace", "Corrida de obstáculos"],
     difficulty: 4,
     accent: "#FF5A1F",
     bg: ["#5e1a08", "#160502"],
@@ -231,6 +238,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       ["gincanaHowFa4", "As prensas deslizam de lado: passe na brecha."],
       ["gincanaHowFa5", "Barris descem a rampa: desvie até o topo."],
     ],
+    event: ["gincanaEvRace", "Corrida de obstáculos"],
     difficulty: 3,
     accent: "#FFC21A",
     bg: ["#3e3a2c", "#121110"],
@@ -265,6 +273,7 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       ["gincanaHowGe4", "O gelo fino quebra logo depois que alguém pisa."],
       ["gincanaHowGe5", "Bolas de neve descem a rampa: desvie até o topo."],
     ],
+    event: ["gincanaEvRace", "Corrida de obstáculos"],
     difficulty: 3,
     accent: "#A8E6FF",
     bg: ["#2a5a7e", "#0a1826"],
