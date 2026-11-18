@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo" | "relogio" | "feira"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo", "relogio", "feira"]
+export type GincanaPhase = "cidade" | "floresta" | "canion" | "orbital" | "forja" | "fabrica" | "gelo" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "canion", "orbital", "forja", "fabrica", "gelo", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -460,6 +460,8 @@ export interface Course {
   drums: Drum[]
   /** Gincana 3: a grade do Relógio da Praça. */
   memory: Memory | null
+  /** Gincana 3 (Coroa da Torre): a linha fica acima do chão — só cruza quem pula (pegar a coroa). */
+  crown: boolean
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -576,6 +578,7 @@ export class CourseKit {
     zone?: Zone
     walls?: Walls
     memory?: Memory
+    crown?: boolean
   }): Course {
     return {
       id: o.id,
@@ -588,6 +591,7 @@ export class CourseKit {
       walls: o.walls ?? null,
       drums: this.drums,
       memory: o.memory ?? null,
+      crown: o.crown ?? false,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,

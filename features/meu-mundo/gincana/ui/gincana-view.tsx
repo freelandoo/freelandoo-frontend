@@ -17,7 +17,7 @@
 // segurando); no fim, classificou ou eliminado.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Flag, Loader2, Star, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
+import { Crown, Flag, Loader2, Star, Timer, Trophy, User, Users, Volume2, VolumeX, WifiOff, X } from "lucide-react"
 import { TrainButton } from "../../ui/kit/train-button"
 import { BackToCity } from "../../ui/kit/back-to-city"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -59,7 +59,21 @@ const BG = "radial-gradient(120% 90% at 50% 0%, #4fd6ff 0%, #8a6cff 48%, #3a1d6e
 const BOT_NAMES = ["Pipoca", "Jujuba", "Paçoca", "Cocada", "Quindim", "Bolacha", "Brigadeiro", "Pudim", "Canjica", "Suspiro"]
 
 type Mp = { net: GincanaNet; start: GincanaStart }
-type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind: "game"; key: number; mp?: Mp; phase: string }
+/** Programa (solo, contra o computador): as rodadas sorteadas e em qual se está. */
+type Show = { phases: string[]; round: number }
+type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind: "game"; key: number; mp?: Mp; phase: string; show?: Show }
+
+// Gincana 3 (G3-13): o programa abre com uma corrida, segue com duas provas de sobrevivência/coleta
+// (diferentes) e fecha na final, a Coroa da Torre (vaga 1). Não classificou = fim do programa.
+const SHOW_RACE = ["cidade", "feira", "floresta"]
+const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
+const SHOW_FINAL = "coroa"
+function drawShow(): string[] {
+  const mid = [...SHOW_MID]
+  const m1 = mid.splice(Math.floor(Math.random() * mid.length), 1)[0]
+  const m2 = mid[Math.floor(Math.random() * mid.length)]
+  return [SHOW_RACE[Math.floor(Math.random() * SHOW_RACE.length)], m1, m2, SHOW_FINAL]
+}
 
 /** Recorde do aparelho por fase (conveniência local; some se o navegador limpar). A de sempre fica na chave antiga. */
 const REC_KEY = "mm-gincana-recorde-v1"
@@ -116,6 +130,10 @@ export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps
   const [phase, setPhase] = useState("cidade")
   useEffect(() => setPhase(loadPhase()), [])
   const seq = useRef(0)
+  const startShow = useCallback((show: Show) => {
+    setError(null)
+    setStage({ kind: "game", key: ++seq.current, phase: show.phases[show.round], show })
+  }, [])
   const play = useCallback(
     async (multi: boolean) => {
       setError(null)
@@ -148,7 +166,18 @@ export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps
   return (
     <div className={`fixed inset-0 z-[70] touch-none select-none overflow-hidden ${archivo.className}`} style={{ background: "#3a1d6e" }}>
       {stage.kind === "game" ? (
-        <GincanaScreen key={stage.key} body={body} look={look} name={name} mp={stage.mp} phase={stage.phase} onAgain={() => void play(!!stage.mp)} onMenu={() => setStage({ kind: "menu" })} />
+        <GincanaScreen
+          key={stage.key}
+          body={body}
+          look={look}
+          name={name}
+          mp={stage.mp}
+          phase={stage.phase}
+          show={stage.show}
+          onAgain={() => (stage.show ? startShow({ phases: drawShow(), round: 0 }) : void play(!!stage.mp))}
+          onNext={stage.show && stage.show.round < stage.show.phases.length - 1 ? () => startShow({ phases: stage.show!.phases, round: stage.show!.round + 1 }) : undefined}
+          onMenu={() => setStage({ kind: "menu" })}
+        />
       ) : stage.kind === "lobby" ? (
         <Lobby
           list={lobby.list}
@@ -159,7 +188,7 @@ export function GincanaView({ body, look, name, onExit, join }: GincanaViewProps
           }}
         />
       ) : (
-        <Menu phase={phase} onPhase={setPhase} onPlay={(m) => void play(m)} onExit={onExit} multi={!!join} error={error} />
+        <Menu phase={phase} onPhase={setPhase} onPlay={(m) => void play(m)} onShow={() => startShow({ phases: drawShow(), round: 0 })} onExit={onExit} multi={!!join} error={error} />
       )}
     </div>
   )
@@ -190,6 +219,7 @@ function Menu({
   phase,
   onPhase,
   onPlay,
+  onShow,
   onExit,
   multi,
   error,
@@ -197,6 +227,7 @@ function Menu({
   phase: string
   onPhase: (p: string) => void
   onPlay: (multi: boolean) => void
+  onShow: () => void
   onExit: () => void
   multi: boolean
   error: string | null
@@ -214,7 +245,7 @@ function Menu({
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[12px] font-bold uppercase tracking-[0.18em]" style={{ color: TEAL }}>
-              {t("gincanaKicker3", "Party game · 7 provas diferentes")}
+              {t("gincanaKicker10", "Party game · 10 provas diferentes")}
             </div>
             <h1 className="mt-1.5 text-[34px] font-black italic leading-none tracking-tight max-[759px]:text-[27px]">
               <span style={{ color: YELLOW }}>GIN</span>
@@ -222,14 +253,14 @@ function Menu({
               <span style={{ color: TEAL }}>NA</span>
             </h1>
             <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
-              {t("gincanaPitch3", "Oito jogadores e uma prova diferente em cada fase: corrida, sobrevivência, coleta e rei do topo. Só a vaga classifica.")}
+              {t("gincanaPitch10", "Oito jogadores e uma prova diferente em cada fase: corrida, sobrevivência, coleta, memória e a final da coroa. Só a vaga classifica.")}
             </p>
           </div>
           <BackToCity onExit={onExit} className="pointer-events-auto" />
         </div>
 
         {/* fases: a de sempre e uma por Domínio */}
-        <div role="radiogroup" aria-label={t("gincanaPhases", "Fases")} className="mt-3 grid grid-cols-7 gap-1 max-[759px]:grid-cols-4">
+        <div role="radiogroup" aria-label={t("gincanaPhases", "Fases")} className="mt-3 grid grid-cols-5 gap-1 max-[420px]:grid-cols-4">
           {GINCANA_THEMES.map((th) => {
             const on = th.id === phase
             return (
@@ -313,6 +344,21 @@ function Menu({
             </button>
           )}
         </div>
+        {/* o programa: rodadas sorteadas até a final da coroa */}
+        <button
+          type="button"
+          onClick={onShow}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-none px-3 py-2 transition-transform active:scale-[0.98]"
+          style={{ background: "rgba(242,183,5,0.12)", border: `1.5px solid ${YELLOW}`, color: MM.text }}
+        >
+          <Crown className="h-5 w-5 shrink-0" style={{ color: YELLOW }} />
+          <span className="flex flex-col items-start leading-tight">
+            <span className="text-[16px] font-black italic tracking-wide">{t("gincanaShow", "Programa completo")}</span>
+            <span className="text-[11px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
+              {t("gincanaShowSub", "4 rodadas sorteadas até a final da coroa · contra o computador")}
+            </span>
+          </span>
+        </button>
 
         <p className="mt-3 text-[12px] leading-snug max-[759px]:hidden [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
           {t("gincanaKeys2", "WASD ou setas andam · Espaço pula · Shift ou E mergulha · segure F ou Ctrl para agarrar · arraste para girar a câmera")}
@@ -327,7 +373,27 @@ function Menu({
 
 // ═══ prova ═══════════════════════════════════════════════════════════════════
 
-function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body: BodyId; look?: string; name?: string; mp?: Mp; phase: string; onAgain: () => void; onMenu: () => void }) {
+function GincanaScreen({
+  body,
+  look,
+  name,
+  mp,
+  phase,
+  show,
+  onAgain,
+  onNext,
+  onMenu,
+}: {
+  body: BodyId
+  look?: string
+  name?: string
+  mp?: Mp
+  phase: string
+  show?: Show
+  onAgain: () => void
+  onNext?: () => void
+  onMenu: () => void
+}) {
   const t = useTranslations("MeuMundo")
   const theme = themeOf(phase)
   const sections = useSections(theme)
@@ -657,7 +723,7 @@ function GincanaScreen({ body, look, name, mp, phase, onAgain, onMenu }: { body:
             </div>
           )}
           {isTouch && !result && hud.phase !== "end" && <TouchControls gameRef={gameRef} />}
-          {result && <Results result={result.r} record={result.record} best={result.best} live={hud.board} quota={hud.quota} final={final} me={mp ? mp.start.me : 0} group={!!mp} onAgain={onAgain} onMenu={onMenu} mode={hud.mode} phaseId={theme.id} />}
+          {result && <Results result={result.r} record={result.record} best={result.best} live={hud.board} quota={hud.quota} final={final} me={mp ? mp.start.me : 0} group={!!mp} onAgain={onAgain} onNext={onNext} show={show} onMenu={onMenu} mode={hud.mode} phaseId={theme.id} />}
         </>
       )}
 
@@ -796,10 +862,14 @@ function Results({
   me,
   group,
   onAgain,
+  onNext,
+  show,
   onMenu,
   mode,
   phaseId,
 }: {
+  onNext?: () => void
+  show?: Show
   mode: GincanaHud["mode"]
   phaseId: string
   result: GincanaResult
@@ -843,6 +913,11 @@ function Results({
       <div className="w-full max-w-[420px] rounded-none p-4" style={{ background: MM.surface, color: MM.text, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}>
         <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em]" style={{ color: TEAL }}>
           <Flag className="h-4 w-4" /> {t("gincanaAria", "Gincana")}
+          {show && (
+            <span style={{ color: MM.muted }}>
+              · {t("gincanaShowRound", "Rodada {n} de {m}").replace("{n}", String(show.round + 1)).replace("{m}", String(show.phases.length))}
+            </span>
+          )}
         </div>
         <h2 className="mt-1 text-[25px] font-black italic leading-tight" style={{ color: place === 1 && result.time >= 0 ? YELLOW : MM.text }}>
           {title}
@@ -850,6 +925,16 @@ function Results({
         <p className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-black uppercase tracking-[0.08em]" style={{ background: result.qualified ? "rgba(99,224,90,0.18)" : "rgba(110,16,34,0.6)", color: result.qualified ? "#9BF59A" : "#ffd5dc" }}>
           {result.qualified ? t("gincanaQualifiedTag", "Classificado") : t("gincanaEliminatedTag", "Eliminado")}
         </p>
+        {show && result.qualified && !onNext && (
+          <p className="mt-2 flex items-center gap-2 text-[16px] font-black italic" style={{ color: YELLOW }}>
+            <Crown className="h-5 w-5" /> {t("gincanaShowChampion", "Campeão da Gincana! A coroa é sua.")}
+          </p>
+        )}
+        {show && !result.qualified && (
+          <p className="mt-2 text-[13px]" style={{ color: MM.muted }}>
+            {t("gincanaShowOver", "Fim do programa na rodada {n}. Tente de novo: as provas são sorteadas outra vez.").replace("{n}", String(show.round + 1))}
+          </p>
+        )}
         {result.time >= 0 && (
           <p className="mt-1 flex items-center gap-1.5 text-[15px] font-bold tabular-nums">
             <Timer className="h-4 w-4" style={{ color: YELLOW }} /> {fmt(result.time)}
@@ -892,9 +977,15 @@ function Results({
           </ol>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[15px] font-bold text-white" style={{ background: `linear-gradient(180deg, ${PINK}, #d93a86)` }}>
-            {t("gincanaAgain", "De novo")}
-          </button>
+          {show && result.qualified && onNext ? (
+            <button type="button" onClick={onNext} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: `linear-gradient(180deg, #FFE58A, ${YELLOW})`, color: "#3a1d6e" }}>
+              {t("gincanaShowNext", "Próxima rodada")}
+            </button>
+          ) : (
+            <button type="button" onClick={onAgain} className="rounded-none px-3 py-3 text-[15px] font-bold text-white" style={{ background: `linear-gradient(180deg, ${PINK}, #d93a86)` }}>
+              {t("gincanaAgain", "De novo")}
+            </button>
+          )}
           <button type="button" onClick={onMenu} className="rounded-none px-3 py-3 text-[15px] font-bold" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
             {t("gincanaBackMenu", "Voltar ao menu")}
           </button>

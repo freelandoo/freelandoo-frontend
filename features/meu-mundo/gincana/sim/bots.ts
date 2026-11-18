@@ -632,6 +632,14 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
       br.stuck = 0
     }
   }
+  // Coroa da Torre: pula na hora de pegar a coroa (a linha fica no alto); nada de mergulho
+  if (C.crown) {
+    if (b.ground && b.z > C.finishZ - 1.7 && b.z < C.finishZ - 0.3 && br.jumpCool <= 0) {
+      it.jump = true
+      br.jumpCool = 0.5
+    }
+    return it
+  }
   // reta final: os melhores mergulham para a linha
   if (br.divesFinish && b.ground && b.z > C.finishZ - 7 && b.z < C.finishZ - 4 && Math.abs(b.facing) < 0.3) it.dive = true
   return it

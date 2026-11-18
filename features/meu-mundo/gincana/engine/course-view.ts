@@ -71,6 +71,8 @@ export class CourseView {
   private readonly gemBases: Mesh[] = []
   /** Gincana 3: o anel aceso do topo (Rei do Iceberg). */
   private zoneRing: Mesh | null = null
+  /** Coroa da Torre: a coroa que gira no alto do estrado (pular para pegar). */
+  private crownMesh: Mesh | null = null
   /** Gincana 3: anéis do Rolo de Gelo (um nó por anel, gira em z). */
   private readonly drumNodes: { node: TransformNode; d: number; r: number }[] = []
   /** Gincana 3: Relógio da Praça — ladrilhos, símbolos [símbolo][ladrilho], o símbolo no mostrador e o ponteiro. */
@@ -262,7 +264,8 @@ export class CourseView {
     const arena = course.mode !== "race"
     if (!arena) {
       this.arch(st, glow, 8.4, DECK)
-      this.arch(st, glow, course.finishZ, course.finishY)
+      // Coroa da Torre: a linha fica 1,1 m acima do estrado (a coroa); o pórtico fica no chão
+      this.arch(st, glow, course.finishZ, course.finishY - (course.crown ? 1.1 : 0))
     }
     if (city) {
       // rebites de latão na borda de cada disco
@@ -280,7 +283,7 @@ export class CourseView {
     // faixa xadrez da chegada
     for (let i = 0; i < (arena ? 0 : 14); i++) {
       for (let j = 0; j < 2; j++) {
-        st.roundBox(1.2, 0.06, 0.6, 0.03, at(-8.4 + i * 1.3, course.finishY + 0.03, course.finishZ - 0.3 + j * 0.62), (i + j) % 2 ? WHITE : [0.08, 0.08, 0.1], 4)
+        st.roundBox(1.2, 0.06, 0.6, 0.03, at(-8.4 + i * 1.3, course.finishY - (course.crown ? 1.1 : 0) + 0.03, course.finishZ - 0.3 + j * 0.62), (i + j) % 2 ? WHITE : [0.08, 0.08, 0.1], 4)
       }
     }
     // marcos das portas: pilares entre elas (só desenho; a fileira inteira é a regra)
@@ -789,6 +792,33 @@ export class CourseView {
       this.zoneRing = zg.build("gincana-zone", scene, this.glowMat, false)
       this.zoneRing.position.set(Z.x, Z.y + 0.06, Z.z)
       this.zoneRing.isPickable = false
+    }
+
+    // ── Gincana 3: Coroa da Torre — a coroa no alto do estrado (aro, 5 pontas com pérola, faixa de
+    // rubis) e o pedestal de latão embaixo; gira e sobe e desce devagar ──
+    if (course.crown) {
+      const GOLD: RGB = [1, 0.8, 0.18]
+      const cg = new SoftGeo()
+      cg.cylinder(1.5, 0.42, at(0, 0, 0), GOLD, 24)
+      cg.torus(1.56, 0.08, at(0, -0.2, 0), mix(GOLD, WHITE, 0.3), 24)
+      cg.torus(1.56, 0.08, at(0, 0.2, 0), mix(GOLD, WHITE, 0.3), 24)
+      for (let k = 0; k < 5; k++) {
+        const a = (k / 5) * Math.PI * 2
+        cg.cylinder(0.34, 0.62, at(Math.cos(a) * 0.72, 0.5, Math.sin(a) * 0.72), GOLD, 6, 0.04)
+        cg.sphere(0.26, at(Math.cos(a) * 0.72, 0.86, Math.sin(a) * 0.72), [1, 0.96, 0.86], 6)
+        cg.sphere(0.22, at(Math.cos(a + 0.63) * 0.8, 0, Math.sin(a + 0.63) * 0.8), [0.9, 0.08, 0.16], 6)
+      }
+      this.crownMesh = cg.build("gincana-crown", scene, this.glowMat, false)
+      this.crownMesh.position.set(0, course.finishY + 0.5, course.finishZ)
+      this.crownMesh.isPickable = false
+      // pedestal: coluna de latão com anel aceso
+      const top = course.finishY - 1.1
+      const pg = new SoftGeo()
+      const pl = new SoftGeo()
+      pg.cylinder(1.2, 0.5, at(0, top + 0.25, course.finishZ + 1.6), SP.brassDark, 10)
+      pl.torus(2.8, 0.12, at(0, top + 0.06, course.finishZ), [1, 0.84, 0.3], 32)
+      this.meshes.push(pg.build("gincana-crown-base", scene, toy, true))
+      this.meshes.push(pl.build("gincana-crown-lit", scene, this.glowMat, true))
     }
 
     // ── Gincana 3: engrenagens (latão; a dourada, que vale 3, maior e amarela) ──
@@ -1620,6 +1650,10 @@ export class CourseView {
       m.mesh.rotation.y = m.p.k === 0 ? m.p.spin * tt : padRot(m.p, tt)
     }
     if (this.zoneRing) this.zoneRing.scaling.y = 1 + Math.sin(clock * 3) * 0.25
+    if (this.crownMesh) {
+      this.crownMesh.rotation.y = clock * 1.2
+      this.crownMesh.position.y = this.course.finishY + 0.5 + Math.sin(clock * 2) * 0.12
+    }
     // anéis do Rolo de Gelo: o material no ângulo m fica em θ = m + giro (rotation.z = −giro)
     for (const dn of this.drumNodes) dn.node.rotation.z = -drumAngle(C.drums[dn.d].rings[dn.r], tt)
     if (C.memory) this.updateMemory(t, clock, world)
@@ -1760,6 +1794,7 @@ export class CourseView {
     for (const m of this.gemMeshes) m.dispose()
     for (const m of this.gemBases) m.dispose()
     this.zoneRing?.dispose()
+    this.crownMesh?.dispose()
     for (const row of this.memSyms) for (const m of row) m.dispose()
     for (const m of this.memTiles) m.dispose()
     for (const m of this.memFace) m.dispose(false, true)
