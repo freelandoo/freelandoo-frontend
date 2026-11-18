@@ -500,8 +500,28 @@ function ice(lit: SoftGeo, glow: SoftGeo, n: number) {
       lit.cylinder(0.02, ih, at(x - Math.sign(x) * 4.2, h - 1.6 - ih / 2, z - w / 2 + 1 + (k * (w - 2)) / 8), [0.82, 0.94, 1], 5, 1.1)
     }
   }
+  // V-Gelo (ref. v3): placas de gelo hexagonais boiando, tampa de neve com beira azulada, lado ciano
+  // escurecendo para baixo e pingentes embaixo da beira (o que dá a cara de "gelo que pinga")
+  for (let i = 0; i < Math.round(46 * n); i++) {
+    // metade fica em volta do rolo (onde a câmera olha), o resto ao longe
+    const x = side(i, 11 + rnd(i, 200) * (i % 2 ? 22 : 40))
+    const z = i % 2 ? -24 + rnd(i, 201) * 90 : Z0 + 20 + rnd(i, 201) * (Z1 - Z0 - 40)
+    if (Math.abs(x) < 13 && z > -6 && z < 40) continue
+    const d = 4 + rnd(i, 202) * 6
+    const y = 0.25 + rnd(i, 203) * 0.5
+    const yaw = rnd(i, 204) * 3
+    lit.cylinder(d, 1, at(x, y, z, yaw), (_x, yy) => mix([0.18, 0.5, 0.78], [0.55, 0.85, 1], yy + 0.5), 6, d * 1.04)
+    lit.cylinder(d * 1.02, 0.3, at(x, y + 0.6, z, yaw), (xx, _yy, zz) => (Math.hypot(xx, zz) > d * 0.42 ? [0.72, 0.9, 1] : [0.94, 0.98, 1]), 6)
+    // rachadura funda (uma placa em cada três)
+    if (i % 3 === 0) lit.box(d * 0.8, 0.05, 0.12, at(x, y + 0.76, z, yaw + 0.7), [0.3, 0.6, 0.85])
+    for (let k = 0; k < 6; k++) {
+      const a = yaw + (k / 6) * Math.PI * 2 + 0.5
+      const ih = 0.6 + rnd(i, 210 + k) * 1.4
+      lit.cylinder(0.02, ih, at(x + Math.cos(a) * d * 0.44, y - 0.5 - ih / 2, z + Math.sin(a) * d * 0.44), [0.7, 0.92, 1], 4, 0.36)
+    }
+  }
   // icebergs no mar
-  for (let i = 0; i < Math.round(30 * n); i++) {
+  for (let i = 0; i < Math.round(16 * n); i++) {
     const x = side(i + 1, 18 + rnd(i, 10) * 50)
     const z = Z0 + rnd(i, 11) * (Z1 - Z0)
     const w = 4 + rnd(i, 12) * 10
@@ -546,12 +566,29 @@ export function buildTargets(lit: SoftGeo, glow: SoftGeo, deco: GincanaDeco, neo
 
 /** Aurora (só no Mar de Gelo, à noite): faixas acesas no alto. */
 export function buildAurora(g: SoftGeo) {
-  for (let i = 0; i < 5; i++) {
-    const z = 60 + i * 60
-    for (let k = 0; k < 9; k++) {
-      const x = -120 + k * 30
-      const h = 26 + Math.sin(k * 1.3 + i) * 8
-      g.roundBox(28, h, 0.4, 0.1, at(x, 70 + h / 2 + Math.sin(k + i) * 6, z + Math.sin(k * 0.7 + i) * 18, Math.sin(k + i * 2) * 0.4), k % 2 ? [0.3, 1, 0.6] : [0.3, 0.8, 1], 2)
+  // V-Gelo (ref. v3): três cortinas onduladas no céu ao fundo, cada uma de faixas finas lado a lado.
+  // O material é aditivo (preto some): verde aceso embaixo → magenta em cima, sumindo nas duas pontas.
+  const curtain = (zc: number, y0: number, h: number, ph: number, amp: number) => {
+    for (let k = 0; k < 64; k++) {
+      const x = -280 + k * 8.8
+      const z = zc + Math.sin(k * 0.21 + ph) * amp + Math.sin(k * 0.07 + ph * 2) * amp * 0.6
+      const hh = h * (0.75 + 0.25 * Math.sin(k * 0.33 + ph))
+      const edge = Math.min(1, k / 10, (63 - k) / 10)
+      const yaw = Math.atan2(Math.cos(k * 0.21 + ph) * amp * 0.21, 8.2)
+      // a caixa só tem vértice em cima e embaixo: quatro pedaços empilhados para o degradê aparecer
+      const colorAt = (t: number): RGB => {
+        const fade = Math.min(1, t / 0.12) * Math.min(1, (1 - t) / 0.35) * edge
+        const c = mix([0.1, 0.9, 0.4], [0.75, 0.15, 0.9], Math.min(1, Math.max(0, (t - 0.2) / 0.55)))
+        return [c[0] * fade, c[1] * fade, c[2] * fade]
+      }
+      const T = [0, 0.12, 0.4, 0.65, 1]
+      for (let q = 0; q < 4; q++) {
+        const sh = hh * (T[q + 1] - T[q])
+        g.box(9.2, sh, 0.3, at(x, y0 + hh * T[q] + sh / 2, z, -yaw), (_x, y) => colorAt(T[q] + ((y + sh / 2) / sh) * (T[q + 1] - T[q])))
+      }
     }
   }
+  curtain(520, 95, 90, 0, 40)
+  curtain(640, 120, 100, 2.1, 50)
+  curtain(440, 130, 60, 4.2, 30)
 }

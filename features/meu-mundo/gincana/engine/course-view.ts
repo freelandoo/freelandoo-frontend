@@ -145,7 +145,8 @@ export class CourseView {
     // v2: o céu de cada fase é a arte do Domínio dela (a cidade usa a do centro)
     this.sky = new Sky(scene, 900, { region: SKY_OF[theme.deco], tier: low ? "low" : "mid" })
     this.cloudMat = this.unlit("gincana-cloud-mat", 0.94)
-    if (theme.deco === "city" || theme.deco === "canyon" || theme.deco === "factory" || theme.deco === "ice") {
+    // V-Gelo: sem nuvens (noite polar limpa, a aurora no lugar)
+    if (theme.deco === "city" || theme.deco === "canyon" || theme.deco === "factory") {
       const cloudG = new SoftGeo()
       for (let i = 0; i < 18; i++) {
         const a = (i / 18) * Math.PI * 2 + Math.sin(i * 7.1) * 0.2
@@ -608,6 +609,46 @@ export class CourseView {
 
     // ── Gincana 3: Rolo de Gelo — cada anel é uma casca de placas de gelo (sem as do buraco), com aros
     // escuros nas juntas, geada clara nas quinas e a boca do buraco acesa (aviso de perigo) ──
+    // V-Gelo (ref. v3): pórtico de gelo em cada ponta do rolo — colunas de blocos de gelo com tampa de
+    // neve, viga de madeira com cintas de ferro e pingentes grandes, lampião aceso no alto e friso magenta
+    if (course.drums.length) {
+      const pg = new SoftGeo()
+      const pl = new SoftGeo()
+      const d0 = course.drums[0]
+      const len = d0.rings.reduce((a, r) => a + r.len, 0)
+      const top = d0.y + d0.R + 6
+      for (const gz of [d0.z0 - 2.2, d0.z0 + len + 2.2]) {
+        for (const sx of [-1, 1]) {
+          const x = sx * (d0.R + 2.6)
+          // coluna em três blocos de gelo (um pouco desencontrados), base mais escura
+          for (let b = 0; b < 3; b++) {
+            const bh = (top + 0.6) / 3
+            pg.box(2.4 - b * 0.15, bh - 0.08, 2.4 - b * 0.15, at(x + (b % 2 ? 0.08 : -0.06), bh * b + bh / 2, gz, b * 0.12), (_x, y) => mix([0.3, 0.58, 0.86], [0.62, 0.86, 1], (y + bh / 2) / bh * 0.7 + b * 0.1))
+          }
+          pg.box(2.8, 0.7, 2.8, at(x, top + 0.95, gz), (_x, y) => (y > 0 ? [0.96, 0.99, 1] : [0.8, 0.92, 1]))
+          for (let k = 0; k < 4; k++) pg.cylinder(0.04, 1 + (k % 2) * 0.8, at(x - 1.1 + k * 0.72, top + 0.1 - (k % 2) * 0.4, gz - 1.35), [0.8, 0.95, 1], 4, 0.34)
+          // lampião: gaiola escura e chama acesa
+          pg.box(0.8, 0.1, 0.8, at(x, top + 1.35, gz), [0.14, 0.12, 0.12])
+          pl.sphere(0.62, at(x, top + 1.8, gz), [1, 0.7, 0.3], 8)
+          for (const c of [-0.32, 0.32]) for (const e of [-0.32, 0.32]) pg.box(0.07, 0.8, 0.07, at(x + c, top + 1.75, gz + e), [0.14, 0.12, 0.12])
+          pg.cylinder(0.95, 0.4, at(x, top + 2.3, gz), [0.92, 0.97, 1], 4, 0.1)
+          // friso magenta aceso no pé da coluna
+          pl.box(2.6, 0.14, 2.6, at(x, 0.9, gz), [1, 0.3, 0.7])
+        }
+        // viga de madeira com cintas de ferro e pingentes grandes
+        const span = (d0.R + 2.6) * 2
+        pg.box(span, 1.1, 1.3, at(0, top - 0.3, gz), (_x, y) => (y > 0.3 ? [0.5, 0.33, 0.2] : [0.34, 0.2, 0.12]))
+        for (let c = -2; c <= 2; c++) pg.box(0.25, 1.2, 1.4, at(c * span * 0.18, top - 0.3, gz), [0.2, 0.2, 0.24])
+        pg.box(span, 0.35, 1.5, at(0, top + 0.35, gz), [0.95, 0.98, 1])
+        for (let k = 0; k < 9; k++) {
+          const ih = 1.2 + ((k * 7) % 5) * 0.5
+          pg.cylinder(0.05, ih, at(-span / 2 + 1.5 + k * ((span - 3) / 8), top - 0.85 - ih / 2, gz), (_x, y) => mix([0.55, 0.85, 1], [0.92, 0.98, 1], y / ih + 0.5), 5, 0.55)
+        }
+      }
+      this.meshes.push(pg.build("gincana-ice-gates", scene, toy, true))
+      this.meshes.push(pl.build("gincana-ice-gates-lit", scene, this.glowMat, true))
+    }
+
     course.drums.forEach((d, di) => {
       let z0 = d.z0
       d.rings.forEach((ring, ri) => {
@@ -633,11 +674,11 @@ export class CourseView {
           // placa tangente ao cilindro (sin m em x, cos m em y): normal para fora
           const px = Math.sin(m) * (d.R - 0.3)
           const py = Math.cos(m) * (d.R - 0.3)
-          g.roundBox(seg + 0.02, 0.6, ring.len - 0.24, 0.08, at(px, py, 0, 0, 0, -m), (k + ri) % 3 === 0 ? ICE_B : ICE_A, 2)
+          g.box(seg + 0.02, 0.6, ring.len - 0.24, at(px, py, 0, 0, 0, -m), (k + ri) % 3 === 0 ? ICE_B : ICE_A)
           // geada clara por cima de cada placa (em listras finas)
-          gl.roundBox(seg * 0.5, 0.04, ring.len - 0.7, 0.02, at(Math.sin(m) * d.R, Math.cos(m) * d.R, 0, 0, 0, -m), k % 2 ? [0.5, 0.78, 0.95] : [0.62, 0.86, 1], 1)
+          gl.box(seg * 0.5, 0.04, ring.len - 0.7, at(Math.sin(m) * d.R, Math.cos(m) * d.R, 0, 0, 0, -m), k % 2 ? [0.5, 0.78, 0.95] : [0.62, 0.86, 1])
           // boca do buraco: placa de perigo acesa nas duas beiras
-          if (inHole(m + (Math.PI * 2) / N) || inHole(m - (Math.PI * 2) / N)) gl.roundBox(seg * 0.9, 0.08, ring.len - 0.3, 0.02, at(Math.sin(m) * (d.R + 0.04), Math.cos(m) * (d.R + 0.04), 0, 0, 0, -m), [1, 0.35, 0.55], 1)
+          if (inHole(m + (Math.PI * 2) / N) || inHole(m - (Math.PI * 2) / N)) gl.box(seg * 0.9, 0.08, ring.len - 0.3, at(Math.sin(m) * (d.R + 0.04), Math.cos(m) * (d.R + 0.04), 0, 0, 0, -m), [1, 0.35, 0.55])
         }
         // aros escuros nas juntas (a costura dos anéis) e o miolo
         for (const ez of [-ring.len / 2, ring.len / 2]) g.torus(d.R * 2 + 0.1, 0.22, at(0, 0, ez, 0, Math.PI / 2, 0), [0.18, 0.3, 0.46], 48)
@@ -647,7 +688,7 @@ export class CourseView {
         for (let k = 0; k < 4; k++) {
           const m = (k / 4) * Math.PI * 2 + 0.4
           if (inHole(m)) continue
-          gl.roundBox(0.25, 0.04, 1.1, 0.02, at(Math.sin(m) * (d.R + 0.03), Math.cos(m) * (d.R + 0.03), 0, sgn * 0.6, 0, -m), [1, 0.82, 0.2], 1)
+          gl.box(0.25, 0.04, 1.1, at(Math.sin(m) * (d.R + 0.03), Math.cos(m) * (d.R + 0.03), 0, sgn * 0.6, 0, -m), [1, 0.82, 0.2])
         }
         const mesh = g.build(`gincana-drum-m-${di}-${ri}`, scene, this.toy, false)
         mesh.parent = node
@@ -1222,7 +1263,8 @@ export class CourseView {
     if (Math.abs(n - this.night) < 0.005) return
     this.night = n
     // a prova é um programa de TV: de noite a luz baixa só até a metade (o céu escurece inteiro; o neon acende)
-    applyLights(this.scene, n * 0.55)
+    // V-Gelo: a noite polar vai mais fundo (luz fria; na metade o sol ainda é de fim de tarde e o gelo sai bege)
+    applyLights(this.scene, n * (this.theme.deco === "ice" ? 0.85 : 0.55))
     this.sky.set(n)
     this.stage.setNight(n)
     this.city?.setNight(n)
@@ -1238,9 +1280,11 @@ export class CourseView {
       Color3.LerpToRef(new Color3(1, 1, 1), new Color3(0.2, 0.32, 0.38), n, this.waterMat.diffuseColor)
     }
     if (this.aurora) this.aurora.setEnabled(n > 0.3)
-    if (this.auroraMat) this.auroraMat.alpha = 0.1 + 0.25 * n
+    if (this.auroraMat) this.auroraMat.alpha = 0.1 + 0.3 * n
     const k = 0.14 - 0.08 * n + (this.lava ? 0.08 : 0)
     this.toy.emissiveColor.set(k, k * (this.lava ? 0.7 : 1), k * (this.lava ? 0.5 : 1))
+    // V-Gelo: o gelo brilha sozinho na noite polar (o branco vira ciano-gelo, como na referência)
+    if (this.theme.deco === "ice") this.toy.emissiveColor.set(0.12 + 0.08 * n, 0.22 + 0.14 * n, 0.32 + 0.16 * n)
   }
 
   private unlit(name: string, k = 1) {

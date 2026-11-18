@@ -288,7 +288,8 @@ export const GINCANA_THEMES: readonly GincanaTheme[] = [
       [0.94, 0.97, 1],
     ],
     fluid: { day: "#2c6f9c", night: "#0b2236", glow: 0, streak: "rgba(230,250,255,0.7)", kind: "ice" },
-    night: null,
+    // V-Gelo (ref. v3): noite polar com aurora — o gelo e o neon acendem
+    night: 1,
     deco: "ice",
   },
   {
