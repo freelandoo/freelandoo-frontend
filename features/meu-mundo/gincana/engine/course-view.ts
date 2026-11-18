@@ -903,7 +903,9 @@ export class CourseView {
         for (const dz of [-1.9, 1.9]) for (const dx of [-1.4, 1.4]) bg.cylinder(0.14, 2.8, at(x + dx, y + 1.55, z + dz), WOOD, 6)
         // toldo inclinado para a pista, listrado
         const c = AWN[n % AWN.length]
-        bg.roundBox(3.6, 0.1, 4.6, 0.04, at(x - sx * 0.2, y + 3.1, z, 0, 0, sx * 0.28), (_x, _y, zz) => (Math.floor((zz + 20) / 0.55) % 2 ? c : [0.95, 0.92, 0.84]), 6)
+        // listras em FAIXAS (a pintura por vértice não aparecia: o toldo saía branco) e a franja recortada
+        for (let q = 0; q < 8; q++) bg.box(3.6, 0.1, 4.6 / 8 + 0.01, at(x - sx * 0.2, y + 3.1, z - 2.3 + (q + 0.5) * (4.6 / 8), 0, 0, sx * 0.28), q % 2 ? c : [0.95, 0.92, 0.84])
+        for (let q = 0; q < 8; q++) bg.box(0.06, 0.32, 4.6 / 8 - 0.06, at(x + sx * 1.55, y + 2.6, z - 2.3 + (q + 0.5) * (4.6 / 8)), q % 2 ? c : [0.95, 0.92, 0.84])
         // frutas no balcão (pilhas de 3 tipos)
         for (let i = 0; i < 9; i++) {
           const fz = z - 1.5 + (i % 3) * 1.5 + (Math.floor(i / 3) - 1) * 0.3
@@ -1016,6 +1018,18 @@ export class CourseView {
         }, 6)
         for (const sz of [-1, 1]) {
           const z = sz * 0.19
+          // V-Centro: almofadas em RELEVO (a pintura por vértice não aparecia) — quatro por folha, mais claras
+          // em cima (quina que pega luz), e a fresta escura do meio
+          for (const sx of [-1, 1]) {
+            const px = sx * (W / 4 + 0.02)
+            const pw = W / 2 - 0.42
+            for (const [y0, y1] of [[0.32, H * 0.42], [H * 0.52, H - 0.32]] as [number, number][]) {
+              const ph = y1 - y0
+              dg.box(pw, ph, 0.05, at(px, y0 + ph / 2, z + sz * 0.005), (_x, y) => (y > ph / 2 - 0.05 ? mix(PANEL, [0.5, 0.7, 0.55], 0.35) : PANEL))
+              dg.box(pw - 0.2, ph - 0.2, 0.05, at(px, y0 + ph / 2, z + sz * 0.03), darker(PANEL, 0.88))
+            }
+          }
+          dg.box(0.05, H - 0.2, 0.03, at(0, H / 2, z + sz * 0.02), [0.04, 0.08, 0.06])
           dg.roundBox(W, 0.14, 0.08, 0.03, at(0, H - 0.07, z), [0.7, 0.5, 0.18], 2)
           dg.roundBox(0.12, H, 0.08, 0.03, at(-W / 2 + 0.06, H / 2, z), [0.7, 0.5, 0.18], 2)
           dg.roundBox(0.12, H, 0.08, 0.03, at(W / 2 - 0.06, H / 2, z), [0.7, 0.5, 0.18], 2)
