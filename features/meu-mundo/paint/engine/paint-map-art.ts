@@ -80,7 +80,7 @@ const ART: Record<PaintMapId, Omit<PaintMapArt, "id">> = {
     ],
     players: "Todos os modos",
     playersKey: T("PlayersAll"),
-    thumb: "/meu-mundo/paint/v1/mapas/cidade.webp",
+    thumb: "/meu-mundo/paint/mapas-v2/cidade.webp",
     accent: "#E8B44A",
     bg: ["#f4e2bf", "#9cc2dd"],
     theme: null,
@@ -100,7 +100,7 @@ const ART: Record<PaintMapId, Omit<PaintMapArt, "id">> = {
     ],
     players: "Ótimo para treinar e 1 × 1",
     playersKey: T("JardimPlayers"),
-    thumb: "/meu-mundo/paint/v1/mapas/jardim.webp",
+    thumb: "/meu-mundo/paint/mapas-v2/jardim.webp",
     accent: "#B98CFF",
     bg: ["#cfe8ff", "#7fb4e8"],
     theme: {
@@ -150,7 +150,7 @@ const ART: Record<PaintMapId, Omit<PaintMapArt, "id">> = {
     ],
     players: "Ótimo para 2 × 2",
     playersKey: T("FabricaPlayers"),
-    thumb: "/meu-mundo/paint/v1/mapas/fabrica.webp",
+    thumb: "/meu-mundo/paint/mapas-v2/fabrica.webp",
     accent: "#F5C21B",
     bg: ["#dfe7ee", "#7e95ad"],
     theme: {
@@ -200,7 +200,7 @@ const ART: Record<PaintMapId, Omit<PaintMapArt, "id">> = {
     ],
     players: "Todos os modos",
     playersKey: T("PlayersAll"),
-    thumb: "/meu-mundo/paint/v1/mapas/floresta.webp",
+    thumb: "/meu-mundo/paint/mapas-v2/floresta.webp",
     accent: "#43E0C8",
     bg: ["#5c4b9a", "#1d2a4a"],
     theme: {
@@ -250,7 +250,7 @@ const ART: Record<PaintMapId, Omit<PaintMapArt, "id">> = {
     ],
     players: "Ótimo para 3 × 3",
     playersKey: T("TemploPlayers"),
-    thumb: "/meu-mundo/paint/v1/mapas/templo.webp",
+    thumb: "/meu-mundo/paint/mapas-v2/templo.webp",
     accent: "#7FA8FF",
     bg: ["#3b3b70", "#151630"],
     theme: {
@@ -300,7 +300,7 @@ const ART: Record<PaintMapId, Omit<PaintMapArt, "id">> = {
     ],
     players: "Ótimo para 2 × 2 e 3 × 3",
     playersKey: T("ForjaPlayers"),
-    thumb: "/meu-mundo/paint/v1/mapas/forja.webp",
+    thumb: "/meu-mundo/paint/mapas-v2/forja.webp",
     accent: "#FF6A1F",
     bg: ["#5a1f14", "#1a0c0c"],
     theme: {

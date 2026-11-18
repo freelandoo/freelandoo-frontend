@@ -14935,7 +14935,16 @@
     "eqRuneNone": "no socket",
     "eqRuneFree": "Free socket",
     "eqRuneRemove": "Remove the rune",
-    "eqRuneNoneOwned": "No runes in your bag. Trade minigame tokens or fight in the Domains."
+    "eqRuneNoneOwned": "No runes in your bag. Trade minigame tokens or fight in the Domains.",
+    "stageBack": "Back",
+    "stageHelp": "How to play",
+    "stageClose": "Close",
+    "stageSoon": "Coming soon",
+    "jetGoals": "Goals {a} / {b} / {c} m",
+    "gincanaSelectTitle": "Select stage",
+    "gincanaKeysShort": "WASD or arrows move · Space jumps · Shift dives · F grabs",
+    "gincanaShow": "Full show",
+    "gincanaShowSub": "4 random rounds up to the crown final · against the computer"
   },
   "Sports": {
     "eyebrow": "Sports",

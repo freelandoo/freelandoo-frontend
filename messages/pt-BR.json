@@ -14349,7 +14349,16 @@
     "eqRuneNone": "sem encaixe",
     "eqRuneFree": "Encaixe livre",
     "eqRuneRemove": "Tirar a runa",
-    "eqRuneNoneOwned": "Sem runas na mochila. Troque fichas dos minijogos ou lute nos Domínios."
+    "eqRuneNoneOwned": "Sem runas na mochila. Troque fichas dos minijogos ou lute nos Domínios.",
+    "stageBack": "Voltar",
+    "stageHelp": "Como jogar",
+    "stageClose": "Fechar",
+    "stageSoon": "Em breve",
+    "jetGoals": "Metas {a} / {b} / {c} m",
+    "gincanaSelectTitle": "Selecionar fase",
+    "gincanaKeysShort": "WASD ou setas andam · Espaço pula · Shift mergulha · F agarra",
+    "gincanaShow": "Programa completo",
+    "gincanaShowSub": "4 rodadas sorteadas até a final da coroa · contra o computador"
   },
   "Sports": {
     "eyebrow": "Esportes",
