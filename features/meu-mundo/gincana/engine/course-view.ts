@@ -156,7 +156,9 @@ export class CourseView {
         const n = 4 + (i % 4)
         for (let k = 0; k < n; k++) {
           const s = 14 + ((k * 13 + i * 5) % 12)
-          cloudG.sphere(s, at(cx + (k - n / 2) * 8, cy + Math.sin(k * 2.1 + i) * 3, cz + Math.cos(k * 1.7) * 5), WHITE, 8, 1, 0.62, 1)
+          // Cânion (ref. v3): nuvem de pôr do sol — rosada embaixo, quase branca em cima
+          const cloudPaint = theme.deco === "canyon" ? (_x: number, y: number): RGB => mix([0.98, 0.68, 0.72], [1, 0.95, 0.9], Math.min(1, Math.max(0, y / s + 0.5))) : WHITE
+          cloudG.sphere(s, at(cx + (k - n / 2) * 8, cy + Math.sin(k * 2.1 + i) * 3, cz + Math.cos(k * 1.7) * 5), cloudPaint, 8, 1, 0.62, 1)
         }
       }
       this.clouds = cloudG.build("gincana-clouds", scene, this.cloudMat, false)
@@ -469,6 +471,23 @@ export class CourseView {
           return vein ? mix(c, [0.85, 1, 0.6], 0.35) : c
         }, 16, 1, 0.16, 1.18)
         tg.cylinder(0.14, 0.9, at(0, -0.1, -W * 0.62, 0, Math.PI / 2, 0), [0.3, 0.42, 0.16], 5)
+      } else if (t.k === 1 && theme.deco === "canyon") {
+        // V-Cânion (ref. v3): pedra do caminho — laje de pedra cinza-areia em três lajotas (tons
+        // diferentes, rejunte escuro entre elas), corpo de arenito terracota escurecendo embaixo
+        // (sombra de contato) e um filete ciano na quina de cima, como a borda acesa da referência
+        const D = t.h * 2.06
+        const side: RGB = mix(col, [0.62, 0.3, 0.18], 0.6)
+        tg.cylinder(D, 0.55, at(0, -0.3, 0, Math.PI / 6), (_x, y) => mix(darker(side, 0.55), side, Math.min(1, (y + 0.55) / 0.5)), 6, D * 0.9)
+        tg.cylinder(D * 1.015, 0.05, at(0, -0.035, 0, Math.PI / 6), [0.32, 0.95, 0.9], 6)
+        // laje de cima: cinza-areia, mais clara na beira (quina que pega luz), tom pela cor do ladrilho
+        const STONE: RGB[] = [[0.74, 0.66, 0.56], [0.68, 0.6, 0.52], [0.8, 0.72, 0.6]]
+        const st = mix(STONE[t.c % 3], col, 0.16)
+        tg.cylinder(D * 0.95, 0.07, at(0, 0, 0, Math.PI / 6), (x, _y, z) => (Math.hypot(x, z) > D * 0.4 ? mix(st, WHITE, 0.3) : darker(st, 0.92)), 6)
+        // rejunte: três linhas do centro a cantos alternados (a laje vira três lajotas)
+        for (let q = 0; q < 3; q++) {
+          const a = (q / 3) * Math.PI * 2 + Math.PI / 6
+          tg.box(D * 0.47, 0.012, 0.045, at(Math.cos(a) * D * 0.24, 0.033, Math.sin(a) * D * 0.24, -a), [0.36, 0.28, 0.22])
+        }
       } else if (t.k === 1) {
         tg.cylinder(t.h * 2.06, 0.55, at(0, -0.275, 0, Math.PI / 6), col, 6)
         tg.cylinder(t.h * 1.5, 0.06, at(0, 0.005, 0, Math.PI / 6), mix(col, WHITE, 0.35), 6)

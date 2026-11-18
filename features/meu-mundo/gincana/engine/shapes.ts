@@ -12,6 +12,7 @@ import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData"
 import { CreateSphereVertexData } from "@babylonjs/core/Meshes/Builders/sphereBuilder"
 import { CreateCylinderVertexData } from "@babylonjs/core/Meshes/Builders/cylinderBuilder"
 import { CreateTorusVertexData } from "@babylonjs/core/Meshes/Builders/torusBuilder"
+import { CreateBoxVertexData } from "@babylonjs/core/Meshes/Builders/boxBuilder"
 import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector"
 import type { Scene } from "@babylonjs/core/scene"
 import type { Material } from "@babylonjs/core/Materials/material"
@@ -141,6 +142,11 @@ export class SoftGeo {
     vd.normals = normals
     vd.indices = indices
     this.append(vd, paint, m)
+  }
+
+  /** Caixa reta w×h×d (12 triângulos): bloco, friso, rejunte — onde a quina redonda não paga o custo. */
+  box(w: number, h: number, d: number, m: Matrix, paint: Paint) {
+    this.append(CreateBoxVertexData({ width: w, height: h, depth: d }), paint, m)
   }
 
   /** Cilindro vertical (centro na matriz). */

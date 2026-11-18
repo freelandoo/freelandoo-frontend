@@ -228,53 +228,110 @@ function mossRock(lit: SoftGeo, glow: SoftGeo, x: number, z: number, w: number, 
 
 // ── Cânion ───────────────────────────────────────────────────────────────────
 
+/**
+ * V-Cânion (ref. v3): ilha de arenito flutuando. Camadas de blocos (cada camada um bloco grande + dois
+ * que saltam, girados), estratos escuros finos, quina de cima clara e base de cada bloco escura;
+ * tampa de grama, acácia de copa chata em dois andares, e embaixo o "pião" de rocha que some nas nuvens.
+ * Numa a cada duas, a cachoeira acesa cai da beira virada para a prova.
+ */
+const SAND: RGB[] = [
+  [0.86, 0.48, 0.3],
+  [0.74, 0.36, 0.22],
+  [0.92, 0.6, 0.38],
+  [0.8, 0.42, 0.28],
+]
+function sandPaint(base: RGB, lh: number, seed: number) {
+  return (x: number, y: number, z: number): RGB => {
+    const t = (y + lh / 2) / lh
+    const strata = Math.abs(Math.sin(y * 2.6 + seed + Math.sin(x * 0.3 + z * 0.2) * 0.6)) < 0.08
+    let c = mix(mix(base, [0, 0, 0], 0.4), base, Math.min(1, t * 1.6))
+    if (t > 0.92) c = mix(c, [1, 0.86, 0.66], 0.45)
+    if (strata) c = mix(c, [0.3, 0.14, 0.1], 0.5)
+    return c
+  }
+}
+function rockIsland(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, z: number, w: number, layers: number, seed: number, fall: boolean, tree = true) {
+  const lh = Math.min(4 + rnd(seed, 1) * 3, w * 0.55)
+  let y = yTop
+  for (let k = 0; k < layers; k++) {
+    const sc = 1 - k * 0.1
+    const base = SAND[(seed + k) % SAND.length]
+    const yaw = rnd(seed, 10 + k) * 0.6
+    lit.box(w * sc, lh, w * sc * 0.82, at(x, y - lh / 2, z, yaw), sandPaint(base, lh, seed + k))
+    // estrato: friso de pedra mais escura que sai um palmo do bloco, e duas rachaduras verticais
+    lit.box(w * sc + 0.5, 0.35, w * sc * 0.82 + 0.5, at(x, y - lh * 0.55, z, yaw), mix(base, [0.25, 0.1, 0.08], 0.45))
+    for (let c = 0; c < 2; c++) {
+      const cx = (rnd(seed, 90 + k * 2 + c) - 0.5) * w * sc * 0.8
+      lit.box(0.3, lh * 0.7, 0.3, at(x + Math.cos(yaw) * cx, y - lh * 0.45, z - w * sc * 0.41 * (c ? 1 : -1) - Math.sin(yaw) * cx, yaw), [0.32, 0.14, 0.1])
+    }
+    // dois blocos que saltam do contorno (silhueta quebrada)
+    for (let b = 0; b < 2; b++) {
+      const a = rnd(seed, 20 + k * 3 + b) * Math.PI * 2
+      const bw = w * sc * (0.3 + rnd(seed, 30 + k + b) * 0.2)
+      const bh = lh * (0.6 + rnd(seed, 40 + k + b) * 0.35)
+      lit.box(bw, bh, bw * 0.9, at(x + Math.cos(a) * w * sc * 0.45, y - lh + bh / 2, z + Math.sin(a) * w * sc * 0.38, a), sandPaint(SAND[(seed + k + b + 1) % SAND.length], bh, seed + 7 * b))
+    }
+    y -= lh
+  }
+  // o pião embaixo: afina até a ponta, escurecendo
+  const deep = w * 0.9
+  lit.cylinder(w * 0.12, deep, at(x, y - deep / 2, z, rnd(seed, 5)), (_x, yy) => mix([0.28, 0.12, 0.1], [0.66, 0.32, 0.22], Math.min(1, (yy + deep / 2) / deep + 0.2)), 7, w * 0.72)
+  // tampa de grama (beira mais clara) e tufos
+  const gw = w * 0.96
+  lit.box(gw, 0.7, gw * 0.8, at(x, yTop + 0.2, z, rnd(seed, 10) * 0.6), (_x, yy) => (yy > 0.2 ? [0.5, 0.66, 0.24] : [0.3, 0.42, 0.16]))
+  for (let t = 0; t < 4; t++) {
+    const a = rnd(seed, 50 + t) * Math.PI * 2
+    const r = gw * 0.38 * rnd(seed, 60 + t)
+    lit.sphere(1.6 + rnd(seed, 70 + t), at(x + Math.cos(a) * r, yTop + 0.7, z + Math.sin(a) * r), [0.34, 0.5, 0.18], 5, 1, 0.6, 1)
+  }
+  if (!tree) return
+  // acácia: tronco que entorta, copa chata em dois andares (escura embaixo, clara em cima)
+  const ta = rnd(seed, 80) * Math.PI * 2
+  const tx = x + Math.cos(ta) * gw * 0.18
+  const tz = z + Math.sin(ta) * gw * 0.18
+  const lean = (rnd(seed, 81) - 0.5) * 0.5
+  lit.cylinder(1.1, 5, at(tx, yTop + 2.9, tz, 0, 0, lean), [0.3, 0.2, 0.13], 6, 0.7)
+  const cx = tx - Math.sin(lean) * 5
+  const cw = gw * 0.6
+  lit.sphere(cw, at(cx, yTop + 5.6, tz), [0.22, 0.38, 0.14], 9, 1, 0.22, 0.9)
+  lit.sphere(cw * 0.78, at(cx + 0.6, yTop + 6.5, tz - 0.4), [0.42, 0.62, 0.22], 9, 1, 0.2, 0.9)
+  if (fall) {
+    // a cachoeira acesa da beira virada para a prova, mais clara no meio, com névoa no pé
+    const fx = x - Math.sign(x) * gw * 0.47
+    const fh = yTop - y + deep * 0.5
+    glow.box(3.6, fh, 1, at(fx, yTop - fh / 2, z), (xx, yy) => mix([0.55, 0.85, 0.95], [1, 1, 1], Math.abs(Math.sin(yy * 0.9 + xx * 2)) > 0.6 ? 0.7 : 0.15))
+    glow.sphere(6, at(fx, yTop - fh, z), [0.95, 0.92, 1], 6, 1, 0.5, 1)
+    for (const dz of [-1.2, 1.2]) glow.box(0.5, fh * 0.9, 0.3, at(fx - Math.sign(x) * 0.5, yTop - fh * 0.45, z + dz), [1, 1, 1])
+    glow.box(2.8, 0.25, 1.4, at(fx + Math.sign(x) * 0.6, yTop + 0.45, z), [0.6, 0.9, 1])
+  }
+}
+
 function canyon(lit: SoftGeo, glow: SoftGeo, n: number) {
-  const bands: RGB[] = [
-    [0.7, 0.36, 0.2],
-    [0.82, 0.52, 0.3],
-    [0.6, 0.28, 0.18],
-    [0.88, 0.66, 0.42],
-  ]
   const count = Math.round(22 * n)
   for (let i = 0; i < count; i++) {
     const x = side(i, 34 + rnd(i) * 70)
     const z = Z0 + (i / count) * (Z1 - Z0) + rnd(i, 1) * 10
-    const w = 14 + rnd(i, 2) * 22
-    const h = 26 + rnd(i, 3) * 40
-    const layers = 3 + Math.floor(rnd(i, 4) * 3)
-    let y = -30
-    for (let k = 0; k < layers; k++) {
-      const lh = (h + 30) / layers
-      const sc = 1 - k * 0.12
-      lit.cylinder(w * sc, lh, at(x, y + lh / 2, z, rnd(i, 5 + k) * 3), bands[(i + k) % bands.length], 7, w * sc * 0.92)
-      y += lh
-    }
-    const topW = w * (1 - layers * 0.12)
-    lit.cylinder(topW, 1.2, at(x, y + 0.6, z), [0.5, 0.42, 0.24], 7)
-    // uma árvore de copa chata no topo (acácia) e, numa a cada duas, a cachoeira que cai do lado da prova
-    const tx = x + (rnd(i, 12) - 0.5) * topW * 0.4
-    lit.cylinder(0.9, 4, at(tx, y + 3, z), [0.36, 0.24, 0.14], 6, 0.6)
-    lit.sphere(topW * 0.32, at(tx, y + 5.2, z), [0.42, 0.56, 0.2], 8, 1, 0.32, 1)
-    if (i % 2 === 0) {
-      const fx = x - Math.sign(x) * topW * 0.46
-      glow.roundBox(2.6, y + 30, 1.2, 0.5, at(fx, (y - 30) / 2 + 0.4, z), (_x, yy) => mix([0.7, 0.92, 1], [1, 1, 1], ((yy * 0.35) % 1 + 1) % 1 > 0.5 ? 0.6 : 0), 3)
-    }
+    const w = 14 + rnd(i, 2) * 18
+    const yTop = 4 + rnd(i, 3) * 26
+    rockIsland(lit, glow, x, yTop, z, w, 2 + Math.floor(rnd(i, 4) * 3), i, i % 2 === 0)
   }
+  // o sol do fim de tarde, grande e baixo à frente da prova (miolo amarelo, borda laranja, halo rosado)
+  glow.sphere(90, at(0, 18, 560), (x, y) => mix([1, 0.62, 0.3], [1, 0.92, 0.5], Math.max(0, 1 - Math.hypot(x, y) / 45)), 16, 1, 1, 0.2)
+  glow.torus(118, 6, at(0, 18, 566, 0, Math.PI / 2, 0), [1, 0.7, 0.62], 40)
   // mar de nuvens embaixo da prova (o abismo some nas nuvens, como na referência)
   for (let i = 0; i < Math.round(70 * n); i++) {
     const x = side(i, 4 + rnd(i, 80) * 90)
     const z = Z0 + rnd(i, 81) * (Z1 - Z0 + 60)
     const s = 12 + rnd(i, 82) * 16
-    lit.sphere(s, at(x, -4.5 + rnd(i, 83) * 3, z), mix([1, 0.86, 0.86], [0.98, 0.96, 1], rnd(i, 84)), 6, 1, 0.42, 1)
+    lit.sphere(s, at(x, -4.5 + rnd(i, 83) * 3, z), (_x, y) => mix([0.96, 0.7, 0.74], [1, 0.95, 0.92], Math.min(1, Math.max(0, y / (s * 0.42) + 0.5 + rnd(i, 84) * 0.2))), 6, 1, 0.42, 1)
   }
-  // pedras flutuando sobre o abismo
+  // ilhotas flutuando sobre o abismo (a mesma pedra das ilhas, pequena; uma a cada três com acácia)
   for (let i = 0; i < Math.round(26 * n); i++) {
     const x = side(i + 1, 16 + rnd(i, 30) * 40)
     const z = Z0 + rnd(i, 31) * (Z1 - Z0)
     const y = 8 + rnd(i, 32) * 30
-    const s = 3 + rnd(i, 33) * 7
-    lit.sphere(s, at(x, y, z, rnd(i, 34) * 6), bands[i % 4], 6, 1.2, 0.55, 1)
-    lit.cylinder(s * 0.5, s * 0.6, at(x, y - s * 0.35, z), mix(bands[i % 4], [0, 0, 0], 0.3), 6, s * 0.9)
+    const s = 3 + rnd(i, 33) * 6
+    rockIsland(lit, glow, x, y, z, s, 1, i + 100, false, i % 3 === 0)
   }
   // brasas de sol no fundo do abismo
   for (let i = 0; i < Math.round(30 * n); i++) glow.sphere(0.5, at(side(i, 6 + rnd(i, 40) * 20), -6 - rnd(i, 41) * 10, Z0 + rnd(i, 42) * (Z1 - Z0)), [1, 0.6, 0.3], 3)
