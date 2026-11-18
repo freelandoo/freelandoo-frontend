@@ -14916,7 +14916,7 @@
     "eqRuneFree": "Engaste libre",
     "eqRuneRemove": "Quitar la runa",
     "eqRuneNoneOwned": "Sin runas en la mochila. Cambia fichas de los minijuegos o lucha en los Dominios.",
-    "gincanaEvCidade": "Carrera del Canal",
+    "gincanaEvCidade": "Puertas del Ayuntamiento",
     "gincanaEvFloresta": "Marea del Pantano",
     "gincanaEvRace": "Carrera de obstáculos",
     "gincanaPhFlorestaPitch3": "Sube el árbol gigante antes de que el pantano te alcance: a quien alcanza, queda fuera.",
@@ -15021,7 +15021,18 @@
     "gincanaMemShow": "¡Memoriza los símbolos!",
     "gincanaMemHide": "Atención…",
     "gincanaMemCall": "El reloj llama:",
-    "gincanaMemRound": "Ronda {n}"
+    "gincanaMemRound": "Ronda {n}",
+    "gincanaPhCidadePitch3": "La carrera de apertura: filas de puertas del Ayuntamiento (solo algunas abren), el carrusel, péndulos y la subida con barriles.",
+    "gincanaSecPp1": "Puertas",
+    "gincanaSecPp2": "Carrusel",
+    "gincanaSecPp3": "Más puertas",
+    "gincanaSecPp4": "Péndulos",
+    "gincanaSecPp5": "Subida",
+    "gincanaHowPp1": "Solo algunas puertas abren: las falsas son pared. Quien pasa primero muestra el camino.",
+    "gincanaHowPp2": "El carrusel tiene dos barras a ras del suelo: salta en el momento justo.",
+    "gincanaHowPp3": "En las últimas filas abren menos puertas. ¿Chocaste? Prueba la de al lado.",
+    "gincanaHowPp4": "Vigas estrechas y bolas de péndulo: espera a que pase la bola.",
+    "gincanaHowPp5": "Los barriles bajan por la rampa: esquívalos hasta la cima."
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -14936,7 +14936,7 @@
     "eqRuneFree": "Free socket",
     "eqRuneRemove": "Remove the rune",
     "eqRuneNoneOwned": "No runes in your bag. Trade minigame tokens or fight in the Domains.",
-    "gincanaEvCidade": "Canal Race",
+    "gincanaEvCidade": "City Hall Doors",
     "gincanaEvFloresta": "Swamp Tide",
     "gincanaEvRace": "Obstacle race",
     "gincanaPhFlorestaPitch3": "Climb the giant tree before the swamp catches you: whoever it reaches is out.",
@@ -15041,7 +15041,18 @@
     "gincanaMemShow": "Memorize the symbols!",
     "gincanaMemHide": "Get ready…",
     "gincanaMemCall": "The clock calls:",
-    "gincanaMemRound": "Round {n}"
+    "gincanaMemRound": "Round {n}",
+    "gincanaPhCidadePitch3": "The opening race: rows of City Hall doors (only some open), the carousel, pendulums and the climb with barrels.",
+    "gincanaSecPp1": "Doors",
+    "gincanaSecPp2": "Carousel",
+    "gincanaSecPp3": "More doors",
+    "gincanaSecPp4": "Pendulums",
+    "gincanaSecPp5": "Climb",
+    "gincanaHowPp1": "Only some doors open: the fake ones are walls. Whoever gets through first shows the way.",
+    "gincanaHowPp2": "The carousel has two bars low to the ground: jump at the right time.",
+    "gincanaHowPp3": "Fewer doors open in the last rows. Bumped? Try the next one.",
+    "gincanaHowPp4": "Narrow beams and pendulum balls: wait for the ball to pass.",
+    "gincanaHowPp5": "Barrels roll down the ramp: dodge your way to the top."
   },
   "Sports": {
     "eyebrow": "Sports",

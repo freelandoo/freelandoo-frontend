@@ -122,6 +122,26 @@ const MEU_MUNDO = {
     "Grab and dive into others to throw them into the bar.",
     "Agarra y lánzate contra los demás para tirarlos a la barra.",
   ],
+  // G3-11 Cidade: Portas da Prefeitura (o nome muda pelo OVERRIDE)
+  gincanaPhCidadePitch3: [
+    "A corrida de abertura: fileiras de portas da Prefeitura (só algumas abrem), o carrossel, pêndulos e a subida com barris.",
+    "The opening race: rows of City Hall doors (only some open), the carousel, pendulums and the climb with barrels.",
+    "La carrera de apertura: filas de puertas del Ayuntamiento (solo algunas abren), el carrusel, péndulos y la subida con barriles.",
+  ],
+  gincanaSecPp1: ["Portas", "Doors", "Puertas"],
+  gincanaSecPp2: ["Carrossel", "Carousel", "Carrusel"],
+  gincanaSecPp3: ["Mais portas", "More doors", "Más puertas"],
+  gincanaSecPp4: ["Pêndulos", "Pendulums", "Péndulos"],
+  gincanaSecPp5: ["Subida", "Climb", "Subida"],
+  gincanaHowPp1: [
+    "Só algumas portas abrem: as falsas são parede. Quem passa primeiro mostra o caminho.",
+    "Only some doors open: the fake ones are walls. Whoever gets through first shows the way.",
+    "Solo algunas puertas abren: las falsas son pared. Quien pasa primero muestra el camino.",
+  ],
+  gincanaHowPp2: ["O carrossel tem duas barras rente ao chão: pule na hora certa.", "The carousel has two bars low to the ground: jump at the right time.", "El carrusel tiene dos barras a ras del suelo: salta en el momento justo."],
+  gincanaHowPp3: ["Nas últimas fileiras abrem menos portas. Bateu? Tente a vizinha.", "Fewer doors open in the last rows. Bumped? Try the next one.", "En las últimas filas abren menos puertas. ¿Chocaste? Prueba la de al lado."],
+  gincanaHowPp4: ["Vigas estreitas e bolas de pêndulo: espere a bola passar.", "Narrow beams and pendulum balls: wait for the ball to pass.", "Vigas estrechas y bolas de péndulo: espera a que pase la bola."],
+  gincanaHowPp5: ["Barris descem a rampa: desvie até o topo.", "Barrels roll down the ramp: dodge your way to the top.", "Los barriles bajan por la rampa: esquívalos hasta la cima."],
   // G3-10 Relógio da Praça (memória)
   gincanaPhRelogio: ["Praça do Relógio", "Clock Square", "Plaza del Reloj"],
   gincanaEvRelogio: ["Relógio da Praça", "Square Clock", "Reloj de la Plaza"],
@@ -224,6 +244,7 @@ const MEU_MUNDO = {
 // valor que mudou (fatia nova sobre fatia velha): sobrescreve
 const OVERRIDE = {
   gincanaEvGelo: ["Rolo de Gelo", "Ice Roller", "Rodillo de Hielo"],
+  gincanaEvCidade: ["Portas da Prefeitura", "City Hall Doors", "Puertas del Ayuntamiento"],
 }
 
 const LOCALES = ["pt-BR", "en", "es"]

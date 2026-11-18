@@ -787,9 +787,58 @@ export class CourseView {
     if (course.doors.length) {
       const d0 = course.doors[0]
       const dg = new SoftGeo()
-      dg.roundBox(d0.hw * 2 - 0.1, d0.h, 0.4, 0.12, at(0, d0.h / 2, 0), (x, y) => ((Math.abs(x) * 1.6 + y) % 1.2 < 0.6 ? C[2] : WHITE), 6)
-      dg.sphere(0.5, at(-d0.hw * 0.5, d0.h * 0.82, -0.25), C[1], 8)
-      dg.sphere(0.5, at(d0.hw * 0.5, d0.h * 0.82, -0.25), C[1], 8)
+      if (theme.deco === "city") {
+        // Prefeitura (G3-11): porta dupla de madeira pintada de verde-garrafa, almofadas mais claras,
+        // moldura e puxadores de latão e a janelinha redonda âmbar (as falsas são iguais por fora)
+        const W = d0.hw * 2 - 0.12
+        const H = d0.h
+        const GREEN: RGB = [0.1, 0.27, 0.2]
+        const PANEL: RGB = [0.15, 0.36, 0.27]
+        dg.roundBox(W, H, 0.34, 0.06, at(0, H / 2, 0), (x, y) => {
+          const ax = Math.abs(x)
+          if (ax < 0.04) return [0.05, 0.12, 0.09]
+          const inPanel = ax > 0.16 && ax < W / 2 - 0.2 && ((y > 0.3 && y < H * 0.42) || (y > H * 0.5 && y < H - 0.3))
+          return inPanel ? PANEL : GREEN
+        }, 6)
+        for (const sz of [-1, 1]) {
+          const z = sz * 0.19
+          dg.roundBox(W, 0.14, 0.08, 0.03, at(0, H - 0.07, z), [0.7, 0.5, 0.18], 2)
+          dg.roundBox(0.12, H, 0.08, 0.03, at(-W / 2 + 0.06, H / 2, z), [0.7, 0.5, 0.18], 2)
+          dg.roundBox(0.12, H, 0.08, 0.03, at(W / 2 - 0.06, H / 2, z), [0.7, 0.5, 0.18], 2)
+          dg.cylinder(0.78, 0.08, at(0, H * 0.74, z, 0, Math.PI / 2, 0), [0.7, 0.5, 0.18], 16)
+          dg.cylinder(0.6, 0.1, at(0, H * 0.74, z, 0, Math.PI / 2, 0), [1, 0.74, 0.32], 16)
+          for (const sx of [-1, 1]) dg.sphere(0.16, at(sx * 0.2, H * 0.46, z * 1.25), [0.92, 0.72, 0.3], 8)
+        }
+      } else {
+        dg.roundBox(d0.hw * 2 - 0.1, d0.h, 0.4, 0.12, at(0, d0.h / 2, 0), (x, y) => ((Math.abs(x) * 1.6 + y) % 1.2 < 0.6 ? C[2] : WHITE), 6)
+        dg.sphere(0.5, at(-d0.hw * 0.5, d0.h * 0.82, -0.25), C[1], 8)
+        dg.sphere(0.5, at(d0.hw * 0.5, d0.h * 0.82, -0.25), C[1], 8)
+      }
+      // a fileira ganha um pórtico: pilares de pedra nas pontas, viga de ferro com cinta de latão e o relógio no meio
+      const rows = new Map<number, { z: number; x0: number; x1: number }>()
+      for (const d of course.doors) {
+        const r = rows.get(d.row) ?? { z: d.z, x0: Infinity, x1: -Infinity }
+        r.x0 = Math.min(r.x0, d.x - d.hw)
+        r.x1 = Math.max(r.x1, d.x + d.hw)
+        rows.set(d.row, r)
+      }
+      const pg = new SoftGeo()
+      const pl = new SoftGeo()
+      for (const r of rows.values()) {
+        const top = DECK + d0.h + 0.5
+        for (const x of [r.x0 - 0.45, r.x1 + 0.45]) {
+          pg.roundBox(0.8, top - DECK + 0.6, 0.9, 0.08, at(x, (top + DECK) / 2 - 0.2, r.z), [0.62, 0.56, 0.48], 4)
+          pg.roundBox(1.0, 0.3, 1.1, 0.06, at(x, top + 0.25, r.z), [0.5, 0.44, 0.38], 3)
+          pg.sphere(0.5, at(x, top + 0.62, r.z), [0.7, 0.5, 0.18], 10)
+        }
+        pg.roundBox(r.x1 - r.x0 + 0.4, 0.5, 0.5, 0.08, at((r.x0 + r.x1) / 2, top, r.z), (x) => (Math.abs(Math.sin(x * 1.3)) < 0.18 ? [0.7, 0.5, 0.18] : [0.12, 0.11, 0.12]), 4)
+        pg.cylinder(1.5, 0.3, at((r.x0 + r.x1) / 2, top + 0.8, r.z, 0, Math.PI / 2, 0), [0.7, 0.5, 0.18], 20)
+        pl.cylinder(1.2, 0.34, at((r.x0 + r.x1) / 2, top + 0.8, r.z, 0, Math.PI / 2, 0), [0.98, 0.9, 0.7], 20)
+      }
+      if (theme.deco === "city") {
+        this.meshes.push(pg.build("gincana-door-arch", scene, toy, true))
+        this.meshes.push(pl.build("gincana-door-arch-lit", scene, this.glowMat, true))
+      }
       const base = dg.build("gincana-door", scene, toy, false)
       base.isVisible = false
       this.doorBase = base

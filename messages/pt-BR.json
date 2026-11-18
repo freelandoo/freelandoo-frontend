@@ -14350,7 +14350,7 @@
     "eqRuneFree": "Encaixe livre",
     "eqRuneRemove": "Tirar a runa",
     "eqRuneNoneOwned": "Sem runas na mochila. Troque fichas dos minijogos ou lute nos Domínios.",
-    "gincanaEvCidade": "Corrida do Canal",
+    "gincanaEvCidade": "Portas da Prefeitura",
     "gincanaEvFloresta": "Maré do Pântano",
     "gincanaEvRace": "Corrida de obstáculos",
     "gincanaPhFlorestaPitch3": "Suba a árvore gigante antes que o pântano pegue você: quem ele alcança está fora.",
@@ -14455,7 +14455,18 @@
     "gincanaMemShow": "Decore os símbolos!",
     "gincanaMemHide": "Atenção…",
     "gincanaMemCall": "O relógio chama:",
-    "gincanaMemRound": "Rodada {n}"
+    "gincanaMemRound": "Rodada {n}",
+    "gincanaPhCidadePitch3": "A corrida de abertura: fileiras de portas da Prefeitura (só algumas abrem), o carrossel, pêndulos e a subida com barris.",
+    "gincanaSecPp1": "Portas",
+    "gincanaSecPp2": "Carrossel",
+    "gincanaSecPp3": "Mais portas",
+    "gincanaSecPp4": "Pêndulos",
+    "gincanaSecPp5": "Subida",
+    "gincanaHowPp1": "Só algumas portas abrem: as falsas são parede. Quem passa primeiro mostra o caminho.",
+    "gincanaHowPp2": "O carrossel tem duas barras rente ao chão: pule na hora certa.",
+    "gincanaHowPp3": "Nas últimas fileiras abrem menos portas. Bateu? Tente a vizinha.",
+    "gincanaHowPp4": "Vigas estreitas e bolas de pêndulo: espere a bola passar.",
+    "gincanaHowPp5": "Barris descem a rampa: desvie até o topo."
   },
   "Sports": {
     "eyebrow": "Esportes",
