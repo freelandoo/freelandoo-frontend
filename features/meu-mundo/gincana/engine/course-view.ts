@@ -213,6 +213,19 @@ export class CourseView {
         st.cylinder(q.r * 2.3, 0.04, at(q.x, q.y0 + 0.02, q.z), [0.03, 0.08, 0.07], 16)
         glow.cylinder(q.r * 1.6, 0.12, at(q.x, q.y1 + 0.05, q.z), [1, 0.9, 0.5], 18)
         glow.torus(q.r * 1.9, 0.08, at(q.x, q.y1 + 0.02, q.z), [1, 0.62, 0.2], 18)
+      } else if (q.r > 0.7 && theme.deco === "orbital") {
+        // V-Orbital (ref. v3): eixo de aço roxo em seis faces, base larga, anéis de neon ciano, filetes acesos
+        // nas arestas e o topo em magenta
+        const STEEL: RGB = [0.3, 0.26, 0.44]
+        st.cylinder(q.r * 2.6, 0.5, at(q.x, q.y0 + 0.25, q.z), darker(STEEL, 0.7), 6)
+        st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), (_x, y) => (y > h / 2 - 0.3 ? mix(STEEL, WHITE, 0.3) : STEEL), 6, q.r * 1.8)
+        for (const yy of [0.7, h * 0.5, h - 0.45]) glow.cylinder(q.r * 2.12, 0.14, at(q.x, q.y0 + yy, q.z), this.neon, 6)
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2
+          glow.box(0.08, h - 1.4, 0.08, at(q.x + Math.cos(a) * q.r * 0.98, q.y0 + h / 2, q.z + Math.sin(a) * q.r * 0.98), [1, 0.3, 0.8])
+        }
+        st.cylinder(q.r * 2.2, 0.3, at(q.x, q.y1 + 0.15, q.z), darker(STEEL, 0.8), 6)
+        glow.cylinder(q.r * 1.3, 0.5, at(q.x, q.y1 + 0.5, q.z), [1, 0.35, 0.82], 6, q.r * 0.6)
       } else if (q.r > 0.7) {
         // pilar do carrossel: bala listrada com topo redondo
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(YELLOW, ORANGE, 0.45), 24)
@@ -360,7 +373,9 @@ export class CourseView {
         bg.cylinder(1.9, 1.2, at(0, 0, 0), (x, y, z) => (Math.floor((Math.atan2(z, x) * 1.6 + y * 3.2) + 100) % 2 ? HAZ_Y : HAZ_K), 20)
         for (const yy of [-0.55, 0.55]) bg.torus(1.95, 0.1, at(0, yy, 0), [0.12, 0.12, 0.14], 20)
       } else {
-        bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city ? stripesY(ORANGE, WHITE, 0.55, 0) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
+        // V-Orbital: a barra ALTA (mergulhe) em magenta e branco, a baixa (pule) em amarelo e preto — lê de longe
+        const high = theme.deco === "orbital" && s.y - DECK > 1
+        bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city ? stripesY(ORANGE, WHITE, 0.55, 0) : high ? stripesY([1, 0.25, 0.75], [1, 0.9, 1], 0.55, 0.5) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
         bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
       }
       if (!city && theme.deco !== "forest") {
@@ -1366,7 +1381,7 @@ export class CourseView {
     // Floresta: todo o chão no verde-azulado da referência (a cor da peça só puxa um pouco)
     const top = d0 === "forest" ? mix(C[5], C[p.c], stage ? 0 : 0.18) : stage ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
     // Floresta (ref. v3): moldura magenta em toda a pista
-    const rim: RGB = d0 === "forest" ? [0.78, 0.16, 0.56] : C[p.rim]
+    const rim: RGB = d0 === "forest" ? [0.78, 0.16, 0.56] : d0 === "orbital" ? [0.34, 0.27, 0.54] : C[p.rim]
     const body = darker(top, 0.62)
     const city = this.theme.deco === "city"
     const { pavers, cobble } = this.stage.ctx
@@ -1384,6 +1399,25 @@ export class CourseView {
             steamLamp(this.stage.ctx, p.x + Math.sin(a) * (p.r - 0.25), p.z + Math.cos(a) * (p.r - 0.25), { y: p.y, collide: false, gearSeed: Math.round(p.z) + k })
           }
         }
+      } else if (d0 === "orbital" && p.r >= 5) {
+        // V-Orbital (ref. v3): ladrilhos hexagonais de ardósia roxa sobre uma chapa de neon (o rejunte acende),
+        // um em cada nove aceso em magenta; o anel de neon em volta do eixo mostra o giro
+        glow.cylinder((p.r - 1.45) * 2, 0.02, at(p.x, p.y + 0.015, p.z), this.neon, 40)
+        const R = 1.05
+        const cw = 1.5 * R
+        const rh = Math.sqrt(3) * R
+        let i = 0
+        for (let lx = -p.r; lx <= p.r; lx += cw, i++) {
+          let j = 0
+          for (let lz = -p.r + (i % 2 ? rh / 2 : 0); lz <= p.r; lz += rh, j++) {
+            if (Math.hypot(lx, lz) > p.r - 1.6 || Math.hypot(lx, lz) < 1.6) continue
+            const hsh = Math.abs(Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1
+            const at6 = at(p.x + lx, p.y + 0.06, p.z + lz)
+            if (hsh < 0.08) glow.cylinder(R * 1.97, 0.08, at6, [1, 0.28, 0.8], 6, R * 1.86)
+            else g.cylinder(R * 1.97, 0.08, at6, hsh < 0.5 ? top : hsh < 0.8 ? mix(top, [0.4, 0.34, 0.62], 0.35) : darker(top, 0.8), 6, R * 1.86)
+          }
+        }
+        glow.torus(3.6, 0.16, at(p.x, p.y + 0.1, p.z), [1, 0.3, 0.8], 24)
       } else {
         // anel e raios no tampo (mostram o giro)
         g.torus((p.r - 0.6) * 2, 0.12, at(p.x, p.y + 0.02, p.z), mix(top, C[7], 0.5), 40)
