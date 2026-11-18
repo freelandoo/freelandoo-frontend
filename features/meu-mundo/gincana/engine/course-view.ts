@@ -579,8 +579,19 @@ export class CourseView {
       // brasa clara (o vão precisa se ler de longe): listras laranja e vermelho-escuro, borda amarela
       const EMBER: RGB = [1, 0.5, 0.12]
       const COAL: RGB = [0.42, 0.1, 0.05]
-      sg.roundBox(Wl.seg - 0.08, Wl.tall, 0.7, 0.12, at(0, Wl.tall / 2, 0), (_x, y) => (Math.floor(y / 0.55) % 2 ? EMBER : COAL), 4)
-      sg.roundBox(Wl.seg, 0.3, 0.9, 0.1, at(0, Wl.tall, 0), HAZ_Y, 4)
+      // V-Forja (ref. v3): grade de ferro — miolo de brasa (amarelo no pé, vermelho no alto) atrás de barras
+      // verticais, colunas e viga rebitada, faixa de perigo no pé. Tudo em box: o vão continua a ler de longe.
+      const IRN: RGB = [0.13, 0.11, 0.11]
+      const W2 = Wl.seg - 0.08
+      const T = Wl.tall
+      sg.box(W2 - 0.2, T - 0.7, 0.36, at(0, 0.45 + (T - 0.7) / 2, 0), (_x, y) => mix([1, 1, 0.6], [1, 0.32, 0.06], Math.min(1, Math.max(0, (y + (T - 0.7) / 2) / (T - 0.7)))))
+      for (let b = 0; b < 4; b++) sg.box(0.13, T - 0.6, 0.86, at(-W2 / 2 + 0.2 + (b + 0.5) * ((W2 - 0.4) / 4), 0.45 + (T - 0.6) / 2, 0), (_x, y) => (y > (T - 0.6) / 2 - 0.08 ? [0.4, 0.34, 0.3] : IRN))
+      for (const sx of [-1, 1]) sg.box(0.24, T, 0.96, at(sx * (W2 / 2 - 0.12), T / 2, 0), (_x, y) => (y > T / 2 - 0.1 ? [0.42, 0.36, 0.32] : IRN))
+      sg.box(W2, 0.34, 1.02, at(0, T - 0.05, 0), (_x, y) => (y > 0.1 ? [0.38, 0.3, 0.26] : IRN))
+      for (const rx of [-0.3, 0, 0.3]) for (const rz of [-0.52, 0.52]) sg.box(0.12, 0.12, 0.05, at(rx * W2, T - 0.05, rz), [0.72, 0.5, 0.22])
+      for (let q = 0; q < 4; q++) sg.box(W2 / 4, 0.42, 1.0, at(-W2 / 2 + (q + 0.5) * (W2 / 4), 0.21, 0), q % 2 ? HAZ_K : HAZ_Y)
+      void EMBER
+      void COAL
       const segBase = sg.build("gincana-wall", scene, toy, false)
       const lg = new SoftGeo()
       lg.roundBox(Wl.hw * 2, Wl.low, 0.7, 0.12, at(0, Wl.low / 2, 0), (x) => (Math.floor((x + 50) / 1.1) % 2 ? HAZ_Y : HAZ_K), 4)

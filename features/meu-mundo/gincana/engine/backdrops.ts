@@ -392,6 +392,57 @@ function orbital(lit: SoftGeo, glow: SoftGeo, n: number) {
 
 // ── Forja ────────────────────────────────────────────────────────────────────
 
+/**
+ * V-Forja (ref. v3): o castelo da forja atrás da arena, de onde as paredes de brasa "saem". Torre do meio
+ * com o portão em arco aceso (grade escura na frente), ameias, duas torres redondas com janelas acesas e
+ * coroa de ameias, contrafortes e a lava escorrendo das bocas laterais até o mar de lava.
+ */
+function forgeCastle(lit: SoftGeo, glow: SoftGeo, cx: number, cz: number) {
+  const STONE: RGB = [0.2, 0.15, 0.14]
+  const DARK: RGB = [0.1, 0.08, 0.08]
+  const stone = (h: number) => (_x: number, y: number): RGB => (y > h / 2 - 0.4 ? [0.34, 0.24, 0.2] : y < -h / 2 + 2 ? DARK : STONE)
+  // corpo e portão
+  const W = 30
+  const H = 24
+  lit.box(W, H, 10, at(cx, H / 2 - 1, cz), stone(H))
+  for (let k = 0; k < 8; k++) lit.box(2.4, 2.2, 10.6, at(cx - W / 2 + 1.6 + k * ((W - 3.2) / 7), H + 0.1, cz), stone(2.2))
+  glow.box(10, 12, 0.4, at(cx, 6 - 1, cz - 5.1), (_x, y) => mix([1, 0.9, 0.4], [1, 0.3, 0.05], (y + 6) / 12))
+  glow.cylinder(10, 0.4, at(cx, 11 - 1, cz - 5.1, 0, Math.PI / 2, 0), [1, 0.36, 0.06], 16)
+  for (let b = 0; b < 6; b++) lit.box(0.4, 13, 0.6, at(cx - 4.2 + b * 1.68, 5.5 - 1, cz - 5.4), DARK)
+  for (let r = 0; r < 4; r++) lit.box(10.4, 0.4, 0.6, at(cx, 1.5 + r * 3, cz - 5.4), DARK)
+  // frisos de pedra (saltam do plano), juntas desencontradas e seteiras acesas: o corpo não é chapa lisa
+  for (const fy of [7.5, 15.5, 21.5]) lit.box(W + 0.6, 0.7, 10.8, at(cx, fy, cz), [0.3, 0.22, 0.19])
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 9; c++) {
+      const jx = cx - W / 2 + 1.8 + c * 3.4 + (r % 2) * 1.7
+      if (Math.abs(jx - cx) < 6.2 && r < 4) continue
+      lit.box(0.16, 1.8, 0.2, at(jx, 1.6 + r * 3.6, cz - 5.05), DARK)
+    }
+  }
+  for (const sx of [-1, 1]) for (const wy of [10, 18.5]) glow.box(0.7, 2.4, 0.3, at(cx + sx * 9.5, wy, cz - 5.1), [1, 0.58, 0.14])
+  // faixa de perigo sobre o portão e o brasão (engrenagem de brasa)
+  for (let q = 0; q < 8; q++) lit.box(1.5, 1, 0.5, at(cx - 5.25 + q * 1.5, 13 - 1, cz - 5.2), q % 2 ? [0.08, 0.07, 0.07] : [1, 0.76, 0.1])
+  glow.torus(5, 0.5, at(cx, 18, cz - 5.2, 0, Math.PI / 2, 0), [1, 0.5, 0.1], 20)
+  // torres redondas
+  for (const sx of [-1, 1]) {
+    const tx = cx + sx * (W / 2 + 3)
+    const th = H + 10
+    lit.cylinder(9, th, at(tx, th / 2 - 1, cz), stone(th), 12, 8)
+    lit.cylinder(10.4, 2, at(tx, th, cz), [0.3, 0.22, 0.19], 12)
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2
+      lit.box(1.6, 2, 1.2, at(tx + Math.cos(a) * 4.6, th + 1.8, cz + Math.sin(a) * 4.6, -a), stone(2))
+    }
+    for (let r = 0; r < 3; r++) glow.box(1.2, 2.6, 0.3, at(tx, 8 + r * 8, cz - 4.2), [1, 0.55, 0.12])
+    // lava escorrendo da boca lateral até o chão (degradê: amarelo na boca, vermelho no pé)
+    const lx = cx + sx * (W / 2 - 3)
+    glow.box(3, 14, 0.6, at(lx, 14 / 2 - 2, cz - 5.3), (_x, y) => mix([1, 0.3, 0.04], [1, 0.82, 0.3], (y + 7) / 14))
+    lit.box(4.4, 1.4, 1.6, at(lx, 12.6, cz - 5.4), DARK)
+  }
+  // contrafortes
+  for (const sx of [-1, 1]) for (const k of [0.3, 0.7]) lit.box(2, 14, 4, at(cx + sx * W * (k - 0.5) * 2 * 0.5 + sx * 6, 6, cz - 6), stone(14))
+}
+
 function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
   const rock: RGB = [0.16, 0.12, 0.11]
   const count = Math.round(8 * n)
@@ -433,6 +484,7 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
     lit.sphere(s, at(x, 0.2, z, rnd(i, 23) * 5), rock, 6, 1.2, 0.7, 1)
     if (i % 3 === 0) glow.sphere(s * 0.35, at(x, s * 0.4, z), [1, 0.55, 0.1], 5)
   }
+  forgeCastle(lit, glow, 0, 64)
   // brasas no ar
   for (let i = 0; i < Math.round(60 * n); i++) glow.sphere(0.22, at(side(i, 4 + rnd(i, 30) * 30), 2 + rnd(i, 31) * 22, Z0 + rnd(i, 32) * (Z1 - Z0)), [1, 0.62, 0.2], 3)
 }
