@@ -474,7 +474,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   })
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
-  // Poder transbordando (2026-11-18): faísca vermelha/verde por onde anda quem passou do teto do nível
+  // Poder transbordando (2026-11-18/19): brasas de luz saindo das costas + contorno de luz em quem passou do teto do nível
   const surge = new PowerSurge(scene, quality.particles)
   const gainFx = setGainFx(gainPillar)
   // mm3d-60r: o mapa (radar + modal) desta cena e onde eu estou
@@ -628,7 +628,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
         if (carFromMessage === null) setDriving(p.car ?? 0, p)
         if (typeof p.pace === "number" && p.pace > 0) myPace = p.pace
         local.char.unwell = !!p.sk
-        surge.set("me", p.car ? 0 : p.ov, local.char.holder)
+        surge.set("me", p.car ? 0 : p.ov, local.char)
         if (!!p.wd !== winded) {
           winded = !!p.wd
           opts.onWinded?.(winded)
@@ -663,7 +663,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       r.char.setVisible(!p.car || rk !== "car")
       r.char.tired = (p.pace ?? 1) < 1 || !!p.wd
       r.char.unwell = !!p.sk
-      surge.set(sid, p.car ? 0 : p.ov, r.char.holder)
+      surge.set(sid, p.car ? 0 : p.ov, r.char)
       r.setTarget(p.x, p.z, p.facing, (p.car ? 0 : Math.max(0, Math.min(2, p.move))) as MoveState)
     })
     for (const sid of remotes.keys()) if (!seen.has(sid)) dropRemote(sid)
