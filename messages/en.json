@@ -15095,7 +15095,11 @@
     "gincanaHowOv5": "The bars speed up until the end. When only the spots are left, it's over.",
     "gincanaEvGelo": "Ice Roller",
     "questScenes": "Story scenes",
-    "questSceneN": "Scene {i} of {n}"
+    "questSceneN": "Scene {i} of {n}",
+    "ncCollector": "Nectar collector",
+    "ncCollectorTotal": "{n} L",
+    "ncCollectorHint": "All the nectar you have ever collected. There is no limit.",
+    "ncCollectorRings": "{n} full rings (10 L each)"
   },
   "Sports": {
     "eyebrow": "Sports",

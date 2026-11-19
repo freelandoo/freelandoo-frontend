@@ -14509,7 +14509,11 @@
     "gincanaHowOv5": "As barras aceleram até o fim. Sobrando só a vaga, acabou.",
     "gincanaEvGelo": "Rolo de Gelo",
     "questScenes": "Cenas da história",
-    "questSceneN": "Cena {i} de {n}"
+    "questSceneN": "Cena {i} de {n}",
+    "ncCollector": "Coletor de néctar",
+    "ncCollectorTotal": "{n} L",
+    "ncCollectorHint": "Todo o néctar que você já coletou. Não tem limite.",
+    "ncCollectorRings": "{n} anéis completos (10 L cada)"
   },
   "Sports": {
     "eyebrow": "Esportes",

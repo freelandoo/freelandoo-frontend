@@ -27,6 +27,7 @@ import { anton } from "../hud/fight-plate"
 import { TYPE } from "../kit/type-scale"
 import { EVO, Tag, archivo, teko } from "./evo-skin"
 import type { LoadoutData } from "./loadout-page"
+import { NectarCollector } from "./nectar-collector"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -376,6 +377,7 @@ export function EquipPage({
           <p className="text-[13px] leading-snug" style={{ color: EVO.mudo }}>
             {t("eqHint", "Toque numa casa em volta do personagem para escolher a peça.")}
           </p>
+          <NectarCollector t={t} />
           <div className="flex flex-wrap gap-1.5">
             {classStatLines(gear.bag.classGear, t).map((line) => (
               <Tag key={"c" + line} tone="bom">

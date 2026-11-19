@@ -633,6 +633,8 @@ export interface NectarWallet {
   /** D4: os pactos de pé (os dois povos) e o bônus com a semana inteira (0,5 = +50%). */
   pacts?: DomainPact[]
   pactBonus?: number
+  /** o coletor de néctar: liberado no nível 5 do treinador; mostra `earnedMl`, sem limite */
+  collector?: { unlocked: boolean; level: number }
 }
 export const getNectarWallet = (token: string) => call<NectarWallet>(token, "GET", "/nectar")
 // ═══ lore v2 N3: domingo na estátua (entrega, corrida Raposas × Vampiros, meta no admin) ═══

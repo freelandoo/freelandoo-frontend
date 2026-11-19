@@ -15075,7 +15075,11 @@
     "gincanaHowOv5": "Las barras aceleran hasta el final. Cuando solo quedan los cupos, se acabó.",
     "gincanaEvGelo": "Rodillo de Hielo",
     "questScenes": "Escenas de la historia",
-    "questSceneN": "Escena {i} de {n}"
+    "questSceneN": "Escena {i} de {n}",
+    "ncCollector": "Colector de néctar",
+    "ncCollectorTotal": "{n} L",
+    "ncCollectorHint": "Todo el néctar que ya recolectaste. No tiene límite.",
+    "ncCollectorRings": "{n} anillos completos (10 L cada uno)"
   },
   "Sports": {
     "eyebrow": "Deportes",
