@@ -35,6 +35,7 @@ import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steamp
 import { CITY } from "../../paint/engine/world-view"
 import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
+import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
 
@@ -59,6 +60,9 @@ export class CourseView {
   private readonly tileBases: Mesh[] = []
   private readonly ballPool: InstancedMesh[] = []
   private readonly ballBase: Mesh | null = null
+  /** Clareira da Lua: uma fruta por faixa (base e conjunto de instâncias por espécie). */
+  private readonly fruitBases: Mesh[] = []
+  private readonly fruitPools: InstancedMesh[][] = []
   private readonly movers: { mesh: Mesh; p: Pad }[] = []
   private readonly pusherMeshes: Mesh[] = []
   /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
@@ -201,6 +205,9 @@ export class CourseView {
         m.position.set(q.x, q.y1 - 0.12, q.z)
         this.bounceCaps.push({ mesh: m, x: q.x, z: q.z })
         this.meshes.push(m)
+      } else if (theme.id === "clareira") {
+        // Clareira da Lua: cogumelo do miolo das fatias, árvore gigante dos tocos
+        clareiraPost(st, glow, q)
       } else if (q.y0 < DECK - 0.1) {
         // poste da luva: sai da água, com anéis
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(col, darker(col, 0.8), 0.8, 0), 20)
@@ -240,8 +247,10 @@ export class CourseView {
     for (const z of rows) {
       const row = course.pendulums.filter((p) => p.z === z)
       const py = row[0].py
-      const x0 = Math.min(...row.map((p) => p.x)) - 5.5
-      const x1 = Math.max(...row.map((p) => p.x)) + 5.5
+      // Clareira: o pórtico fica fora da vitória-régia que gira (r 9) e da rampa
+      const span = theme.id === "clareira" ? 10.5 : 5.5
+      const x0 = Math.min(...row.map((p) => p.x)) - span
+      const x1 = Math.max(...row.map((p) => p.x)) + span
       if (theme.deco === "forest") {
         // Floresta: dois troncos e um GALHO grosso de trave, com musgo, folhas e flores acesas penduradas
         const bark = (x: number, y: number, zz: number): RGB => {
@@ -318,6 +327,7 @@ export class CourseView {
     }
     if (city) this.cityExtras(st)
     else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low)
+    if (theme.id === "clareira") cannonGate(st, glow)
     // alvos de programa de TV: fora da Floresta (a referência não tem)
     if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)
     const stat = st.build("gincana-course", scene, toy, true)
@@ -530,7 +540,24 @@ export class CourseView {
       const R = course.balls.R
       const bb = new SoftGeo()
       const paint = this.ballPaint()
-      if (theme.deco === "forest") {
+      if (theme.id === "clareira") {
+        for (let kind = 0; kind < 4; kind++) {
+          const fg = new SoftGeo()
+          fruit(fg, kind, R)
+          const base = fg.build(`gincana-fruit-${kind}`, scene, toy, false)
+          base.isVisible = false
+          this.fruitBases.push(base)
+          const pool: InstancedMesh[] = []
+          for (let i = 0; i < 6; i++) {
+            const b = base.createInstance(`gincana-fruit-${kind}-${i}`)
+            b.isPickable = false
+            b.setEnabled(false)
+            pool.push(b)
+          }
+          this.fruitPools.push(pool)
+        }
+        bb.sphere(0.01, at(0, 0, 0), WHITE, 4)
+      } else if (theme.deco === "forest") {
         // Floresta (ref. v3): TRONCO rolando de lado (eixo em x, gira em x como a bola): casca em sulcos,
         // pontas de madeira clara com anéis e um aro listrado de perigo em cada ponta; nó e musgo na casca
         const Lg = 2.3
@@ -1420,6 +1447,18 @@ export class CourseView {
     const { pavers, cobble } = this.stage.ctx
     const ice = p.f < 0.7
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
+    if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
+    if (this.theme.id === "clareira" && isClareiraStump(p)) return spinStump(g, glow, p)
+    if (this.theme.id === "clareira" && isClareiraLily(p)) return giantLily(g, glow, p)
+    if (this.theme.id === "clareira" && isClareiraLog(p)) return fallenLog(g, glow, p)
+    if (this.theme.id === "clareira" && isClareiraStone(p)) return mossStone(g, p)
+    if (this.theme.id === "clareira" && isClareiraCannon(p)) return hollowLog(g, glow, p)
+    if (this.theme.id === "clareira" && isClareiraFloor(p)) {
+      clearingFloor(g, glow, p, dyn)
+      // largada e chegada: a cerca da Floresta
+      if (!dyn && (p.s === 0 || p.s === 6) && p.y2 === p.y && p.hx >= 3) this.bollards(g, glow, p)
+      return
+    }
     if (p.k === 0) {
       g.cylinder(p.r * 2, 0.5, at(p.x, p.y - 0.25, p.z), top, 48)
       if (city && !dyn) {
@@ -1832,6 +1871,20 @@ export class CourseView {
         b.rotation.x = -this.balls[k + 2] / C.balls.R
       }
       for (let i = used; i < this.ballPool.length; i++) this.ballPool[i].setEnabled(false)
+      if (this.fruitPools.length) {
+        // Clareira: a fruta da faixa (as do conjunto comum ficam escondidas)
+        for (const b of this.ballPool) b.setEnabled(false)
+        const usedK = [0, 0, 0, 0]
+        for (let k = 0; k < this.balls.length; k += 5) {
+          const kind = this.balls[k + 3] % this.fruitPools.length
+          const b = this.fruitPools[kind][usedK[kind]++]
+          if (!b) continue
+          b.setEnabled(true)
+          b.position.set(this.balls[k], this.balls[k + 1], this.balls[k + 2])
+          b.rotation.x = -this.balls[k + 2] / C.balls.R
+        }
+        for (let kind = 0; kind < this.fruitPools.length; kind++) for (let i = usedK[kind]; i < this.fruitPools[kind].length; i++) this.fruitPools[kind][i].setEnabled(false)
+      }
     }
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
@@ -1975,6 +2028,8 @@ export class CourseView {
     for (const b of this.tileBases) b.dispose()
     for (const b of this.ballPool) b.dispose()
     this.ballBase?.dispose()
+    for (const pool of this.fruitPools) for (const b of pool) b.dispose()
+    for (const b of this.fruitBases) b.dispose()
     for (const m of this.movers) m.mesh.dispose()
     for (const m of this.pusherMeshes) m.dispose()
     for (const m of this.wallSegs) m.dispose()

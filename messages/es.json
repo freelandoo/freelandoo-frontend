@@ -15079,7 +15079,20 @@
     "ncCollector": "Colector de néctar",
     "ncCollectorTotal": "{n} L",
     "ncCollectorHint": "Todo el néctar que ya recolectaste. No tiene límite.",
-    "ncCollectorRings": "{n} anillos completos (10 L cada uno)"
+    "ncCollectorRings": "{n} anillos completos (10 L cada uno)",
+    "gincanaPhClareira": "Claro de la Luna",
+    "gincanaEvClareira": "Tocones Giratorios",
+    "gincanaPhClareiraPitch": "La segunda carrera del Bosque: rodajas de tronco que giran, frutas gigantes rodando por la rampa, tocones en escalera sobre el pantano, el nenúfar gigante que gira y los hongos que lanzan.",
+    "gincanaSecCl1": "Rodajas que giran",
+    "gincanaSecCl2": "Rampa de las frutas",
+    "gincanaSecCl3": "Tocones",
+    "gincanaSecCl4": "Nenúfar gigante",
+    "gincanaSecCl5": "Hongos",
+    "gincanaHowCl1": "Cada rodaja de tronco gira hacia un lado y te lleva: corre por los huecos y salta los troncos caídos.",
+    "gincanaHowCl2": "Frutas gigantes bajan por cuatro carriles: las piedras de musgo entre los carriles protegen.",
+    "gincanaHowCl3": "Los tocones suben en escalera y giran: salta de uno a otro. Si caes al pantano, vuelves al puesto.",
+    "gincanaHowCl4": "El nenúfar gira despacio y las semillas colgadas se balancean: pasa cuando la tuya vuelva.",
+    "gincanaHowCl5": "Pisa un hongo para salir lanzado a lo alto del barranco. Después, la subida a la meta."
   },
   "Sports": {
     "eyebrow": "Deportes",

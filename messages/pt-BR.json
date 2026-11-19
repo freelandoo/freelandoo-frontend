@@ -14513,7 +14513,20 @@
     "ncCollector": "Coletor de néctar",
     "ncCollectorTotal": "{n} L",
     "ncCollectorHint": "Todo o néctar que você já coletou. Não tem limite.",
-    "ncCollectorRings": "{n} anéis completos (10 L cada)"
+    "ncCollectorRings": "{n} anéis completos (10 L cada)",
+    "gincanaPhClareira": "Clareira da Lua",
+    "gincanaEvClareira": "Tocos que Giram",
+    "gincanaPhClareiraPitch": "A segunda corrida da Floresta: fatias de tronco que giram, frutas gigantes rolando pela rampa, tocos em escada sobre o pântano, a vitória-régia que gira e os cogumelos que lançam.",
+    "gincanaSecCl1": "Fatias que giram",
+    "gincanaSecCl2": "Rampa das frutas",
+    "gincanaSecCl3": "Tocos",
+    "gincanaSecCl4": "Vitória-régia",
+    "gincanaSecCl5": "Cogumelos",
+    "gincanaHowCl1": "Cada fatia de tronco gira para um lado e leva você junto: corra pelos vãos e pule os troncos caídos.",
+    "gincanaHowCl2": "Frutas gigantes descem por quatro faixas: as pedras de musgo entre as faixas protegem.",
+    "gincanaHowCl3": "Os tocos sobem em escada e giram: pule de um para o outro. Caiu no pântano, volta ao posto.",
+    "gincanaHowCl4": "A vitória-régia gira devagar e as sementes penduradas balançam: passe quando a sua voltar.",
+    "gincanaHowCl5": "Pise num cogumelo para ser lançado ao alto do barranco. Depois, a subida da chegada."
   },
   "Sports": {
     "eyebrow": "Esportes",

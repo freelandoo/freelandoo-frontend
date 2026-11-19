@@ -15099,7 +15099,20 @@
     "ncCollector": "Nectar collector",
     "ncCollectorTotal": "{n} L",
     "ncCollectorHint": "All the nectar you have ever collected. There is no limit.",
-    "ncCollectorRings": "{n} full rings (10 L each)"
+    "ncCollectorRings": "{n} full rings (10 L each)",
+    "gincanaPhClareira": "Moon Glade",
+    "gincanaEvClareira": "Spinning Stumps",
+    "gincanaPhClareiraPitch": "The Forest's second race: spinning log slices, giant fruit rolling down the ramp, stepping stumps over the swamp, the spinning giant lily pad and launching mushrooms.",
+    "gincanaSecCl1": "Spinning slices",
+    "gincanaSecCl2": "Fruit ramp",
+    "gincanaSecCl3": "Stumps",
+    "gincanaSecCl4": "Giant lily pad",
+    "gincanaSecCl5": "Mushrooms",
+    "gincanaHowCl1": "Each log slice spins its own way and carries you along: run through the gaps and hop the fallen logs.",
+    "gincanaHowCl2": "Giant fruit rolls down four lanes: the mossy stones between the lanes give cover.",
+    "gincanaHowCl3": "The stumps climb like stairs and spin: jump from one to the next. Fall in the swamp and you go back to the checkpoint.",
+    "gincanaHowCl4": "The lily pad spins slowly and the hanging seeds swing: go when yours swings back.",
+    "gincanaHowCl5": "Step on a mushroom to be launched to the top of the bank. Then, the climb to the finish."
   },
   "Sports": {
     "eyebrow": "Sports",
