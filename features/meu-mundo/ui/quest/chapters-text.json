@@ -7,6 +7,8 @@
   "questProgress": ["{have} de {need}", "{have} of {need}", "{have} de {need}"],
   "questAllDone": ["Você terminou todos os capítulos desta temporada.", "You finished every chapter of this season.", "Terminaste todos los capítulos de esta temporada."],
   "questChapterEnd": ["Fim do capítulo {n}", "End of chapter {n}", "Fin del capítulo {n}"],
+  "questScenes": ["Cenas da história", "Story scenes", "Escenas de la historia"],
+  "questSceneN": ["Cena {i} de {n}", "Scene {i} of {n}", "Escena {i} de {n}"],
 
   "qc_cap1_title": ["A Cápsula Três", "Capsule Three", "La Cápsula Tres"],
   "qc_cap1_intro_raposa": ["Você acorda na cápsula 3 do Laboratório de Criogenia. A Dra. Nívea anota tudo o que você sente. Lá fora, um Vampiro cospe no pé da estátua de Morkhan quando vê você olhando.", "You wake up in capsule 3 of the Cryogenics Lab. Dr. Nívea writes down everything you feel. Outside, a Vampire spits at the foot of Morkhan's statue when he sees you looking.", "Despiertas en la cápsula 3 del Laboratorio de Criogenia. La Dra. Nívea anota todo lo que sientes. Afuera, un Vampiro escupe al pie de la estatua de Morkhan cuando te ve mirando."],

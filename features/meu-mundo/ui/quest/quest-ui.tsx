@@ -32,6 +32,8 @@ import q from "./quest-hud.module.css"
 import { currentSoul } from "../../soul"
 import { temperSuffix } from "../../banter"
 import { uiSound } from "../../engine/audio"
+import { SceneImage, StoryScenes } from "../story/story-scenes"
+import { sceneSrc, scenesOfStep, unlockedScenes } from "../story/story-art"
 
 type T = (k: string, f: string) => string
 
@@ -92,7 +94,7 @@ export function QuestTracker({
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   // C1: o fecho do passo que acabou de ser entregue (+ o gancho, se fechou o capítulo)
-  const [beat, setBeat] = useState<(Beat & { n: number }) | null>(null)
+  const [beat, setBeat] = useState<(Beat & { n: number; step: string }) | null>(null)
   // o botão de entregar fica embaixo do modal: o fecho aparece em cima, então rola até ele
   const beatRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -154,7 +156,7 @@ export function QuestTracker({
       // som do passo cumprido (áudio P1: `ui-missao-passo` estava no manifesto sem ninguém chamar)
       if (moved) uiSound("questStep")
       const b = moved ? storyBeat(before.id, before.current.key, r.data.clan, chapterDone) : null
-      setBeat(b ? { ...b, n: before.chapter } : null)
+      setBeat(b ? { ...b, n: before.chapter, step: before.current.key } : null)
     }
   }, [busy, state, t])
 
@@ -278,6 +280,12 @@ export function QuestTracker({
               {/* C1: o que a história conta na entrega do passo (e o gancho no fim do capítulo) */}
               {beat && (
                 <div ref={beatRef} role="status" aria-live="polite" className={`${archivo.className} mb-3 grid gap-1.5 p-3`} style={{ background: AE.well, boxShadow: `inset 0 0 0 1px ${AE.brassLine}`, clipPath: chamfer(AE.cut.chip) }}>
+                  {/* 18/11: a ilustração da cena do passo entregue */}
+                  {scenesOfStep(beat.chapter, beat.step, state.clan)[0] && (
+                    <div className="-mx-1 -mt-1 mb-1 overflow-hidden" style={{ clipPath: chamfer(AE.cut.chip) }}>
+                      <SceneImage id={scenesOfStep(beat.chapter, beat.step, state.clan)[0].id} alt={tx(t, `qc_${beat.chapter}_title`)} />
+                    </div>
+                  )}
                   {beat.lines.map((k) => (
                     <p key={k} className="text-[14px] italic leading-snug" style={{ color: AE.text }}>
                       {tx(t, k)}
@@ -310,6 +318,13 @@ export function QuestTracker({
                   {tx(t, heroKey)}
                 </p>
               )}
+              {/* 18/11: as ilustrações da história (cenas dos passos já entregues) */}
+              <StoryScenes
+                key={quest.id}
+                scenes={unlockedScenes(quest.id, (k) => quest.steps.some((st) => st.key === k && st.state === "done"), state.clan)}
+                title={tx(t, `qc_${quest.id}_title`)}
+                tx={(k) => tx(t, k)}
+              />
               {/* F5: o vídeo do capítulo (o Alex sobe pelo admin; sem ele, imagem + texto) */}
               {video === undefined ? (
                 <button
@@ -335,7 +350,7 @@ export function QuestTracker({
                   {lockedLine} · {tx(t, "questTrainerNow").replace("{n}", String(state.trainer))}
                 </p>
               )}
-              <QuestShelf quest={quest} sel={Math.min(sel, quest.steps.length - 1)} onSel={setSel} t={t} actions={actions} />
+              <QuestShelf quest={quest} clan={state.clan} sel={Math.min(sel, quest.steps.length - 1)} onSel={setSel} t={t} actions={actions} />
               {/* F6: prédios que abriram com o nível do treinador — uma missão curta cada */}
               {bldMissions.length > 0 && (
                 <section className="mt-3 grid gap-2">
@@ -381,7 +396,7 @@ const CARD_H = 228
 const IMG_K = 0.66
 const thumbOf = (chapter: string, key: string) => `/meu-mundo/missoes/${chapter}_${key}.webp`
 
-function QuestShelf({ quest, sel, onSel, t, actions }: { quest: QuestView; sel: number; onSel: (i: number) => void; t: T; actions: () => React.ReactNode }) {
+function QuestShelf({ quest, clan, sel, onSel, t, actions }: { quest: QuestView; clan: "raposa" | "vampiro" | null; sel: number; onSel: (i: number) => void; t: T; actions: () => React.ReactNode }) {
   const s = quest.steps[sel]
   const stateText = (st: string) => (st === "done" ? t("questDone", "Feito") : st === "current" ? t("questNow", "Agora") : t("questLocked", "Depois"))
   const stateColor = (st: string) => (st === "done" ? AE.good : st === "current" ? AE.gold : AE.dim)
@@ -409,13 +424,16 @@ function QuestShelf({ quest, sel, onSel, t, actions }: { quest: QuestView; sel: 
         render={(i, active) => {
           const st = quest.steps[i]
           const locked = st.state === "locked"
+          // 18/11: passo entregue mostra a cena da história dele (16:9, recortada no card)
+          const scene = st.state === "done" ? scenesOfStep(quest.id, st.key, clan)[0] : undefined
           return (
             <Card
               active={active}
               empty={locked}
               art={
                 <ItemImage
-                  src={locked ? null : thumbOf(quest.id, st.key)}
+                  src={locked ? null : scene ? sceneSrc(scene.id, true) : thumbOf(quest.id, st.key)}
+                  fit={scene ? "cover" : undefined}
                   category={artOf(checkOf(i))}
                   rarity={st.state === "done" ? "uncommon" : st.state === "current" ? "legendary" : "common"}
                   alt={locked ? t("questHidden", "???") : stepTxt(t, quest.id, st.key, "what")}

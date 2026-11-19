@@ -15093,7 +15093,9 @@
     "gincanaHowFw4": "After 40 s the walls come in pairs and faster.",
     "gincanaHowFw5": "Whoever the wall pushes off falls into the lava. When only the spots are left, it's over.",
     "gincanaHowOv5": "The bars speed up until the end. When only the spots are left, it's over.",
-    "gincanaEvGelo": "Ice Roller"
+    "gincanaEvGelo": "Ice Roller",
+    "questScenes": "Story scenes",
+    "questSceneN": "Scene {i} of {n}"
   },
   "Sports": {
     "eyebrow": "Sports",

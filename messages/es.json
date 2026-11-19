@@ -15073,7 +15073,9 @@
     "gincanaHowFw4": "Después de 40 s los muros vienen en pares y más rápido.",
     "gincanaHowFw5": "A quien el muro empuja fuera cae a la lava. Cuando solo quedan los cupos, se acabó.",
     "gincanaHowOv5": "Las barras aceleran hasta el final. Cuando solo quedan los cupos, se acabó.",
-    "gincanaEvGelo": "Rodillo de Hielo"
+    "gincanaEvGelo": "Rodillo de Hielo",
+    "questScenes": "Escenas de la historia",
+    "questSceneN": "Escena {i} de {n}"
   },
   "Sports": {
     "eyebrow": "Deportes",

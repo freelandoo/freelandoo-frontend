@@ -14507,7 +14507,9 @@
     "gincanaHowFw4": "Depois de 40 s as paredes vêm em pares e mais rápidas.",
     "gincanaHowFw5": "Quem a parede empurra para fora cai na lava. Sobrando só a vaga, acabou.",
     "gincanaHowOv5": "As barras aceleram até o fim. Sobrando só a vaga, acabou.",
-    "gincanaEvGelo": "Rolo de Gelo"
+    "gincanaEvGelo": "Rolo de Gelo",
+    "questScenes": "Cenas da história",
+    "questSceneN": "Cena {i} de {n}"
   },
   "Sports": {
     "eyebrow": "Esportes",
