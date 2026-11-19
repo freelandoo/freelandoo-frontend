@@ -474,8 +474,8 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   })
   // mm3d-60: tubo de luz (o do poder, bem mais leve) quando ganha status
   const gainPillar = new GainPillar(scene, () => local.char.holder.getAbsolutePosition(), quality.tier === "low")
-  // Poder transbordando (2026-11-18/19): brasas de luz saindo das costas + contorno de luz em quem passou do teto do nível
-  const surge = new PowerSurge(scene, quality.particles)
+  // Poder transbordando (2026-11-18/19): contorno de luz em quem passou do teto do nível
+  const surge = new PowerSurge(scene)
   const gainFx = setGainFx(gainPillar)
   // mm3d-60r: o mapa (radar + modal) desta cena e onde eu estou
   const mapOf = (l: SceneLabels) =>
