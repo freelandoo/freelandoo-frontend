@@ -470,8 +470,9 @@ export class CourseView {
         for (const yy of [-0.55, 0.55]) bg.torus(1.95, 0.1, at(0, yy, 0), [0.12, 0.12, 0.14], 20)
       } else {
         // V-Orbital: a barra ALTA (mergulhe) em magenta e branco, a baixa (pule) em amarelo e preto — lê de longe
-        const high = theme.deco === "orbital" && s.y - DECK > 1
-        bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city ? stripesY(ORANGE, WHITE, 0.55, 0) : high ? stripesY([1, 0.25, 0.75], [1, 0.9, 1], 0.55, 0.5) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
+        // 20/11: na cidade também há barra alta (carrossel de duas barras) — a cor diz pular ou mergulhar
+        const high = (theme.deco === "orbital" || city) && s.y - DECK > 1
+        bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city && !high ? stripesY(ORANGE, WHITE, 0.55, 0) : high ? stripesY([1, 0.25, 0.75], [1, 0.9, 1], 0.55, 0.5) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
         bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
       }
       if (!city && theme.deco !== "forest") {
