@@ -165,9 +165,11 @@ function fanRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
   let L = 0
   const arms: number[] = []
   let hubR = 0
+  let bladeSpin = p0.spin
   for (const p of C.pads) {
     if (p.spin === 0 || p.x !== cx || p.z !== cz) continue
     if (p.k === 1) {
+      bladeSpin = p.spin
       L = Math.max(L, p.hz)
       const a = padRot(p, w.t)
       arms.push(a, a + Math.PI)
@@ -194,7 +196,8 @@ function fanRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
     if (d < -Math.PI) d += Math.PI * 2
     return d
   }
-  const spin = p0.spin
+  // 20/11: o miolo gira ao contrário (HELICES.hub) — a previsão é sempre pelo giro das pás
+  const spin = bladeSpin
   const rb = Math.hypot(b.x - cx, b.z - cz)
   const go = Math.max(0.6, br.pace)
   // a pá que vai estar na direção da saída quando eu chegar na ponta (o giro anda enquanto eu corro)
@@ -231,6 +234,7 @@ function fanRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
       it.mx = 0
       it.mz = 0
     }
+    hubCounter(b, p0, cx, cz, it)
     return
   }
   br.fanT = -1
@@ -243,6 +247,21 @@ function fanRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
     it.mx = -Math.sin(out) * go
     it.mz = -Math.cos(out) * go
   }
+  hubCounter(b, p0, cx, cz, it)
+}
+
+/** 20/11: em cima do miolo (que gira ao contrário e RÁPIDO), anda contra o arrasto dele. */
+function hubCounter(b: Runner, p: Course["pads"][number], cx: number, cz: number, it: RunIntent) {
+  if (p.k === 1) return
+  let mx = it.mx - (p.spin * (b.z - cz)) / GINCANA.run
+  let mz = it.mz + (p.spin * (b.x - cx)) / GINCANA.run
+  const m = Math.hypot(mx, mz)
+  if (m > 1) {
+    mx /= m
+    mz /= m
+  }
+  it.mx = mx
+  it.mz = mz
 }
 
 /** Pulo de/para hélice: o pouso de verdade (o pulo voa ~5 m) existe na hora em que eu chego lá? */
@@ -672,6 +691,8 @@ function spinRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
   if (!b.ground || b.pad < 0) return false
   const p = C.pads[b.pad]
   if (p.k !== 0 || p.spin === 0 || p.mw !== 0 || Math.abs(p.spin) * p.r <= 4) return false
+  // o miolo de hélice (gira rápido desde 20/11) é da fanRide
+  if (isFanPad(C, p)) return false
   // o primeiro ponto da rota adiante e FORA desta peça: para onde pular
   let e = null as (typeof br.route)[number] | null
   for (const q of br.route) {
@@ -852,6 +873,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     if (near) {
       const ok = (i: number) => {
         const s = w.tiles[i]
+        // 20/11 Hélices (corredor que cai, corrida): placa já pisada serve se ainda aguenta a travessia
+        if (C.id === "helices") return tileUp(C, s, t + 0.7) && (s < 0 || t - s < C.tileTime.warn)
         return tileUp(C, s, t + 0.35) && !(s >= 0 && t - s < 0.8)
       }
       let under = -1
@@ -1115,8 +1138,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
       br.jumpCool = 0.5
     }
   }
-  // ladrilho tremendo embaixo: pula para o próximo
-  if (b.ground && br.jumpCool <= 0) {
+  // ladrilho tremendo embaixo: pula para o próximo (nas Hélices não: o corredor tem as barras — anda)
+  if (b.ground && br.jumpCool <= 0 && C.id !== "helices") {
     for (let i = 0; i < C.tiles.length; i++) {
       const q = C.tiles[i]
       const s = w.tiles[i]
@@ -1188,7 +1211,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     if (br.stuck > 1.4 && b.ground && br.door >= 0 && C.doors[br.door].z - b.z < 1.5) {
       br.back = 0.45 + botRand(br.seed, br.slot, Math.floor(t * 4)) * 0.3
       br.stuck = 0
-    } else if (br.stuck > 2.2 && b.ground) {
+    } else if (br.stuck > 2.2 && b.ground && !(b.pad >= 0 && isFanPad(C, C.pads[b.pad]))) {
+      // (no miolo da hélice, parado é esperar a pá — pular dali é cair)
       it.jump = true
       br.stuck = 0
     }

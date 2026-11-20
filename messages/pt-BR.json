@@ -14703,7 +14703,14 @@
     "gincanaHowFg5b": "Caiu no óleo? Volta ao seu andar, só perdeu tempo. Os 2 últimos de cada andar ficam fora.",
     "gincanaFloorGears": "Andar {f} · {n}/{g} engrenagens",
     "gincanaFloorJump": "Andar {f}: pule no miolo!",
-    "gincanaFloorTop": "No topo!"
+    "gincanaFloorTop": "No topo!",
+    "gincanaPhComportasPitch2": "A segunda corrida da Fábrica: fileiras de comportas de aço fechadas, e em cada uma só uma abre por vez, sorteada, por dois segundos. Corra até a aberta, pule as baixas e atravesse a graxa.",
+    "gincanaSecCp1b": "Uma por vez",
+    "gincanaHowCp1b": "Em cada fileira só UMA comporta abre por vez, sorteada: a luz verde mostra qual. Ela fica 2 s aberta e fecha de repente.",
+    "gincanaHowCp4b": "A graxa deixa a corrida na metade: a comporta aberta pode ficar longe demais. Escolha cedo.",
+    "gincanaHowCp5b": "Ficou dentro quando ela fechou? Ela cospe você para fora: espere a próxima abrir.",
+    "gincanaHowHe2b": "No corredor das barras as placas acendem quando você pisa e caem logo depois: pule as barras sem parar.",
+    "gincanaHowHe3b": "O cubo gira rápido ao contrário das pás: não fique parado nele, corra para a pá que aponta para a saída."
   },
   "Sports": {
     "eyebrow": "Esportes",

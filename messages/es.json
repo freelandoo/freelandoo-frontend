@@ -15269,7 +15269,14 @@
     "gincanaHowFg5b": "¿Caíste en el aceite? Vuelves a tu piso, solo perdiste tiempo. Los 2 últimos de cada piso quedan fuera.",
     "gincanaFloorGears": "Piso {f} · {n}/{g} engranajes",
     "gincanaFloorJump": "Piso {f}: ¡salta al centro!",
-    "gincanaFloorTop": "¡En la cima!"
+    "gincanaFloorTop": "¡En la cima!",
+    "gincanaPhComportasPitch2": "La segunda carrera de la Fábrica: filas de compuertas de acero cerradas, y en cada una solo se abre una a la vez, al azar, durante dos segundos. Corre hacia la abierta, salta las bajas y cruza la grasa.",
+    "gincanaSecCp1b": "Una a la vez",
+    "gincanaHowCp1b": "En cada fila solo UNA compuerta se abre a la vez, al azar: la luz verde muestra cuál. Queda abierta 2 s y se cierra de golpe.",
+    "gincanaHowCp4b": "La grasa reduce tu carrera a la mitad: la compuerta abierta puede quedar demasiado lejos. Elige pronto.",
+    "gincanaHowCp5b": "¿Te quedaste dentro cuando se cerró? Te escupe afuera: espera a que se abra la siguiente.",
+    "gincanaHowHe2b": "En el pasillo de las barras las placas se encienden al pisarlas y caen poco después: salta las barras sin parar.",
+    "gincanaHowHe3b": "El cubo gira rápido al revés de las aspas: no te quedes quieto en él, corre hacia el aspa que apunta a la salida."
   },
   "Sports": {
     "eyebrow": "Deportes",

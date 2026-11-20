@@ -46,7 +46,7 @@ import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serr
 import { EstaleiroView } from "./estaleiro-view"
 import { GangorrasView } from "./gangorras-view"
 import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
-import { canionTileIdle, canionTileLit } from "./canion-view"
+import { CANION_SKIN, HELICES_SKIN, canionTileIdle, canionTileLit } from "./canion-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
@@ -618,12 +618,14 @@ export class CourseView {
           return vein ? mix(c, [0.85, 1, 0.6], 0.35) : c
         }, 16, 1, 0.16, 1.18)
         tg.cylinder(0.14, 0.9, at(0, -0.1, -W * 0.62, 0, Math.PI / 2, 0), [0.3, 0.42, 0.16], 5)
-      } else if (t.k === 1 && theme.id === "canion") {
-        // Cânion (20/11, pedido do Alex): pedra apagada na cor clara do andar; a acesa sai em `canionLitKey`
-        canionTileIdle(tg, t.h, t.c)
+      } else if (t.k === 1 && (theme.id === "canion" || theme.id === "helices")) {
+        // Cânion (20/11, pedido do Alex): pedra apagada na cor clara do andar; a acesa sai em `canionLitKey`.
+        // Hélices (20/11): a mesma placa na pele da Orbital (chapa escura, neon magenta/ciano)
+        const skin = theme.id === "helices" ? HELICES_SKIN : CANION_SKIN
+        canionTileIdle(tg, t.h, t.c, skin)
         const lb = new SoftGeo()
         const lg = new SoftGeo()
-        canionTileLit(lb, lg, t.h, t.c)
+        canionTileLit(lb, lg, t.h, t.c, skin)
         const body = lb.build(`gincana-tile-lit-${key}`, scene, toy, false)
         const glow = lg.build(`gincana-tile-glow-${key}`, scene, this.glowMat, false)
         for (const m of [body, glow]) {
@@ -655,7 +657,7 @@ export class CourseView {
         tg.roundBox(t.h * 2, 0.55, t.h * 2, 0.2, at(0, -0.275, 0), col, 8)
         tg.roundBox(t.h * 1.4, 0.06, t.h * 1.4, 0.03, at(0, 0.005, 0), mix(col, WHITE, 0.35), 4)
       }
-      const base = tg.build(`gincana-tile-${key}`, scene, theme.deco === "orbital" ? this.glowMat : toy, false)
+      const base = tg.build(`gincana-tile-${key}`, scene, theme.deco === "orbital" && !canionLitKey.has(key) ? this.glowMat : toy, false)
       base.setEnabled(true)
       base.isVisible = false
       baseKey.set(key, base)
@@ -2098,10 +2100,18 @@ export class CourseView {
           lit.glow.position.copyFrom(lit.body.position)
           const blink = age > TT.warn * 0.55 && age < TT.warn && Math.sin(age * 40) < -0.2
           lit.glow.setEnabled(!blink)
-        } else {
+        } else if (age < TT.warn + TT.gone - 0.35) {
           inst.setEnabled(false)
           lit.body.setEnabled(false)
           lit.glow.setEnabled(false)
+        } else {
+          // a placa volta (Hélices: corrida, quem vem atrás precisa de chão) — sobe apagada e "estufando"
+          const k = Math.min(1, (age - (TT.warn + TT.gone - 0.35)) / 0.35)
+          lit.body.setEnabled(false)
+          lit.glow.setEnabled(false)
+          inst.setEnabled(true)
+          inst.position.set(base.x, base.y - (1 - k) * 1.2, base.z)
+          inst.scaling.set(0.7 + 0.3 * k, 1, 0.7 + 0.3 * k)
         }
         continue
       }

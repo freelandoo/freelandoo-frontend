@@ -137,6 +137,14 @@ export interface Pad {
   gh: number
   gp: number
   gph: number
+  /**
+   * 20/11 (o Alex: "nessas filas só uma abre por vez e é aleatória; abre, fica 2 s e fecha, e fecha rápido"):
+   * comporta de FILA — `gn` comportas na fila, esta é a `gi`, sorteio pela semente `gs`. Fechada (em cima) o
+   * tempo todo; a cada vez (`gp` s) uma só da fila abre (ver gateLift / GATE_ONE). Sem `gn`: o ciclo antigo.
+   */
+  gn?: number
+  gi?: number
+  gs?: number
   /** Graxa: multiplica a velocidade da corrida de quem pisa (1 = normal). */
   sl: number
   /** Chão com bolas quicando (Course.balls.flat). */
@@ -1180,6 +1188,7 @@ export function riseAt(c: Course, t: number) {
  */
 export function gateLift(p: Pad, t: number) {
   if (p.gh === 0) return 0
+  if (p.gn) return gateOneLift(p, t)
   const u = ((((t + p.gph) / p.gp) % 1) + 1) % 1
   if (u < 0.38) return 0
   if (u < 0.5) {
@@ -1189,6 +1198,38 @@ export function gateLift(p: Pad, t: number) {
   if (u < 0.88) return 1
   const k = (u - 0.88) / 0.12
   return 1 - k * k * (3 - 2 * k)
+}
+
+/** Comporta de fila (20/11): desce, fica aberta, FECHA RÁPIDO e a fila fica toda fechada um instante (s). */
+export const GATE_ONE = { down: 0.3, hold: 2, up: 0.15, rest: 0.1 }
+const GATE_SLOT = GATE_ONE.down + GATE_ONE.hold + GATE_ONE.up + GATE_ONE.rest
+
+function gateHash(a: number, b: number) {
+  let h = Math.imul(((a * 7919) | 0) ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul((b + 0x632be5ab) | 0, 0xc2b2ae35)
+  h ^= h >>> 15
+  h = Math.imul(h, 0x2c1b3c6d)
+  h ^= h >>> 12
+  return (h >>> 0) / 4294967296
+}
+
+/** Qual comporta da fila abre na vez `slot` (sorteada; nunca a mesma da vez anterior). */
+export function gatePick(n: number, seed: number, slot: number) {
+  const a = Math.floor(gateHash(seed, slot) * n)
+  const b = Math.floor(gateHash(seed, slot - 1) * n)
+  return a === b ? (a + 1) % n : a
+}
+
+function gateOneLift(p: Pad, t: number) {
+  const T = (t + p.gph) / p.gp
+  const slot = Math.floor(T)
+  if (gatePick(p.gn!, p.gs ?? 0, slot) !== p.gi) return 1
+  const u = (T - slot) * GATE_SLOT
+  const G = GATE_ONE
+  const ease = (k: number) => k * k * (3 - 2 * k)
+  if (u < G.down) return 1 - ease(u / G.down)
+  if (u < G.down + G.hold) return 0
+  if (u < G.down + G.hold + G.up) return ease((u - G.down - G.hold) / G.up)
+  return 1
 }
 
 /** Tampo de uma plataforma em z no tempo t (a rampa, k = 2, sobe de y em z − hz a y2 em z + hz; a comporta sobe pelo relógio). */

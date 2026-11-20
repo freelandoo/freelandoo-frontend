@@ -15289,7 +15289,14 @@
     "gincanaHowFg5b": "Fell in the oil? You go back to your floor, you only lost time. The last 2 on each floor are out.",
     "gincanaFloorGears": "Floor {f} · {n}/{g} gears",
     "gincanaFloorJump": "Floor {f}: jump on the center!",
-    "gincanaFloorTop": "At the top!"
+    "gincanaFloorTop": "At the top!",
+    "gincanaPhComportasPitch2": "The Factory's second race: rows of closed steel gates, and in each row only one opens at a time, at random, for two seconds. Run to the open one, jump the low ones and cross the grease.",
+    "gincanaSecCp1b": "One at a time",
+    "gincanaHowCp1b": "In each row only ONE gate opens at a time, at random: the green light shows which. It stays open for 2 s and slams shut.",
+    "gincanaHowCp4b": "The grease halves your speed: the open gate may be too far. Pick early.",
+    "gincanaHowCp5b": "Caught inside when it shut? It spits you out: wait for the next one to open.",
+    "gincanaHowHe2b": "In the bar corridor the plates light up when you step on them and drop soon after: jump the bars without stopping.",
+    "gincanaHowHe3b": "The hub spins fast against the blades: don't stand still on it, run to the blade pointing at the exit."
   },
   "Sports": {
     "eyebrow": "Sports",

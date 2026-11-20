@@ -30,11 +30,34 @@ export const CANION_FLOORS: { idle: RGB; lit: RGB; light: RGB }[] = [
   { idle: [0.97, 0.92, 0.6], lit: [1, 0.82, 0.12], light: [1, 0.95, 0.55] },
 ]
 
-const SAND: RGB = [0.66, 0.36, 0.22]
-const SAND_D: RGB = [0.34, 0.17, 0.11]
-const GROUT: RGB = [0.36, 0.3, 0.26]
-const BRASS: RGB = [0.62, 0.46, 0.2]
-const GLASS: RGB = [0.92, 0.94, 0.96]
+/**
+ * A "pele" da placa: o mesmo desenho serve ao Cânion (arenito e lâmpadas de latão) e, desde 20/11, ao corredor
+ * das Hélices da Orbital (chapa azul-noite, rebites de aço e neon magenta/ciano — o Alex: "os pisos têm que
+ * acender e cair como na fase que os pisos caem").
+ */
+export type TileSkin = { body: RGB; bodyD: RGB; grout: RGB; brass: RGB; glass: RGB; floors: { idle: RGB; lit: RGB; light: RGB }[] }
+
+export const CANION_SKIN: TileSkin = {
+  body: [0.66, 0.36, 0.22],
+  bodyD: [0.34, 0.17, 0.11],
+  grout: [0.36, 0.3, 0.26],
+  brass: [0.62, 0.46, 0.2],
+  glass: [0.92, 0.94, 0.96],
+  floors: CANION_FLOORS,
+}
+
+/** Hélices: chapa escura com tampo azul-aço apagado; acesa = magenta (fileira par) ou ciano (ímpar). */
+export const HELICES_SKIN: TileSkin = {
+  body: [0.14, 0.15, 0.27],
+  bodyD: [0.05, 0.05, 0.09],
+  grout: [0.05, 0.05, 0.09],
+  brass: [0.7, 0.74, 0.82],
+  glass: [0.5, 0.54, 0.66],
+  floors: [
+    { idle: [0.3, 0.33, 0.48], lit: [1, 0.37, 0.78], light: [1, 0.6, 0.9] },
+    { idle: [0.28, 0.34, 0.46], lit: [0.25, 0.85, 1], light: [0.6, 0.95, 1] },
+  ],
+}
 const WHITE: RGB = [1, 1, 1]
 const HEX = Math.PI / 6
 
@@ -47,16 +70,16 @@ function corners(r: number) {
 }
 
 /** 1 + 2: corpo e tampo (comum ao apagado e ao aceso; muda só a cor do tampo). */
-function body(g: SoftGeo, h: number, top: RGB) {
+function body(g: SoftGeo, h: number, top: RGB, S: TileSkin) {
   const D = h * 2.06
   // 1. corpo: arenito, escuro embaixo (sombra de contato), com friso escuro logo abaixo do tampo
-  g.cylinder(D, 0.55, at(0, -0.3, 0, HEX), (_x, y) => mix(SAND_D, SAND, Math.min(1, (y + 0.55) / 0.5)), 6, D * 0.88)
-  g.cylinder(D * 1.005, 0.05, at(0, -0.07, 0, HEX), SAND_D, 6)
+  g.cylinder(D, 0.55, at(0, -0.3, 0, HEX), (_x, y) => mix(S.bodyD, S.body, Math.min(1, (y + 0.55) / 0.5)), 6, D * 0.88)
+  g.cylinder(D * 1.005, 0.05, at(0, -0.07, 0, HEX), S.bodyD, 6)
   // 2. tampo: mais claro na beira; três lajotas com rejunte
   g.cylinder(D * 0.97, 0.08, at(0, -0.005, 0, HEX), (x, _y, z) => (Math.hypot(x, z) > D * 0.38 ? mix(top, WHITE, 0.12) : top), 6)
   for (let q = 0; q < 3; q++) {
     const a = (q / 3) * Math.PI * 2 + HEX
-    g.box(D * 0.46, 0.012, 0.05, at(Math.cos(a) * D * 0.235, 0.04, Math.sin(a) * D * 0.235, -a), mix(GROUT, top, 0.25))
+    g.box(D * 0.46, 0.012, 0.05, at(Math.cos(a) * D * 0.235, 0.04, Math.sin(a) * D * 0.235, -a), mix(S.grout, top, 0.25))
   }
   return D
 }
@@ -72,24 +95,24 @@ function rim(g: SoftGeo, D: number, w: number, c: RGB) {
 }
 
 /** Pedra apagada (material comum): tampo claro do andar, lâmpadas de vidro claro e borda clara. */
-export function canionTileIdle(g: SoftGeo, h: number, floor: number) {
-  const F = CANION_FLOORS[floor % CANION_FLOORS.length]
-  const D = body(g, h, F.idle)
+export function canionTileIdle(g: SoftGeo, h: number, floor: number, S: TileSkin = CANION_SKIN) {
+  const F = S.floors[floor % S.floors.length]
+  const D = body(g, h, F.idle, S)
   // 4. borda: filete claro
   rim(g, D, 0.08, mix(F.idle, WHITE, 0.45))
   // 3. lâmpadas apagadas: base de latão + domo de vidro (um pouco da cor do andar)
   for (const [x, z] of corners(D * 0.42)) {
-    g.cylinder(0.3, 0.06, at(x, 0.05, z), BRASS, 8)
-    g.sphere(0.24, at(x, 0.09, z), mix(GLASS, F.light, 0.25), 8, 1, 0.7, 1)
+    g.cylinder(0.3, 0.06, at(x, 0.05, z), S.brass, 8)
+    g.sphere(0.24, at(x, 0.09, z), mix(S.glass, F.light, 0.25), 8, 1, 0.7, 1)
   }
 }
 
 /** Pedra acesa: corpo + tampo na cor forte (material comum) e as luzes (material aceso, `gl`). */
-export function canionTileLit(g: SoftGeo, gl: SoftGeo, h: number, floor: number) {
-  const F = CANION_FLOORS[floor % CANION_FLOORS.length]
-  const D = body(g, h, mix(F.lit, WHITE, 0.12))
+export function canionTileLit(g: SoftGeo, gl: SoftGeo, h: number, floor: number, S: TileSkin = CANION_SKIN) {
+  const F = S.floors[floor % S.floors.length]
+  const D = body(g, h, mix(F.lit, WHITE, 0.12), S)
   for (const [x, z] of corners(D * 0.42)) {
-    g.cylinder(0.3, 0.06, at(x, 0.05, z), BRASS, 8)
+    g.cylinder(0.3, 0.06, at(x, 0.05, z), S.brass, 8)
     // domo aceso (miolo quase branco) + halo largo e baixo da cor do andar
     gl.sphere(0.26, at(x, 0.1, z), mix(F.light, WHITE, 0.55), 8, 1, 0.75, 1)
     gl.cylinder(0.44, 0.015, at(x, 0.047, z), F.light, 10)
