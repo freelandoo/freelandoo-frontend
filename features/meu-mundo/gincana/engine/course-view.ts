@@ -404,7 +404,7 @@ export class CourseView {
       }
     }
     if (city) this.cityExtras(st)
-    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" || theme.id === "crosta" ? course.finishZ + 40 : 64)
+    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" || theme.id === "crosta" ? course.finishZ + 40 : 64, course.finishZ, course.pads)
     if (theme.id === "clareira") cannonGate(st, glow)
     // alvos de programa de TV: fora da Floresta (a referência não tem)
     if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)

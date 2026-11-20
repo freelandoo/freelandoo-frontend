@@ -12,23 +12,15 @@ import { Vector3 } from "@babylonjs/core/Maths/math.vector"
 import { SoftGeo, at, mix, stripesY, type RGB } from "./shapes"
 import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../engine/steampunk/scenery"
 import type { GincanaDeco } from "./phase-themes"
+import type { Pad } from "../sim/course"
+import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
+import { tallTrunk } from "./backdrop-floresta"
 
-/** Pseudo-aleatório determinístico (o cenário é igual em todo aparelho). */
-function rnd(i: number, k = 0) {
-  const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453
-  return x - Math.floor(x)
-}
-
-/** Lados da prova: devolve x a `d` metros do eixo, alternando. */
-const side = (i: number, d: number) => (i % 2 ? d : -d)
-
-/** O meio da prova (z) e até onde o cenário vai. */
-const Z0 = -40
-const Z1 = 300
-
-/** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada). */
-export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, low: boolean, castleZ = 64) {
-  const n = low ? 0.6 : 1
+/** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada).
+ * `finishZ`/`pads` (20/11): o fundo vai até o fim da prova (percurso dobrado) e sabe a altura do chão (`deckY`). */
+export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, low: boolean, castleZ = 64, finishZ = 260, pads: readonly Pad[] = []) {
+  setSpan(finishZ, pads)
+  const n = (low ? 0.6 : 1) * spanK()
   switch (deco) {
     case "forest":
       return forest(lit, glow, n)
@@ -131,6 +123,15 @@ function gnarledTree(lit: SoftGeo, glow: SoftGeo, x: number, z: number, h: numbe
 }
 
 function forest(lit: SoftGeo, glow: SoftGeo, n: number) {
+  // miniaturas (20/11): muralha de troncos altos nos dois lados, 1ª fileira junto da prova
+  for (let z = Z0, i = 0; z < Z1; z += 13, i++) {
+    for (const s of [-1, 1]) {
+      const k = i * 2 + (s > 0 ? 1 : 0)
+      const x = s * (17 + rnd(k, 200) * 9)
+      const zz = z + rnd(k, 201) * 7
+      tallTrunk(lit, glow, x, zz, deckY(zz) + 46 + rnd(k, 202) * 18, 2.4 + rnd(k, 203) * 1.4, k)
+    }
+  }
   const count = Math.round(26 * n)
   for (let i = 0; i < count; i++) {
     const x = side(i, 26 + rnd(i) * 44)
