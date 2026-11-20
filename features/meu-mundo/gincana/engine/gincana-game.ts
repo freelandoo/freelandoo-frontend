@@ -386,6 +386,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   const camAt = new Vector3(0, 0, 0)
   const camLook = new Vector3(0, 0, 0)
   let camReady = false
+  let freeCam: [Vector3, Vector3] | null = null
 
   // placar pela MESMA regra da sala (Gincana 3: corrida, sobrevivência, coleta e zona)
   const board = (): BoardRow[] =>
@@ -683,6 +684,10 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     cam.position.copyFrom(want)
     camLook.set(camAt.x + Math.sin(yaw) * 2, ty + 0.2, camAt.z + Math.cos(yaw) * 2)
     cam.setTarget(camLook)
+    if (freeCam) {
+      cam.position.copyFrom(freeCam[0])
+      cam.setTarget(freeCam[1])
+    }
 
     hudAt -= dt
     if (hudAt <= 0) {
@@ -732,6 +737,10 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     Object.assign(mine, { x, y, z, vx: 0, vy: 0, vz: 0, ground: false, mode: MODE.RUN, timer: 0 })
     if (cp !== undefined) mine.cp = cp
   }
+  // câmera livre para fotografar o cenário de perto (harness); null devolve a câmera ao boneco
+  w.__gincanaCam = (x: number | null, y = 0, z = 0, tx = 0, ty = 0, tz = 0) => {
+    freeCam = x === null ? null : [new Vector3(x, y, z), new Vector3(tx, ty, tz)]
+  }
   w.__gincanaLook = (y: number, p: number) => {
     yaw = y
     pitch = p
@@ -773,7 +782,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       canvas.removeEventListener("contextmenu", noMenu)
       ro.disconnect()
       engine.onContextLostObservable.remove(lost)
-      for (const k of ["__gincana", "__gincanaRace", "__gincanaTp", "__gincanaLook"]) delete w[k]
+      for (const k of ["__gincana", "__gincanaRace", "__gincanaTp", "__gincanaLook", "__gincanaCam"]) delete w[k]
       for (const s of seats.values()) s.char.dispose()
       for (const s of splashes) s.mesh.dispose()
       logos.dispose()

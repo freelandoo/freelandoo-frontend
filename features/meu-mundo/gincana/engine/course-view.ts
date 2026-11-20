@@ -59,6 +59,10 @@ const IRON: RGB = [0.2, 0.2, 0.22]
 const darker = (c: RGB, k = 0.72): RGB => [c[0] * k, c[1] * k, c[2] * k]
 /** A arte de céu (céu v2) de cada fase: a do Domínio. */
 const SKY_OF: Record<GincanaTheme["deco"], SkyRegionId> = { city: "centro", forest: "noctis", canyon: "zephyra", orbital: "iris", forge: "kragor", factory: "aeryn", ice: "maru" }
+/** Cor da névoa por Domínio, [dia, noite] (sem linha = a do céu do Centro). */
+const HAZE_OF: Partial<Record<GincanaTheme["deco"], readonly [RGB, RGB]>> = {
+  forest: [[0.46, 0.38, 0.62], [0.2, 0.15, 0.34]],
+}
 /** Seta do chão (sem luz: lê de dia e de noite). */
 const ARROW: RGB = [1, 0.84, 0.12]
 /** Listra de perigo (amarelo e quase preto) do que machuca. */
@@ -1631,6 +1635,13 @@ export class CourseView {
     // a prova é um programa de TV: de noite a luz baixa só até a metade (o céu escurece inteiro; o neon acende)
     // V-Gelo: a noite polar vai mais fundo (luz fria; na metade o sol ainda é de fim de tarde e o gelo sai bege)
     applyLights(this.scene, n * (this.theme.deco === "ice" ? 0.85 : 0.55))
+    // miniaturas (20/11): a névoa do Domínio (o fundo distante some nela; a do Centro deixava a mata cor de pêssego)
+    const haze = HAZE_OF[this.theme.deco]
+    if (haze) {
+      const c = Color3.Lerp(new Color3(...haze[0]), new Color3(...haze[1]), n)
+      this.scene.fogColor = c
+      this.scene.clearColor.set(c.r, c.g, c.b, 1)
+    }
     this.sky.set(n)
     this.stage.setNight(n)
     this.city?.setNight(n)

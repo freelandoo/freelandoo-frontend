@@ -14,7 +14,7 @@ import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../en
 import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
-import { tallTrunk } from "./backdrop-floresta"
+import { farTrunk, farWall, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
 import { forgeField, gridWindow } from "./backdrop-forja"
@@ -45,87 +45,6 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
 
 // ── Floresta da Lua ──────────────────────────────────────────────────────────
 
-/** Casca em sulcos verticais (escuro no sulco, claro na crista) com ilhas de líquen verde. */
-function barkPaint(seed: number) {
-  return (x: number, y: number, z: number): RGB => {
-    const g = Math.sin(Math.atan2(z, x) * 9 + y * 0.35 + seed)
-    const lichen = Math.sin(y * 0.7 + seed * 3) * Math.cos(x * 1.3 + z) > 0.62
-    if (lichen) return [0.2, 0.32, 0.2]
-    return g > 0.5 ? [0.13, 0.08, 0.07] : g < -0.55 ? [0.4, 0.27, 0.22] : [0.27, 0.17, 0.14]
-  }
-}
-
-/** Copa: escura embaixo → verde-azulado claro em cima (o luar bate de cima). */
-function canopyPaint(h: number) {
-  return (x: number, y: number, z: number): RGB => {
-    const k = Math.max(0, Math.min(1, y / h + 0.5))
-    // tufos claros no topo (ruído) para a copa não virar uma bolacha lisa
-    const tuft = Math.sin(x * 1.7 + z * 1.3) * Math.cos(z * 1.9 - x) > 0.3 ? 0.12 : 0
-    return mix([0.03, 0.12, 0.11], [0.2, 0.5, 0.4], Math.min(1, k * k + tuft * k))
-  }
-}
-
-/**
- * Árvore gigante retorcida (ref. v3 da Floresta): tronco em gomos que torcem, raízes-escora saindo do pântano,
- * 3–4 galhos com copa achatada em degradê, cipós pendurados com gota acesa e flores rosa/lilás na copa.
- */
-function gnarledTree(lit: SoftGeo, glow: SoftGeo, x: number, z: number, h: number, d: number, i: number) {
-  const bark = barkPaint(i)
-  const segs = 5
-  const pts: Vector3[] = []
-  for (let k = 0; k <= segs; k++) {
-    const u = k / segs
-    const lean = Math.sin(u * 2.4 + i) * d * 0.5
-    pts.push(new Vector3(x + lean, -2 + u * h, z + Math.cos(u * 2 + i * 1.3) * d * 0.4))
-  }
-  for (let k = 0; k < segs; k++) lit.tube(pts[k], pts[k + 1], (d / 2) * (1 - (k / segs) * 0.55), bark, 10)
-  // raízes-escora: sobem do pântano e encostam no tronco (com joelho)
-  for (let k = 0; k < 5; k++) {
-    const a = (k / 5) * Math.PI * 2 + i
-    const knee = new Vector3(x + Math.cos(a) * d * 1.1, 1.6 + rnd(i, 30 + k) * 1.2, z + Math.sin(a) * d * 1.1)
-    lit.tube(new Vector3(x + Math.cos(a) * d * 0.3, 4.5, z + Math.sin(a) * d * 0.3), knee, d * 0.2, bark, 7)
-    lit.tube(knee, new Vector3(x + Math.cos(a) * d * 2, -0.6, z + Math.sin(a) * d * 2), d * 0.15, bark, 7)
-  }
-  // galhos e copas
-  const top = pts[segs]
-  const nb = 3 + (i % 2)
-  for (let b = 0; b < nb; b++) {
-    const a = (b / nb) * Math.PI * 2 + i * 0.7
-    const from = pts[segs - 1 - (b % 2)]
-    const len = h * (0.22 + rnd(i, 40 + b) * 0.12)
-    const end = new Vector3(from.x + Math.cos(a) * len, from.y + len * 0.45, from.z + Math.sin(a) * len)
-    lit.tube(from, end, d * 0.16, bark, 7)
-    const cs = 7 + rnd(i, 50 + b) * 5
-    for (let c = 0; c < 3; c++) {
-      const cx = end.x + (rnd(i, 60 + b * 3 + c) - 0.5) * cs * 0.9
-      const cz = end.z + (rnd(i, 70 + b * 3 + c) - 0.5) * cs * 0.9
-      const cy = end.y + 0.8 + c * 0.9
-      lit.sphere(cs * (1 - c * 0.18), at(cx, cy, cz), canopyPaint(cs * 0.6), 9, 1, 0.68, 1)
-    }
-    // cipós pendurados com uma gota acesa na ponta
-    for (let v = 0; v < 3; v++) {
-      const vx = end.x + (rnd(i, 80 + b * 3 + v) - 0.5) * cs
-      const vz = end.z + (rnd(i, 90 + b * 3 + v) - 0.5) * cs
-      const vl = 4 + rnd(i, 100 + b * 3 + v) * 6
-      lit.tube(new Vector3(vx, end.y, vz), new Vector3(vx + 0.3, end.y - vl, vz), 0.09, [0.12, 0.26, 0.14], 4)
-      glow.sphere(0.3, at(vx + 0.3, end.y - vl - 0.15, vz), v % 2 ? [0.6, 1, 0.75] : [1, 0.5, 0.88], 4)
-    }
-    // flores na beira da copa
-    for (let f = 0; f < 3; f++) {
-      const fa = a + (f - 1) * 0.7
-      const fx = end.x + Math.cos(fa) * cs * 0.48
-      const fz = end.z + Math.sin(fa) * cs * 0.48
-      const col: RGB = (b + f) % 3 ? [1, 0.38, 0.84] : [0.72, 0.5, 1]
-      for (let k = 0; k < 5; k++) {
-        const pa = (k / 5) * Math.PI * 2
-        glow.sphere(0.9, at(fx + Math.cos(pa) * 0.5, end.y + 0.6 + Math.sin(pa) * 0.5, fz), col, 5, 1, 1, 0.5)
-      }
-      glow.sphere(0.5, at(fx, end.y + 0.6, fz), [1, 0.92, 0.6], 5)
-    }
-  }
-  lit.sphere(d * 2.2, at(top.x, top.y + 1, top.z), canopyPaint(d), 8, 1, 0.6, 1)
-}
-
 function forest(lit: SoftGeo, glow: SoftGeo, n: number) {
   // miniaturas (20/11): muralha de troncos altos nos dois lados, 1ª fileira junto da prova
   for (let z = Z0, i = 0; z < Z1; z += 13, i++) {
@@ -136,30 +55,32 @@ function forest(lit: SoftGeo, glow: SoftGeo, n: number) {
       tallTrunk(lit, glow, x, zz, deckY(zz) + 46 + rnd(k, 202) * 18, 2.4 + rnd(k, 203) * 1.4, k)
     }
   }
-  const count = Math.round(26 * n)
-  for (let i = 0; i < count; i++) {
-    const x = side(i, 26 + rnd(i) * 44)
-    const z = Z0 + (i / count) * (Z1 - Z0) + rnd(i, 1) * 8
-    const h = 24 + rnd(i, 2) * 18
-    const d = 3 + rnd(i, 3) * 2.4
-    gnarledTree(lit, glow, x, z, h, d, i)
+  farWall(lit, Z0, Z1)
+  // 2ª fileira (|x| 32–60) e 3ª (|x| 62–130, mais azulada): o fundo fechado de troncos da miniatura
+  // (as árvores-bonsai com flores soltas no céu saíram — a miniatura não tem)
+  for (let z = Z0 - 20, i = 0; z < Z1 + 40; z += 9, i++) {
+    for (const s of [-1, 1]) {
+      const k = 1000 + i * 2 + (s > 0 ? 1 : 0)
+      const zz = z + rnd(k, 1) * 6
+      const x2 = s * (32 + rnd(k, 2) * 28)
+      farTrunk(lit, x2, zz, deckY(zz) + 50 + rnd(k, 3) * 20, 2.6 + rnd(k, 4) * 1.6, k, (Math.abs(x2) - 30) / 120)
+      const x3 = s * (62 + rnd(k, 5) * 68)
+      farTrunk(lit, x3, zz + 4, deckY(zz) + 55 + rnd(k, 6) * 25, 3 + rnd(k, 7) * 2, k + 1, Math.min(0.85, (Math.abs(x3) - 30) / 110))
+    }
   }
   // cogumelos acesos nas ilhotas (rosa e ciano), longe do caminho
   const shrooms = Math.round(26 * n)
   for (let i = 0; i < shrooms; i++) {
-    const x = side(i + 1, 15 + rnd(i, 11) * 10)
-    const z = Z0 + 10 + (i / shrooms) * (Z1 - Z0 - 20)
-    const h = 1.2 + rnd(i, 12) * 2.6
-    const cap: RGB = i % 3 ? [0.95, 0.35, 0.75] : [0.3, 0.95, 0.9]
-    lit.cylinder(2.6 + h, 0.8, at(x, 0.2, z), [0.16, 0.22, 0.16], 10)
-    lit.cylinder(0.5 + h * 0.12, h, at(x, h / 2 + 0.5, z), [0.86, 0.84, 0.74], 8)
-    glow.sphere(1.4 + h * 0.7, at(x, h + 0.6, z), cap, 8, 1, 0.5, 1)
+    // miniaturas: luminárias na beira (|x| 13–15) e entre os troncos (|x| 28–34)
+    const x = side(i + 1, i % 3 === 2 ? 28 + rnd(i, 11) * 6 : 13 + rnd(i, 11) * 2)
+    const z = Z0 + 10 + (i / shrooms) * (Z1 - Z0 - 20) + rnd(i, 13) * 5
+    shroomLamp(lit, glow, x, z, 1.4 + rnd(i, 12) * 2.4, i)
   }
   // ilhas de pedra com musgo e cachoeira verde acesa (perto o bastante para ler)
   for (let i = 0; i < Math.round(12 * n); i++) {
     const x = side(i, 22 + rnd(i, 70) * 18)
     const z = Z0 + 15 + i * 28
-    mossRock(lit, glow, x, z, 11 + rnd(i, 71) * 8, 10 + rnd(i, 72) * 12, i)
+    mossDrum(lit, glow, x, z, 8 + rnd(i, 71) * 5, 8 + rnd(i, 72) * 7, i)
   }
   // vitórias-régias com flor de lótus acesa no pântano
   for (let i = 0; i < Math.round(60 * n); i++) {
@@ -178,58 +99,21 @@ function forest(lit: SoftGeo, glow: SoftGeo, n: number) {
   // a lua (Floresta da Lua) e um anel de vaga-lumes grandes no céu
   // a lua no fim da subida (aparece por cima da pista), com o mar da lua mais escuro
   const craters: [number, number, number][] = [[-14, 10, 9], [8, 18, 6], [12, -8, 11], [-6, -16, 7], [20, 4, 4]]
-  glow.sphere(84, at(-40, 92, 430), (x, y): RGB => {
+  glow.sphere(84, at(-40, 92 + deckY(Z1) * 0.6, Z1 + 140), (x, y): RGB => {
     let k = 0
     for (const [cx, cy, r] of craters) k = Math.max(k, 1 - Math.hypot(x - cx, y - cy) / r)
     return mix([0.94, 0.96, 1], [0.7, 0.76, 0.9], Math.min(1, k * 1.6))
   }, 28)
-  for (let i = 0; i < Math.round(40 * n); i++) {
-    glow.sphere(0.35, at(side(i, 8 + rnd(i, 20) * 18), 3 + rnd(i, 21) * 7, Z0 + rnd(i, 22) * (Z1 - Z0)), [0.8, 1, 0.5], 3)
+  // vaga-lumes em todo canto (miniatura): em nuvens (grupos de 5–9), perto e longe, amarelos e verdes
+  for (let c = 0; c < Math.round(36 * n); c++) {
+    const cx = side(c, 7 + rnd(c, 20) * 50)
+    const cz = Z0 + rnd(c, 22) * (Z1 - Z0)
+    const cy = deckY(cz) * 0.5 + 1.5 + rnd(c, 21) * 9
+    for (let k = 0; k < 5 + (c % 5); k++) {
+      const col: RGB = (c + k) % 3 ? [1, 0.88, 0.35] : [0.6, 1, 0.45]
+      glow.sphere(0.2 + rnd(c * 9 + k, 23) * 0.22, at(cx + (rnd(c * 9 + k, 24) - 0.5) * 7, cy + (rnd(c * 9 + k, 25) - 0.5) * 4, cz + (rnd(c * 9 + k, 26) - 0.5) * 7), col, 3)
+    }
   }
-}
-
-/**
- * Ilha de pedra da Floresta (ref. v3): 3 blocos de pedra azul-arroxeada empilhados e girados (estratos, quina
- * de cima clara, pé escuro), tampa de musgo que transborda com tufos caídos, e a cachoeira acesa na face que
- * olha a pista (filetes claros/escuros, branca em cima → verde embaixo) com espuma em anéis no pé.
- */
-function mossRock(lit: SoftGeo, glow: SoftGeo, x: number, z: number, w: number, h: number, i: number) {
-  const stone = (base: number) => (_x: number, y: number): RGB => {
-    const band = Math.sin((y + base) * 2.1 + i) > 0.55
-    const k = Math.max(0, Math.min(1, (y + base) / h))
-    const c = mix([0.2, 0.19, 0.34], [0.5, 0.47, 0.7], 0.35 + k * 0.65)
-    return band ? mix(c, [0.05, 0.05, 0.1], 0.35) : c
-  }
-  let y = -1.5
-  const parts = 3
-  let ww = w
-  for (let p = 0; p < parts; p++) {
-    const ph = (h + 1.5) / parts
-    lit.cylinder(ww, ph, at(x + Math.sin(p * 2.3 + i) * 0.5, y + ph / 2, z + Math.cos(p * 1.7 + i) * 0.5, p * 0.6 + i), stone(y + ph / 2), 7, ww * 0.92)
-    // quina clara em cima de cada bloco
-    lit.torus(ww * 0.92, 0.12, at(x + Math.sin(p * 2.3 + i) * 0.5, y + ph - 0.05, z + Math.cos(p * 1.7 + i) * 0.5), [0.42, 0.4, 0.58], 7)
-    y += ph
-    ww *= 0.9
-  }
-  // musgo: tampa que transborda + tufos caídos
-  lit.cylinder(ww * 1.12, 0.9, at(x, y + 0.2, z), (_x, yy): RGB => (yy > 0.2 ? [0.26, 0.58, 0.3] : [0.12, 0.36, 0.2]), 9, ww * 1.02)
-  for (let k = 0; k < 7; k++) {
-    const a = (k / 7) * Math.PI * 2 + i
-    lit.sphere(1.4 + (k % 3) * 0.4, at(x + Math.cos(a) * ww * 0.55, y - 0.3 - (k % 2) * 0.5, z + Math.sin(a) * ww * 0.55), [0.14, 0.4, 0.22], 6, 1, 1.4, 1)
-  }
-  // a cachoeira na face que olha a pista
-  const s = -Math.sign(x)
-  const fx = x + s * ww * 0.5
-  const fall = y + 0.1
-  glow.roundBox(0.5, fall, 2.6, 0.2, at(fx, fall / 2 - 0.2, z), (_xx, yy, zz): RGB => {
-    const streak = Math.sin(zz * 9) > 0.2
-    const k = (yy + fall / 2) / fall
-    // verde-neon; só a boca de cima clareia
-    const c = mix([0.2, 0.95, 0.5], [0.85, 1, 0.9], k > 0.9 ? (k - 0.9) * 10 : 0)
-    return streak ? c : mix(c, [0.05, 0.5, 0.3], 0.45)
-  }, 2)
-  for (let r = 0; r < 3; r++) glow.torus(3 + r * 1.6, 0.14, at(fx + s * 1.2, 0.12, z), [0.7, 1, 0.8], 14)
-  glow.cylinder(3.2, 0.1, at(fx + s * 0.9, 0.1, z), [0.75, 1, 0.82], 12)
 }
 
 // ── Cânion ───────────────────────────────────────────────────────────────────
