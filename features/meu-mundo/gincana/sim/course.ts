@@ -379,7 +379,6 @@ export interface Balls {
   flat?: { every: number; v: number; hop: number; hopT: number; bounce: number }
 }
 
-/** Andar da Fábrica: centro e altura do chão, raio do miolo, engrenagens para subir e o pulo. */
 /**
  * Fábrica em andares (20/11, o Alex: "a plataforma vai descendo e quando só sobram dois é engolida pelo rio de fogo;
  * o rio vai subindo conforme menos pessoas lá"): segundos entre a hora em que o andar fica com os 2 últimos e o corte
@@ -389,6 +388,7 @@ export const FLOOR_SINK = 2.4
 /** A lava parada de cada andar fica FLOOR_LAVA m abaixo do chão dele (quem cai do andar some nela e volta ao andar). */
 export const FLOOR_LAVA = 4.6
 
+/** Andar da Fábrica: centro e altura do chão, raio do miolo, engrenagens para subir e o pulo. */
 export interface Floor {
   x: number
   z: number
