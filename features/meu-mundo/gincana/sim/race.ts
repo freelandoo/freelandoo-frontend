@@ -24,7 +24,7 @@
 
 import { GINCANA, ballsAt, onTile, stepTile, type Course } from "./course"
 import { courseOf } from "./courses"
-import { ANIM, IDLE_INTENT, MODE, fallOut, knock, newRunner, newWorld, runnerAnim, separate, stepRunner, type RunEvent, type RunIntent, type RunWorld, type Runner } from "./body"
+import { ANIM, IDLE_INTENT, MODE, fallOut, knock, newRunner, newWorld, stepSaws, runnerAnim, separate, stepRunner, type RunEvent, type RunIntent, type RunWorld, type Runner } from "./body"
 import { botIntent, newBrain, type BotBrain } from "./bots"
 
 export type RunnerCtl = "local" | "bot" | "remote"
@@ -128,6 +128,7 @@ export class GincanaRace {
     const C = this.course
     w.t = this.t
     ballsAt(C, this.seed, this.t, w.balls)
+    stepSaws(w, this.runners, (j) => !this.gone[j], dt)
     // ladrilhos que já voltaram
     for (let i = 0; i < w.tiles.length; i++) if (w.tiles[i] >= 0 && this.t - w.tiles[i] >= C.tileTime.warn + C.tileTime.gone) w.tiles[i] = -1
     for (const b of this.runners) {

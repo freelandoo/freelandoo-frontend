@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "tanque" | "gelo" | "portoes" | "estaleiro" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "tanque", "gelo", "portoes", "estaleiro", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "gangorras" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "tanque" | "gelo" | "portoes" | "estaleiro" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "gangorras", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "tanque", "gelo", "portoes", "estaleiro", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -549,6 +549,61 @@ export function rotorBladeAt(q: Rotor, x: number, y: number, t: number, r: numbe
   return -1
 }
 
+/**
+ * Gangorras do Desfiladeiro: GANGORRA que inclina pelo PESO de quem está em cima (o estado fica no mundo,
+ * `w.saw`: ângulo e giro de cada uma). `ax` 0 = a tábua comprida em z inclina para a frente/trás (o pivô
+ * corre em x); 1 = inclina de lado (o pivô corre em z). Ângulo + = o lado + (z ou x) desce. Sem ninguém,
+ * a mola `k` volta ao repouso `a0`; `max` é o batente. `y` = altura do eixo (o meio do tampo).
+ */
+export interface Seesaw {
+  x: number
+  z: number
+  y: number
+  hx: number
+  hz: number
+  ax: 0 | 1
+  max: number
+  a0: number
+  k: number
+}
+/** Ganho do peso (rad/s² por metro de braço de cada um) e amortecimento. */
+export const SAW = { gain: 0.6, damp: 2.2 }
+/** Braço do ponto: o quanto ele está para o lado + do pivô. */
+export function sawArm(S: Seesaw, x: number, z: number) {
+  return S.ax === 0 ? z - S.z : x - S.x
+}
+/** Tampo da gangorra no ângulo `a`, no ponto (x, z) preso dentro da tábua. */
+export function sawTop(S: Seesaw, a: number, x: number, z: number) {
+  const cx = Math.max(S.x - S.hx, Math.min(S.x + S.hx, x))
+  const cz = Math.max(S.z - S.hz, Math.min(S.z + S.hz, z))
+  return S.y - Math.tan(a) * sawArm(S, cx, cz)
+}
+/** Estado inicial: [ângulo, giro] por gangorra, no repouso. */
+export function sawRest(C: { saws: Seesaw[] }) {
+  const s = new Float64Array(C.saws.length * 2)
+  C.saws.forEach((S, i) => (s[i * 2] = S.a0))
+  return s
+}
+/** Um passo: `arms[i]` = soma dos braços de quem está em pé na gangorra i. */
+export function stepSawState(C: { saws: Seesaw[] }, s: Float64Array, arms: Float64Array, dt: number) {
+  for (let i = 0; i < C.saws.length; i++) {
+    const S = C.saws[i]
+    let a = s[i * 2]
+    let v = s[i * 2 + 1]
+    v += (SAW.gain * arms[i] - S.k * (a - S.a0) - SAW.damp * v) * dt
+    a += v * dt
+    if (a > S.max) {
+      a = S.max
+      if (v > 0) v = 0
+    } else if (a < -S.max) {
+      a = -S.max
+      if (v < 0) v = 0
+    }
+    s[i * 2] = a
+    s[i * 2 + 1] = v
+  }
+}
+
 export function plankAngle(P: Plank, t: number) {
   return P.amp * Math.sin(P.w * t + P.ph)
 }
@@ -584,6 +639,8 @@ export interface Course {
   planks: Plank[]
   /** Estaleiro do Quebra-Gelo: hélices em pé que giram de frente. */
   rotors: Rotor[]
+  /** Gangorras do Desfiladeiro: tábuas que inclinam com o peso. */
+  saws: Seesaw[]
   /** Gincana 3: a grade do Relógio da Praça. */
   memory: Memory | null
   /** Gincana 3 (Coroa da Torre): a linha fica acima do chão — só cruza quem pula (pegar a coroa). */
@@ -634,6 +691,11 @@ export class CourseKit {
   readonly logs: Log[] = []
   readonly planks: Plank[] = []
   readonly rotors: Rotor[] = []
+  readonly saws: Seesaw[] = []
+  /** Gangorra: pivô em (x, z) na altura `y`; repouso `a0` (rad), batente `max`, mola `k`. */
+  saw(x: number, z: number, y: number, hx: number, hz: number, ax: 0 | 1, max: number, a0: number, k: number) {
+    this.saws.push({ x, z, y, hx, hz, ax, max, a0, k })
+  }
   rotor(x: number, z: number, y: number, L: number, n: number, hw: number, hz: number, w: number, ph = 0) {
     this.rotors.push({ x, z, y, L, n, hw, hz, w, ph })
   }
@@ -746,6 +808,7 @@ export class CourseKit {
       logs: this.logs,
       planks: this.planks,
       rotors: this.rotors,
+      saws: this.saws,
       memory: o.memory ?? null,
       crown: o.crown ?? false,
       pads: this.pads,

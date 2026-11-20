@@ -885,6 +885,102 @@ function courseCrosta(): Course {
   })
 }
 
+// ═══ gangorras — Gangorras do Desfiladeiro (3ª fase do Cânion) ════════════════
+
+/**
+ * 20/11 (pedido do Alex, 8º vídeo de referência: tipo de prova "tábuas que inclinam com o peso sobre o
+ * vazio"): pontes de gangorra de madeira e corda atravessando o desfiladeiro. A gangorra inclina pelo PESO de
+ * quem está em cima (estado no mundo, `w.saw`) — quem chega encontra a tábua como os da frente deixaram.
+ * 1. Três pistas, duas fileiras de gangorras compridas com patamar no meio (a ponta de perto descansa no chão;
+ *    passou do eixo, ela tomba para a frente; se tem gente na frente, a sua ponta está no alto: pule).
+ * 2. A corrente: três gangorras emendadas em cada uma das duas pistas estreitas, sem patamar.
+ * 3. Os pratos de lado: gangorras largas que tombam para o lado de quem pisa fora do meio (escorrega),
+ *    com vão para pular entre elas.
+ * 4. A balança grande: uma gangorra larga para todos; ela só tomba quando a turma passa do eixo.
+ * Diferente da Serraria (tábuas que balançam pelo relógio): aqui quem move a tábua é o peso dos corredores.
+ */
+export const GANGORRAS = {
+  /** 1ª e 2ª fileiras: z do eixo; pistas em x */
+  rows: [19.9, 35.5],
+  lanes: [-3.4, 0, 3.4],
+  long: { hx: 1.25, hz: 4.5, max: 0.2, k: 0.9 },
+  /** corrente: z do eixo de cada elo; pistas ±2.3 */
+  chain: [51.1, 60.4, 69.7],
+  chainX: 2.3,
+  chainHx: 1.0,
+  /** pratos de lado: [x, z, meia largura] */
+  plates: [[-2.9, 84, 2.2], [2.9, 84, 2.2], [0, 91.4, 3.1], [-3.2, 98.8, 2.3], [3.2, 98.8, 2.3], [0, 106.2, 3.1]] as [number, number, number][],
+  plateHz: 2.1,
+  big: { z: 123.3, hx: 5.2, hz: 6, max: 0.16, k: 0.35 },
+} as const
+
+function courseGangorras(): Course {
+  const K = GANGORRAS
+  const k = new CourseKit()
+  kitStart(k)
+  // gangorra comprida que descansa com a ponta de perto no chão (eixo acima do patamar)
+  const longSaw = (x: number, z: number, hx: number, hz: number, max: number, kk: number) =>
+    k.saw(x, z, DECK + Math.tan(max) * hz, hx, hz, 0, max, -max, kk)
+  // ── 1. as duas fileiras de gangorras compridas ──
+  for (const z of K.rows) for (const x of K.lanes) longSaw(x, z, K.long.hx, K.long.hz, K.long.max, K.long.k)
+  k.box(0, 27.7, 6.2, 2.9, 1, 1, 1)
+  k.box(0, 43.3, 6.2, 3.1, 1, 1, 1)
+  // ── 2. a corrente: três elos emendados em cada pista ──
+  for (const x of [-K.chainX, K.chainX]) for (const z of K.chain) longSaw(x, z, K.chainHx, K.long.hz, K.long.max, K.long.k)
+  k.box(0, 77.5, 5.2, 3, 1, 1, 2)
+  // ── 3. os pratos de lado ──
+  // descansam tortos, cada um para um lado: quem pisa no lado baixo escorrega e tomba mais; o peso no lado alto endireita
+  K.plates.forEach(([x, z, hx], i) => k.saw(x, z, DECK, hx, K.plateHz, 1, 0.28, i % 2 ? 0.13 : -0.13, 0.9))
+  k.box(0, 113.4, 6.2, 3, 1, 1, 3)
+  // ── 4. a balança grande ──
+  longSaw(0, K.big.z, K.big.hx, K.big.hz, K.big.max, K.big.k)
+  const z0 = K.big.z + K.big.hz + 0.3
+  const finishZ = kitFinish(k, z0, 1.05, 7, 1.15)
+  for (const [x, z] of [[0, 27.7], [-3, 43.3], [3, 43.3], [0, 77.5], [0, 113.4]] as [number, number][]) k.logo(x, z)
+  return k.done({
+    id: "gangorras",
+    checkpoints: [
+      { x: 0, z: -3.5, y: DECK, w: 7 },
+      { x: 0, z: 27.7, y: DECK, w: 5 },
+      { x: 0, z: 43.3, y: DECK, w: 5 },
+      { x: 0, z: 77.5, y: DECK, w: 4 },
+      { x: 0, z: 113.4, y: DECK, w: 5 },
+    ],
+    finishZ,
+    finishY: DECK + 6,
+    sections: [15.1, 46.4, 80.5, 116.4, z0],
+    minFinish: 20,
+    route: (r) =>
+      routeOf((add) => {
+        add(0, 10)
+        const l1 = K.lanes[Math.floor(r(1) * 3)]
+        add(l1, 14.5)
+        add(l1, 24)
+        const l2 = K.lanes[Math.floor(r(2) * 3)]
+        add(l2, 30.2)
+        add(l2, 39.8)
+        const l3 = r(3) < 0.5 ? -K.chainX : K.chainX
+        add(l3, 46)
+        add(l3, 74)
+        // pratos: o do lado da corrente, o do meio, um dos dois de lado e o do meio
+        // (no prato, um pouco fora do meio: o peso de cada um conta)
+        const o = (i: number) => (r(6 + i) - 0.5) * 2.2
+        add(Math.sign(l3) * 2.9 + o(0), 81)
+        add(Math.sign(l3) * 2.9 + o(0), 86)
+        add(o(1), 89.4)
+        add(o(1), 93.4)
+        const s4 = r(4) < 0.5 ? -3.2 : 3.2
+        add(s4 + o(2), 96.8)
+        add(s4 + o(2), 100.8)
+        add(o(3), 104.2)
+        add(o(3), 108.2)
+        add(0, 111)
+        for (let z = K.big.z - K.big.hz + 1; z <= K.big.z + K.big.hz - 1; z += 2) add(r(5) < 0.5 ? -1.5 : 1.5, z)
+        routeFinish(add, z0, finishZ)
+      }),
+  })
+}
+
 // ═══ orbital — Cidade Orbital ════════════════════════════════════════════════
 
 /**
@@ -1689,6 +1785,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   tanque: courseTanque(),
   canion: courseCanion(),
   moinhos: courseMoinhos(),
+  gangorras: courseGangorras(),
   orbital: courseOrbital(),
   helices: courseHelices(),
   forja: courseForja(),

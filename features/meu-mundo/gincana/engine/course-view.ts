@@ -43,6 +43,7 @@ import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadow
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
 import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serraria-view"
 import { EstaleiroView } from "./estaleiro-view"
+import { GangorrasView } from "./gangorras-view"
 import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
@@ -102,6 +103,7 @@ export class CourseView {
   private serraria: SerrariaView | null = null
   private tanque: TanqueView | null = null
   private estaleiro: EstaleiroView | null = null
+  private gangorras: GangorrasView | null = null
   /** Gincana 3: Relógio da Praça — ladrilhos, símbolos [símbolo][ladrilho], o símbolo no mostrador e o ponteiro. */
   private readonly memTiles: InstancedMesh[] = []
   private readonly memSyms: InstancedMesh[][] = []
@@ -1269,6 +1271,7 @@ export class CourseView {
     if (course.logs.length || course.planks.length) this.serraria = new SerrariaView(scene, toy, this.glowMat, course)
     if (theme.id === "tanque") this.tanque = new TanqueView(scene, toy, this.glowMat, course)
     if (course.rotors.length) this.estaleiro = new EstaleiroView(scene, toy, this.glowMat, course)
+    if (course.saws.length) this.gangorras = new GangorrasView(scene, toy, this.glowMat, course)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
@@ -2066,6 +2069,7 @@ export class CourseView {
     this.yard?.update(tt)
     this.serraria?.update(tt)
     this.estaleiro?.update(tt)
+    this.gangorras?.update(world)
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
@@ -2236,6 +2240,7 @@ export class CourseView {
     this.crosta?.dispose()
     this.tanque?.dispose()
     this.estaleiro?.dispose()
+    this.gangorras?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

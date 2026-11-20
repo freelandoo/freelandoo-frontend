@@ -15243,7 +15243,20 @@
     "gincanaHowEs3": "In the yard the propellers stand side by side in two rows: pick your gap and your moment.",
     "gincanaHowEs4": "A blade knocks you toward its spin and back: near the tip the gap opens sooner.",
     "gincanaHowEs5": "On the climb out of the dry dock, the giant propeller blocks the way. Then the finish.",
-    "gincanaHitBlade": "Hit by a blade!"
+    "gincanaHitBlade": "Hit by a blade!",
+    "gincanaPhGangorras": "Canyon Seesaws",
+    "gincanaEvGangorras": "Weight on the Plank",
+    "gincanaPhGangorrasPitch": "The Canyon's third race: seesaw bridges over the gorge that tilt with the weight of whoever is on them. Cross the pivot and the plank tips forward.",
+    "gincanaSecGa1": "Seesaws",
+    "gincanaSecGa2": "Chain",
+    "gincanaSecGa3": "Plates",
+    "gincanaSecGa4": "Big scale",
+    "gincanaSecGa5": "Climb",
+    "gincanaHowGa1": "The seesaw tips toward the heavier side: once you cross the pivot, the front goes down.",
+    "gincanaHowGa2": "People ahead of you? Your end is up high: jump to get on it.",
+    "gincanaHowGa3": "The plates tip sideways: stay near the middle or you slide into the void.",
+    "gincanaHowGa4": "The big scale only tips once the crowd gets past the middle.",
+    "gincanaHowGa5": "On the climb the stones roll down: switch lanes early."
   },
   "Sports": {
     "eyebrow": "Sports",

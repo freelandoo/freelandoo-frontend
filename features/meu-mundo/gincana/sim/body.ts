@@ -29,6 +29,10 @@ import {
   logSpikeX,
   plankAngle,
   plankTop,
+  sawArm,
+  sawRest,
+  sawTop,
+  stepSawState,
   SPIKE_OUT,
   SPIKE_R,
   gloveAt,
@@ -160,6 +164,8 @@ export interface RunWorld {
   doors: Float64Array
   /** Gincana 3: quando cada engrenagem foi pega (−1 = nunca). */
   gems: Float64Array
+  /** Gangorras: [ângulo, giro] de cada uma (mudam com o peso de quem está em cima). */
+  saw: Float64Array
 }
 
 /** Acontecimentos de um passo (para som, aviso e animação). */
@@ -183,7 +189,27 @@ export type RunEvent =
 export const IDLE_INTENT: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
 
 export function newWorld(course: Course, seed: number, t: number): RunWorld {
-  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), gems: new Float64Array(course.gems.length).fill(-1) }
+  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), gems: new Float64Array(course.gems.length).fill(-1), saw: sawRest(course) }
+}
+
+const sawArms = new Float64Array(64)
+/** Gangorras: soma o braço de quem está em pé em cada uma e anda o ângulo um passo. */
+export function stepSaws(w: RunWorld, bodies: Runner[], live: (j: number) => boolean, dt: number) {
+  const C = w.course
+  if (!C.saws.length) return
+  const arms = sawArms.length >= C.saws.length ? sawArms.fill(0, 0, C.saws.length) : new Float64Array(C.saws.length)
+  for (let j = 0; j < bodies.length; j++) {
+    const b = bodies[j]
+    if (!live(j) || b.mode === MODE.WATER || b.fin >= 0) continue
+    for (let i = 0; i < C.saws.length; i++) {
+      const S = C.saws[i]
+      if (Math.abs(b.x - S.x) > S.hx + 0.1 || Math.abs(b.z - S.z) > S.hz + 0.1) continue
+      if (Math.abs(b.y - sawTop(S, w.saw[i * 2], b.x, b.z)) > 0.35) continue
+      arms[i] += sawArm(S, b.x, b.z)
+      break
+    }
+  }
+  stepSawState(C, w.saw, arms, dt)
 }
 
 export function newRunner(course: Course, slot: number): Runner {
@@ -337,11 +363,23 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
       roll = ROLL_PLANK + i
     }
   }
+  for (let i = 0; i < C.saws.length; i++) {
+    const S = C.saws[i]
+    if (Math.abs(x - S.x) > S.hx + EDGE || Math.abs(z - S.z) > S.hz + EDGE) continue
+    const top = sawTop(S, w.saw[i * 2], x, z)
+    if (top <= reach && top > best) {
+      best = top
+      tile = pad = drum = -1
+      bounce = 0
+      roll = ROLL_SAW + i
+    }
+  }
   return { y: best, tile, pad, bounce, drum, roll }
 }
 
-/** No campo `roll`: índice da tora; a partir daqui, tábua. */
+/** No campo `roll`: índice da tora; a partir daqui, tábua; a partir de ROLL_SAW, gangorra. */
 export const ROLL_PLANK = 1000
+export const ROLL_SAW = 2000
 
 /** Ondas de parede do passo (reaproveitado: nada de lixo a 60 Hz). */
 const WALL_TMP: WallWave[] = []
@@ -453,6 +491,24 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
       sawLedge(top, Math.sign(lx || 1), 0)
     } else {
       b.z = P.z + Math.sign(lz || 1) * (P.hz + R)
+      sawLedge(top, 0, Math.sign(lz || 1))
+    }
+  }
+  // gangorra: a ponta que subiu acima do pé é parede (dá para subir na beira)
+  for (let i = 0; i < C.saws.length; i++) {
+    const S = C.saws[i]
+    const top = sawTop(S, w.saw[i * 2], b.x, b.z)
+    if (top <= lift || top - 0.5 >= b.y + H) continue
+    const lx = b.x - S.x
+    const lz = b.z - S.z
+    const ox = S.hx + R - Math.abs(lx)
+    const oz = S.hz + R - Math.abs(lz)
+    if (ox <= 0 || oz <= 0) continue
+    if (ox < oz) {
+      b.x = S.x + Math.sign(lx || 1) * (S.hx + R)
+      sawLedge(top, Math.sign(lx || 1), 0)
+    } else {
+      b.z = S.z + Math.sign(lz || 1) * (S.hz + R)
       sawLedge(top, 0, Math.sign(lz || 1))
     }
   }
@@ -709,6 +765,16 @@ function carry(b: Runner, w: RunWorld, dt: number) {
     if (d && g) {
       b.x += drumSpeed(d.rings[g.ring], w.t) * (g.top - d.y) * dt
       b.x += Math.sin(g.th) * 3.2 * dt
+    }
+    return
+  }
+  if (b.ground && b.roll >= ROLL_SAW) {
+    // gangorra inclinada: escorrega para o lado que desce (de lado escorrega mais)
+    const S = w.course.saws[b.roll - ROLL_SAW]
+    if (S) {
+      const s = Math.sin(w.saw[(b.roll - ROLL_SAW) * 2])
+      if (S.ax === 0) b.z += s * 4 * dt
+      else b.x += s * 7.5 * dt
     }
     return
   }

@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, logRowAngle, rotorBladeAt, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, logRowAngle, rotorBladeAt, sawTop, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -965,6 +965,26 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   fanRide(br, b, w, it)
   // barra chegando: pula na hora (com o erro da habilidade)
   barJump(br, b, w, it)
+  // Gangorras: a ponta da gangorra adiante subiu acima do passo — pula para subir nela
+  if (b.ground && br.jumpCool <= 0) {
+    for (let i = 0; i < C.saws.length; i++) {
+      const S = C.saws[i]
+      if (S.ax !== 0) continue
+      const ahead = S.z - S.hz - b.z
+      if (ahead < 0.1 || ahead > 1.3 || Math.abs(b.x - S.x) > S.hx + 0.1) continue
+      if (sawTop(S, w.saw[i * 2], b.x, S.z - S.hz) < b.y + GINCANA.stepUp) continue
+      it.jump = true
+      br.jumpCool = 0.5
+    }
+  }
+  // em cima da gangorra de lado inclinada: corre contra o escorregão, para o lado que sobe
+  for (let i = 0; i < C.saws.length; i++) {
+    const S = C.saws[i]
+    if (S.ax !== 1 || !b.ground || Math.abs(b.x - S.x) > S.hx || Math.abs(b.z - S.z) > S.hz) continue
+    const a = w.saw[i * 2]
+    const off = b.x - S.x
+    if (Math.abs(a) > 0.06 && Math.sign(off) === Math.sign(a) && Math.abs(off) > 0.5) it.mx -= Math.sign(a) * Math.min(1, br.skill + 0.3)
+  }
   // Serraria: tora atravessada logo à frente — pula para subir nela (a parede de baixo não deixa passar)
   if (b.ground && br.jumpCool <= 0) {
     for (const L of C.logs) {
