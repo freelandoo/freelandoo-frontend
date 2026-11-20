@@ -14531,7 +14531,8 @@
     "rkNcNivea": "Néctar da Nívea",
     "rkNcNiveaHow": "Perder ou fugir de um monstro da rua ou de um Domínio dá à Nívea {pct}% do néctar que você carrega (de {min} a {max}).",
     "rkNcTheftList": "Extrato do roubo",
-    "rkNcTheftLine": "Roubado por um monstro: {mob}"
+    "rkNcTheftLine": "Roubado por um monstro: {mob}",
+    "hudLevelShort": "Nv."
   },
   "Sports": {
     "eyebrow": "Esportes",

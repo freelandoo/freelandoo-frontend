@@ -136,7 +136,7 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
         // XP do nível de aventura na barra grande; o número grande é o NÍVEL
         hp={adv ? (adv.need > 0 ? adv.into : 1) : 0}
         hpMax={adv ? (adv.need > 0 ? adv.need : 1) : 1}
-        label={adv ? adv.level : "–"}
+        label={<><span style={{ fontSize: "0.45em", marginRight: "0.18em", letterSpacing: 0 }}>{t("hudLevelShort", "Nv.")}</span>{adv ? adv.level : "–"}</>}
         // o PODER fica embaixo das tiras, do mesmo tamanho, sem barra
         extra={{ value: pow, title: t("stPower", "PODER") }}
         chaoK={HUD_CHAO}

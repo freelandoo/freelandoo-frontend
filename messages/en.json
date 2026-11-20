@@ -15117,7 +15117,8 @@
     "rkNcNivea": "Nívea's nectar",
     "rkNcNiveaHow": "Losing to or fleeing from a street or Domain monster gives Nívea {pct}% of the nectar you carry ({min} to {max}).",
     "rkNcTheftList": "Theft log",
-    "rkNcTheftLine": "Stolen by a monster: {mob}"
+    "rkNcTheftLine": "Stolen by a monster: {mob}",
+    "hudLevelShort": "Lv."
   },
   "Sports": {
     "eyebrow": "Sports",

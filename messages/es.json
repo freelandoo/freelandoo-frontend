@@ -15097,7 +15097,8 @@
     "rkNcNivea": "Néctar de Nívea",
     "rkNcNiveaHow": "Perder o huir de un monstruo de la calle o de un Dominio le da a Nívea el {pct}% del néctar que llevas (de {min} a {max}).",
     "rkNcTheftList": "Registro del robo",
-    "rkNcTheftLine": "Robado por un monstruo: {mob}"
+    "rkNcTheftLine": "Robado por un monstruo: {mob}",
+    "hudLevelShort": "Nv."
   },
   "Sports": {
     "eyebrow": "Deportes",
