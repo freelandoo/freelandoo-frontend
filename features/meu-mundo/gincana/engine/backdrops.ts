@@ -14,6 +14,7 @@ import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../en
 import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
+import { mesaTower } from "./backdrop-canion"
 import { farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
@@ -204,14 +205,24 @@ function rockIsland(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, z: num
 }
 
 function canyon(lit: SoftGeo, glow: SoftGeo, n: number) {
-  const count = Math.round(22 * n)
-  for (let i = 0; i < count; i++) {
-    const x = side(i, 34 + rnd(i) * 70)
-    const z = Z0 + (i / count) * (Z1 - Z0) + rnd(i, 1) * 10
-    const w = 14 + rnd(i, 2) * 18
-    const yTop = 4 + rnd(i, 3) * 26
-    rockIsland(lit, glow, x, yTop, z, w, 2 + Math.floor(rnd(i, 4) * 3), i, i % 2 === 0)
-  }
+  // miniaturas (20/11): mesas-coluna de arenito em 3 faixas, perto/meio/longe, em alturas diferentes
+  const bands: [number, number, number, number, number][] = [
+    // |x| de, |x| até, passo em z, largura, fiadas
+    [30, 26, 34, 12, 4],
+    [62, 50, 30, 18, 6],
+    [125, 80, 36, 28, 8],
+  ]
+  bands.forEach(([x0, dx, step, w0, c0], bi) => {
+    for (let z = Z0 - 20, i = 0; z < Z1 + 40; z += step, i++) {
+      for (const s of [-1, 1]) {
+        const k = bi * 1000 + i * 2 + (s > 0 ? 1 : 0)
+        const zz = z + rnd(k, 1) * step * 0.6
+        const w = w0 * (0.75 + rnd(k, 2) * 0.6)
+        const yTop = deckY(zz) + 6 + bi * 8 + rnd(k, 3) * (14 + bi * 10)
+        mesaTower(lit, glow, s * (x0 + rnd(k, 4) * dx), yTop, zz, w, c0 + Math.floor(rnd(k, 5) * 3), k, k % 3 === 0, bi === 2)
+      }
+    }
+  })
   // o sol do fim de tarde, grande e baixo à frente da prova (miolo amarelo, borda laranja, halo rosado)
   glow.sphere(90, at(0, 18, 560), (x, y) => mix([1, 0.62, 0.3], [1, 0.92, 0.5], Math.max(0, 1 - Math.hypot(x, y) / 45)), 16, 1, 1, 0.2)
   glow.torus(118, 6, at(0, 18, 566, 0, Math.PI / 2, 0), [1, 0.7, 0.62], 40)
