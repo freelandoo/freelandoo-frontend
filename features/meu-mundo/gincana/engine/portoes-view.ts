@@ -39,6 +39,8 @@ const ICE_L: RGB = [0.8, 0.93, 1]
 const SNOW: RGB = [0.94, 0.97, 1]
 const SNOW_S: RGB = [0.72, 0.8, 0.9]
 const COLD: RGB = [0.55, 0.95, 1]
+/** floco aceso sobre o painel aceso: quase branco */
+const FLAKE: RGB = [0.93, 1, 1]
 
 /** Ruído barato e fixo (0–1). */
 function n01(a: number, b: number, c = 0) {
@@ -72,12 +74,12 @@ function iceGate(g: SoftGeo, gl: SoftGeo, W0: number, H: number) {
     g.box(pw + 0.16, 0.08, 0.05, at(0, py + ph / 2 + 0.04, z + s * 0.012), ICE_L)
     g.box(pw + 0.16, 0.08, 0.05, at(0, py - ph / 2 - 0.04, z + s * 0.012), mix(ICE, ICE_L, 0.4))
     for (const sx of [-1, 1]) g.box(0.08, ph, 0.05, at(sx * (pw / 2 + 0.04), py, z + s * 0.012), mix(ICE, ICE_L, 0.6))
-    // o fundo do painel: geada clara nas bordas → gelo fundo no miolo (radial), com ondas de veio
-    g.roundBox(pw, ph, 0.03, 0.01, at(0, py, z + s * 0.004), (x, y) => {
-      const e = Math.max(Math.abs(x) / (pw / 2), Math.abs(y) / (ph / 2))
-      const frost = Math.max(0, (e - 0.6) / 0.4)
-      return mix(mix(ICE_D, ICE, 0.18 + (y + ph / 2) / ph * 0.3 + Math.sin(x * 7 + y * 3) * 0.06), ICE_L, frost * frost * 0.75)
-    }, 1)
+    // o fundo do painel ACESO (miniatura 20/11: gelo luminoso): azul-fundo no miolo → ciano claro na geada da
+    // borda, com ondas de veio
+    // (a caixa só tem vértice nos cantos: o degradê é vertical e a geada são filetes na borda)
+    gl.roundBox(pw, ph, 0.03, 0.01, at(0, py, z + s * 0.004), (_x, y) => mix([0.06, 0.26, 0.58], [0.2, 0.56, 0.9], (y + ph / 2) / ph), 1)
+    for (const [fw, fh, fx, fy2] of [[pw, 0.22, 0, ph / 2 - 0.11], [pw, 0.16, 0, -ph / 2 + 0.08], [0.18, ph, -pw / 2 + 0.09, 0], [0.18, ph, pw / 2 - 0.09, 0]] as [number, number, number, number][])
+      gl.box(fw, fh, 0.03, at(fx, py + fy2, z + s * 0.012), [0.55, 0.86, 1])
     // cachos de cristal nos cantos de baixo: prismas de 6 lados, pontudos, abrindo em leque
     for (const fx of [-1, 1]) {
       for (let c = 0; c < 4; c++) {
@@ -99,11 +101,11 @@ function iceGate(g: SoftGeo, gl: SoftGeo, W0: number, H: number) {
     const R = Math.min(pw, ph) * 0.3
     for (let a = 0; a < 3; a++) {
       const r = (a / 3) * Math.PI
-      gl.box(R * 2, 0.07, 0.03, at(0, fy, z + s * 0.03, 0, 0, r), COLD)
+      gl.box(R * 2, 0.09, 0.03, at(0, fy, z + s * 0.03, 0, 0, r), FLAKE)
       for (const e of [-1, 1]) {
         const ex = Math.cos(r) * R * 0.62 * e
         const ey = Math.sin(r) * R * 0.62 * e
-        for (const b of [-1, 1]) gl.box(R * 0.42, 0.05, 0.03, at(ex, fy + ey, z + s * 0.03, 0, 0, r + b * 0.8), COLD)
+        for (const b of [-1, 1]) gl.box(R * 0.42, 0.07, 0.03, at(ex, fy + ey, z + s * 0.03, 0, 0, r + b * 0.8), FLAKE)
       }
     }
     gl.box(0.16, 0.16, 0.03, at(0, fy, z + s * 0.035, 0, 0, Math.PI / 4), [0.85, 1, 1])
@@ -168,9 +170,12 @@ function pillar(g: SoftGeo, gl: SoftGeo, x: number, z: number, H: number, end: b
   // cintas de gelo claro (médio) e o filete aceso nas duas faces (frente e trás)
   for (const fy of [0.35, 0.72]) g.cylinder(d + 0.1, 0.12, at(x, DECK + 0.42 + fh * fy, z, Math.PI / 6), mix(ICE, ICE_L, 0.5), 6)
   for (const fz of [-1, 1]) gl.box(0.07, fh * 0.55, 0.03, at(x, DECK + 0.42 + fh * 0.53, z + fz * (d * 0.44)), COLD)
-  // ponta: cristal pontudo + gorro de neve
-  g.cylinder(d * 0.9, 0.7, at(x, top + 0.35, z, Math.PI / 6), ICE_L, 6, 0.04)
+  // ponta (miniatura 20/11): gorro de neve, colar escuro e a agulha alta de cristal (fundo → claro) com a ponta nevada
   g.sphere(d + 0.3, at(x, top + 0.02, z), (_x, y) => (y < 0 ? SNOW_S : SNOW), 7, 1.1, 0.42, 1.1)
+  const sh = end ? 2.4 : 1.7
+  g.cylinder(d * 0.86, 0.22, at(x, top + 0.2, z, Math.PI / 6), CRYS_D, 6)
+  g.cylinder(d * 0.8, sh, at(x, top + 0.3 + sh / 2, z, Math.PI / 6), (_x, y) => mix(CRYS, ICE_L, y / sh + 0.5), 6, 0.04)
+  g.cylinder(d * 0.42, sh * 0.3, at(x, top + 0.3 + sh * 0.78, z, Math.PI / 6), SNOW, 6, 0.02)
   if (end) {
     // lampião âmbar no braço de ferro (o acento quente, 10%)
     for (const fz of [-1, 1]) {

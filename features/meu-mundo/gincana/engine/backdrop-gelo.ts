@@ -77,7 +77,35 @@ export function icePost(lit: SoftGeo, glow: SoftGeo, x: number, z: number, top: 
   lit.cylinder(1.4, 0.35, at(x, top + 1.3, z), ST, 4, 0.5)
 }
 
+/**
+ * Castelo de gelo (fundo dos Portões, miniatura): muralha de blocos com ameias e neve, torres sextavadas (fundo →
+ * claro) com telhado cônico nevado e janelas ciano acesas, e a torre do meio mais alta com agulha. Medidas × `k`.
+ */
+export function iceCastle(lit: SoftGeo, glow: SoftGeo, x: number, z: number, k: number) {
+  const W = 60 * k
+  const WH = 12 * k
+  lit.box(W, WH, 6 * k, at(x, WH / 2 - 1, z), (_x, y) => mix(DEEP, CYAN, Math.max(0, y / WH + 0.5)))
+  for (let i = 0; i < Math.round(W / (3 * k)); i++) lit.box(1.6 * k, 1.6 * k, 6.4 * k, at(x - W / 2 + (i + 0.5) * 3 * k, WH - 0.2 * k, z), (_x, y) => (y > 0.3 * k ? SNOW : PALE))
+  const tower = (tx: number, th: number, tr: number, wins: number) => {
+    lit.cylinder(tr * 2, th, at(tx, th / 2 - 1, z - 1, 0.3), (_x, y) => mix(DEEP, PALE, Math.max(0, y / th + 0.5) ** 1.2), 6, tr * 1.85)
+    lit.cylinder(tr * 2.3, 1.2 * k, at(tx, th - 1, z - 1, 0.3), PALE, 6)
+    lit.cylinder(tr * 2.2, tr * 2.6, at(tx, th - 0.4 + tr * 1.3, z - 1, 0.3), (_x, y) => (y > -tr * 0.6 ? SNOW : PALE), 6, 0.05)
+    for (let w = 0; w < wins; w++) glow.box(0.7 * k, 1.6 * k, 0.1, at(tx, th * (0.35 + w * 0.2), z - 1 - tr * 0.93), [0.55, 0.9, 1])
+  }
+  tower(x, 34 * k, 5 * k, 3)
+  for (const s of [-1, 1]) {
+    tower(x + s * 14 * k, 24 * k, 3.6 * k, 2)
+    tower(x + s * 30 * k, 19 * k, 3.4 * k, 2)
+  }
+  lit.cylinder(1.2 * k, 9 * k, at(x, 34 * k + 6.5 * k + 4 * k, z - 1), (_x, y) => mix(CYAN, SNOW, y / (9 * k) + 0.5), 6, 0.05)
+}
+
 export function iceSea(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
+  // portoes: o castelo de gelo ao fundo, depois da chegada (e um de cada lado, menor, no meio da prova)
+  if (phase === "portoes") {
+    iceCastle(lit, glow, 0, Z1 + 50, 1.4)
+    for (const s of [-1, 1]) iceCastle(lit, glow, s * 150, (Z0 + Z1) / 2 + s * 60, 1)
+  }
   // gelo: postes de aço com lâmpada âmbar dos dois lados da fila de tubos
   if (phase === "gelo") for (let z = 10; z < Z1 - 70; z += 14) for (const s of [-1, 1]) icePost(lit, glow, s * 8.6, z + (s > 0 ? 7 : 0), 13)
   // 2. penhascos dos dois lados: uma fila perto (x ≈ 46–60, 14–30 m) e uma ao longe mais alta (x ≈ 110–150,
