@@ -65,7 +65,8 @@ function routeOf(fill: (add: (x: number, z: number, m?: number) => void) => void
  * barris a cada 0,95 s a 7,5 m/s (R 1,2), ponte sem nada.
  */
 export const CIDADE = {
-  rows1: [[26, 2], [38, 2], [50, 1]] as [number, number][],
+  /** 20/11: uma porta aberta por fileira, nunca na frente da aberta da anterior (doorsOpen) */
+  rows1: [[26, 1], [38, 1], [50, 1]] as [number, number][],
   open2: 1,
   /** socos da ponte: [x da base, z, fase] */
   punches: [[-5.6, 67.5, 0], [5.6, 72.5, 1.2]] as [number, number, number][],
