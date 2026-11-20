@@ -14533,7 +14533,20 @@
     "rkNcTheftList": "Extrato do roubo",
     "rkNcTheftLine": "Roubado por um monstro: {mob}",
     "hudLevelShort": "Nv.",
-    "hudPowerShort": "Poder"
+    "hudPowerShort": "Poder",
+    "gincanaPhComportas": "Comportas da Usina",
+    "gincanaEvComportas": "Comportas",
+    "gincanaPhComportasPitch": "A segunda corrida da Fábrica: fileiras de comportas de aço sobem e descem do chão. Passe pela que está embaixo, pule as baixas, atravesse a graxa e vença a fileira rápida.",
+    "gincanaSecCp1": "Comportas em onda",
+    "gincanaSecCp2": "Baixas e fundas",
+    "gincanaSecCp3": "Funil",
+    "gincanaSecCp4": "Graxa",
+    "gincanaSecCp5": "Fileira rápida",
+    "gincanaHowCp1": "As comportas sobem e descem em onda: a luz verde mostra a que está embaixo. Em cima de uma, você sobe junto.",
+    "gincanaHowCp2": "As baixas dá para pular; as fundas demoram para atravessar: entre logo que ela descer.",
+    "gincanaHowCp3": "Muretas de cano fecham metade do funil: contorne ou pule. Depois, três comportas só.",
+    "gincanaHowCp4": "A graxa deixa a corrida na metade: as comportas daqui são lentas, mas você também.",
+    "gincanaHowCp5": "A última fileira sobe e desce rápido: espere a sua e corra para a subida."
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "orbital" | "forja" | "fabrica" | "gelo" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "orbital", "forja", "fabrica", "gelo", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "orbital" | "forja" | "fabrica" | "comportas" | "gelo" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "orbital", "forja", "fabrica", "comportas", "gelo", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -125,6 +125,16 @@ export interface Pad {
   mph: number
   /** Disco/caixa que gira (rad/s) e leva quem está em cima. */
   spin: number
+  /**
+   * Comporta (20/11, Comportas da Usina): a caixa sobe `gh` m acima de `y` e desce pelo relógio,
+   * ciclo de `gp` s com atraso `gph` s (ver gateLift). Embaixo ela fica rente ao chão; em cima é
+   * parede, e quem está no tampo sobe junto. 0 = parada.
+   */
+  gh: number
+  gp: number
+  gph: number
+  /** Graxa: multiplica a velocidade da corrida de quem pisa (1 = normal). */
+  sl: number
 }
 
 /** Coluna (pilar, frade, poste da luva, cogumelo): empurra de lado e dá para subir; `b` > 0 = lança para cima (m/s) quem pousa. */
@@ -514,11 +524,20 @@ export class CourseKit {
 
   /** Caixa (tampo em `y`). Devolve o índice (para pôr esteira, gelo, movimento). */
   box(x: number, z: number, hx: number, hz: number, c: number, rim: number, s: number, rot = 0, d = 1.4, y = DECK) {
-    this.pads.push({ k: 1, x, z, r: 0, hx, hz, rot, y, y2: y, d, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0 })
+    this.pads.push({ k: 1, x, z, r: 0, hx, hz, rot, y, y2: y, d, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0, gh: 0, gp: 0, gph: 0, sl: 1 })
     return this.pads.length - 1
   }
+  /** Comporta (Comportas da Usina): caixa que sobe `h` m e desce, ciclo `per` s, atraso `ph` s. */
+  gate(x: number, z: number, hx: number, hz: number, h: number, per: number, ph: number, c: number, rim: number, s: number, y = DECK) {
+    const i = this.box(x, z, hx, hz, c, rim, s, 0, h + 1.4, y)
+    const p = this.pads[i]
+    p.gh = h
+    p.gp = per
+    p.gph = ph
+    return i
+  }
   disc(x: number, z: number, r: number, c: number, rim: number, s: number, y = DECK) {
-    this.pads.push({ k: 0, x, z, r, hx: r, hz: r, rot: 0, y, y2: y, d: 1.6, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0 })
+    this.pads.push({ k: 0, x, z, r, hx: r, hz: r, rot: 0, y, y2: y, d: 1.6, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0, gh: 0, gp: 0, gph: 0, sl: 1 })
     return this.pads.length - 1
   }
   /** Viga de (x0, z0) a (x1, z1), largura `w`. */
@@ -530,7 +549,7 @@ export class CourseKit {
   slope(x: number, z0: number, z1: number, y0: number, y1: number, hx: number, c: number, rim: number, s: number) {
     // várias rampas (Gincana 3): só a primeira tem as bolas
     if (!this.ramp) this.ramp = { x, z0, z1, y0, y1, hx }
-    this.pads.push({ k: 2, x, z: (z0 + z1) / 2, r: 0, hx, hz: (z1 - z0) / 2, rot: 0, y: y0, y2: y1, d: 1.4, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0 })
+    this.pads.push({ k: 2, x, z: (z0 + z1) / 2, r: 0, hx, hz: (z1 - z0) / 2, rot: 0, y: y0, y2: y1, d: 1.4, c, rim, s, f: 1, bx: 0, bz: 0, mx: 0, mz: 0, mw: 0, mph: 0, spin: 0, gh: 0, gp: 0, gph: 0, sl: 1 })
     return this.pads.length - 1
   }
   post(x: number, z: number, r: number, y0: number, y1: number, c: number, b = 0) {
@@ -743,8 +762,26 @@ export function riseAt(c: Course, t: number) {
   return R.y0 + (R.y1 - R.y0) * u
 }
 
-/** Tampo de uma plataforma em z (a rampa, k = 2, sobe de y em z − hz a y2 em z + hz). */
-export function padTop(p: Pad, z: number) {
+/**
+ * Comporta: quanto está levantada (0–1) no tempo t. Ciclo: embaixo 38%, sobe 12% (suave),
+ * em cima 38%, desce 12%. Tudo pelo tempo: a sala e o aparelho veem igual.
+ */
+export function gateLift(p: Pad, t: number) {
+  if (p.gh === 0) return 0
+  const u = ((((t + p.gph) / p.gp) % 1) + 1) % 1
+  if (u < 0.38) return 0
+  if (u < 0.5) {
+    const k = (u - 0.38) / 0.12
+    return k * k * (3 - 2 * k)
+  }
+  if (u < 0.88) return 1
+  const k = (u - 0.88) / 0.12
+  return 1 - k * k * (3 - 2 * k)
+}
+
+/** Tampo de uma plataforma em z no tempo t (a rampa, k = 2, sobe de y em z − hz a y2 em z + hz; a comporta sobe pelo relógio). */
+export function padTop(p: Pad, z: number, t = 0) {
+  if (p.gh !== 0) return p.y + p.gh * gateLift(p, t)
   if (p.k !== 2) return p.y
   const u = Math.max(0, Math.min(1, (z - (p.z - p.hz)) / (2 * p.hz)))
   return p.y + (p.y2 - p.y) * u

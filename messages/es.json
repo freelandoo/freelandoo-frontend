@@ -15099,7 +15099,20 @@
     "rkNcTheftList": "Registro del robo",
     "rkNcTheftLine": "Robado por un monstruo: {mob}",
     "hudLevelShort": "Nv.",
-    "hudPowerShort": "Poder"
+    "hudPowerShort": "Poder",
+    "gincanaPhComportas": "Compuertas de la Usina",
+    "gincanaEvComportas": "Compuertas",
+    "gincanaPhComportasPitch": "La segunda carrera de la Fábrica: filas de compuertas de acero suben y bajan del suelo. Pasa por la que está abajo, salta las bajas, cruza la grasa y vence la fila rápida.",
+    "gincanaSecCp1": "Compuertas en ola",
+    "gincanaSecCp2": "Bajas y hondas",
+    "gincanaSecCp3": "Embudo",
+    "gincanaSecCp4": "Grasa",
+    "gincanaSecCp5": "Fila rápida",
+    "gincanaHowCp1": "Las compuertas suben y bajan en ola: la luz verde muestra cuál está abajo. Encima de una, subes con ella.",
+    "gincanaHowCp2": "Las bajas se pueden saltar; las hondas tardan en cruzarse: entra apenas baje.",
+    "gincanaHowCp3": "Muretes de tubo cierran medio embudo: rodea o salta. Después, solo tres compuertas.",
+    "gincanaHowCp4": "La grasa reduce tu carrera a la mitad: las compuertas aquí son lentas, pero tú también.",
+    "gincanaHowCp5": "La última fila sube y baja rápido: espera la tuya y corre a la subida."
   },
   "Sports": {
     "eyebrow": "Deportes",

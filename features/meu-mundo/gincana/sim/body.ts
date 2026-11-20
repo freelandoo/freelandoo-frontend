@@ -246,7 +246,7 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
     } else {
       const L = padLocal(p, w.t, x, z)
       if (Math.abs(L.lx) > p.hx + EDGE || Math.abs(L.lz) > p.hz + EDGE) continue
-      top = padTop(p, z)
+      top = padTop(p, z, w.t)
     }
     if (top <= reach && top > best) {
       best = top
@@ -325,7 +325,7 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
     if (!ledge || top < ledge.top) ledge = { top, nx, nz }
   }
   for (const p of C.pads) {
-    const top = padTop(p, b.z)
+    const top = padTop(p, b.z, w.t)
     if (top <= lift || top - p.d >= b.y + H) continue
     if (p.k === 0) {
       const sh = padShift(p, w.t)
@@ -679,6 +679,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     let run = T.run * (b.boost > 0 ? T.boost : 1)
     if (b.held > 0) run *= T.heldRun
     if (b.grab >= 0) run *= T.grabRun
+    // graxa (Comportas da Usina): no chão dela a corrida fica mais lenta
+    if (b.ground && b.pad >= 0) run *= C.pads[b.pad].sl
     const tx = mx * run
     const tz = mz * run
     const a = T.accel * (b.boost > 0 ? 1.3 : 1) * (b.ground ? b.fric : T.airControl) * dt

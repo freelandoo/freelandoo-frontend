@@ -36,6 +36,7 @@ import { CITY } from "../../paint/engine/world-view"
 import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
+import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
 
@@ -64,6 +65,8 @@ export class CourseView {
   private readonly fruitBases: Mesh[] = []
   private readonly fruitPools: InstancedMesh[][] = []
   private readonly movers: { mesh: Mesh; p: Pad }[] = []
+  /** Comportas da Usina: as comportas que sobem e descem (instanciadas por tipo) e as luzes delas. */
+  private readonly comportas: ComportasGates | null = null
   private readonly pusherMeshes: Mesh[] = []
   /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
   private readonly wallSegs: InstancedMesh[] = []
@@ -188,7 +191,7 @@ export class CourseView {
     // ── o que não se mexe ──
     const st = new SoftGeo()
     const glow = new SoftGeo()
-    for (const p of course.pads) if (p.mw === 0 && p.spin === 0) this.pad(st, glow, p, false)
+    for (const p of course.pads) if (p.mw === 0 && p.spin === 0 && p.gh === 0) this.pad(st, glow, p, false)
     for (const q of course.posts) {
       const col = C[q.c]
       const h = q.y1 - q.y0
@@ -208,6 +211,9 @@ export class CourseView {
       } else if (theme.id === "clareira") {
         // Clareira da Lua: cogumelo do miolo das fatias, árvore gigante dos tocos
         clareiraPost(st, glow, q)
+      } else if (theme.id === "comportas") {
+        // Comportas da Usina: bobina de cobre
+        comportasPost(st, glow, q)
       } else if (q.y0 < DECK - 0.1) {
         // poste da luva: sai da água, com anéis
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(col, darker(col, 0.8), 0.8, 0), 20)
@@ -589,6 +595,7 @@ export class CourseView {
     // ── plataformas que andam e discos que giram (malha própria, posta a cada quadro) ──
     for (const p of course.pads) {
       if (p.mw === 0 && p.spin === 0) continue
+      if (p.gh !== 0) continue
       const g = new SoftGeo()
       const gl = new SoftGeo()
       this.pad(g, gl, { ...p, x: 0, z: 0, rot: 0 }, true)
@@ -601,6 +608,8 @@ export class CourseView {
       mesh.position.set(p.x, 0, p.z)
       this.movers.push({ mesh, p })
     }
+
+    if (theme.id === "comportas") this.comportas = new ComportasGates(scene, toy, this.glowMat, course)
 
     // ── blocos que empurram ──
     for (const q of course.pushers) {
@@ -1446,6 +1455,10 @@ export class CourseView {
     const city = this.theme.deco === "city"
     const { pavers, cobble } = this.stage.ctx
     const ice = p.f < 0.7
+    if (this.theme.id === "comportas") {
+      if (comportasPad(g, glow, p)) return
+      comportasFloor(g, glow, p)
+    }
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraStump(p)) return spinStump(g, glow, p)
@@ -1886,6 +1899,7 @@ export class CourseView {
         for (let kind = 0; kind < this.fruitPools.length; kind++) for (let i = usedK[kind]; i < this.fruitPools[kind].length; i++) this.fruitPools[kind][i].setEnabled(false)
       }
     }
+    this.comportas?.update(tt)
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
@@ -2031,6 +2045,7 @@ export class CourseView {
     for (const pool of this.fruitPools) for (const b of pool) b.dispose()
     for (const b of this.fruitBases) b.dispose()
     for (const m of this.movers) m.mesh.dispose()
+    this.comportas?.dispose()
     for (const m of this.pusherMeshes) m.dispose()
     for (const m of this.wallSegs) m.dispose()
     for (const m of this.wallLows) m.dispose()

@@ -612,6 +612,103 @@ function courseFabrica(): Course {
   })
 }
 
+// ═══ comportas — Comportas da Usina (2ª fase da Fábrica) ═════════════════════
+
+/**
+ * 20/11 (pedido do Alex: fases novas pelos vídeos de referência; tipo de prova "portões que sobem e
+ * descem"): corrida na usina da Fábrica. Fileiras de COMPORTAS de aço saem do chão e voltam pelo relógio
+ * (gateLift); entre elas, paredes fixas listradas. Embaixo a comporta é chão; em cima é parede de 3,5 m (e
+ * quem estava no tampo sobe junto). Trechos: comportas em onda → comportas baixas (pule) e fundas →
+ * funil com muretas → GRAXA (corre na metade) com comportas lentas → a fileira rápida e a subida.
+ */
+export const COMPORTAS = {
+  /** Centros das 5 comportas e das paredes entre elas (fileira larga, deck de 22 m). */
+  gx: [-8.4, -4.2, 0, 4.2, 8.4],
+  wall: [[-10.4, 0.6], [-6.3, 0.5], [-2.1, 0.5], [2.1, 0.5], [6.3, 0.5], [10.4, 0.6]] as [number, number][],
+  /** Fileira estreita (funil, deck de 14 m). */
+  gx3: [-4.2, 0, 4.2],
+  wall3: [[-6.3, 0.7], [-2.1, 0.5], [2.1, 0.5], [6.3, 0.7]] as [number, number][],
+  gateHx: 1.6,
+  gateH: 3.5,
+  lowH: 1.0,
+  wallH: 3.2,
+  /** Graxa: fração da corrida. */
+  grease: 0.5,
+} as const
+
+function courseComportas(): Course {
+  const K = COMPORTAS
+  const k = new CourseKit()
+  kitStart(k)
+  const row = (z: number, hz: number, xs: readonly number[], walls: readonly [number, number][], per: number, ph: (i: number) => number, s: number, h: (i: number) => number = () => K.gateH) => {
+    xs.forEach((x, i) => k.gate(x, z, K.gateHx, hz, h(i), per, ph(i), 6, 7, s))
+    for (const [x, hx] of walls) k.box(x, z, hx, hz + 0.15, 4, 1, s, 0, K.wallH + 1.4, DECK + K.wallH)
+  }
+  // ── 1. comportas em onda ──
+  k.box(0, 40, 11, 24.9, 3, 1, 1)
+  row(26, 1.4, K.gx, K.wall, 4, (i) => i * 0.8, 1)
+  row(40, 1.4, K.gx, K.wall, 4, (i) => (4 - i) * 0.8, 1)
+  row(54, 1.4, K.gx, K.wall, 3.6, (i) => (i % 2) * 1.8, 1)
+  for (const [x, z] of [[-5, 33], [5, 33], [0, 47], [-9, 47], [9, 47]] as [number, number][]) k.post(x, z, 0.8, DECK, DECK + 2.2, 2)
+  // ── 2. comportas baixas (pule) e fundas ──
+  k.box(0, 85, 11, 20.2, 3, 1, 2)
+  row(72, 1.4, K.gx, K.wall, 3.2, (i) => i * 0.64, 2, (i) => (i % 2 ? K.lowH : K.gateH))
+  row(84, 1.4, K.gx, K.wall, 3, (i) => (i % 2) * 1.5, 2)
+  row(96, 2.4, K.gx, K.wall, 4.4, (i) => [0, 2.2, 1.1, 3.3, 0.5][i], 2)
+  for (const [x, z] of [[-6.3, 78], [6.3, 78], [-2.1, 90], [2.1, 90]] as [number, number][]) k.post(x, z, 0.8, DECK, DECK + 2.2, 2)
+  // ── 3. funil com muretas e a fileira estreita ──
+  k.box(0, 120, 7, 15.1, 3, 1, 3)
+  k.box(-2.5, 112, 4.5, 0.45, 2, 1, 3, 0, 1.0 + 1.4, DECK + 1.0)
+  k.box(2.5, 119, 4.5, 0.45, 2, 1, 3, 0, 1.0 + 1.4, DECK + 1.0)
+  row(128, 1.4, K.gx3, K.wall3, 2.8, (i) => i * 0.93, 3)
+  // ── 4. graxa com comportas lentas ──
+  const g = k.box(0, 150, 11, 15, 4, 1, 4)
+  k.pads[g].sl = K.grease
+  row(150, 1.4, K.gx, K.wall, 5, (i) => i, 4)
+  for (const [x, z] of [[-6, 142], [6, 142], [-3, 158], [3, 158]] as [number, number][]) k.post(x, z, 0.8, DECK, DECK + 2.2, 2)
+  // ── 5. a fileira rápida e a subida ──
+  k.box(0, 172, 11, 7, 3, 1, 5)
+  row(172, 1.4, K.gx, K.wall, 2.6, (i) => i * 0.52, 5)
+  const z0 = 179
+  k.slope(0, z0, z0 + 14, DECK, DECK + 3, 8, 0, 1, 5)
+  k.box(0, z0 + 14 + 7.8, 9, 7.8, 1, 0, 6, 0, 1.6, DECK + 3)
+  const finishZ = z0 + 14 + 8.8
+  for (const [x, z] of [[0, 67], [-4, 107], [4, 107], [0, 166]] as [number, number][]) k.logo(x, z)
+  return k.done({
+    id: "comportas",
+    checkpoints: [
+      { x: 0, z: -3.5, y: DECK, w: 7 },
+      { x: 0, z: 67, y: DECK, w: 7 },
+      { x: 0, z: 107.5, y: DECK, w: 6 },
+      { x: 0, z: 137.5, y: DECK, w: 7 },
+      { x: 0, z: 167, y: DECK, w: 7 },
+    ],
+    finishZ,
+    finishY: DECK + 3,
+    sections: [15.1, 64.9, 105.1, 135, 165],
+    minFinish: 20,
+    // a rota só segue o meio: a escolha da comporta é do computador (bots.ts gateAim), na hora
+    route: (r) =>
+      routeOf((add) => {
+        const side = r(1) < 0.5 ? -1 : 1
+        add(side * 1.2, 10)
+        add(side * 0.8, 15.5)
+        for (let z = 18; z <= 104; z += 2) add(0, z)
+        add(4.6, 109)
+        add(4.6, 113.5)
+        add(0, 115.8)
+        add(-4.6, 117.5)
+        add(-4.6, 120.5)
+        add(0, 123)
+        for (let z = 125; z <= 177; z += 2) add(0, z)
+        for (let z = z0 + 1; z <= z0 + 13; z += 2.5) add(0, z)
+        add(0, finishZ - 7)
+        add(0, finishZ - 2)
+        add(0, finishZ + 3)
+      }),
+  })
+}
+
 // ═══ gelo — Mar de Gelo ══════════════════════════════════════════════════════
 
 /**
@@ -857,6 +954,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   orbital: courseOrbital(),
   forja: courseForja(),
   fabrica: courseFabrica(),
+  comportas: courseComportas(),
   gelo: courseGelo(),
   relogio: courseRelogio(),
   feira: courseFeira(),

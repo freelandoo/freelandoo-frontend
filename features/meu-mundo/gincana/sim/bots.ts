@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padShift, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -410,6 +410,55 @@ function spinRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
   return true
 }
 
+/**
+ * Comportas (Comportas da Usina): na fileira à frente, escolhe a comporta que vai estar EMBAIXO enquanto
+ * eu cruzo (prevê pelo relógio dela); nenhuma: vai para a melhor e espera na frente dela. Já dentro da
+ * fileira (entre as paredes) segue a dela. Erro pela habilidade. null = nenhuma fileira perto.
+ */
+function gateAim(br: BotBrain, b: Runner, w: RunWorld): { x: number; z: number; wait: boolean } | null {
+  const C = w.course
+  let rowZ = Infinity
+  let hz = 0
+  for (const p of C.pads) {
+    if (p.gh <= 0 || p.z + p.hz - b.z < -0.2 || p.z - p.hz - b.z > 6.5) continue
+    if (p.z < rowZ) {
+      rowZ = p.z
+      hz = p.hz
+    }
+  }
+  if (rowZ === Infinity) return null
+  const t = w.t
+  const under = b.pad >= 0 ? C.pads[b.pad] : null
+  const vRun = GINCANA.run * Math.max(0.3, br.pace) * (under ? under.sl : 1)
+  const front = rowZ - hz
+  let best = -1
+  let bestScore = -Infinity
+  for (let i = 0; i < C.pads.length; i++) {
+    const p = C.pads[i]
+    if (p.gh <= 0 || p.z !== rowZ) continue
+    // dentro da fileira: fica na sua
+    if (b.z > front - 0.15 && Math.abs(p.x - b.x) <= p.hx) return { x: p.x, z: p.z + hz + 1, wait: false }
+    const lat = Math.max(0, Math.abs(p.x - b.x) - 0.3) / GINCANA.run
+    const ta = Math.max(0, (front - 0.45 - b.z) / vRun, lat)
+    const tl = ta + (2 * hz + 0.9) / vRun
+    let free = true
+    for (let k = 0; k <= 5 && free; k++) if (padTop(p, p.z, t + ta + ((tl - ta) * k) / 5) > b.y + GINCANA.stepUp - 0.08) free = false
+    const score = (free ? 8 : 0) - Math.abs(p.x - b.x) * 0.45 + botRand(br.seed, br.slot * 13 + i, Math.floor((t + p.gph) / p.gp)) * (2.6 - br.skill * 2.4)
+    if (score > bestScore) {
+      bestScore = score
+      best = i
+    }
+  }
+  if (best < 0) return null
+  const p = C.pads[best]
+  const ta = Math.max(0, (front - 0.45 - b.z) / vRun)
+  let open = true
+  for (let k = 0; k <= 5 && open; k++) if (padTop(p, p.z, t + ta + ((2 * hz + 0.9) / vRun) * (k / 5)) > b.y + GINCANA.stepUp - 0.08) open = false
+  // fechada para quando eu chegar: espera um passo antes da frente, já alinhado
+  if (!open) return { x: p.x, z: front - 1.1, wait: true }
+  return { x: p.x, z: p.z + hz + 1, wait: false }
+}
+
 export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.step): RunIntent {
   const C = w.course
   const it: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
@@ -464,6 +513,14 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
       }
       break
     }
+  }
+
+  // comportas: mira a que vai estar embaixo quando eu passar (ou espera alinhado na frente)
+  const ga = gateAim(br, b, w)
+  if (ga) {
+    tx = ga.x
+    tz = ga.z
+    if (ga.wait && Math.abs(b.x - ga.x) < 0.5 && b.z > ga.z - 0.6) go = 0
   }
 
   // ladrilhos: escolhe o próximo em pé (e não tremendo), perto da reta

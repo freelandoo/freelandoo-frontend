@@ -15119,7 +15119,20 @@
     "rkNcTheftList": "Theft log",
     "rkNcTheftLine": "Stolen by a monster: {mob}",
     "hudLevelShort": "Lv.",
-    "hudPowerShort": "Power"
+    "hudPowerShort": "Power",
+    "gincanaPhComportas": "Power Plant Floodgates",
+    "gincanaEvComportas": "Floodgates",
+    "gincanaPhComportasPitch": "The Factory's second race: rows of steel floodgates rise and sink into the floor. Go through the one that is down, jump the low ones, cross the grease and beat the fast row.",
+    "gincanaSecCp1": "Floodgate wave",
+    "gincanaSecCp2": "Low and deep",
+    "gincanaSecCp3": "Funnel",
+    "gincanaSecCp4": "Grease",
+    "gincanaSecCp5": "Fast row",
+    "gincanaHowCp1": "The floodgates rise and sink in a wave: the green light shows which one is down. Stand on one and you ride it up.",
+    "gincanaHowCp2": "The low ones can be jumped; the deep ones take longer to cross: go in as soon as it sinks.",
+    "gincanaHowCp3": "Pipe barriers close half of the funnel: go around or jump. Then, only three floodgates.",
+    "gincanaHowCp4": "Grease halves your running speed: the floodgates here are slow, but so are you.",
+    "gincanaHowCp5": "The last row rises and sinks fast: wait for yours and run to the climb."
   },
   "Sports": {
     "eyebrow": "Sports",
