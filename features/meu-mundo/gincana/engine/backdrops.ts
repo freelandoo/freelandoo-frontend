@@ -17,6 +17,7 @@ import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
 import { tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
+import { forgeField, gridWindow } from "./backdrop-forja"
 
 /** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada).
  * `finishZ`/`pads` (20/11): o fundo vai até o fim da prova (percurso dobrado) e sabe a altura do chão (`deckY`).
@@ -394,6 +395,8 @@ function forgeCastle(lit: SoftGeo, glow: SoftGeo, cx: number, cz: number) {
     }
   }
   for (const sx of [-1, 1]) for (const wy of [10, 18.5]) glow.box(0.7, 2.4, 0.3, at(cx + sx * 9.5, wy, cz - 5.1), [1, 0.58, 0.14])
+  // 20/11 (miniatura): as janelas grandes em grade do andar de cima, acesas
+  for (const sx of [-1, 1]) gridWindow(lit, glow, cx + sx * 4.2, 18.6, cz - 5.25, 4.6, 4.8)
   // faixa de perigo sobre o portão e o brasão (engrenagem de brasa)
   for (let q = 0; q < 8; q++) lit.box(1.5, 1, 0.5, at(cx - 5.25 + q * 1.5, 13 - 1, cz - 5.2), q % 2 ? [0.08, 0.07, 0.07] : [1, 0.76, 0.1])
   glow.torus(5, 0.5, at(cx, 18, cz - 5.2, 0, Math.PI / 2, 0), [1, 0.5, 0.1], 20)
@@ -408,6 +411,7 @@ function forgeCastle(lit: SoftGeo, glow: SoftGeo, cx: number, cz: number) {
       lit.box(1.6, 2, 1.2, at(tx + Math.cos(a) * 4.6, th + 1.8, cz + Math.sin(a) * 4.6, -a), stone(2))
     }
     for (let r = 0; r < 3; r++) glow.box(1.2, 2.6, 0.3, at(tx, 8 + r * 8, cz - 4.2), [1, 0.55, 0.12])
+    for (const by of [th * 0.3, th * 0.62]) lit.cylinder(9.6, 0.9, at(tx, by, cz), [0.32, 0.24, 0.2], 12, 9.4)
     // lava escorrendo da boca lateral até o chão (degradê: amarelo na boca, vermelho no pé)
     const lx = cx + sx * (W / 2 - 3)
     glow.box(3, 14, 0.6, at(lx, 14 / 2 - 2, cz - 5.3), (_x, y) => mix([1, 0.3, 0.04], [1, 0.82, 0.3], (y + 7) / 14))
@@ -459,6 +463,8 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: n
     if (i % 3 === 0) glow.sphere(s * 0.35, at(x, s * 0.4, z), [1, 0.55, 0.1], 5)
   }
   forgeCastle(lit, glow, 0, castleZ)
+  // 20/11 (miniatura): torres de tambores e casarões de janelas acesas enchendo os lados
+  forgeField(lit, glow, n)
   // brasas no ar
   for (let i = 0; i < Math.round(60 * n); i++) glow.sphere(0.22, at(side(i, 4 + rnd(i, 30) * 30), 2 + rnd(i, 31) * 22, Z0 + rnd(i, 32) * (Z1 - Z0)), [1, 0.62, 0.2], 3)
 }

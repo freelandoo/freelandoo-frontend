@@ -40,6 +40,7 @@ import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./c
 import { CrostaPlates, crostaGantry, crostaHammer } from "./crosta-view"
 import { ArosHoops, arosPillar, arosShroomCap, arosShroomStalk, arosSlide, arosWall } from "./aros-view"
 import { orbitalGem, orbitalRim } from "./backdrop-orbital"
+import { lavaCrust } from "./backdrop-forja"
 import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumHoled, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
@@ -863,11 +864,14 @@ export class CourseView {
       const IRN: RGB = [0.13, 0.11, 0.11]
       const W2 = Wl.seg - 0.08
       const T = Wl.tall
-      sg.box(W2 - 0.2, T - 0.7, 0.36, at(0, 0.45 + (T - 0.7) / 2, 0), (_x, y) => mix([1, 1, 0.6], [1, 0.32, 0.06], Math.min(1, Math.max(0, (y + (T - 0.7) / 2) / (T - 0.7)))))
-      for (let b = 0; b < 4; b++) sg.box(0.13, T - 0.6, 0.86, at(-W2 / 2 + 0.2 + (b + 0.5) * ((W2 - 0.4) / 4), 0.45 + (T - 0.6) / 2, 0), (_x, y) => (y > (T - 0.6) / 2 - 0.08 ? [0.4, 0.34, 0.3] : IRN))
-      for (const sx of [-1, 1]) sg.box(0.24, T, 0.96, at(sx * (W2 / 2 - 0.12), T / 2, 0), (_x, y) => (y > T / 2 - 0.1 ? [0.42, 0.36, 0.32] : IRN))
-      sg.box(W2, 0.34, 1.02, at(0, T - 0.05, 0), (_x, y) => (y > 0.1 ? [0.38, 0.3, 0.26] : IRN))
-      for (const rx of [-0.3, 0, 0.3]) for (const rz of [-0.52, 0.52]) sg.box(0.12, 0.12, 0.05, at(rx * W2, T - 0.05, rz), [0.72, 0.5, 0.22])
+      // 20/11 (miniatura): a brasa entre as barras acesa de verdade (cor acima de 1 vence a luz do sol) e as
+      // barras em pares com a fresta larga; chapéu grosso com rebites de latão em fiada
+      sg.box(W2 - 0.2, T - 0.7, 0.36, at(0, 0.45 + (T - 0.7) / 2, 0), (_x, y) => mix([2, 1.75, 0.8], [1.9, 0.62, 0.1], Math.min(1, Math.max(0, (y + (T - 0.7) / 2) / (T - 0.7)))))
+      for (let b = 0; b < 3; b++) for (const o of [-0.13, 0.13]) sg.box(0.15, T - 0.6, 0.86, at(-W2 / 2 + 0.2 + (b + 0.5) * ((W2 - 0.4) / 3) + o, 0.45 + (T - 0.6) / 2, 0), (x, y) => (y > (T - 0.6) / 2 - 0.08 || Math.abs(x) > 0.06 ? [0.4, 0.32, 0.27] : IRN))
+      for (const sx of [-1, 1]) sg.box(0.28, T, 0.96, at(sx * (W2 / 2 - 0.14), T / 2, 0), (_x, y) => (y > T / 2 - 0.1 ? [0.42, 0.36, 0.32] : IRN))
+      sg.box(W2 + 0.04, 0.48, 1.08, at(0, T - 0.02, 0), (_x, y) => (y > 0.18 ? [0.42, 0.33, 0.28] : y < -0.18 ? [0.06, 0.05, 0.05] : IRN))
+      for (let r = 0; r < 5; r++) for (const rz of [-0.55, 0.55]) sg.box(0.11, 0.11, 0.05, at((r / 4 - 0.5) * (W2 - 0.3), T - 0.02, rz), [0.95, 0.7, 0.28])
+      for (const sx of [-1, 1]) for (const yy of [0.9, T * 0.5, T - 0.6]) for (const rz of [-0.5, 0.5]) sg.box(0.1, 0.1, 0.04, at(sx * (W2 / 2 - 0.14), yy, rz), [0.95, 0.7, 0.28])
       for (let q = 0; q < 4; q++) sg.box(W2 / 4, 0.42, 1.0, at(-W2 / 2 + (q + 0.5) * (W2 / 4), 0.21, 0), q % 2 ? HAZ_K : HAZ_Y)
       void EMBER
       void COAL
@@ -1436,6 +1440,9 @@ export class CourseView {
         g.stroke()
       }
       g.globalAlpha = 1
+    } else if (F.kind === "lava" && this.theme.deco === "forge") {
+      // Forja (20/11, miniatura): crosta de lava em placas (células) — miolo escuro, borda quente e a rachadura acesa
+      lavaCrust(g)
     } else if (F.kind === "void") {
       // estrelas / poeira
       for (let i = 0; i < 70; i++) {
@@ -1669,7 +1676,8 @@ export class CourseView {
     // piso escuro onde o rejunte acende (Orbital = ardósia roxa, Forja = ferro), gelo puxado para o ciano
     const tint = (c: RGB): RGB => (d0 === "forest" ? mix(c, [0.1, 0.34, 0.32], 0.3) : d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : d0 === "factory" ? mix(c, [0.19, 0.2, 0.22], 0.78) : c)
     // Floresta: todo o chão no verde-azulado da referência (a cor da peça só puxa um pouco)
-    const top = d0 === "forest" ? mix(C[5], C[p.c], stage ? 0 : 0.18) : stage ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
+    // Forja (20/11, miniatura): a largada e a chegada no mesmo ferro escuro do resto (o palco bege destoava)
+    const top = d0 === "forest" ? mix(C[5], C[p.c], stage ? 0 : 0.18) : stage && d0 !== "forge" ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
     // Floresta (ref. v3): moldura magenta em toda a pista
     const rim: RGB = d0 === "forest" ? [0.78, 0.16, 0.56] : d0 === "orbital" ? [0.34, 0.27, 0.54] : C[p.rim]
     const body = darker(top, 0.62)
@@ -1876,6 +1884,10 @@ export class CourseView {
         // V-Fábrica (ref. v3): chapa de aço em três tons, uma em cada sete de cobre, e rebites de latão nos cantos
         const copper = d === "factory" && Math.abs(Math.sin(i * 7.31 + j * 3.17 + p.z)) % 1 < 0.14
         g.cylinder((T - 0.1) * Math.SQRT2, h, Matrix.RotationY(Math.PI / 4).multiply(Matrix.Translation(lx, 0.03 + h / 2, lz)).multiply(frame), copper ? [0.56, 0.3, 0.18] : tone(i, j), 4, (T - 0.26) * Math.SQRT2)
+        if (d === "forge") {
+          // Forja (20/11, miniatura): rebite de ferro claro nos quatro cantos da chapa
+          for (const cx of [-1, 1]) for (const cz of [-1, 1]) g.cylinder(0.15, 0.06, Matrix.Translation(lx + cx * (T / 2 - 0.32), 0.03 + h + 0.02, lz + cz * (T / 2 - 0.32)).multiply(frame), [0.46, 0.38, 0.33], 4, 0.09)
+        }
         if (d === "factory") {
           for (const cx of [-1, 1]) for (const cz of [-1, 1]) g.cylinder(0.16, 0.06, Matrix.Translation(lx + cx * (T / 2 - 0.3), 0.03 + h + 0.02, lz + cz * (T / 2 - 0.3)).multiply(frame), [0.82, 0.62, 0.3], 5, 0.1)
         }
@@ -1887,8 +1899,10 @@ export class CourseView {
   private bollards(g: SoftGeo, glow: SoftGeo, p: Pad) {
     if (this.theme.deco === "forest") return this.forestRails(g, glow, p)
     const C = this.C
-    const post = C[p.rim]
-    const band = mix(post, C[7], 0.6)
+    // Forja (20/11, miniatura): frades de latão com aro escuro e a coluna de ferro com anéis dourados no canto
+    const forge = this.theme.deco === "forge"
+    const post: RGB = forge ? [0.72, 0.5, 0.2] : C[p.rim]
+    const band = forge ? ([0.16, 0.12, 0.1] as RGB) : mix(post, C[7], 0.6)
     const c = Math.cos(p.rot)
     const s = Math.sin(p.rot)
     const put = (lx: number, lz: number) => {
@@ -1896,7 +1910,19 @@ export class CourseView {
       const z = p.z - lx * s + lz * c
       g.cylinder(0.7, 0.95, at(x, p.y + 0.47, z), (_x, y) => (Math.abs(y) < 0.12 ? band : post), 14)
       g.torus(0.78, 0.16, at(x, p.y + 0.06, z), darker(post, 0.7), 10)
-      glow.sphere(0.78, at(x, p.y + 1.02, z), this.C[1], 10, 1, 0.75, 1)
+      if (forge) g.sphere(0.74, at(x, p.y + 0.98, z), [0.9, 0.72, 0.36], 10, 1, 0.55, 1)
+      else glow.sphere(0.78, at(x, p.y + 1.02, z), this.C[1], 10, 1, 0.75, 1)
+    }
+    if (forge) {
+      for (const sx of [-1, 1]) {
+        const lx = sx * (p.hx + 0.9)
+        const lz = p.hz - 0.8
+        const x = p.x + lx * c + lz * s
+        const z = p.z - lx * s + lz * c
+        g.box(1.3, 0.6, 1.3, at(x, p.y + 0.3, z, p.rot), [0.2, 0.16, 0.14])
+        g.box(0.9, 9, 0.9, at(x, p.y + 4.5, z, p.rot), (_x, y) => (Math.abs(y - 1.8) < 0.18 || Math.abs(y + 2.2) < 0.18 ? [0.85, 0.62, 0.22] : [0.12, 0.1, 0.1]))
+        g.box(1.2, 0.5, 1.2, at(x, p.y + 9.2, z, p.rot), [0.3, 0.24, 0.2])
+      }
     }
     for (const sx of [-1, 1]) {
       const zs: number[] = []
