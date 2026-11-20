@@ -784,7 +784,7 @@ export class CourseView {
         // o pórtico fixo por onde o carro corre (colunas FORA da arena: ninguém atravessa)
         const gg = new SoftGeo()
         // Tanque: o pórtico se apoia FORA do piso que está embaixo (rampa estreita ou patamar)
-        const under = theme.id === "tanque" ? course.pads.find((p) => p.k !== 0 && Math.abs(q.x - p.x) <= p.hx && Math.abs(q.z - p.z) <= p.hz) : undefined
+        const under = theme.id === "tanque" ? course.pads.find((p) => p.k !== 0 && p.sl >= 1 && Math.abs(q.x - p.x) <= p.hx && Math.abs(q.z - p.z) <= p.hz) : undefined
         const gx = under ? under.x : q.x
         const span = under ? (under.hx + 1.0) * 2 : (q.ax + q.hx) * 2 + 6
         const by = q.y + q.h + rodH + 0.35

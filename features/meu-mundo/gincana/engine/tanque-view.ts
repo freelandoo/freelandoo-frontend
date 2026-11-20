@@ -98,8 +98,66 @@ export function tanqueBarrel(g: SoftGeo, R: number) {
 
 // ── 1. piso: rampa de chapa xadrez e patamar de grade ─────────────────────────────────────────────────────
 /** Desenha rampa (k 2) e patamar (k 1) do tanque; largada e chegada ficam com o desenho de sempre. */
+/**
+ * Parte 7 (20/11) — óleo derramado (o pad fino com sl < 1 por cima da rampa ou do patamar): a lâmina preta com a
+ * borda recortada em bolhas que transbordam, o brilho irisado apagado (violeta e verde-azulado), os rastros de
+ * pé arrastados para cima e as bolhas com o ponto de luz. Escuro como o óleo do fundo, com o brilho laranja
+ * da lâmpada pegando nas bolhas — lê como "não pise aqui" sem ser tinta.
+ */
+function oilSlick(g: SoftGeo, glow: SoftGeo, p: Pad) {
+  const rise = p.y2 - p.y
+  const len = p.hz * 2
+  const pitch = Math.atan2(rise, len)
+  const L = Math.hypot(len, rise)
+  const frame = at(p.x, (p.y + p.y2) / 2, p.z, p.rot, -pitch)
+  const F = (lx: number, ly: number, lz: number, ry = 0) => at(lx, ly, lz, ry).multiply(frame)
+  const W = p.hx * 2
+  const SLICK: RGB = [0.035, 0.03, 0.028]
+  const GLINT: RGB = [0.08, 0.065, 0.11]
+  const SHEEN: RGB = [0.035, 0.08, 0.08]
+  const seed = p.z * 1.7 + p.x
+  // lâmina (um pouco menor que o pad) e a borda que transborda em manchas redondas
+  g.box(W - 0.5, 0.05, L - 0.5, F(0, -0.005, 0), SLICK)
+  const per = Math.max(4, Math.round((W + L) / 1.1))
+  for (let k = 0; k < per; k++) {
+    const u = n01(k, seed)
+    const side = k % 4
+    const lx = side < 2 ? (u - 0.5) * (W - 0.6) : (side === 2 ? -1 : 1) * (W / 2 - 0.3)
+    const lz = side < 2 ? (side === 0 ? -1 : 1) * (L / 2 - 0.3) : (u - 0.5) * (L - 0.6)
+    const r = 0.45 + n01(seed, k) * 0.7
+    g.cylinder(r * 2, 0.045, F(lx, -0.005, lz), SLICK, 12)
+  }
+  // brilho irisado: manchas finas sobre a lâmina
+  const nSheen = Math.round((W * L) / 9)
+  for (let k = 0; k < nSheen; k++) {
+    const lx = (n01(k, 7, seed) - 0.5) * (W - 1)
+    const lz = (n01(7, k, seed) - 0.5) * (L - 1)
+    const r = 0.2 + n01(k, 3, seed) * 0.45
+    g.sphere(r * 2, F(lx, 0.025 + k * 0.0004, lz, n01(k, 9) * 3), k % 3 ? GLINT : SHEEN, 8, 1.9, 0.01, 0.6)
+  }
+  // rastros arrastados (quem escorregou) no sentido da subida
+  for (let k = 0; k < Math.max(3, Math.round(L / 2)); k++) {
+    const lx = (n01(k, 11, seed) - 0.5) * (W - 1.2)
+    const lz = (n01(11, k, seed) - 0.5) * (L - 3)
+    g.box(0.3, 0.012, 1.4 + n01(k, 12) * 2, F(lx, 0.03, lz, (n01(k, 13) - 0.5) * 0.4), mix(SLICK, GLINT, 0.55))
+  }
+  // bolhas (meia esfera escura + ponto de luz) e um anel aqui e ali
+  for (let k = 0; k < Math.round((W * L) / 2.5); k++) {
+    const lx = (n01(k, 21, seed) - 0.5) * (W - 0.8)
+    const lz = (n01(21, k, seed) - 0.5) * (L - 0.8)
+    const r = 0.07 + n01(k, 22, seed) * 0.16
+    g.sphere(r * 2, F(lx, 0.02, lz), mix(SLICK, GLINT, 0.4), 6, 1, 0.7, 1)
+    glow.sphere(r * 0.45, F(lx - r * 0.3, 0.02 + r * 0.55, lz - r * 0.3), [0.9, 0.55, 0.25], 4)
+    if (k % 4 === 0) g.torus(r * 6, 0.03, F(lx, 0.03, lz), mix(SLICK, GLINT, 0.8), 14)
+  }
+}
+
 export function tanqueFloor(g: SoftGeo, glow: SoftGeo, p: Pad): boolean {
   if (p.s === 0 || p.s === 6 || p.k === 0 || p.mw !== 0 || p.spin !== 0) return false
+  if (p.sl < 1) {
+    oilSlick(g, glow, p)
+    return true
+  }
   const rise = p.y2 - p.y
   const ramp = rise !== 0
   const len = p.hz * 2
@@ -281,8 +339,10 @@ function pistonBox(g: SoftGeo, glow: SoftGeo, gv: Glove) {
 // alta com o medidor de nível (tubo de vidro aceso com as marcas) e o volante da válvula ──
 const WX = 16.5
 const Z0 = -14
-const Z1 = 152
-const TOP = 12
+// o tanque cresce com a prova (20/11: 4 → 7 rampas): fundo, borda das paredes e altura da parede do fundo
+let Z1 = 152
+let TOP = 12
+let BACK_H = 34
 function tankSide(g: SoftGeo, glow: SoftGeo, s: number) {
   const x = s * WX
   const PW = 4
@@ -333,7 +393,9 @@ function tankSide(g: SoftGeo, glow: SoftGeo, s: number) {
 
 function tankBack(g: SoftGeo, glow: SoftGeo) {
   const z = Z1
-  const H = 34
+  const H = BACK_H
+  // medidor e faixas na proporção da parede (o desenho foi feito para 34 m)
+  const q = H / 34
   // parede alta em chapas (fiadas de 6 m), cintas e rebites
   for (let r = 0; r < 6; r++) {
     for (let c = 0; c < 8; c++) {
@@ -346,16 +408,16 @@ function tankBack(g: SoftGeo, glow: SoftGeo) {
   }
   // o medidor de nível: tubo de vidro com o óleo aceso, as marcas e os números em barras, a moldura de latão
   // faixa larga de perigo (listra diagonal) no alto e o letreiro de nível máximo (barra vermelha)
-  for (let k = 0; k < 22; k++) g.box((WX * 2) / 22 - 0.04, 1.4, 0.1, at(-WX + (k + 0.5) * ((WX * 2) / 22), 27.6, z - 0.25), (x, y) => (Math.floor((x + y) / 0.5 + 100) % 2 ? HAZ_Y : HAZ_K))
-  glow.box(WX * 2 - 2, 0.2, 0.08, at(0, 26.5, z - 0.3), [1, 0.2, 0.1])
+  for (let k = 0; k < 22; k++) g.box((WX * 2) / 22 - 0.04, 1.4, 0.1, at(-WX + (k + 0.5) * ((WX * 2) / 22), 27.6 * q, z - 0.25), (x, y) => (Math.floor((x + y) / 0.5 + 100) % 2 ? HAZ_Y : HAZ_K))
+  glow.box(WX * 2 - 2, 0.2, 0.08, at(0, 26.5 * q, z - 0.3), [1, 0.2, 0.1])
   const gx = -4.5
-  g.box(1.8, 30, 0.4, at(gx, 15, z - 0.3), STEEL_D)
-  glow.box(0.7, 28, 0.12, at(gx, 15, z - 0.55), (_x, y) => (y < 4 ? LAMP : mix(LAMP, [0.3, 0.2, 0.1], 0.55)))
-  for (let k = 0; k <= 14; k++) {
+  g.box(1.8, 30 * q, 0.4, at(gx, 15 * q, z - 0.3), STEEL_D)
+  glow.box(0.7, 28 * q, 0.12, at(gx, 15 * q, z - 0.55), (_x, y) => (y < 4 ? LAMP : mix(LAMP, [0.3, 0.2, 0.1], 0.55)))
+  for (let k = 0; k <= Math.round(14 * q); k++) {
     const y = 1 + k * 2
     g.box(k % 2 ? 0.5 : 0.9, 0.12, 0.1, at(gx + 0.9, y, z - 0.6), k % 2 ? STEEL_L : HAZ_Y)
   }
-  for (const y of [0.4, 29.6]) g.box(2.2, 0.5, 0.6, at(gx, y, z - 0.4), BRASS)
+  for (const y of [0.4, 29.6 * q]) g.box(2.2, 0.5, 0.6, at(gx, y, z - 0.4), BRASS)
   // volante da válvula e o cano grosso que entra no tanque
   g.cylinder(2.2, 4, at(8, 4, z - 2, 0, Math.PI / 2), TEAL, 14)
   g.cylinder(2.8, 0.3, at(8, 4, z - 3.9, 0, Math.PI / 2), STEEL_L, 14)
@@ -371,6 +433,9 @@ function tankBack(g: SoftGeo, glow: SoftGeo) {
 export class TanqueView {
   private readonly meshes: Mesh[] = []
   constructor(scene: Scene, toy: Material, glowMat: Material, course: Course) {
+    Z1 = course.finishZ + 11.2
+    TOP = course.finishY - 11
+    BACK_H = course.finishY + 11
     const st = new SoftGeo()
     const glow = new SoftGeo()
     for (const gv of course.gloves) pistonBox(st, glow, gv)

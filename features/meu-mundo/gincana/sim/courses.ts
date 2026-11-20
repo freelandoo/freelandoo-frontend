@@ -22,7 +22,7 @@
 // (engine/course-view.ts + engine/phase-themes.ts); aqui só a regra. Fase nova
 // = uma função aqui + a entrada em COURSES + o tema + GINCANA_PHASES.
 
-import { CourseKit, DECK, GINCANA, type Course, type GincanaPhase, type RoutePoint } from "./course"
+import { CourseKit, DECK, GINCANA, reprise, type Course, type GincanaPhase, type RoutePoint } from "./course"
 
 /** Largada (2 filas de 4) e a ponte larga: igual em todas as fases. */
 function kitStart(k: CourseKit) {
@@ -909,7 +909,7 @@ export const GANGORRAS = {
   chainX: 2.3,
   chainHx: 1.0,
   /** pratos de lado: [x, z, meia largura] */
-  plates: [[-2.9, 84, 2.2], [2.9, 84, 2.2], [0, 91.4, 3.1], [-3.2, 98.8, 2.3], [3.2, 98.8, 2.3], [0, 106.2, 3.1]] as [number, number, number][],
+  plates: [[-2.9, 84, 2.2], [2.9, 84, 2.2], [0, 91.4, 3.1], [-3.2, 98.8, 2.3], [3.2, 98.8, 2.3], [0, 105.2, 3.1]] as [number, number, number][],
   plateHz: 2.1,
   big: { z: 123.3, hx: 5.2, hz: 6, max: 0.16, k: 0.35 },
 } as const
@@ -1174,7 +1174,7 @@ export const ALTOFORNO = {
   z1: 120,
   rise: 10,
   hx: 7,
-  belt: -2.4,
+  belt: -4.4,
   lanes: [-4.8, -2.4, 0, 2.4, 4.8],
 } as const
 
@@ -1397,22 +1397,31 @@ function courseComportas(): Course {
  * Diferente da Maré do Pântano: o caminho vai e volta (zigue-zague), o perigo é empurrar de lado.
  */
 export const TANQUE = {
-  /** x das rampas (esquerda, direita, esquerda, meio) */
-  rx: [-4.2, 4.2, -4.2, 0] as const,
+  /** x das rampas (trocam de lado; a última no meio) */
+  rx: [-4.2, 4.2, -4.2, 4.2, -4.2, 4.2, 0] as const,
   rhx: 3.1,
   /** z de cada rampa [início, fim] */
   rz: [
     [15, 39],
     [48, 72],
     [81, 105],
-    [114, 132],
+    [114, 138],
+    [147, 171],
+    [180, 204],
+    [213, 231],
   ] as [number, number][],
   /** altura de cada andar acima do DECK */
-  dy: [0, 5, 10, 15, 20] as const,
-  /** z das prensas da 2ª rampa e fases */
+  dy: [0, 5, 10, 15, 20, 25, 30, 35] as const,
+  /** z das prensas da 2ª e da 5ª rampa e fases */
   press2: [[54, 0], [60, 1.6], [66, 3.2]] as [number, number][],
-  /** z dos pistões da 3ª rampa */
+  press5: [[153, 0.4], [160, 2.2], [167, 1.0]] as [number, number][],
+  /** z dos pistões da 3ª, 4ª e 6ª rampa (socam da parede de fora) */
   punch3: [[87, 0], [93, 0.8], [99, 1.6]] as [number, number][],
+  punch4: [[119, 0.3], [124, 1.1], [129, 1.9], [134, 0.7]] as [number, number][],
+  punch6: [[185, 0], [189.5, 0.6], [194, 1.2], [198.5, 1.8]] as [number, number][],
+  /** Óleo derramado: a corrida fica nesta fração e o pé escorrega (atrito). */
+  oilRun: 0.55,
+  oilGrip: 0.3,
 } as const
 
 function courseTanque(): Course {
@@ -1421,74 +1430,104 @@ function courseTanque(): Course {
   kitStart(k)
   const Y = K.dy.map((d) => DECK + d)
   const yAt = (i: number, z: number) => Y[i] + ((z - K.rz[i][0]) / (K.rz[i][1] - K.rz[i][0])) * (Y[i + 1] - Y[i])
+  const ramp = (i: number, s: number, hx: number = K.rhx) => k.slope(K.rx[i], K.rz[i][0], K.rz[i][1], Y[i], Y[i + 1], hx, 3, 1, s)
   const land = (i: number, s: number) => {
     const z0 = K.rz[i][1]
     const z1 = K.rz[i + 1][0]
     return k.box(0, (z0 + z1) / 2, 8.4, (z1 - z0) / 2, 5, 1, s, 0, 1.4, Y[i + 1])
   }
+  const greasy = (p: number) => Object.assign(k.pads[p], { sl: K.oilRun, f: K.oilGrip })
+  // poça de óleo na rampa i, de z0 a z1, faixa (x relativo à rampa, meia largura): uma rampa fina por cima
+  const oilRamp = (i: number, z0: number, z1: number, dx: number, hx: number, s: number) =>
+    greasy(k.slope(K.rx[i] + dx, z0, z1, yAt(i, z0) + 0.03, yAt(i, z1) + 0.03, hx, 3, 1, s))
+  // poça no patamar i (que fica depois da rampa i)
+  const oilLand = (i: number, x: number, z: number, hx: number, hz: number, s: number) => greasy(k.box(x, z, hx, hz, 5, 1, s, 0, 0.3, Y[i + 1] + 0.15)) // acima das barras da grade
+  const pistons = (i: number, list: readonly (readonly [number, number])[], reach: number, per: number) => {
+    const out = K.rx[i] < 0 ? -1 : 1
+    for (const [z, ph] of list) k.glove(K.rx[i] + out * (K.rhx + 1.6), z, yAt(i, z) + 1, -out, reach, 1.0, per, ph)
+  }
   // ── 1. rampa dos barris (esquerda) ──
-  k.slope(K.rx[0], K.rz[0][0], K.rz[0][1], Y[0], Y[1], K.rhx, 3, 1, 1)
+  ramp(0, 1)
   k.balls = { lanes: [-1.5, 1.5], every: 1.5, v: 6, R: 1.0, zEnd: 12 }
   land(0, 1)
-  // pistões da parede direita do 1º patamar (socam para o meio)
   k.glove(9.4, 41.5, Y[1] + 1, -1, 7.5, 1.0, 2.6, 0)
   k.glove(9.4, 45.5, Y[1] + 1, -1, 7.5, 1.0, 2.6, 1.3)
-  // ── 2. rampa das prensas (direita): blocos que vão e voltam de lado ──
-  k.slope(K.rx[1], K.rz[1][0], K.rz[1][1], Y[1], Y[2], K.rhx, 3, 1, 2)
+  // ── 2. rampa das prensas (direita) ──
+  ramp(1, 2)
   for (const [z, ph] of K.press2) k.pusher(K.rx[1], z, 1.1, 1.1, 1.8, 2.1, 0, 1.25, ph, yAt(1, z))
+  oilRamp(1, 50, 56, -1.4, 1.5, 2)
   land(1, 2)
-  // ganchos do guindaste no 2º patamar
   k.swing(-2.5, 75, Y[2] + 8, 6.6, 0.9, 0.9, 1.9, 0)
   k.swing(2.5, 78.5, Y[2] + 8, 6.6, 0.9, 0.9, 1.9, 1.6)
-  // ── 3. rampa dos pistões (esquerda): socam da parede de fora e jogam no óleo ──
-  k.slope(K.rx[2], K.rz[2][0], K.rz[2][1], Y[2], Y[3], K.rhx, 3, 1, 3)
-  for (const [z, ph] of K.punch3) k.glove(K.rx[2] - K.rhx - 1.6, z, yAt(2, z) + 1, 1, 3.4, 1.0, 2.2, ph)
-  land(2, 4)
-  // prensas que cruzam o 3º patamar
+  // ── 3. rampa dos pistões (esquerda) ──
+  ramp(2, 3)
+  pistons(2, K.punch3, 3.4, 2.2)
+  oilRamp(2, 90, 100, 1.5, 1.4, 3)
+  land(2, 3)
   k.pusher(-2.6, 108, 1.2, 1.2, 1.8, 3.6, 0, 1.0, 0, Y[3])
   k.pusher(2.6, 111.5, 1.2, 1.2, 1.8, 3.6, 0, 1.0, 2.2, Y[3])
-  // ── 4. rampa do meio com os ganchos e a chegada no alto ──
-  k.slope(K.rx[3], K.rz[3][0], K.rz[3][1], Y[3], Y[4], 4.5, 3, 1, 5)
-  k.swing(-1.6, 120, yAt(3, 120) + 8, 6.6, 0.9, 0.85, 1.7, 0.4)
-  k.swing(1.6, 126, yAt(3, 126) + 8, 6.6, 0.9, 0.85, 1.7, 2.0)
-  k.box(0, 139.8, 9, 7.8, 1, 0, 6, 0, 1.6, Y[4])
-  const finishZ = 140.8
-  for (const [x, z, y] of [[0, 43.5, Y[1]], [0, 76.5, Y[2]], [0, 109.5, Y[3]]] as [number, number, number][]) k.logo(x, z, y)
+  // ── 4. vazamento: daqui para cima o óleo escorre pelas rampas ──
+  // 4ª rampa (direita): óleo em quase tudo + pistões da parede de fora
+  ramp(3, 4)
+  oilRamp(3, 115, 137, 0, K.rhx - 0.25, 4)
+  pistons(3, K.punch4, 3.6, 2.0)
+  land(3, 4)
+  oilLand(3, -3.5, 145.6, 4, 1.3, 4)
+  k.swing(-2.8, 141, Y[4] + 8, 6.6, 0.9, 0.95, 2.0, 0.5)
+  k.swing(2.8, 144, Y[4] + 8, 6.6, 0.9, 0.95, 2.0, 2.1)
+  // 5ª rampa (esquerda): prensas em fila + poças alternadas
+  ramp(4, 4)
+  for (const [z, ph] of K.press5) k.pusher(K.rx[4], z, 1.1, 1.0, 1.8, 2.1, 0, 1.15, ph, yAt(4, z))
+  oilRamp(4, 155, 158, 1.3, 1.6, 4)
+  oilRamp(4, 162, 165, -1.3, 1.6, 4)
+  land(4, 4)
+  oilLand(4, 3.8, 178.6, 4.2, 1.3, 4)
+  k.pusher(-2.6, 174, 1.2, 1.2, 1.8, 3.6, 0, 1.15, 1.0, Y[5])
+  k.pusher(2.6, 177.2, 1.2, 1.2, 1.8, 3.6, 0, 1.15, 3.0, Y[5])
+  // 6ª rampa (direita): a mais estreita, óleo inteiro e os pistões em sequência
+  ramp(5, 4, 2.7)
+  oilRamp(5, 181, 203, 0, 2.45, 4)
+  pistons(5, K.punch6, 3.2, 1.8)
+  land(5, 4)
+  k.swing(-2.5, 207, Y[6] + 8, 6.6, 0.9, 1.0, 2.1, 0)
+  k.swing(2.5, 210, Y[6] + 8, 6.6, 0.9, 1.0, 2.1, 1.7)
+  // ── 5. rampa do meio com os ganchos e a chegada no alto ──
+  ramp(6, 5, 4.5)
+  k.swing(-1.6, 217, yAt(6, 217) + 8, 6.6, 0.9, 0.9, 1.8, 0.4)
+  k.swing(1.6, 222, yAt(6, 222) + 8, 6.6, 0.9, 0.9, 1.8, 2.0)
+  k.swing(0, 227, yAt(6, 227) + 8, 6.6, 0.9, 0.95, 1.9, 1.1)
+  k.box(0, 238.8, 9, 7.8, 1, 0, 6, 0, 1.6, Y[7])
+  const finishZ = 239.8
+  const L = (i: number) => (K.rz[i][1] + K.rz[i + 1][0]) / 2
+  for (const i of [0, 1, 2, 3, 4]) k.logo(0, L(i), Y[i + 1])
   return k.done({
     id: "tanque",
     mode: "race",
-    limit: 80,
+    limit: 150,
     // 3 s de folga; o óleo afoga a largada aos ~11 s e passa do topo perto do fim
-    rise: { y0: 0, y1: Y[4] + 2, t0: 3, t1: 50 },
-    checkpoints: [
-      { x: 0, z: -3.5, y: DECK, w: 7 },
-      { x: 0, z: 43.5, y: Y[1], w: 6 },
-      { x: 0, z: 76.5, y: Y[2], w: 6 },
-      { x: 0, z: 109.5, y: Y[3], w: 6 },
-    ],
+    rise: { y0: 0, y1: Y[7] + 2, t0: 3, t1: 112 },
+    checkpoints: [{ x: 0, z: -3.5, y: DECK, w: 7 }, ...[0, 1, 2, 3, 4, 5].map((i) => ({ x: 0, z: L(i), y: Y[i + 1], w: 6 }))],
     finishZ,
-    finishY: Y[4],
-    sections: [15, 39, 72, 105, 114],
-    minFinish: 20,
+    finishY: Y[7],
+    sections: [15, 48, 81, 114, 213],
+    minFinish: 34,
     route: (r) =>
       routeOf((add) => {
         const l0 = r(1) < 0.5 ? -1.4 : 1.4
         add(K.rx[0] * 0.5, 9)
         add(K.rx[0], 13.5)
         for (let z = 16; z <= 38; z += 2) add(K.rx[0] + l0, z)
-        add(K.rx[0], 40.5)
-        add(0, 43.5)
-        add(K.rx[1], 46.5)
-        for (let z = 49; z <= 71; z += 2) add(K.rx[1], z)
-        add(K.rx[1], 73.5)
-        add(0, 76.8)
-        add(K.rx[2], 79.8)
-        // na rampa dos pistões: por dentro (longe da parede)
-        for (let z = 82; z <= 104; z += 2) add(K.rx[2] + 1.6, z)
-        add(K.rx[2] + 1, 106.5)
-        add(0, 110)
-        add(0, 113)
-        for (let z = 115; z <= 131; z += 2) add(0, z)
+        for (let i = 0; i < 6; i++) {
+          const z0 = K.rz[i][1]
+          const z1 = K.rz[i + 1][0]
+          const nx = K.rx[i + 1]
+          add(K.rx[i], z0 + 1.5)
+          add(0, (z0 + z1) / 2)
+          add(nx, z1 - 1.5)
+          // nas rampas com pistões, por dentro (longe da parede de fora)
+          const inner = i + 1 === 2 || i + 1 === 3 || i + 1 === 5 ? -Math.sign(nx) * 1.2 : 0
+          for (let z = z1 + 1; z <= K.rz[i + 1][1] - 1; z += 2) add(nx + inner, z)
+        }
         add(0, finishZ - 7)
         add(0, finishZ - 2)
         add(0, finishZ + 3)
@@ -1737,7 +1776,7 @@ function courseFeira(): Course {
   const Y = DECK + 3
   // ── 1. rampa-esteira com melancias ──
   const r1 = k.slope(0, 15.1, 40, DECK, Y, 6, 0, 1, 1)
-  k.pads[r1].bz = -GINCANA.belt
+  k.pads[r1].bz = -GINCANA.belt * 0.75 // rampa + melancias + esteira: a esteira cheia trava todo mundo
   k.balls = { lanes: [-4.3, -1.45, 1.45, 4.3], every: 1.15, v: 6.5, R: 1.15, zEnd: 12 }
   k.box(0, 44, 7, 4, 6, 7, 1, 0, 1.4, Y)
   // ── 2. esteiras de mão dupla com prensas ──
@@ -1897,7 +1936,8 @@ function courseCoroa(): Course {
   })
 }
 
-export const COURSES: Record<GincanaPhase, Course> = {
+/** As fases como foram desenhadas (uma volta só): os testes de estrutura leem daqui. */
+export const COURSE_BASE: Record<GincanaPhase, Course> = {
   cidade: courseCidade(),
   floresta: courseFloresta(),
   clareira: courseClareira(),
@@ -1920,6 +1960,35 @@ export const COURSES: Record<GincanaPhase, Course> = {
   relogio: courseRelogio(),
   feira: courseFeira(),
   coroa: courseCoroa(),
+}
+
+/** Quanto media cada corrida antes de dobrar (o Tanque já tinha sido alongado à mão). */
+export const BASE_LEN: Partial<Record<GincanaPhase, number>> = { tanque: 140.8 }
+
+// 20/11 (pedido do Alex): toda corrida com no mínimo o DOBRO do percurso antigo — o miolo se repete (reprise)
+export const COURSES: Record<GincanaPhase, Course> = {
+  cidade: reprise(COURSE_BASE.cidade),
+  floresta: reprise(COURSE_BASE.floresta),
+  clareira: reprise(COURSE_BASE.clareira),
+  serraria: reprise(COURSE_BASE.serraria, { f: 1 }), // toras mais rápidas na 2ª volta prendem todo mundo
+  tanque: reprise(COURSE_BASE.tanque, { z0: 114, z1: 213, base: BASE_LEN.tanque }),
+  canion: reprise(COURSE_BASE.canion),
+  moinhos: reprise(COURSE_BASE.moinhos),
+  gangorras: reprise(COURSE_BASE.gangorras),
+  orbital: reprise(COURSE_BASE.orbital),
+  helices: reprise(COURSE_BASE.helices, { f: 1 }), // hélices mais rápidas na 2ª volta jogam todo mundo no vazio
+  forja: reprise(COURSE_BASE.forja),
+  altoforno: reprise(COURSE_BASE.altoforno),
+  crosta: reprise(COURSE_BASE.crosta),
+  aros: reprise(COURSE_BASE.aros),
+  fabrica: reprise(COURSE_BASE.fabrica),
+  comportas: reprise(COURSE_BASE.comportas),
+  gelo: reprise(COURSE_BASE.gelo),
+  portoes: reprise(COURSE_BASE.portoes),
+  estaleiro: reprise(COURSE_BASE.estaleiro),
+  relogio: reprise(COURSE_BASE.relogio),
+  feira: reprise(COURSE_BASE.feira),
+  coroa: reprise(COURSE_BASE.coroa),
 }
 
 /** O percurso da fase (desconhecida = a de sempre). */

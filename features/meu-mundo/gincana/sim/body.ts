@@ -122,6 +122,9 @@ export interface Runner {
   roll: number
   /** Atrito do chão embaixo (gelo < 1). */
   fric: number
+  /** Embalo da esteira (m/s): quem pula de cima dela segue sendo levado até pousar (20/11: pular não fura a esteira). */
+  bbx: number
+  bbz: number
   /** Agarrando a vaga (−1 = ninguém), há quanto tempo e a espera para agarrar de novo. */
   grab: number
   grabT: number
@@ -246,6 +249,8 @@ export function newRunner(course: Course, slot: number): Runner {
     drum: -1,
     roll: -1,
     fric: 1,
+    bbx: 0,
+    bbz: 0,
     grab: -1,
     grabT: 0,
     grabCool: 0,
@@ -612,8 +617,8 @@ function sphereGap(b: Runner, x: number, y: number, z: number) {
 
 export function knock(b: Runner, kx: number, ky: number, kz: number, by: "bar" | "swing" | "glove" | "ball" | "push" | "tackle", out: RunEvent[] | null) {
   if (b.shield > 0 || b.hitCool > 0 || b.mode === MODE.WATER || b.mode === MODE.DONE) return
-  b.vx = kx + b.vx * 0.15
-  b.vz = kz + b.vz * 0.15
+  b.vx = kx * GINCANA.hitPush + b.vx * 0.15
+  b.vz = kz * GINCANA.hitPush + b.vz * 0.15
   b.vy = Math.max(b.vy, ky)
   b.ground = false
   b.air = GINCANA.coyote
@@ -752,6 +757,8 @@ export function respawn(b: Runner, course: Course) {
   b.shield = GINCANA.shieldT
   b.hitCool = 0
   b.pad = -1
+  b.bbx = 0
+  b.bbz = 0
   b.drum = -1
   b.roll = -1
   b.fric = 1
@@ -760,6 +767,10 @@ export function respawn(b: Runner, course: Course) {
 
 /** Leva quem está em cima da plataforma que anda, do disco que gira e da esteira. */
 function carry(b: Runner, w: RunWorld, dt: number) {
+  if (b.ground) {
+    b.bbx = 0
+    b.bbz = 0
+  }
   if (b.ground && b.drum >= 0) {
     // cilindro: o chão anda de lado (w·R·cos θ) e a curva escorrega para fora
     const d = w.course.drums[b.drum]
@@ -776,7 +787,7 @@ function carry(b: Runner, w: RunWorld, dt: number) {
     if (S) {
       const s = Math.sin(w.saw[(b.roll - ROLL_SAW) * 2])
       if (S.ax === 0) b.z += s * 4 * dt
-      else b.x += s * 7.5 * dt
+      else b.x += s * 6 * dt
     }
     return
   }
@@ -796,7 +807,13 @@ function carry(b: Runner, w: RunWorld, dt: number) {
     }
     return
   }
-  if (!b.ground || b.pad < 0) return
+  if (!b.ground) {
+    // no ar: o embalo da esteira de onde saiu
+    b.x += b.bbx * dt
+    b.z += b.bbz * dt
+    return
+  }
+  if (b.pad < 0) return
   const p = w.course.pads[b.pad]
   if (!p) return
   if (p.mw !== 0) {
@@ -822,6 +839,8 @@ function carry(b: Runner, w: RunWorld, dt: number) {
   if (p.bx !== 0 || p.bz !== 0) {
     b.x += p.bx * dt
     b.z += p.bz * dt
+    b.bbx = p.bx
+    b.bbz = p.bz
   }
 }
 

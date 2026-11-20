@@ -25,8 +25,8 @@ export const GINCANA = {
   // mm3d-47b: mais rápido e mais seco (o Alex achou lento e o pulo mole)
   gravity: 30,
   run: 8.2,
-  /** Esteira (Gincana 3, pedido do Alex 18/11): forte — parado, ela leva você; contra ela anda a 2,7 m/s. */
-  belt: 5.5,
+  /** Esteira (Gincana 3, pedido do Alex 18/11; mais forte em 20/11): parado, ela leva você; contra ela anda a 2 m/s; pulando não escapa. */
+  belt: 6.2,
   accel: 58,
   /** Controle no ar (fração da aceleração do chão). */
   airControl: 0.72,
@@ -45,8 +45,12 @@ export const GINCANA = {
   diveUp: 4.4,
   slideT: 0.45,
   riseT: 0.4,
-  /** Derrubado por obstáculo: sem controle por isto (s); depois levanta. */
-  stunT: 0.9,
+  /** Derrubado por obstáculo: sem controle por isto (s); depois levanta (20/11: 0,9 → 1,2, o Alex achou fácil). */
+  stunT: 1.2,
+  /** 20/11 (o Alex achou tudo fácil): pancada empurra mais longe (× na velocidade de lado). */
+  hitPush: 1.3,
+  /** 20/11: nas corridas tudo que se mexe gira/vai e volta mais rápido (× na velocidade, ÷ no período). */
+  tempo: 1.22,
   /** Abaixo disto caiu na água: volta ao último posto depois de `respawnT`. */
   waterY: -0.6,
   respawnT: 1.3,
@@ -806,6 +810,30 @@ export class CourseKit {
     this.logos.push({ x, z, y: y + 1.1 })
   }
   /** Fecha o percurso. */
+  /** Tudo que se mexe pelo relógio fica `f` vezes mais rápido (a regra é a mesma no aparelho e na sala). */
+  private faster(f: number) {
+    for (const s of this.sweepers) {
+      s.w *= f
+      s.acc *= f * f
+      s.wMax *= f
+    }
+    for (const q of this.pendulums) q.w *= f
+    for (const g of this.gloves) g.period /= f
+    for (const q of this.pushers) q.w *= f
+    for (const q of this.rotors) q.w *= f
+    for (const q of this.logs) q.w *= Math.sqrt(f) // a tora rolando contra já é o obstáculo mais duro: acelera menos
+    for (const q of this.planks) q.w *= f
+    for (const p of this.pads) {
+      p.mw *= f
+      p.spin *= f
+      p.gp /= f
+    }
+    if (this.balls) {
+      this.balls.v *= f
+      this.balls.every /= f
+    }
+  }
+
   done(o: {
     id: GincanaPhase
     checkpoints: Checkpoint[]
@@ -824,6 +852,7 @@ export class CourseKit {
     memory?: Memory
     crown?: boolean
   }): Course {
+    if ((o.mode ?? "race") === "race") this.faster(GINCANA.tempo)
     return {
       id: o.id,
       mode: o.mode ?? "race",
@@ -1120,4 +1149,238 @@ export function spawnAt(c: Course, cp: number, slot: number) {
   const col = slot % 4
   const row = Math.floor(slot / 4) % 2
   return { x: p.x + (col - 1.5) * Math.min(3.4, (p.w * 2) / 4), z: p.z - row * 2.6, y: p.y }
+}
+
+// ═══ reprise — o percurso dobrado (20/11, pedido do Alex: "no mínimo o dobro do percurso") ═══════════════
+
+/** Peças de chão fixo embaixo do caminho em z (o x vem da rota). */
+function floorPadsAt(C: Course, z: number) {
+  const pts = C.route(() => 0.5)
+  let x = 0
+  let best = Infinity
+  for (const p of pts) if (Math.abs(p.z - z) < best) (best = Math.abs(p.z - z)), (x = p.x)
+  return C.pads.filter((p) => {
+    if (p.mw !== 0 || p.gh !== 0 || p.sl < 1) return false
+    const ex = p.rot ? Math.max(p.hx, p.hz) : p.hx
+    return Math.abs(z - p.z) <= p.hz + 0.01 && Math.abs(x - p.x) <= ex + 0.6
+  })
+}
+
+/** Topo do chão fixo embaixo do caminho em z: para saber quanto um trecho sobe. */
+function floorTopAt(C: Course, z: number) {
+  // num vão de pulo vale o chão de logo antes
+  for (let d = 0; d <= 10; d += 0.5) {
+    let y = -Infinity
+    for (const p of floorPadsAt(C, z - d)) y = Math.max(y, p.k === 2 ? p.y + ((z - d - (p.z - p.hz)) / (2 * p.hz)) * (p.y2 - p.y) : p.y)
+    if (y > -Infinity) return y
+  }
+  return DECK
+}
+
+/** Corte limpo: nenhuma peça embaixo do caminho atravessa a linha z (nem a que gira ou anda). */
+function cleanCut(C: Course, z: number) {
+  const pts = C.route(() => 0.5)
+  let x = 0
+  let best = Infinity
+  for (const p of pts) if (Math.abs(p.z - z) < best) (best = Math.abs(p.z - z)), (x = p.x)
+  return !C.pads.some((p) => {
+    const ex = p.rot ? Math.max(p.hx, p.hz) : p.hx
+    return Math.abs(x - p.x) <= ex + 0.6 && p.z - p.hz < z - 0.05 && p.z + p.hz > z + 0.05
+  })
+}
+
+/** A emenda fica no começo da peça de chão que cobre z (nunca corta uma peça no meio). */
+function seamAt(C: Course, z: number) {
+  const ps = floorPadsAt(C, z)
+  return ps.length ? Math.min(...ps.map((p) => p.z - p.hz)) : z
+}
+
+/**
+ * Dobra o percurso de uma corrida: o miolo [z0, z1) (do começo do trecho 1 ao começo do trecho 5, por padrão)
+ * se repete logo depois, deslocado em z (e em y, se o miolo sobe), com tudo que se mexe mais rápido (`f`) e o
+ * ritmo trocado (fases deslocadas) — a 2ª volta não é a 1ª decorada. Se ainda não deu `minLen` × `base`
+ * (o comprimento antigo da fase), uma 3ª volta parcial (até o começo de um trecho) completa. O que vinha
+ * depois de z1 (a subida e a chegada) vai para o fim. Regra pura: o aparelho e a sala calculam igual.
+ */
+export function reprise(C: Course, o: { z0?: number; z1?: number; base?: number; minLen?: number; f?: number } = {}): Course {
+  if (C.mode !== "race") return C
+  const z0 = o.z0 ?? seamAt(C, C.sections[0] + 0.05)
+  const z1 = o.z1 ?? seamAt(C, C.sections[4] + 0.05)
+  const L = z1 - z0
+  const target = (o.minLen ?? 2) * (o.base ?? C.finishZ)
+  const dyLap = floorTopAt(C, z1 - 0.3) - floorTopAt(C, z0 + 0.3)
+  const f = o.f ?? 1.12
+  // voltas: [a, b) copiado com deslocamento (dz, dy), velocidade × k e fases + ph
+  const laps: { a: number; b: number; dz: number; dy: number; k: number; ph: number }[] = [{ a: z0, b: z1, dz: L, dy: dyLap, k: f, ph: 1.7 }]
+  let DZ = L
+  let DY = dyLap
+  if (C.finishZ + DZ < target) {
+    const need = target - C.finishZ - DZ
+    // cortes possíveis: começo de cada peça de chão do miolo
+    const cuts = [...new Set(C.pads.filter((p) => p.z > z0 && p.z < z1 && p.mw === 0 && p.spin === 0).map((p) => p.z - p.hz).filter((s) => s > z0 + 0.5 && s <= z1 && cleanCut(C, s))), z1].sort((a, b) => a - b)
+    const b = cuts.find((s) => s - z0 >= need) ?? z1
+    laps.push({ a: z0, b, dz: 2 * L, dy: 2 * dyLap, k: f * f, ph: 3.1 })
+    DZ += b - z0
+    DY += floorTopAt(C, b - 0.3) - floorTopAt(C, z0 + 0.3)
+  }
+  const inLap = (z: number, l: (typeof laps)[number]) => z >= l.a && z < l.b
+  const after = (z: number) => z >= z1
+  const out: Course = {
+    ...C,
+    pads: [],
+    posts: [],
+    sweepers: [],
+    pendulums: [],
+    gloves: [],
+    tiles: [],
+    doors: [],
+    doorOpen: [...C.doorOpen],
+    pushers: [],
+    logos: [],
+    hoops: [],
+    gems: [],
+    drums: [],
+    logs: [],
+    planks: [],
+    rotors: [],
+    saws: [],
+    checkpoints: [],
+  }
+  // cada lista: o original (o que vem depois de z1 vai para o fim) e, para cada volta, a cópia
+  function each<T>(src: readonly T[], dst: T[], zOf: (q: T) => number, move: (q: T, dz: number, dy: number) => T, tune: (q: T, k: number, ph: number) => void) {
+    src.forEach((q) => dst.push(after(zOf(q)) ? move(q, DZ, DY) : { ...q }))
+    const maps: Map<number, number>[] = []
+    for (const l of laps) {
+      const m = new Map<number, number>()
+      src.forEach((q, i) => {
+        if (!inLap(zOf(q), l)) return
+        const c = move(q, l.dz, l.dy)
+        tune(c, l.k, l.ph)
+        m.set(i, dst.length)
+        dst.push(c)
+      })
+      maps.push(m)
+    }
+    return maps
+  }
+  const none = () => {}
+  const padMaps = each(C.pads, out.pads, (p) => p.z, (p, dz, dy) => ({ ...p, z: p.z + dz, y: p.y + dy, y2: p.y2 + dy }), (p, k, ph) => {
+    p.mw *= k
+    p.spin *= k
+    p.mph += ph
+    if (p.gp) {
+      p.gp /= k
+      p.gph += ph * 0.37 * p.gp
+    }
+  })
+  each(C.posts, out.posts, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y0: q.y0 + dy, y1: q.y1 + dy }), none)
+  each(C.sweepers, out.sweepers, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.w *= k
+    q.wMax *= k
+    q.acc *= k * k
+    q.a0 += ph
+  })
+  each(C.pendulums, out.pendulums, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, py: q.py + dy }), (q, k, ph) => {
+    q.w *= k
+    q.ph += ph
+  })
+  each(C.gloves, out.gloves, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.period /= k
+    q.ph += ph * 0.3 * q.period
+  })
+  each(C.pushers, out.pushers, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.w *= k
+    q.ph += ph
+  })
+  each(C.logos, out.logos, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), none)
+  each(C.hoops, out.hoops, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.w *= k
+    q.ph += ph
+  })
+  each(C.drums, out.drums, (q) => q.z0, (q, dz, dy) => ({ ...q, z0: q.z0 + dz, y: q.y + dy }), none)
+  each(C.logs, out.logs, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.w *= k
+    q.ph += ph
+  })
+  each(C.planks, out.planks, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.w *= k
+    q.ph += ph
+  })
+  each(C.rotors, out.rotors, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
+    q.w *= k
+    q.ph += ph
+  })
+  each(C.saws, out.saws, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), none)
+  each(C.checkpoints, out.checkpoints, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), none)
+  out.checkpoints.sort((a, b) => a.z - b.z)
+  // portas: cada volta ganha fileiras novas (sorteadas à parte)
+  each(C.doors, out.doors, (q) => q.z, (q, dz) => ({ ...q, z: q.z + dz }), none)
+  {
+    let n = C.doors.length
+    for (const l of laps) {
+      const rows = new Map<number, number>()
+      for (const d of C.doors) {
+        if (!inLap(d.z, l)) continue
+        if (!rows.has(d.row)) {
+          rows.set(d.row, out.doorOpen.length)
+          out.doorOpen.push(C.doorOpen[d.row])
+        }
+        out.doors[n++].row = rows.get(d.row) as number
+      }
+    }
+  }
+  // ladrilhos: o tabuleiro escondido copiado é outro tabuleiro (caminho sorteado à parte)
+  each(C.tiles, out.tiles, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), none)
+  {
+    let n = C.tiles.length
+    let pg = C.tiles.reduce((m, q) => Math.max(m, q.pg + 1), 0)
+    for (const l of laps) {
+      const grids = new Map<number, number>()
+      for (const t of C.tiles) {
+        if (!inLap(t.z, l)) continue
+        const q = out.tiles[n++]
+        if (t.pg < 0) continue
+        if (!grids.has(t.pg)) grids.set(t.pg, pg++)
+        q.pg = grids.get(t.pg) as number
+      }
+    }
+  }
+  if (C.ramp && after(C.ramp.z0)) {
+    out.ramp = { ...C.ramp, z0: C.ramp.z0 + DZ, z1: C.ramp.z1 + DZ, y0: C.ramp.y0 + DY, y1: C.ramp.y1 + DY }
+    if (C.balls) out.balls = { ...C.balls, zEnd: C.balls.zEnd + DZ }
+  }
+  const ratio = (C.finishZ + DZ) / C.finishZ
+  out.finishZ = C.finishZ + DZ
+  out.finishY = C.finishY + DY
+  out.sections = C.sections.map((s) => (after(s) ? s + DZ : s))
+  out.minFinish = Math.round(C.minFinish * ratio)
+  out.limit = Math.min(300, Math.max(C.limit, Math.round(C.limit * ratio * 0.85)))
+  if (C.rise) out.rise = { ...C.rise, y1: C.rise.y1 + DY, t1: C.rise.t0 + (C.rise.t1 - C.rise.t0) * ratio }
+  // percurso que DESCE (Descida dos Aros): a 2ª volta afundaria no mar — levanta tudo, a chegada fica onde estava
+  if (DY < 0) {
+    const up = -DY
+    for (const p of out.pads) (p.y += up), (p.y2 += up)
+    for (const q of out.posts) (q.y0 += up), (q.y1 += up)
+    for (const L of [out.sweepers, out.gloves, out.pushers, out.logos, out.hoops, out.drums, out.logs, out.planks, out.rotors, out.saws, out.checkpoints, out.tiles] as { y: number }[][]) for (const q of L) q.y += up
+    for (const q of out.pendulums) q.py += up
+    out.finishY += up
+    if (out.ramp) out.ramp = { ...out.ramp, y0: out.ramp.y0 + up, y1: out.ramp.y1 + up }
+  }
+  const route0 = C.route
+  out.route = (r) => {
+    const pts = route0(r)
+    const res: RoutePoint[] = []
+    const fix = (p: RoutePoint, dz: number, map?: Map<number, number>) => {
+      const q: RoutePoint = { x: p.x, z: p.z + dz }
+      if (p.m !== undefined) q.m = map ? (map.get(p.m) ?? p.m) : p.m
+      return q
+    }
+    for (const p of pts) if (p.z < z1) res.push(fix(p, 0))
+    laps.forEach((l, i) => {
+      for (const p of pts) if (inLap(p.z, l)) res.push(fix(p, l.dz, padMaps[i]))
+    })
+    for (const p of pts) if (after(p.z)) res.push(fix(p, DZ))
+    return res
+  }
+  return out
 }

@@ -15270,7 +15270,9 @@
     "gincanaHowAr3": "The snow mushroom launches you to the high hoop; one hoop moves back and forth: wait for it.",
     "gincanaHowAr4": "The walls only have windows, each with a hoop: jump through them.",
     "gincanaHowAr5": "After the last wall just run: the hoop turbo helps on the straight.",
-    "gincanaHoop": "Through the hoop! Turbo!"
+    "gincanaHoop": "Through the hoop! Turbo!",
+    "gincanaSecTqOleo": "Leak",
+    "gincanaHowTqOleo": "From here up the oil has leaked: in a puddle you run slower, your feet slip and a hit throws you far. Dodge the puddles or rush through."
   },
   "Sports": {
     "eyebrow": "Sports",
