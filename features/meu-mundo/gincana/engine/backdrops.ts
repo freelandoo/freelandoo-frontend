@@ -241,7 +241,8 @@ function orbital(lit: SoftGeo, glow: SoftGeo, n: number) {
     glow.torus(10 + rnd(i, 50) * 8, 0.4, at(side(i, 22 + rnd(i, 51) * 20), 12 + rnd(i, 52) * 18, Z0 + 20 + i * 38, 0, Math.PI / 2, 0), [0.4, 0.9, 1], 24)
   }
   // estrelas
-  for (let i = 0; i < Math.round(160 * n); i++) {
+  // estrelas numa esfera fixa: não crescem com o comprimento da prova
+  for (let i = 0; i < Math.round(160 * Math.min(1, n)); i++) {
     const a = rnd(i, 60) * Math.PI * 2
     const e = 0.08 + rnd(i, 61) * 1.3
     const r = 520

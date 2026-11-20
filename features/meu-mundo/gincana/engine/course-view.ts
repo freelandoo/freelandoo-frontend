@@ -62,6 +62,9 @@ const SKY_OF: Record<GincanaTheme["deco"], SkyRegionId> = { city: "centro", fore
 /** Cor da névoa por Domínio, [dia, noite] (sem linha = a do céu do Centro). */
 const HAZE_OF: Partial<Record<GincanaTheme["deco"], readonly [RGB, RGB]>> = {
   forest: [[0.46, 0.38, 0.62], [0.2, 0.15, 0.34]],
+  // 20/11 (miniaturas): Orbital no roxo do espaço (o pêssego tingia as torres brancas); Forja no vermelho-brasa
+  orbital: [[0.36, 0.3, 0.6], [0.1, 0.07, 0.22]],
+  forge: [[0.72, 0.26, 0.1], [0.36, 0.08, 0.04]],
 }
 /** Seta do chão (sem luz: lê de dia e de noite). */
 const ARROW: RGB = [1, 0.84, 0.12]
