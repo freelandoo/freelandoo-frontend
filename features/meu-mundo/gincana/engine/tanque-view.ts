@@ -384,11 +384,26 @@ function tankSide(g: SoftGeo, glow: SoftGeo, s: number) {
     for (const dz of [-0.35, 0.35]) g.box(0.08, TOP + 1, 0.08, at(x - s * 0.5, TOP / 2 - 0.5, z + dz), STEEL_L)
     for (let y = 0; y < TOP; y += 0.45) g.box(0.06, 0.06, 0.7, at(x - s * 0.5, y, z), STEEL_L)
   }
+  // arandelas em fila na meia altura de cada andar (desencontradas entre os níveis)
+  for (let y = 7, r = 0; y < TOP - 2; y += 9, r++) for (let z = Z0 + 4 + (r % 2) * 4; z < Z1; z += 8) sconce(g, glow, x - s * 0.18, y, z, s)
   for (let z = Z0 + 6; z < Z1; z += 12) {
     g.box(0.5, 0.3, 0.3, at(x - s * 0.3, TOP - 0.8, z), STEEL)
     glow.sphere(0.5, at(x - s * 0.55, TOP - 1.1, z), LAMP, 8)
     for (let k = 0; k < 4; k++) g.box(0.04, 0.55, 0.04, at(x - s * 0.55 + Math.cos(k * 1.57) * 0.27, TOP - 1.1, z + Math.sin(k * 1.57) * 0.27), STEEL_D)
   }
+}
+
+/**
+ * Arandela da parede (miniatura 20/11, metade C): espelho de aço escuro com a quina clara, a lâmpada âmbar
+ * acesa em caixa (gradiente laranja embaixo → amarelo em cima), três barras da gaiola na frente e o chapéu
+ * que joga a luz para baixo. `s` = lado da parede (a lâmpada olha para −s).
+ */
+function sconce(g: SoftGeo, glow: SoftGeo, x: number, y: number, z: number, s: number) {
+  g.box(0.12, 1.1, 0.8, at(x - s * 0.02, y, z), (_x, yy) => (yy > 0.45 ? STEEL_L : STEEL))
+  glow.box(0.32, 0.62, 0.46, at(x - s * 0.24, y - 0.05, z), (_x, yy) => mix([1, 0.42, 0.1], [1, 0.82, 0.4], yy / 0.62 + 0.5))
+  for (const dz of [-0.16, 0, 0.16]) g.box(0.05, 0.7, 0.05, at(x - s * 0.42, y - 0.05, z + dz), STEEL_D)
+  g.box(0.5, 0.12, 0.7, at(x - s * 0.26, y + 0.33, z), STEEL_D)
+  g.box(0.42, 0.08, 0.56, at(x - s * 0.24, y - 0.4, z), STEEL)
 }
 
 function tankBack(g: SoftGeo, glow: SoftGeo) {

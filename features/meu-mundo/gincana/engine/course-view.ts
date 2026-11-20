@@ -1894,7 +1894,10 @@ export class CourseView {
         // quadrado = cilindro de 4 lados girado 45°: base (T-0,1)·√2, topo menor (chanfro)
         // V-Fábrica (ref. v3): chapa de aço em três tons, uma em cada sete de cobre, e rebites de latão nos cantos
         const copper = d === "factory" && Math.abs(Math.sin(i * 7.31 + j * 3.17 + p.z)) % 1 < 0.14
-        g.cylinder((T - 0.1) * Math.SQRT2, h, Matrix.RotationY(Math.PI / 4).multiply(Matrix.Translation(lx, 0.03 + h / 2, lz)).multiply(frame), copper ? [0.56, 0.3, 0.18] : tone(i, j), 4, (T - 0.26) * Math.SQRT2)
+        // Tanque (miniatura 20/11): chapas alternando cobre-vermelho, bronze e escura
+        const tq = this.theme.id === "tanque" ? (Math.abs(Math.sin(i * 5.17 + j * 9.31 + p.z * 0.7) * 437.58) % 1) : -1
+        const plate: RGB = tq < 0 ? (copper ? [0.56, 0.3, 0.18] : tone(i, j)) : tq < 0.42 ? [0.44, 0.19, 0.11] : tq < 0.86 ? [0.5, 0.32, 0.14] : [0.26, 0.14, 0.09]
+        g.cylinder((T - 0.1) * Math.SQRT2, h, Matrix.RotationY(Math.PI / 4).multiply(Matrix.Translation(lx, 0.03 + h / 2, lz)).multiply(frame), plate, 4, (T - 0.26) * Math.SQRT2)
         if (d === "forge") {
           // Forja (20/11, miniatura): rebite de ferro claro nos quatro cantos da chapa
           for (const cx of [-1, 1]) for (const cz of [-1, 1]) g.cylinder(0.15, 0.06, Matrix.Translation(lx + cx * (T / 2 - 0.32), 0.03 + h + 0.02, lz + cz * (T / 2 - 0.32)).multiply(frame), [0.46, 0.38, 0.33], 4, 0.09)
