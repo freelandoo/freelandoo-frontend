@@ -19,7 +19,8 @@ import type { SteamGeo } from "../../engine/steampunk/geo"
 import { CITY, islandGeometry, type RockBuf } from "../../paint/engine/world-view"
 
 /** Borda do cais (|x|), altura do cais e até onde a cidade vai no canal (z). */
-const QUAY_X = 76
+// miniaturas (20/11): canal estreito com as fachadas coladas (era 76: os sobrados sumiam lá longe)
+const QUAY_X = 40
 const QUAY_Y = 5
 const Z0 = -240
 const Z1 = 520
@@ -37,28 +38,59 @@ const SIGNS: RGB[] = [
 
 type Ctx = SteamCtx & { wall: SteamGeo }
 
+const PASTEL: RGB[] = [
+  [0.88, 0.58, 0.54],
+  [0.93, 0.82, 0.62],
+  [0.86, 0.64, 0.36],
+  [0.78, 0.44, 0.33],
+  [0.62, 0.68, 0.78],
+  [0.9, 0.7, 0.62],
+  SP.brick,
+]
+
 /** Sobrado com a frente para −Z do quadro `f`: loja acesa, janelas, cornija e mansarda. */
 function townhouse(ctx: Ctx, f: Matrix, w: number, h: number, R: () => number, vent: boolean) {
   const { props, glow } = ctx
   const d = w
-  const wallColor = [SP.brick, SP.brickDark, SP.masonry, SP.masonryDark][Math.floor(R() * 4)]
+  // paleta das miniaturas: rosa, creme, ocre, terracota e azul-acinzentado (com tijolo de vez em quando)
+  const wallColor = PASTEL[Math.floor(R() * PASTEL.length)]
   const front = -d / 2 - 0.04
   props.box(w, h, d, place(0, h / 2, 0, 0, f), wallColor)
   props.box(w + 0.3, 0.5, d + 0.3, place(0, 4.3, 0, 0, f), SP.masonryLight)
   props.box(w + 0.5, 0.6, d + 0.5, place(0, h + 0.1, 0, 0, f), SP.brassDark)
   // loja no térreo, com toldo de cobre
   glow.box(w - 2.2, 2.5, 0.1, place(0, 1.8, front, 0, f), SP.windowGlow)
+  // vitrine com caixilhos de ferro, porta escura no meio e soleira de pedra (miniatura)
+  const nm = Math.max(3, Math.round((w - 2.2) / 1.6))
+  for (let m = 0; m <= nm; m++) props.panel(0.12, 2.5, place(-(w - 2.2) / 2 + (m * (w - 2.2)) / nm, 1.8, front - 0.07, 0, f), SP.iron)
+  props.panel(w - 2.2, 0.12, place(0, 2.5, front - 0.07, 0, f), SP.iron)
+  props.panel(1.5, 2.6, place(0, 1.75, front - 0.09, 0, f), [0.16, 0.1, 0.07])
+  props.panel(0.2, 0.2, place(0.5, 1.6, front - 0.1, 0, f), SP.brass)
+  props.box(w - 1.6, 0.3, 0.6, place(0, 0.4, front - 0.2, 0, f), SP.masonryLight)
   props.box(w - 1.4, 0.24, 1.5, place(0, 3.4, front - 0.7, 0, f), SP.copperDark)
   // janelas: a maioria acesa, com peitoril
   const cols = Math.max(2, Math.floor(w / 3.3))
   const rows = Math.floor((h - 5) / 3.3)
+  // miniaturas: quinas com pilastra clara, cornija em cada andar, moldura clara nas janelas, sacada de ferro
+  const trim: RGB = [Math.min(1, wallColor[0] * 0.5 + 0.48), Math.min(1, wallColor[1] * 0.5 + 0.46), Math.min(1, wallColor[2] * 0.5 + 0.42)]
+  for (const sx of [-1, 1]) props.box(0.7, h - 4.5, 0.35, place(sx * (w / 2 - 0.35), 4.5 + (h - 4.5) / 2, front - 0.15, 0, f), trim)
+  const balcony = R() < 0.5
   for (let r = 0; r < rows; r++) {
+    props.box(w + 0.1, 0.22, 0.4, place(0, 4.85 + r * 3.3, front - 0.18, 0, f), trim)
     for (let c = 0; c < cols; c++) {
       const x = (c - (cols - 1) / 2) * (w / cols)
       const y = 6.2 + r * 3.3
+      props.panel(1.55, 2.3, place(x, y + 0.05, front - 0.03, 0, f), trim)
       const pane = R() < 0.68 ? glow : props
-      pane.panel(1.15, 1.9, place(x, y, front - 0.02, 0, f), pane === glow ? SP.windowGlow : SP.glass)
-      props.panel(1.5, 0.18, place(x, y - 1.05, front - 0.02, 0, f), SP.masonryLight)
+      pane.panel(1.15, 1.9, place(x, y, front - 0.06, 0, f), pane === glow ? SP.windowGlow : SP.glass)
+      props.panel(1.5, 0.18, place(x, y - 1.05, front - 0.07, 0, f), SP.masonryLight)
+      // caixilho em cruz
+      props.panel(0.08, 1.9, place(x, y, front - 0.08, 0, f), SP.iron)
+      props.panel(1.15, 0.08, place(x, y + 0.2, front - 0.08, 0, f), SP.iron)
+      if (balcony && r === 0) {
+        props.box(1.9, 0.12, 0.7, place(x, y - 1.1, front - 0.4, 0, f), SP.iron)
+        props.box(1.9, 0.7, 0.06, place(x, y - 0.75, front - 0.74, 0, f), SP.iron)
+      }
     }
   }
   // letreiro em pé, preso na quina
@@ -137,16 +169,16 @@ export function buildCity(scene: Scene, ctx: Ctx, low: boolean): GincanaCity {
       ctx.pools.panel(20, 3, Matrix.RotationX(Math.PI / 2).multiply(place(s * (QUAY_X - 11), 0.12, z)), SP.amber)
     }
     // fileiras de sobrados de frente para o canal
-    const rows = low ? 1 : 2
+    const rows = low ? 2 : 3
     for (let row = 0; row < rows; row++) {
-      const x = s * (QUAY_X + 28 + row * 24)
+      const x = s * (QUAY_X + 26 + row * 22)
       for (let z = Z0 + 30; z < Z1 - 20; ) {
-        const w = 13 + R() * 6
-        const h = 11 + Math.floor(R() * 4) * 3.3 + row * 8
+        const w = 11 + R() * 6
+        const h = 14 + Math.floor(R() * 4) * 3.3 + row * 9
         const vent = vents > 0 && R() < 0.12
         if (vent) vents--
         townhouse(ctx, place(x, QUAY_Y, z + w / 2, (s * Math.PI) / 2), w, h, R, vent)
-        z += w + 1.5
+        z += w + 0.3
       }
     }
   }

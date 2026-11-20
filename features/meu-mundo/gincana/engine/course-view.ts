@@ -1619,7 +1619,7 @@ export class CourseView {
     for (let i = 0; i < 10; i++) {
       const s = i % 2 ? 1 : -1
       const z = 20 + i * 28
-      const x = s * (48 + ((i * 13) % 22))
+      const x = s * (27 + ((i * 13) % 8))
       const h = 14 + ((i * 11) % 12)
       const band = [PINK, ORANGE, PURPLE, BLUE, LIME][i % 5]
       props.cylinder(9, 1.6, place(x, 0.2, z), SP.stoneDark, 12)
