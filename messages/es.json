@@ -15112,7 +15112,20 @@
     "gincanaHowCp2": "Las bajas se pueden saltar; las hondas tardan en cruzarse: entra apenas baje.",
     "gincanaHowCp3": "Muretes de tubo cierran medio embudo: rodea o salta. Después, solo tres compuertas.",
     "gincanaHowCp4": "La grasa reduce tu carrera a la mitad: las compuertas aquí son lentas, pero tú también.",
-    "gincanaHowCp5": "La última fila sube y baja rápido: espera la tuya y corre a la subida."
+    "gincanaHowCp5": "La última fila sube y baja rápido: espera la tuya y corre a la subida.",
+    "gincanaPhPortoes": "Portones de Hielo",
+    "gincanaEvPortoes": "Portones de Hielo",
+    "gincanaPhPortoesPitch": "La segunda carrera del Mar de Hielo: nueve filas de portones de hielo, cada vez más estrechas. Los de verdad se rompen; los falsos son pared. Frena en el hielo liso.",
+    "gincanaSecPt1": "Patio de portones",
+    "gincanaSecPt2": "Lago helado",
+    "gincanaSecPt3": "Puente de hielo",
+    "gincanaSecPt4": "Pasillo de estalactitas",
+    "gincanaSecPt5": "Subida",
+    "gincanaHowPt1": "Cada fila tiene portones de verdad y falsos, iguales por fuera. El de verdad se rompe cuando lo tocas.",
+    "gincanaHowPt2": "¿Viste a alguien pasar? Ese portón está abierto. El hielo liso resbala: empieza a frenar antes.",
+    "gincanaHowPt3": "Bloques de hielo se deslizan de lado en el lago: pasa detrás de ellos.",
+    "gincanaHowPt4": "El puente y el pasillo tienen pocos portones de verdad: la fila se aprieta, lánzate para pasar.",
+    "gincanaHowPt5": "Las estalactitas se balancean en el pasillo; después solo queda la subida."
   },
   "Sports": {
     "eyebrow": "Deportes",

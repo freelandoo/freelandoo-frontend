@@ -24,6 +24,8 @@ export interface BotBrain {
   /** s até poder pular de novo. */
   jumpCool: number
   stuck: number
+  /** recuo (s) depois de travar contra outro na frente de uma porta */
+  back: number
   lastZ: number
   /** s esperando (pêndulo/luva/bloco/plataforma); passou da paciência, vai assim mesmo. */
   waited: number
@@ -48,7 +50,7 @@ export function newBrain(w: RunWorld, seed: number, slot: number): BotBrain {
   const r = (k: number) => botRand(seed, slot, k)
   const route = w.course.route(r)
   const skill = 0.55 + r(6) * 0.4
-  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, lastZ: -99, waited: 0, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
+  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, back: 0, lastZ: -99, waited: 0, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
 }
 
 /**
@@ -727,13 +729,23 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
       }
     }
   }
-  // preso (parado sem esperar nada): pula
+  // preso (parado sem esperar nada): pula; encostado numa fileira de portas, recua um passo (dois robôs que
+  // cruzam um na frente do outro junto da parede de portas se travam de lado)
+  if (br.back > 0) {
+    br.back -= dt
+    it.mz = -0.8
+    it.mx = it.mx >= 0 ? 0.6 : -0.6
+    return it
+  }
   if (Math.abs(b.z - br.lastZ) > 0.6) {
     br.lastZ = b.z
     br.stuck = 0
   } else if (go > 0) {
     br.stuck += dt
-    if (br.stuck > 2.2 && b.ground) {
+    if (br.stuck > 1.4 && b.ground && br.door >= 0 && C.doors[br.door].z - b.z < 1.5) {
+      br.back = 0.45 + botRand(br.seed, br.slot, Math.floor(t * 4)) * 0.3
+      br.stuck = 0
+    } else if (br.stuck > 2.2 && b.ground) {
       it.jump = true
       br.stuck = 0
     }

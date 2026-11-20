@@ -37,6 +37,7 @@ import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
+import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
 
@@ -67,6 +68,8 @@ export class CourseView {
   private readonly movers: { mesh: Mesh; p: Pad }[] = []
   /** Comportas da Usina: as comportas que sobem e descem (instanciadas por tipo) e as luzes delas. */
   private readonly comportas: ComportasGates | null = null
+  /** Portões de Gelo: os portões de gelo (instanciados por largura), o estilhaço e a racha. */
+  private readonly portoes: PortoesDoors | null = null
   private readonly pusherMeshes: Mesh[] = []
   /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
   private readonly wallSegs: InstancedMesh[] = []
@@ -257,6 +260,10 @@ export class CourseView {
       const span = theme.id === "clareira" ? 10.5 : 5.5
       const x0 = Math.min(...row.map((p) => p.x)) - span
       const x1 = Math.max(...row.map((p) => p.x)) + span
+      if (theme.id === "portoes") {
+        portoesSwingGantry(st, glow, x0, x1, z, py)
+        continue
+      }
       if (theme.deco === "forest") {
         // Floresta: dois troncos e um GALHO grosso de trave, com musgo, folhas e flores acesas penduradas
         const bark = (x: number, y: number, zz: number): RGB => {
@@ -318,7 +325,8 @@ export class CourseView {
       }
     }
     // marcos das portas: pilares entre elas (só desenho; a fileira inteira é a regra)
-    const doorRows = [...new Set(course.doors.map((d) => d.row))]
+    const doorRows = theme.id === "portoes" ? [] : [...new Set(course.doors.map((d) => d.row))]
+    if (theme.id === "portoes") portoesFrames(st, glow, course)
     for (const row of doorRows) {
       const ds = course.doors.filter((d) => d.row === row)
       const xs = ds.map((d) => d.x - d.hw).concat([ds[ds.length - 1].x + ds[ds.length - 1].hw])
@@ -412,6 +420,14 @@ export class CourseView {
     // ── pêndulos: haste e a bola/martelo/estalactite do tema ──
     for (const p of course.pendulums) {
       const pg = new SoftGeo()
+      if (theme.id === "portoes") {
+        portoesIcicle(pg, p.len, p.R)
+        const m = pg.build("gincana-swing", scene, toy, false)
+        m.position.set(p.x, p.py, p.z)
+        m.rotationQuaternion = new Quaternion()
+        this.swings.push(m)
+        continue
+      }
       if (city) pg.cylinder(0.16, p.len, at(0, -p.len / 2, 0), IRON, 8)
       else if (theme.deco === "forest") {
         // cipó trançado (dois fios que se cruzam) no lugar da corrente
@@ -615,7 +631,9 @@ export class CourseView {
     for (const q of course.pushers) {
       const pg = new SoftGeo()
       // o que empurra é perigo: listra diagonal amarela e preta (na cidade, as faixas de antes)
-      if (theme.deco === "factory") {
+      if (theme.id === "portoes") {
+        portoesBlock(pg, q.hx, q.hz, q.h)
+      } else if (theme.deco === "factory") {
         // V-Fábrica (ref. v3): prensa num carro — cabeça listrada de perigo, carcaça verde-petróleo com
         // friso de latão, engrenagem de latão nas duas faces e o pistão cromado subindo até o pórtico
         const TEAL: RGB = [0.14, 0.34, 0.34]
@@ -1036,7 +1054,8 @@ export class CourseView {
     }
 
     // ── portas (todas iguais por fora: as de verdade tombam quando alguém passa) ──
-    if (course.doors.length) {
+    if (theme.id === "portoes") this.portoes = new PortoesDoors(scene, toy, this.glowMat, course)
+    else if (course.doors.length) {
       const d0 = course.doors[0]
       const dg = new SoftGeo()
       if (theme.deco === "city") {
@@ -1459,6 +1478,7 @@ export class CourseView {
       if (comportasPad(g, glow, p)) return
       comportasFloor(g, glow, p)
     }
+    if (this.theme.id === "portoes") portoesFloor(g, glow, p)
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraStump(p)) return spinStump(g, glow, p)
@@ -1957,7 +1977,8 @@ export class CourseView {
       this.pusherMeshes[i].position.x = P.x
       this.pusherMeshes[i].position.z = P.z
     }
-    for (let i = 0; i < C.doors.length; i++) {
+    this.portoes?.update(t, clock, world.doors)
+    for (let i = 0; i < this.doorMeshes.length; i++) {
       const m = this.doorMeshes[i]
       const s = world.doors[i]
       if (s >= 0) {
@@ -2061,6 +2082,7 @@ export class CourseView {
     this.memHand?.dispose()
     for (const dn of this.drumNodes) dn.node.dispose()
     for (const m of this.doorMeshes) m.dispose()
+    this.portoes?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {
       b.mesh.dispose()

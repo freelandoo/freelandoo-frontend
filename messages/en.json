@@ -15132,7 +15132,20 @@
     "gincanaHowCp2": "The low ones can be jumped; the deep ones take longer to cross: go in as soon as it sinks.",
     "gincanaHowCp3": "Pipe barriers close half of the funnel: go around or jump. Then, only three floodgates.",
     "gincanaHowCp4": "Grease halves your running speed: the floodgates here are slow, but so are you.",
-    "gincanaHowCp5": "The last row rises and sinks fast: wait for yours and run to the climb."
+    "gincanaHowCp5": "The last row rises and sinks fast: wait for yours and run to the climb.",
+    "gincanaPhPortoes": "Ice Gates",
+    "gincanaEvPortoes": "Ice Gates",
+    "gincanaPhPortoesPitch": "The Ice Sea's second race: nine rows of ice gates, narrower each time. The real ones shatter; the fake ones are walls. Brake on the smooth ice.",
+    "gincanaSecPt1": "Gate yard",
+    "gincanaSecPt2": "Frozen lake",
+    "gincanaSecPt3": "Ice bridge",
+    "gincanaSecPt4": "Icicle corridor",
+    "gincanaSecPt5": "Climb",
+    "gincanaHowPt1": "Every row has real and fake gates that look the same. The real one shatters when you touch it.",
+    "gincanaHowPt2": "Saw someone go through? That gate is open. The smooth ice is slippery: start braking early.",
+    "gincanaHowPt3": "Ice blocks slide sideways on the lake: pass behind them.",
+    "gincanaHowPt4": "The bridge and the corridor have few real gates: the line gets tight, dive to push through.",
+    "gincanaHowPt5": "Icicles swing in the corridor; after that it's just the climb."
   },
   "Sports": {
     "eyebrow": "Sports",

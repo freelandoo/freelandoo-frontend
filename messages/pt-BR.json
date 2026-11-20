@@ -14546,7 +14546,20 @@
     "gincanaHowCp2": "As baixas dá para pular; as fundas demoram para atravessar: entre logo que ela descer.",
     "gincanaHowCp3": "Muretas de cano fecham metade do funil: contorne ou pule. Depois, três comportas só.",
     "gincanaHowCp4": "A graxa deixa a corrida na metade: as comportas daqui são lentas, mas você também.",
-    "gincanaHowCp5": "A última fileira sobe e desce rápido: espere a sua e corra para a subida."
+    "gincanaHowCp5": "A última fileira sobe e desce rápido: espere a sua e corra para a subida.",
+    "gincanaPhPortoes": "Portões de Gelo",
+    "gincanaEvPortoes": "Portões de Gelo",
+    "gincanaPhPortoesPitch": "A segunda corrida do Mar de Gelo: nove fileiras de portões de gelo, cada vez mais estreitas. Os de verdade estilhaçam; os falsos são parede. Freie no gelo liso.",
+    "gincanaSecPt1": "Pátio dos portões",
+    "gincanaSecPt2": "Lago congelado",
+    "gincanaSecPt3": "Ponte de gelo",
+    "gincanaSecPt4": "Corredor das estalactites",
+    "gincanaSecPt5": "Subida",
+    "gincanaHowPt1": "Toda fileira tem portões de verdade e falsos, iguais por fora. O de verdade estilhaça quando você encosta.",
+    "gincanaHowPt2": "Viu alguém passar? Aquele portão está aberto. O gelo liso escorrega: comece a frear antes.",
+    "gincanaHowPt3": "Blocos de gelo deslizam de lado no lago: passe atrás deles.",
+    "gincanaHowPt4": "A ponte e o corredor têm poucos portões de verdade: a fila aperta, mergulhe para furar.",
+    "gincanaHowPt5": "As estalactites balançam no corredor; depois é só a subida."
   },
   "Sports": {
     "eyebrow": "Esportes",
