@@ -292,11 +292,11 @@ export const CLAREIRA = {
   ) as readonly (readonly [number, number])[],
   discR: DR,
   /** Giro das fatias (rad/s, alternando o lado). */
-  discSpin: [1.2, 1.4, 1.3] as readonly number[],
+  discSpin: [2.0, 2.3, 2.15] as readonly number[],
   /** Giro dos tocos (rad/s). */
-  stumpSpin: 1.9,
+  stumpSpin: 3.2,
   /** Giro da vitória-régia (rad/s). */
-  lilySpin: 1.1,
+  lilySpin: 2.3,
   /** Rampa das frutas (DECK → Y1) e as faixas das frutas. */
   ramp: { z0: 65 + CA, z1: 105 + CA, hx: 8 },
   lanes: [-6, -2, 2, 6] as readonly number[],
