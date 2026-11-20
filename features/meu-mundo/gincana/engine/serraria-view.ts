@@ -29,7 +29,7 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { Material } from "@babylonjs/core/Materials/material"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
-import { DECK, logRowAngle, logSpikeCount, logSpikeX, plankAngle, SPIKE_OUT, type Course, type Log, type Pad, type Plank } from "../sim/course"
+import { DECK, logRowAngle, logSpikeCount, logSpikeX, plankAngle, SPIKE_OUT, type Course, type Log, type Pad, type Plank, type Seesaw } from "../sim/course"
 import type { RGB } from "./shapes"
 import { SoftGeo, at, mix } from "./shapes"
 
@@ -233,6 +233,11 @@ export function serrariaGantry(st: SoftGeo, glow: SoftGeo, x0: number, x1: numbe
 }
 
 // ── 3. tábua que balança: tampo em y = 0 local, o nó gira em z (rotation.z = ângulo) ──
+/** Gangorra de lado (20/11) desenhada como a tábua da Serraria (mesmo tampo, eixo e mancais). */
+export function sawPlank(S: Seesaw): Plank {
+  return { x: S.x, z: S.z, hx: S.hx, hz: S.hz, y: S.y, amp: 0, w: 0, ph: 0 }
+}
+
 // Tábuas atravessadas (pregadas em duas travessas), cada uma num tom e um tiquinho torta, pregos, duas
 // cintas de ferro ao longo, o eixo de tronco por baixo, e a borda de cada lado pintada de aviso.
 export function serrariaPlank(g: SoftGeo, P: Plank, seed: number) {
@@ -263,7 +268,8 @@ export function serrariaPlank(g: SoftGeo, P: Plank, seed: number) {
 
 /** Os mancais das tábuas (parados): pilar de pedra que sai do pântano com o berço de ferro do eixo. */
 export function serrariaPlankPosts(st: SoftGeo, course: Course) {
-  for (const P of course.planks) {
+  // 20/11: as gangorras de peso (uma por fileira) usam os mesmos mancais
+  for (const P of [...course.planks, ...course.saws.map(sawPlank)]) {
     for (const e of [-1, 1]) {
       const z = P.z + e * (P.hz + 0.2)
       const h = P.y - 1.05
@@ -447,6 +453,8 @@ export class SerrariaView {
   private readonly spinners: { node: TransformNode; w: number }[] = []
   private readonly logs: TransformNode[] = []
   private readonly planks: TransformNode[] = []
+  /** 20/11: gangorras de peso (tombam de lado pelo `world.saw`) */
+  private readonly saws: TransformNode[] = []
 
   constructor(scene: Scene, toy: Material, glowMat: Material, private readonly course: Course) {
     course.logs.forEach((L, i) => {
@@ -471,6 +479,16 @@ export class SerrariaView {
       m.parent = node
       this.meshes.push(m)
       this.planks.push(node)
+    })
+    course.saws.forEach((S, i) => {
+      const node = new TransformNode(`serraria-saw-${i}`, scene)
+      node.position.set(S.x, S.y, S.z)
+      const g = new SoftGeo()
+      serrariaPlank(g, sawPlank(S), i * 5 + 3)
+      const m = g.build(`serraria-saw-m-${i}`, scene, toy, false)
+      m.parent = node
+      this.meshes.push(m)
+      this.saws.push(node)
     })
     if (course.logs.length) {
       // o galpão ao lado das tábuas, a roda d'água na parede que dá para a pista, a serra na boca, as pilhas
@@ -510,21 +528,23 @@ export class SerrariaView {
       serrariaLogShadows(sh, course)
       this.meshes.push(sh.build("serraria-log-shadows", scene, toy, true))
     }
-    if (course.planks.length) {
+    if (course.planks.length || course.saws.length) {
       const st = new SoftGeo()
       serrariaPlankPosts(st, course)
       this.meshes.push(st.build("serraria-plank-posts", scene, toy, true))
     }
   }
 
-  update(t: number) {
+  update(t: number, saw?: Float64Array) {
     this.course.logs.forEach((L, i) => (this.logs[i].rotation.x = -L.w * t))
     this.course.planks.forEach((P, i) => (this.planks[i].rotation.z = plankAngle(P, t)))
+    // gangorra: ângulo + = o lado +x desce (no nó, rotation.z + levanta o +x)
+    if (saw) this.saws.forEach((n, i) => (n.rotation.z = -saw[i * 2]))
     for (const s of this.spinners) s.node.rotation.x = s.w * t
   }
 
   dispose() {
     for (const m of this.meshes) m.dispose()
-    for (const n of [...this.logs, ...this.planks, ...this.spinners.map((s) => s.node)]) n.dispose()
+    for (const n of [...this.logs, ...this.planks, ...this.saws, ...this.spinners.map((s) => s.node)]) n.dispose()
   }
 }

@@ -1322,7 +1322,8 @@ export class CourseView {
     if (course.logs.length || course.planks.length) this.serraria = new SerrariaView(scene, toy, this.glowMat, course)
     if (theme.id === "tanque") this.tanque = new TanqueView(scene, toy, this.glowMat, course)
     if (course.rotors.length) this.estaleiro = new EstaleiroView(scene, toy, this.glowMat, course)
-    if (course.saws.length) this.gangorras = new GangorrasView(scene, toy, this.glowMat, course)
+    // (a Serraria desenha as gangorras dela com a tábua da serraria)
+    if (course.saws.length && theme.id !== "serraria") this.gangorras = new GangorrasView(scene, toy, this.glowMat, course)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
@@ -2156,7 +2157,7 @@ export class CourseView {
     this.altoforno?.update(tt)
     this.mills?.update(tt)
     this.yard?.update(tt)
-    this.serraria?.update(tt)
+    this.serraria?.update(tt, world.saw)
     this.estaleiro?.update(tt)
     this.gangorras?.update(world)
     for (const m of this.movers) {
