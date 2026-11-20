@@ -797,6 +797,9 @@ export const HELICES = {
     [2, 108.8, 2, 7.5, 1.9, -0.6, 0],
     [-1.5, 128.4, 3, 7.5, 1.9, 0.62, 1],
   ] as [number, number, number, number, number, number, number][],
+  /** 20/11 (pedido do Alex): o miolo de cada hélice gira RÁPIDO ao contrário das pás (× o giro da hélice).
+   *  Antes: o miolo girava junto com as pás (× 1). */
+  hub: -3.2,
 } as const
 
 function courseHelices(): Course {
@@ -808,7 +811,7 @@ function courseHelices(): Course {
       k.pads[p].spin = w
     }
     const c = k.disc(x, z, hw * 1.9, 6, 1, s)
-    k.pads[c].spin = w
+    k.pads[c].spin = w * HELICES.hub
     // a barra do cubo: gira ao contrário, rente ao tampo (se pula); o cubo é um poste (ninguém fica no eixo)
     if (bar) {
       k.sweep(x, z, DECK + 0.55, L - 0.4, 0.3, -w * 1.6, 0.6, true)
@@ -973,9 +976,14 @@ function courseCrosta(): Course {
  * Diferente da Serraria (tábuas que balançam pelo relógio): aqui quem move a tábua é o peso dos corredores.
  */
 export const GANGORRAS = {
-  /** 1ª e 2ª fileiras: z do eixo; pistas em x */
-  rows: [19.9, 35.5],
-  lanes: [-3.4, 0, 3.4],
+  /**
+   * 20/11 (pedido do Alex: "tem que ser um só bem grande em cada etapa… umas 8 etapas… ele escorrega, conforme
+   * ele sobe todo mundo escorrega, é bem sensível"): no lugar das duas fileiras de três tábuas, 8 BALANÇAS largas
+   * em fila, uma por etapa, que tombam de LADO pelo peso (mola fraca = sensível) e escorregam forte (`slip`).
+   * Quem pisa num lado faz ela descer para esse lado: tem que correr para o outro. Patamar de descanso depois
+   * da 4ª. `rest` = repouso torto, alternando o lado. Antes: rows [19.9, 35.5], lanes ±3.4 / 0, long hx 1,25.
+   */
+  stages: { n: 8, z0: 15.4, hx: 3.3, hz: 3.3, gap: 0.5, max: 0.34, k: 0.3, slip: 11, rest: 0.06, mid: 4, midHz: 2.6 },
   long: { hx: 1.25, hz: 4.5, max: 0.2, k: 0.9 },
   /** corrente: z do eixo de cada elo; pistas ±2.3 */
   chain: [51.1, 60.4, 69.7],
@@ -987,6 +995,25 @@ export const GANGORRAS = {
   big: { z: 123.3, hx: 5.2, hz: 6, max: 0.16, k: 0.35 },
 } as const
 
+/** Gangorras: z do centro de cada balança, o patamar do meio e onde acabam (20/11). */
+export function gangorraStages() {
+  const S = GANGORRAS.stages
+  const zs: number[] = []
+  let z = S.z0
+  let mid = 0
+  for (let i = 0; i < S.n; i++) {
+    if (i === S.mid) {
+      mid = z + S.midHz
+      z += 2 * S.midHz + S.gap
+    }
+    zs.push(z + S.hz)
+    z += 2 * S.hz + S.gap
+  }
+  return { zs, mid, end: z - S.gap }
+}
+/** O resto da fase (do patamar 43,3 em diante) anda isto para a frente (as balanças são mais compridas). */
+const GANG_D = gangorraStages().end + 0.2 - 40.2
+
 function courseGangorras(): Course {
   const K = GANGORRAS
   const k = new CourseKit()
@@ -994,68 +1021,73 @@ function courseGangorras(): Course {
   // gangorra comprida que descansa com a ponta de perto no chão (eixo acima do patamar)
   const longSaw = (x: number, z: number, hx: number, hz: number, max: number, kk: number) =>
     k.saw(x, z, DECK + Math.tan(max) * hz, hx, hz, 0, max, -max, kk)
-  // ── 1. as duas fileiras de gangorras compridas ──
-  for (const z of K.rows) for (const x of K.lanes) longSaw(x, z, K.long.hx, K.long.hz, K.long.max, K.long.k)
-  k.box(0, 27.7, 6.2, 2.9, 1, 1, 1)
-  k.box(0, 43.3, 6.2, 3.1, 1, 1, 1)
-  // 20/11 (dificuldade): nos patamares, a barra baixa girando (pule ou cai no vazio)
-  k.sweep(0, 27.7, DECK + 0.55, 5.6, 0.3, 1.1, 0, true)
-  k.sweep(0, 43.3, DECK + 0.55, 5.6, 0.3, -1.2, Math.PI / 2, true)
+  const D = GANG_D
+  const ST = K.stages
+  const G = gangorraStages()
+  // ── 1. as 8 balanças grandes (tombam de lado com o peso e escorregam) ──
+  G.zs.forEach((z, i) => {
+    k.saw(0, z, DECK, ST.hx, ST.hz, 1, ST.max, i % 2 ? ST.rest : -ST.rest, ST.k)
+    k.saws[k.saws.length - 1].slip = ST.slip
+  })
+  k.box(0, G.mid, ST.hx, ST.midHz, 1, 1, 1)
+  k.box(0, 43.3 + D, 6.2, 3.1, 1, 1, 1)
+  // 20/11 (dificuldade): no patamar, a barra baixa girando (pule ou cai no vazio)
+  k.sweep(0, 43.3 + D, DECK + 0.55, 5.6, 0.3, -1.2, Math.PI / 2, true)
   // ── 2. a corrente: três elos emendados em cada pista ──
-  for (const x of [-K.chainX, K.chainX]) for (const z of K.chain) longSaw(x, z, K.chainHx, K.long.hz, K.long.max, K.long.k)
+  for (const x of [-K.chainX, K.chainX]) for (const z of K.chain) longSaw(x, z + D, K.chainHx, K.long.hz, K.long.max, K.long.k)
   // 20/11 (dificuldade): pêndulos atravessando as duas correntes
-  k.swing(0, 55.7, DECK + 8.6, 7.2, 1.05, 0.85, 1.9, 0)
-  k.swing(0, 65, DECK + 8.6, 7.2, 1.05, 0.85, 1.9, 2.2)
-  k.box(0, 77.5, 5.2, 3, 1, 1, 2)
+  k.swing(0, 55.7 + D, DECK + 8.6, 7.2, 1.05, 0.85, 1.9, 0)
+  k.swing(0, 65 + D, DECK + 8.6, 7.2, 1.05, 0.85, 1.9, 2.2)
+  k.box(0, 77.5 + D, 5.2, 3, 1, 1, 2)
   // ── 3. os pratos de lado ──
   // descansam tortos, cada um para um lado: quem pisa no lado baixo escorrega e tomba mais; o peso no lado alto endireita
-  K.plates.forEach(([x, z, hx], i) => k.saw(x, z, DECK, hx, K.plateHz, 1, 0.28, i % 2 ? 0.13 : -0.13, 0.9))
-  k.box(0, 113.4, 6.2, 3, 1, 1, 3)
-  k.sweep(0, 113.4, DECK + 0.55, 5.6, 0.3, 1.25, 0.8, true)
+  K.plates.forEach(([x, z, hx], i) => k.saw(x, z + D, DECK, hx, K.plateHz, 1, 0.28, i % 2 ? 0.13 : -0.13, 0.9))
+  k.box(0, 113.4 + D, 6.2, 3, 1, 1, 3)
+  k.sweep(0, 113.4 + D, DECK + 0.55, 5.6, 0.3, 1.25, 0.8, true)
   // ── 4. a balança grande ──
-  longSaw(0, K.big.z, K.big.hx, K.big.hz, K.big.max, K.big.k)
-  const z0 = K.big.z + K.big.hz + 0.3
+  longSaw(0, K.big.z + D, K.big.hx, K.big.hz, K.big.max, K.big.k)
+  const z0 = K.big.z + D + K.big.hz + 0.3
   const finishZ = kitFinish(k, z0, 1.05, 7, 1.15)
-  for (const [x, z] of [[0, 27.7], [-3, 43.3], [3, 43.3], [0, 77.5], [0, 113.4]] as [number, number][]) k.logo(x, z)
+  for (const [x, z] of [[0, G.mid], [-3, 43.3 + D], [3, 43.3 + D], [0, 77.5 + D], [0, 113.4 + D]] as [number, number][]) k.logo(x, z)
   return k.done({
     id: "gangorras",
     checkpoints: [
       { x: 0, z: -3.5, y: DECK, w: 7 },
-      { x: 0, z: 27.7, y: DECK, w: 5 },
-      { x: 0, z: 43.3, y: DECK, w: 5 },
-      { x: 0, z: 77.5, y: DECK, w: 4 },
-      { x: 0, z: 113.4, y: DECK, w: 5 },
+      { x: 0, z: G.mid + 1.2, y: DECK, w: 4 },
+      { x: 0, z: 43.3 + D, y: DECK, w: 5 },
+      { x: 0, z: 77.5 + D, y: DECK, w: 4 },
+      { x: 0, z: 113.4 + D, y: DECK, w: 5 },
     ],
     finishZ,
     finishY: DECK + 6,
-    sections: [15.1, 46.4, 80.5, 116.4, z0],
+    sections: [15.1, 46.4 + D, 80.5 + D, 116.4 + D, z0],
     minFinish: 20,
     route: (r) =>
       routeOf((add) => {
         add(0, 10)
-        const l1 = K.lanes[Math.floor(r(1) * 3)]
-        add(l1, 14.5)
-        add(l1, 24)
-        const l2 = K.lanes[Math.floor(r(2) * 3)]
-        add(l2, 30.2)
-        add(l2, 39.8)
+        // balanças: um pouco fora do meio (o peso de cada um conta); a regra de correr para o lado que sobe é do robô
+        G.zs.forEach((z, i) => {
+          const x = (r(10 + i) - 0.5) * 2
+          add(x, z - ST.hz + 0.7)
+          add(x, z + ST.hz - 0.7)
+        })
         const l3 = r(3) < 0.5 ? -K.chainX : K.chainX
-        add(l3, 46)
-        add(l3, 74)
+        add(l3, 46 + D)
+        add(l3, 74 + D)
         // pratos: o do lado da corrente, o do meio, um dos dois de lado e o do meio
         // (no prato, um pouco fora do meio: o peso de cada um conta)
         const o = (i: number) => (r(6 + i) - 0.5) * 2.2
-        add(Math.sign(l3) * 2.9 + o(0), 81)
-        add(Math.sign(l3) * 2.9 + o(0), 86)
-        add(o(1), 89.4)
-        add(o(1), 93.4)
+        add(Math.sign(l3) * 2.9 + o(0), 81 + D)
+        add(Math.sign(l3) * 2.9 + o(0), 86 + D)
+        add(o(1), 89.4 + D)
+        add(o(1), 93.4 + D)
         const s4 = r(4) < 0.5 ? -3.2 : 3.2
-        add(s4 + o(2), 96.8)
-        add(s4 + o(2), 100.8)
-        add(o(3), 104.2)
-        add(o(3), 108.2)
-        add(0, 111)
-        for (let z = K.big.z - K.big.hz + 1; z <= K.big.z + K.big.hz - 1; z += 2) add(r(5) < 0.5 ? -1.5 : 1.5, z)
+        add(s4 + o(2), 96.8 + D)
+        add(s4 + o(2), 100.8 + D)
+        add(o(3), 104.2 + D)
+        add(o(3), 108.2 + D)
+        add(0, 111 + D)
+        for (let z = K.big.z + D - K.big.hz + 1; z <= K.big.z + D + K.big.hz - 1; z += 2) add(r(5) < 0.5 ? -1.5 : 1.5, z)
         routeFinish(add, z0, finishZ)
       }),
   })

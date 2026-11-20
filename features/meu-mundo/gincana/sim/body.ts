@@ -787,7 +787,7 @@ function carry(b: Runner, w: RunWorld, dt: number) {
     if (S) {
       const s = Math.sin(w.saw[(b.roll - ROLL_SAW) * 2])
       if (S.ax === 0) b.z += s * 4 * dt
-      else b.x += s * 6 * dt
+      else b.x += s * (S.slip ?? 6) * dt
     }
     return
   }

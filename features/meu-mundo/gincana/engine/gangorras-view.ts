@@ -185,10 +185,12 @@ export class GangorrasView {
     const glow = new SoftGeo()
     course.saws.forEach((S, i) => {
       const big = S.hx > 4
+      // 20/11: as 8 balanças largas que tombam de lado — lampião e flâmula nas laterais (no vão eles ficavam no caminho)
+      const stage = S.ax === 1 && S.hx > 3
       const base = S.y - 1.05
-      column(st, S.x, S.z, base - 0.32, big ? 2.6 : S.ax === 1 ? 2 : 1.6, i)
+      column(st, S.x, S.z, base - 0.32, big || stage ? 2.6 : S.ax === 1 ? 2 : 1.6, i)
       trestle(st, S, base)
-      if (big) {
+      if (big || stage) {
         for (const f of [-1, 1]) {
           lantern(st, glow, S.x + f * (S.hx + 0.9), base, S.z)
           pennant(st, S.x + f * (S.hx + 0.9), base, S.z - 1.2, i + (f > 0 ? 1 : 0))
