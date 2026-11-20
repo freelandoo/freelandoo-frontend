@@ -22,7 +22,7 @@
 // que contam (os de fora e o local; computador não segura a prova) chegaram ou
 // saíram, ou o tempo acabou.
 
-import { GINCANA, ballsAt, onTile, type Course } from "./course"
+import { GINCANA, ballsAt, onTile, stepTile, type Course } from "./course"
 import { courseOf } from "./courses"
 import { ANIM, IDLE_INTENT, MODE, fallOut, knock, newRunner, newWorld, runnerAnim, separate, stepRunner, type RunEvent, type RunIntent, type RunWorld, type Runner } from "./body"
 import { botIntent, newBrain, type BotBrain } from "./bots"
@@ -285,7 +285,7 @@ export class GincanaRace {
     if (b.ground) {
       for (let k = 0; k < C.tiles.length; k++) {
         const q = C.tiles[k]
-        if (Math.abs(b.y - q.y) < 0.3 && onTile(q, b.x, b.z, 0) && this.world.tiles[k] < 0) this.world.tiles[k] = this.t
+        if (Math.abs(b.y - q.y) < 0.3 && onTile(q, b.x, b.z, 0) && this.world.tiles[k] === -1) stepTile(C, this.world.tiles, this.world.real, k, this.t)
       }
     }
     for (let k = 0; k < C.doors.length; k++) {

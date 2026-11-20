@@ -15197,7 +15197,20 @@
     "gincanaHowSe2": "The axes sweep the bridge from side to side: run right after yours goes by.",
     "gincanaHowSe3": "The planks sway and tip you toward the low side: stay in the middle and pick a lane.",
     "gincanaHowSe4": "The big logs roll slower, with an axe in the gap between them: wait for the right moment.",
-    "gincanaHowSe5": "Logs roll down the ramp: switch lanes early."
+    "gincanaHowSe5": "Logs roll down the ramp: switch lanes early.",
+    "gincanaPhCrosta": "Crust Trail",
+    "gincanaEvCrosta": "Crust Trail",
+    "gincanaPhCrostaPitch": "The lava cooled into plates and only one path holds. A solid plate glows like an ember and stays lit for everyone; a fake one sinks into the lava. Find the way while the hammers swing overhead.",
+    "gincanaSecCt1": "Plates",
+    "gincanaSecCt2": "Hammers",
+    "gincanaSecCt3": "Narrows",
+    "gincanaSecCt4": "Embers",
+    "gincanaSecCt5": "Climb",
+    "gincanaHowCt1": "A lit plate is solid: follow the lit ones others already found.",
+    "gincanaHowCt2": "A fake plate sinks at once and leaves a hole. Holes show the way too.",
+    "gincanaHowCt3": "The path only goes straight or sideways, never diagonally.",
+    "gincanaHowCt4": "The hammers swing sideways: let one pass before you step.",
+    "gincanaHowCt5": "Boulders roll down: change lanes early."
   },
   "Sports": {
     "eyebrow": "Sports",

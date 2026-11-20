@@ -39,6 +39,8 @@ export interface BotBrain {
   bad: Set<number>
   /** Ladrilho escolhido (−1 = nenhum). */
   tile: number
+  /** Crosta: a placa do caminho escondido escolhida (−1 = nenhuma). */
+  path: number
 }
 
 /** 0–1 determinístico. */
@@ -53,7 +55,7 @@ export function newBrain(w: RunWorld, seed: number, slot: number): BotBrain {
   const r = (k: number) => botRand(seed, slot, k)
   const route = w.course.route(r)
   const skill = 0.55 + r(6) * 0.4
-  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, back: 0, lastZ: -99, waited: 0, fanA: 0, fanT: -1, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
+  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, back: 0, lastZ: -99, waited: 0, fanA: 0, fanT: -1, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1, path: -1 }
 }
 
 /**
@@ -466,6 +468,108 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
   return it
 }
 
+/**
+ * Crosta da Forja: no tabuleiro do caminho escondido. O computador procura o MENOR caminho até a saída do
+ * tabuleiro pelo que se sabe: placa acesa custa 1, desconhecida custa mais (é chute; um pouco diferente para
+ * cada um, pela semente), buraco não passa; anda só reto, de lado ou para trás (o caminho nunca faz diagonal).
+ * Beco sem saída aparece sozinho. Mira a próxima placa desse caminho e se alinha na coluna antes de avançar;
+ * no ar segue a placa escolhida. Devolve o alvo ou null (fora do tabuleiro).
+ */
+function pathAim(br: BotBrain, b: Runner, w: RunWorld): { x: number; z: number } | null {
+  const C = w.course
+  if (!C.tiles.length || C.tiles[0].pg < 0) return null
+  const state = (i: number) => (w.tiles[i] === -2 ? 2 : w.tiles[i] === -1 ? 1 : 0)
+  if (!b.ground) {
+    if (br.path >= 0 && state(br.path) > 0) return { x: C.tiles[br.path].x, z: C.tiles[br.path].z }
+    return null
+  }
+  let under = -1
+  for (let i = 0; i < C.tiles.length; i++) {
+    const q = C.tiles[i]
+    if (onTile(q, b.x, b.z, 0.02) && Math.abs(q.y - b.y) < 0.4) under = i
+  }
+  let g = under >= 0 ? C.tiles[under].pg : -1
+  if (g < 0) {
+    for (const q of C.tiles) if (q.pr === 0 && q.z - q.h - b.z > -0.2 && q.z - q.h - b.z < 4) g = q.pg
+    if (g < 0) return null
+  }
+  // o tabuleiro g: índice por (fileira, coluna)
+  const idx: number[] = []
+  let rows = 0
+  let cols = 0
+  for (let i = 0; i < C.tiles.length; i++) {
+    const q = C.tiles[i]
+    if (q.pg !== g) continue
+    idx.push(i)
+    rows = Math.max(rows, q.pr + 1)
+    cols = Math.max(cols, q.pc + 1)
+  }
+  const at = (r: number, c: number) => (r < 0 || r >= rows || c < 0 || c >= cols ? -1 : idx[r * cols + c])
+  const enter = (i: number) => (state(i) === 2 ? 1 : 2.2 + botRand(br.seed, br.slot * 31 + i, Math.floor(w.t / 8)) * 1.6)
+  // Dijkstra de trás para a frente: custo até sair do tabuleiro (da última fileira, sair custa 0)
+  const n = rows * cols
+  const cost = new Float64Array(n).fill(Infinity)
+  const done = new Uint8Array(n)
+  for (let c = 0; c < cols; c++) if (state(at(rows - 1, c)) > 0) cost[(rows - 1) * cols + c] = 0
+  for (;;) {
+    let k = -1
+    for (let j = 0; j < n; j++) if (!done[j] && cost[j] < Infinity && (k < 0 || cost[j] < cost[k])) k = j
+    if (k < 0) break
+    done[k] = 1
+    const r = Math.floor(k / cols)
+    const c = k % cols
+    // quem vem de (r2, c2) para k paga a entrada em k
+    for (const [dr, dc, extra] of [[-1, 0, 0], [0, -1, 0.15], [0, 1, 0.15], [1, 0, 1]] as [number, number, number][]) {
+      const r2 = r + dr
+      const c2 = c + dc
+      const j = at(r2, c2)
+      if (j < 0 || state(j) === 0) continue
+      const v = cost[k] + enter(idx[k]) + extra
+      if (v < cost[r2 * cols + c2]) cost[r2 * cols + c2] = v
+    }
+  }
+  let next = -1
+  if (under < 0) {
+    // antes do tabuleiro: a placa da 1ª fileira de menor custo (mais o caminho de lado até ela)
+    let best = Infinity
+    for (let c = 0; c < cols; c++) {
+      const i = at(0, c)
+      if (state(i) === 0) continue
+      const v = cost[c] + enter(i) + Math.abs(C.tiles[i].x - b.x) * 0.12
+      if (v < best) {
+        best = v
+        next = i
+      }
+    }
+    br.path = next
+    if (next < 0) return null
+    const q = C.tiles[next]
+    if (Math.abs(q.x - b.x) > 0.45) return { x: q.x, z: Math.min(b.z + 0.4, q.z - q.h - 0.9) }
+    return { x: q.x, z: q.z }
+  }
+  const u = C.tiles[under]
+  if (u.pr === rows - 1) {
+    br.path = -1
+    return { x: u.x, z: u.z + 4 }
+  }
+  let best = Infinity
+  for (const [dr, dc, extra] of [[1, 0, 0], [0, -1, 0.15], [0, 1, 0.15], [-1, 0, 1]] as [number, number, number][]) {
+    const j = at(u.pr + dr, u.pc + dc)
+    if (j < 0 || state(j) === 0) continue
+    const v = cost[(u.pr + dr) * cols + u.pc + dc] + enter(j) + extra
+    if (v < best) {
+      best = v
+      next = j
+    }
+  }
+  br.path = next
+  if (next < 0) return { x: u.x, z: u.z }
+  const q = C.tiles[next]
+  if (q.pr === u.pr) return { x: q.x, z: u.z }
+  if (q.pr < u.pr) return { x: q.x, z: q.z - 0.3 }
+  return Math.abs(q.x - b.x) > 0.4 ? { x: q.x, z: b.z } : { x: q.x, z: q.z + 0.3 }
+}
+
 /** Escolhe a porta da fileira à frente: aberta (alguém passou) > desconhecida mais perto > a sorteada. */
 function pickDoor(br: BotBrain, b: Runner, w: RunWorld, row: number) {
   const C = w.course
@@ -644,8 +748,17 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     if (ga.wait && Math.abs(b.x - ga.x) < 0.5 && b.z > ga.z - 0.6) go = 0
   }
 
+  // Crosta: o caminho escondido
+  const pa = pathAim(br, b, w)
+  if (pa) {
+    tx = pa.x
+    tz = pa.z
+  }
+
   // ladrilhos: escolhe o próximo em pé (e não tremendo), perto da reta
-  if (C.tiles.length && !b.ground && br.tile >= 0) {
+  if (pa) {
+    br.tile = -1
+  } else if (C.tiles.length && !b.ground && br.tile >= 0) {
     // no ar: segue mirando o ladrilho escolhido (freia no ar se for passar)
     tx = C.tiles[br.tile].x
     tz = C.tiles[br.tile].z
@@ -852,7 +965,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     for (let i = 0; i < C.tiles.length; i++) {
       const q = C.tiles[i]
       const s = w.tiles[i]
-      if (s < 0 || !onTile(q, b.x, b.z, 0)) continue
+      if (s < 0 || q.pg >= 0 || !onTile(q, b.x, b.z, 0)) continue
       if (t - s > C.tileTime.warn * 0.6 && botRand(br.seed, br.slot, i) < br.skill) {
         it.jump = true
         br.jumpCool = 0.6
@@ -861,7 +974,9 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   }
   // o chão acaba logo à frente e há chão adiante: pula o buraco
   const sp = Math.hypot(it.mx, it.mz)
-  const tileNear = br.tile >= 0 && Math.hypot(C.tiles[br.tile].x - b.x, C.tiles[br.tile].z - b.z) < 2.6
+  const tileNear =
+    (br.tile >= 0 && Math.hypot(C.tiles[br.tile].x - b.x, C.tiles[br.tile].z - b.z) < 2.6) ||
+    (br.path >= 0 && Math.hypot(C.tiles[br.path].x - b.x, C.tiles[br.path].z - b.z) < 3.4)
   if (b.ground && br.jumpCool <= 0 && sp > 0.3 && !tileNear) {
     const fx = it.mx / sp
     const fz = it.mz / sp

@@ -813,6 +813,78 @@ function courseHelices(): Course {
   })
 }
 
+// ═══ crosta — Trilha da Crosta (Forja) ═══════════════════════════════════════
+
+/**
+ * Gincana (2026-11-20, vídeo 6): TRILHA DA CROSTA — a 3ª fase da Forja. A lava
+ * esfriou em placas sobre o mar de brasa e só um caminho aguenta (a semente
+ * sorteia; `pathReal`). A placa firme, pisada, acende em brasa e fica acesa para
+ * todos; a crosta falsa afunda na hora e vira buraco. Quatro tabuleiros: o largo
+ * (7 × 8), o dos malhos (7 × 10, três malhos com cravos balançando de lado), o
+ * estreito (5 × 9, dois malhos) e o da brasa (6 × 8, dois malhos). Caiu na lava =
+ * volta ao último posto.
+ */
+export const CROSTA = {
+  /** passo do tabuleiro (m) e meia largura da placa */
+  step: 2.4,
+  h: 1.12,
+  /** [x, z0, colunas, fileiras] */
+  grids: [
+    [0, 16, 7, 8],
+    [0, 42.2, 7, 10],
+    [0, 73.25, 5, 9],
+    [0, 100.75, 6, 8],
+  ] as [number, number, number, number][],
+  /** malhos: [z, fase] */
+  hammers: [
+    [47, 0],
+    [54.2, 2.1],
+    [61.4, 4.2],
+    [78.05, 1],
+    [87.65, 3.2],
+    [105.55, 0.6],
+    [112.75, 3.7],
+  ] as [number, number][],
+} as const
+
+function courseCrosta(): Course {
+  const k = new CourseKit()
+  kitStart(k)
+  for (const [x, z0, cols, rows] of CROSTA.grids) k.pathGrid(x, z0, cols, rows, CROSTA.h, CROSTA.step, 3)
+  // patamares entre os tabuleiros (o posto)
+  k.box(0, 37.5, 8.6, 3.55, 2, 1, 2)
+  k.box(0, 68.6, 8.6, 3.55, 2, 1, 3)
+  k.box(0, 96.6, 6, 3, 2, 1, 4)
+  k.box(0, 121.7, 7.4, 3, 2, 1, 5)
+  // os malhos: pêndulo pendurado no pórtico, balança de lado (cobre ±6 m)
+  for (const [z, ph] of CROSTA.hammers) k.swing(0, z, DECK + 9, 7.6, 1.15, z > 70 && z < 95 ? 0.72 : 0.9, 1.9, ph)
+  const z0 = 124.7
+  const finishZ = kitFinish(k, z0, 1.1, 6.6, 1.1)
+  for (const [x, z] of [[0, 37.5], [0, 68.6], [0, 96.6], [0, 121.7]] as [number, number][]) k.logo(x, z)
+  return k.done({
+    id: "crosta",
+    checkpoints: [
+      { x: 0, z: -3.5, y: DECK, w: 7 },
+      { x: 0, z: 37.5, y: DECK, w: 6 },
+      { x: 0, z: 68.6, y: DECK, w: 6 },
+      { x: 0, z: 96.6, y: DECK, w: 4 },
+      { x: 0, z: 121.7, y: DECK, w: 5 },
+    ],
+    finishZ,
+    finishY: DECK + 6,
+    sections: [14.9, 41, 72.1, 99.6, z0],
+    minFinish: 20,
+    // a falsa cai já (0,25 s) e não volta: o buraco é a pista para quem vem atrás
+    tileTime: { warn: 0.25, gone: 1e6 },
+    route: () =>
+      routeOf((add) => {
+        add(0, 10)
+        for (let z = 14; z <= 122; z += 1.2) add(0, z)
+        routeFinish(add, z0, finishZ)
+      }),
+  })
+}
+
 // ═══ orbital — Cidade Orbital ════════════════════════════════════════════════
 
 /**
@@ -1419,6 +1491,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   helices: courseHelices(),
   forja: courseForja(),
   altoforno: courseAltoForno(),
+  crosta: courseCrosta(),
   fabrica: courseFabrica(),
   comportas: courseComportas(),
   gelo: courseGelo(),

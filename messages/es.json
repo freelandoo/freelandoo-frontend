@@ -15177,7 +15177,20 @@
     "gincanaHowSe2": "Las hachas barren el puente de lado a lado: corre justo después de que pase la tuya.",
     "gincanaHowSe3": "Las tablas se balancean y te tiran hacia el lado que baja: quédate en el medio y elige una fila.",
     "gincanaHowSe4": "Los troncos grandes ruedan más despacio, con un hacha en el hueco entre ellos: espera el momento justo.",
-    "gincanaHowSe5": "Bajan troncos por la rampa: cambia de carril temprano."
+    "gincanaHowSe5": "Bajan troncos por la rampa: cambia de carril temprano.",
+    "gincanaPhCrosta": "Sendero de la Corteza",
+    "gincanaEvCrosta": "Sendero de la Corteza",
+    "gincanaPhCrostaPitch": "La lava se enfrió en placas y solo un camino aguanta. La placa firme se enciende como brasa y queda encendida para todos; la falsa se hunde en la lava. Encuentra el camino con los martillos balanceándose encima.",
+    "gincanaSecCt1": "Placas",
+    "gincanaSecCt2": "Martillos",
+    "gincanaSecCt3": "Estrecho",
+    "gincanaSecCt4": "Brasas",
+    "gincanaSecCt5": "Subida",
+    "gincanaHowCt1": "La placa encendida es firme: sigue las que otros ya encontraron.",
+    "gincanaHowCt2": "La falsa se hunde enseguida y deja un hueco. Los huecos también marcan el camino.",
+    "gincanaHowCt3": "El camino solo va recto o de lado, nunca en diagonal.",
+    "gincanaHowCt4": "Los martillos se balancean de lado: deja que pase antes de pisar.",
+    "gincanaHowCt5": "Las piedras bajan rodando: cambia de carril pronto."
   },
   "Sports": {
     "eyebrow": "Deportes",

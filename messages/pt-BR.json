@@ -14611,7 +14611,20 @@
     "gincanaHowSe2": "Os machados varrem a ponte de um lado para o outro: corra logo depois que o seu passar.",
     "gincanaHowSe3": "As tábuas balançam e jogam você para o lado que desce: fique no meio e escolha a fila.",
     "gincanaHowSe4": "As toras grandes rolam mais devagar, com um machado no vão entre elas: espere a hora certa.",
-    "gincanaHowSe5": "Toras descem a rampa: troque de faixa cedo."
+    "gincanaHowSe5": "Toras descem a rampa: troque de faixa cedo.",
+    "gincanaPhCrosta": "Trilha da Crosta",
+    "gincanaEvCrosta": "Trilha da Crosta",
+    "gincanaPhCrostaPitch": "A lava esfriou em placas e só um caminho aguenta. A placa firme acende em brasa e fica acesa para todos; a falsa afunda na lava. Ache o caminho com os malhos balançando por cima.",
+    "gincanaSecCt1": "Placas",
+    "gincanaSecCt2": "Malhos",
+    "gincanaSecCt3": "Estreito",
+    "gincanaSecCt4": "Brasa",
+    "gincanaSecCt5": "Subida",
+    "gincanaHowCt1": "Placa acesa é firme: siga as acesas que os outros já acharam.",
+    "gincanaHowCt2": "A falsa afunda na hora e vira buraco. Buraco também mostra o caminho.",
+    "gincanaHowCt3": "O caminho só vai reto ou de lado, nunca na diagonal.",
+    "gincanaHowCt4": "Os malhos balançam de lado: espere ele passar antes de pisar.",
+    "gincanaHowCt5": "As pedras descem rolando: troque de faixa cedo."
   },
   "Sports": {
     "eyebrow": "Esportes",

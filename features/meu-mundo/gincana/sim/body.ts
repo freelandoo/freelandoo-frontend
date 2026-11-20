@@ -16,6 +16,8 @@ import {
   DECK,
   GINCANA,
   doorsOpen,
+  pathReal,
+  stepTile,
   DRUM_EDGE,
   drumAt,
   drumSpeed,
@@ -151,6 +153,8 @@ export interface RunWorld {
   balls: number[]
   /** Portas de verdade (1) e falsas (0), pela semente. */
   open: Uint8Array
+  /** Crosta da Forja: ladrilhos do caminho de verdade (1), pela semente. */
+  real: Uint8Array
   /** Quando cada porta de verdade foi aberta (−1 = fechada). */
   doors: Float64Array
   /** Gincana 3: quando cada engrenagem foi pega (−1 = nunca). */
@@ -178,7 +182,7 @@ export type RunEvent =
 export const IDLE_INTENT: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
 
 export function newWorld(course: Course, seed: number, t: number): RunWorld {
-  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), doors: new Float64Array(course.doors.length).fill(-1), gems: new Float64Array(course.gems.length).fill(-1) }
+  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), gems: new Float64Array(course.gems.length).fill(-1) }
 }
 
 export function newRunner(course: Course, slot: number): Runner {
@@ -895,9 +899,10 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
       } else if (b.mode === MODE.KNOCK) b.timer = Math.max(b.timer, 0.35)
     }
     b.air = 0
-    if (g.tile >= 0 && (w.tiles[g.tile] < 0 || w.t - w.tiles[g.tile] >= C.tileTime.warn + C.tileTime.gone)) {
-      w.tiles[g.tile] = w.t
-      out?.push({ type: "tile", i: g.tile })
+    if (g.tile >= 0) {
+      const before = w.tiles[g.tile]
+      stepTile(C, w.tiles, w.real, g.tile, w.t)
+      if (w.tiles[g.tile] !== before) out?.push({ type: "tile", i: g.tile })
     }
     if (g.bounce > 0) {
       // cogumelo: lança para cima (o embalo de lado fica)

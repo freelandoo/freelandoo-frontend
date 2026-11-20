@@ -37,6 +37,7 @@ import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
+import { CrostaPlates, crostaGantry, crostaHammer } from "./crosta-view"
 import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
@@ -78,6 +79,7 @@ export class CourseView {
   private readonly altoforno: AltoFornoBelt | null = null
   private readonly mills: MoinhosMills | null = null
   private readonly yard: HelicesYard | null = null
+  private readonly crosta: CrostaPlates | null = null
   private bladeSeed = 0
   private readonly afBalls: AltoFornoBalls | null = null
   private readonly pusherMeshes: Mesh[] = []
@@ -288,6 +290,10 @@ export class CourseView {
         serrariaGantry(st, glow, x0, x1, z, py)
         continue
       }
+      if (theme.id === "crosta") {
+        crostaGantry(st, glow, x0 - 3, x1 + 3, z, py)
+        continue
+      }
       if (theme.deco === "forest") {
         // Floresta: dois troncos e um GALHO grosso de trave, com musgo, folhas e flores acesas penduradas
         const bark = (x: number, y: number, zz: number): RGB => {
@@ -373,7 +379,7 @@ export class CourseView {
       }
     }
     if (city) this.cityExtras(st)
-    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" ? course.finishZ + 40 : 64)
+    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" || theme.id === "crosta" ? course.finishZ + 40 : 64)
     if (theme.id === "clareira") cannonGate(st, glow)
     // alvos de programa de TV: fora da Floresta (a referência não tem)
     if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)
@@ -469,6 +475,18 @@ export class CourseView {
     // ── pêndulos: haste e a bola/martelo/estalactite do tema ──
     for (const p of course.pendulums) {
       const pg = new SoftGeo()
+      if (theme.id === "crosta") {
+        const gl = new SoftGeo()
+        crostaHammer(pg, gl, p.len, p.R)
+        const m = pg.build("gincana-swing", scene, toy, false)
+        const mg = gl.build("gincana-swing-glow", scene, this.glowMat, false)
+        mg.parent = m
+        this.meshes.push(mg)
+        m.position.set(p.x, p.py, p.z)
+        m.rotationQuaternion = new Quaternion()
+        this.swings.push(m)
+        continue
+      }
       if (theme.id === "portoes" || theme.id === "serraria") {
         if (theme.id === "serraria") serrariaAxe(pg, p.len, p.R)
         else portoesIcicle(pg, p.len, p.R)
@@ -550,7 +568,8 @@ export class CourseView {
 
     // ── ladrilhos: uma base por (cor, forma) e uma instância por ladrilho ──
     const baseKey = new Map<string, Mesh>()
-    for (const t of course.tiles) {
+    if (theme.id === "crosta") this.crosta = new CrostaPlates(scene, toy, this.glowMat, course)
+    for (const t of theme.id === "crosta" ? [] : course.tiles) {
       const key = `${t.c}-${t.k}-${t.h}`
       if (baseKey.has(key)) continue
       const col = C[t.c]
@@ -599,7 +618,7 @@ export class CourseView {
       baseKey.set(key, base)
       this.tileBases.push(base)
     }
-    for (let i = 0; i < course.tiles.length; i++) {
+    for (let i = 0; i < (this.crosta ? 0 : course.tiles.length); i++) {
       const t = course.tiles[i]
       const inst = baseKey.get(`${t.c}-${t.k}-${t.h}`)!.createInstance(`gincana-tile-${i}`)
       inst.position.set(t.x, t.y, t.z)
@@ -1965,7 +1984,8 @@ export class CourseView {
       rod.setEnabled(len > 0.3)
     }
     const TT = C.tileTime
-    for (let i = 0; i < C.tiles.length; i++) {
+    this.crosta?.update(world.tiles, t, clock)
+    for (let i = 0; i < this.tiles.length; i++) {
       const s = world.tiles[i]
       const inst = this.tiles[i]
       const base = C.tiles[i]
@@ -2196,6 +2216,7 @@ export class CourseView {
     this.mills?.dispose()
     this.yard?.dispose()
     this.serraria?.dispose()
+    this.crosta?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

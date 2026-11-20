@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -278,6 +278,14 @@ export interface Tile {
   h: number
   c: number
   k: 0 | 1
+  /**
+   * Tabuleiro do caminho escondido (Crosta da Forja, 2026-11-20): `pg` = tabuleiro (−1 = ladrilho comum),
+   * `pr`/`pc` = fileira e coluna. A semente sorteia o caminho (`pathReal`): o de verdade, pisado, ACENDE e fica
+   * (estado −2 no mundo); o falso cai na hora e não volta.
+   */
+  pg: number
+  pr: number
+  pc: number
 }
 
 /** Porta numa fileira: as falsas são parede; as de verdade abrem quando alguém encosta (a semente sorteia quais). */
@@ -646,7 +654,13 @@ export class CourseKit {
     this.gloves.push({ x0, z, y, dir, reach, R, period, ph })
   }
   tile(x: number, z: number, h: number, c: number, k: 0 | 1 = 0, y = DECK) {
-    this.tiles.push({ x, z, y, h, c, k })
+    this.tiles.push({ x, z, y, h, c, k, pg: -1, pr: -1, pc: -1 })
+  }
+  /** Tabuleiro do caminho escondido: `cols` × `rows` ladrilhos quadrados de meia largura `h`, passo `step`, a partir de z0. */
+  pathGrid(x: number, z0: number, cols: number, rows: number, h: number, step: number, c: number) {
+    const pg = this.tiles.reduce((m, q) => Math.max(m, q.pg + 1), 0)
+    for (let r = 0; r < rows; r++)
+      for (let col = 0; col < cols; col++) this.tiles.push({ x: x + (col - (cols - 1) / 2) * step, z: z0 + r * step, y: DECK, h, c, k: 0, pg, pr: r, pc: col })
   }
   /** Fileira de `n` portas de largura `w` centrada em x, em z; `open` abrem. */
   doorRow(x: number, z: number, n: number, w: number, h: number, open: number) {
@@ -793,6 +807,46 @@ export function ballLane(c: Course, seed: number, i: number) {
 }
 
 /** Quais portas abrem (1) nesta semente: em cada fileira, `doorOpen[row]` sorteadas. */
+/**
+ * Crosta da Forja: o caminho de verdade de cada tabuleiro, pela semente. Entra na fileira r pela coluna em que
+ * saiu da anterior e anda de lado até a coluna da próxima (sem diagonal): na fileira, de verdade = o trecho entre
+ * as duas. 1 = de verdade.
+ */
+export function pathReal(c: Course, seed: number): Uint8Array {
+  const out = new Uint8Array(c.tiles.length)
+  const grids = c.tiles.reduce((m, q) => Math.max(m, q.pg + 1), 0)
+  for (let g = 0; g < grids; g++) {
+    let rows = 0
+    let cols = 0
+    for (const q of c.tiles) if (q.pg === g) {
+      rows = Math.max(rows, q.pr + 1)
+      cols = Math.max(cols, q.pc + 1)
+    }
+    const steps = [-2, -1, -1, 0, 1, 1, 2]
+    let col = courseHash(seed ^ 0x2c1b3c6d, g * 977) % cols
+    for (let r = 0; r < rows; r++) {
+      const next = Math.max(0, Math.min(cols - 1, col + steps[courseHash(seed ^ 0x297a2d39, g * 977 + r * 31 + 1) % steps.length]))
+      const lo = Math.min(col, next)
+      const hi = Math.max(col, next)
+      for (let i = 0; i < c.tiles.length; i++) {
+        const q = c.tiles[i]
+        if (q.pg === g && q.pr === r && q.pc >= lo && q.pc <= hi) out[i] = 1
+      }
+      col = next
+    }
+  }
+  return out
+}
+
+/** Pisaram o ladrilho i: comum = cai daqui a pouco; do caminho = acende (−2) ou cai (falso). */
+export function stepTile(c: Course, tiles: Float64Array, real: Uint8Array, i: number, t: number) {
+  if (c.tiles[i].pg >= 0) {
+    if (tiles[i] === -1) tiles[i] = real[i] ? -2 : t
+    return
+  }
+  if (tiles[i] < 0 || t - tiles[i] >= c.tileTime.warn + c.tileTime.gone) tiles[i] = t
+}
+
 export function doorsOpen(c: Course, seed: number): Uint8Array {
   const out = new Uint8Array(c.doors.length)
   for (let row = 0; row < c.doorOpen.length; row++) {
