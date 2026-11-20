@@ -668,6 +668,8 @@ export interface Seesaw {
   k: number
   /** Escorregão de lado (m/s no seno do ângulo); sem valor, 6. As balanças das Gangorras (20/11) usam mais. */
   slip?: number
+  /** Ganho do peso desta balança (× SAW.gain); sem valor, 1. Gangorras (20/11: "ainda mais sensíveis a peso"). */
+  gain?: number
 }
 /** Ganho do peso (rad/s² por metro de braço de cada um) e amortecimento. */
 export const SAW = { gain: 0.6, damp: 2.2 }
@@ -693,7 +695,7 @@ export function stepSawState(C: { saws: Seesaw[] }, s: Float64Array, arms: Float
     const S = C.saws[i]
     let a = s[i * 2]
     let v = s[i * 2 + 1]
-    v += (SAW.gain * arms[i] - S.k * (a - S.a0) - SAW.damp * v) * dt
+    v += (SAW.gain * (S.gain ?? 1) * arms[i] - S.k * (a - S.a0) - SAW.damp * v) * dt
     a += v * dt
     if (a > S.max) {
       a = S.max
