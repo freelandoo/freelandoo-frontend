@@ -23,6 +23,7 @@
 import type { SoftGeo, RGB } from "./shapes"
 import { at, mix } from "./shapes"
 import type { SteamCtx } from "../../engine/steampunk/scenery"
+import { Z0, Z1 } from "./backdrop-base"
 
 const TEAL: RGB = [0.1, 0.36, 0.36]
 const TEAL_L: RGB = [0.24, 0.55, 0.52]
@@ -150,6 +151,61 @@ function copperRun(lit: SoftGeo, a: [number, number, number], b: [number, number
   for (let i = 1; i < n; i++) lit.cylinder(r * 2.5, 0.28, mid(i / n), i % 3 === 0 ? BRASS : [0.12, 0.08, 0.06], 10)
 }
 
+const BRICKS: RGB[] = [[0.42, 0.2, 0.13], [0.33, 0.17, 0.12], [0.5, 0.27, 0.16], [0.38, 0.24, 0.18]]
+const SLATE: RGB = [0.27, 0.29, 0.35]
+
+/**
+ * Armazém de tijolo da beira do canal (Comportas): pé em (x, z), frente virada para `face` (rad; 0 = olha +z).
+ * Corpo com embasamento de pedra e cornija clara, telhado de duas águas em ardósia (cumeeira ao longo da frente),
+ * janelas em grade (a maioria acesa, âmbar; as apagadas são escuras) com peitoril, e chaminé de tijolo com aro.
+ */
+export function warehouse(lit: SoftGeo, glow: SoftGeo, x: number, z: number, w: number, h: number, d: number, face: number, seed: number) {
+  const c = Math.cos(face)
+  const s = Math.sin(face)
+  // local (u ao longo da frente, y, v para trás) → mundo
+  const P = (u: number, y: number, v: number, rx = 0) => at(x + u * c - v * s, y, z - u * s - v * c, face, rx)
+  const brick = BRICKS[seed % BRICKS.length]
+  lit.box(w, h, d, P(0, h / 2, 0), (_x, y) => mix(mix(brick, [0.05, 0.03, 0.03], 0.45), brick, Math.min(1, (y + h / 2) / 3)))
+  lit.box(w + 0.3, 1.2, d + 0.3, P(0, 0.6, 0), [0.4, 0.36, 0.32])
+  lit.box(w + 0.5, 0.5, d + 0.5, P(0, h, 0), [0.55, 0.48, 0.4])
+  // telhado: duas águas de ardósia e a empena de tijolo nas pontas
+  const rh = d * 0.38
+  const sl = Math.hypot(d / 2, rh)
+  const ang = Math.atan2(rh, d / 2)
+  for (const sv of [-1, 1]) lit.box(w + 0.8, 0.35, sl + 0.4, P(0, h + 0.25 + rh / 2, (sv * d) / 4, sv * ang), (_x, y, zz) => (y > 0 ? mix(SLATE, [0.1, 0.1, 0.13], Math.abs(zz) / sl) : [0.08, 0.08, 0.1]))
+  lit.box(w + 0.9, 0.3, 0.5, P(0, h + 0.3 + rh, 0), [0.5, 0.5, 0.52])
+  // empena escalonada de tijolo nas duas pontas (o telhado fica atrás dela)
+  for (const su of [-1, 1])
+    for (let k = 0; k < 3; k++) {
+      const ww = d * (1 - k * 0.3)
+      lit.box(0.6, rh / 3 + 0.3, ww, P((su * (w + 0.6)) / 2, h + (k + 0.5) * (rh / 3) + 0.15, 0), mix(brick, [0.06, 0.04, 0.03], 0.15))
+      lit.box(0.8, 0.2, ww + 0.2, P((su * (w + 0.6)) / 2, h + (k + 1) * (rh / 3) + 0.3, 0), [0.55, 0.48, 0.4])
+    }
+  // janelas na frente: colunas a cada 3 m, andares a cada 3,6 m; pilastra entre as colunas e cinta entre andares
+  const cols = Math.max(2, Math.floor((w - 2) / 3))
+  const rows = Math.max(1, Math.floor((h - 2.4) / 3.6))
+  const darkB = mix(brick, [0.05, 0.03, 0.03], 0.3)
+  for (let i = 0; i <= cols; i++) lit.box(0.6, h - 1.2, 0.3, P(-w / 2 + 1.5 + i * ((w - 3) / cols), 1.2 + (h - 1.2) / 2, -d / 2 - 0.12), darkB)
+  for (let j = 1; j < rows; j++) lit.box(w, 0.25, 0.25, P(0, 2.6 + j * 3.6 - 0.35, -d / 2 - 0.1), mix(brick, [0.6, 0.5, 0.42], 0.4))
+  for (let i = 0; i < cols; i++)
+    for (let j = 0; j < rows; j++) {
+      const u = -w / 2 + 1.5 + (i + 0.5) * ((w - 3) / cols)
+      const y = 2.6 + j * 3.6 + 0.9
+      const on = rnd(i * 7 + j * 13, seed) < 0.72
+      if (on) glow.box(1.2, 1.8, 0.1, P(u, y, -d / 2 - 0.02), (_x, yy) => mix([1, 0.55, 0.16], [1, 0.84, 0.42], yy / 1.8 + 0.5))
+      else lit.box(1.2, 1.8, 0.1, P(u, y, -d / 2 - 0.02), [0.05, 0.05, 0.07])
+      lit.box(0.12, 1.8, 0.14, P(u, y, -d / 2 - 0.06), [0.12, 0.08, 0.06])
+      lit.box(1.5, 0.18, 0.3, P(u, y - 1, -d / 2 - 0.1), [0.55, 0.48, 0.4])
+    }
+  // chaminé (2 em cada 3 prédios)
+  if (seed % 3 !== 0) {
+    const ch = 3 + rnd(seed, 3) * 4
+    const cu = (rnd(seed, 4) - 0.5) * w * 0.6
+    lit.box(1.2, ch, 1.2, P(cu, h + rh * 0.5 + ch / 2, d * 0.18), brick)
+    lit.box(1.5, 0.35, 1.5, P(cu, h + rh * 0.5 + ch, d * 0.18), [0.12, 0.12, 0.13])
+  }
+}
+
 // ── Fábrica de Engrenagens: o galpão de fundição ─────────────────────────────
 
 export function fabricaHall(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
@@ -232,4 +288,31 @@ export function paintLavaGrate(g: CanvasRenderingContext2D) {
       hex(cx, cy, 1)
       g.stroke()
     }
+}
+
+// ── Comportas da Usina: a beira do canal ─────────────────────────────────────
+
+export function comportasShore(lit: SoftGeo, glow: SoftGeo, n: number) {
+  const QX = 74
+  for (const s of [-1, 1]) {
+    // cais de pedra: laje com a beira clara e o pé molhado escuro; cabeços de amarração na beira
+    lit.box(60, 2.4, Z1 - Z0 + 60, at(s * (QX + 28), 0, (Z0 + Z1) / 2), (_x, y) => (y > 0.6 ? [0.42, 0.38, 0.34] : [0.12, 0.11, 0.1]))
+    lit.box(0.8, 0.5, Z1 - Z0 + 60, at(s * (QX - 1.6), 1.3, (Z0 + Z1) / 2), [0.56, 0.52, 0.46])
+    for (let z = Z0; z < Z1 + 20; z += 9) lit.cylinder(0.6, 0.9, at(s * (QX - 1), 1.65, z), [0.1, 0.1, 0.11], 8, 0.5)
+    // 1ª fila (na beira) e 2ª fila mais alta atrás, frente virada para a prova
+    for (const [row, x0, hmin, hvar] of [[0, QX + 2, 8, 8], [1, QX + 20, 14, 12]] as [number, number, number, number][]) {
+      if (row === 1 && n < 1) continue
+      let z = Z0 - 10 + (row ? 7 : 0)
+      let i = 0
+      while (z < Z1 + 30) {
+        const k = i * 2 + (s > 0 ? 1 : 0) + row * 50
+        const w = 12 + rnd(k, 1) * 12
+        const d = 9 + rnd(k, 2) * 4
+        const h = hmin + rnd(k, 3) * hvar
+        warehouse(lit, glow, s * (x0 + d / 2 + rnd(k, 4) * 3), z + w / 2, w, h, d, s > 0 ? Math.PI / 2 : -Math.PI / 2, k)
+        z += w + 2 + rnd(k, 5) * 5
+        i++
+      }
+    }
+  }
 }

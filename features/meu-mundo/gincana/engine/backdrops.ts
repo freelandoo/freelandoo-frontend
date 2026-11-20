@@ -16,7 +16,7 @@ import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
 import { tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
-import { fabricaHall } from "./backdrop-fabrica"
+import { comportasShore, fabricaHall } from "./backdrop-fabrica"
 
 /** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada).
  * `finishZ`/`pads` (20/11): o fundo vai até o fim da prova (percurso dobrado) e sabe a altura do chão (`deckY`).
@@ -467,6 +467,7 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: n
 
 function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, phase: string) {
   if (phase === "fabrica") return fabricaHall(lit, glow, ctx, n / spanK())
+  if (phase === "comportas") comportasShore(lit, glow, n / spanK())
   // a silhueta de fábricas do kit steampunk dos dois lados
   factorySkyline(ctx, -95, 130, 50, Math.round(12 * n), -2, 21, 1.4)
   factorySkyline(ctx, 95, 130, 50, Math.round(12 * n), -2, 37, 1.4)
