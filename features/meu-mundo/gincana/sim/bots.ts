@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -29,6 +29,9 @@ export interface BotBrain {
   lastZ: number
   /** s esperando (pêndulo/luva/bloco/plataforma); passou da paciência, vai assim mesmo. */
   waited: number
+  /** Hélice: a pá escolhida para sair do cubo (ângulo no instante fanT); fanT < 0 = nenhuma. */
+  fanA: number
+  fanT: number
   /** Mergulho para a chegada (só os melhores). */
   divesFinish: boolean
   /** Porta escolhida (−1 = nenhuma) e as falsas que já descobriu. */
@@ -50,7 +53,7 @@ export function newBrain(w: RunWorld, seed: number, slot: number): BotBrain {
   const r = (k: number) => botRand(seed, slot, k)
   const route = w.course.route(r)
   const skill = 0.55 + r(6) * 0.4
-  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, back: 0, lastZ: -99, waited: 0, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
+  return { route, skill, pace: 0.86 + r(7) * 0.14, seed, slot, laneX: 0, jumpCool: 0, stuck: 0, back: 0, lastZ: -99, waited: 0, fanA: 0, fanT: -1, divesFinish: r(8) < skill - 0.35, door: -1, bad: new Set(), tile: -1 }
 }
 
 /**
@@ -113,6 +116,122 @@ const BOT_WALLS: WallWave[] = []
 
 /** Vizinhas de cada pedra (mesmo andar, até 2,6 m), calculadas uma vez por percurso. */
 const TILE_NB = new WeakMap<Course, number[][]>()
+/**
+ * Hélice (Hélices da Orbital): pás retas (caixas que giram no mesmo centro) + o disco do cubo. Em cima de
+ * uma pá, correr "para a frente do mundo" tira o robô da pá que gira: ele vai pelo eixo da pá — para fora se
+ * ela aponta para a saída, para o cubo se não — e no cubo espera uma pá chegar na direção da saída.
+ */
+function fanRide(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
+  if (!b.ground || b.pad < 0) return
+  const C = w.course
+  const p0 = C.pads[b.pad]
+  if (!isFanPad(C, p0) || p0.mw !== 0) return
+  const cx = p0.x
+  const cz = p0.z
+  let L = 0
+  const arms: number[] = []
+  let hubR = 0
+  for (const p of C.pads) {
+    if (p.spin === 0 || p.x !== cx || p.z !== cz) continue
+    if (p.k === 1) {
+      L = Math.max(L, p.hz)
+      const a = padRot(p, w.t)
+      arms.push(a, a + Math.PI)
+    } else hubR = p.r
+  }
+  if (!arms.length) return
+  // o alvo: o primeiro ponto da rota além da hélice
+  let tx = 0
+  let tz = 0
+  let found = false
+  for (const q of br.route) {
+    if (q.z > b.z && Math.hypot(q.x - cx, q.z - cz) > L + 0.6) {
+      tx = q.x
+      tz = q.z
+      found = true
+      break
+    }
+  }
+  if (!found) return
+  const want = Math.atan2(tx - cx, tz - cz)
+  const diff = (a: number) => {
+    let d = (a - want) % (Math.PI * 2)
+    if (d > Math.PI) d -= Math.PI * 2
+    if (d < -Math.PI) d += Math.PI * 2
+    return d
+  }
+  const spin = p0.spin
+  const rb = Math.hypot(b.x - cx, b.z - cz)
+  const go = Math.max(0.6, br.pace)
+  // a pá que vai estar na direção da saída quando eu chegar na ponta (o giro anda enquanto eu corro)
+  const lead = (L - Math.min(rb, L)) / (GINCANA.run * go)
+  let best = Infinity
+  let bestA = 0
+  for (const a of arms) {
+    const d = Math.abs(diff(a + spin * lead))
+    if (d < best) {
+      best = d
+      bestA = a
+    }
+  }
+  if (rb < hubR - 0.4) {
+    // já escolhi a pá: sigo com ela (ela gira) até sair do cubo
+    if (br.fanT >= 0 && w.t - br.fanT > 1.5) br.fanT = -1
+    if (br.fanT < 0 && best < 0.16 && rb < 1.9) {
+      br.fanA = bestA
+      br.fanT = w.t
+    }
+    if (br.fanT >= 0) {
+      // sai mirando um ponto SOBRE a pá (não paralelo a ela)
+      const a = br.fanA + spin * (w.t - br.fanT)
+      const px = cx + Math.sin(a) * L * 0.7 - b.x
+      const pz = cz + Math.cos(a) * L * 0.7 - b.z
+      const m = Math.hypot(px, pz) || 1
+      it.mx = (px / m) * go
+      it.mz = (pz / m) * go
+    } else if (rb > 1.0) {
+      // vai para o miolo e espera lá (longe da beira)
+      it.mx = ((cx - b.x) / rb) * 0.5
+      it.mz = ((cz - b.z) / rb) * 0.5
+    } else {
+      it.mx = 0
+      it.mz = 0
+    }
+    return
+  }
+  br.fanT = -1
+  // na pá: o eixo da pá onde estou (a direção do centro até mim)
+  const out = Math.atan2(b.x - cx, b.z - cz)
+  if (Math.abs(diff(out)) < 1.0) {
+    it.mx = Math.sin(out) * go
+    it.mz = Math.cos(out) * go
+  } else {
+    it.mx = -Math.sin(out) * go
+    it.mz = -Math.cos(out) * go
+  }
+}
+
+/** Pulo de/para hélice: o pouso de verdade (o pulo voa ~5 m) existe na hora em que eu chego lá? */
+function fanLand(w: RunWorld, b: Runner, fx: number, fz: number) {
+  for (const [k, dt] of [[4.4, 0.58], [5.2, 0.7]]) {
+    const g = groundUnder({ ...w, t: w.t + dt }, b.x + fx * k, b.z + fz * k, b.y + 1.2)
+    if (g.y < b.y - 1.2) return false
+  }
+  return true
+}
+
+/** Peça de hélice: caixa que gira, ou o disco do cubo de uma (mesmo centro). Os discos da Clareira não são. */
+function isFanPad(C: Course, p: Course["pads"][number]) {
+  if (p.spin === 0) return false
+  return C.pads.some((q) => q.k === 1 && q.spin !== 0 && q.x === p.x && q.z === p.z)
+}
+
+/** Hélice (caixa que gira) por perto: o salto precisa de hora certa. */
+function nearFan(C: Course, x: number, z: number) {
+  for (const p of C.pads) if (p.k === 1 && p.spin !== 0 && Math.hypot(p.x - x, p.z - z) < p.hz + 4) return true
+  return false
+}
+
 function tileNeighbors(C: Course) {
   let nb = TILE_NB.get(C)
   if (nb) return nb
@@ -696,6 +815,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   // Vai até perto da borda, deixa o giro levar e pula quando ele traz para o lado da próxima peça
   // (no ar o giro não carrega). Funciona em qualquer velocidade de giro.
   if (spinRide(br, b, w, it)) return it
+  // em cima de uma hélice: pá → cubo → espera uma pá apontar para a saída → corre por ela
+  fanRide(br, b, w, it)
   // barra chegando: pula na hora (com o erro da habilidade)
   barJump(br, b, w, it)
   // ladrilho tremendo embaixo: pula para o próximo
@@ -716,17 +837,40 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   if (b.ground && br.jumpCool <= 0 && sp > 0.3 && !tileNear) {
     const fx = it.mx / sp
     const fz = it.mz / sp
+    const onFan = b.pad >= 0 && isFanPad(C, C.pads[b.pad])
+    if (!onFan && nearFan(C, b.x, b.z)) {
+      // hélice adiante, eu em chão parado: na beira, só sai com pouso garantido NO TEMPO do pouso (e longe
+      // da ponta da pá); senão espera. O chão "de agora" 1 m à frente pode ser uma pá que já vai embora.
+      const own = groundUnder(w, b.x + fx * 1.1, b.z + fz * 1.1, b.y + 0.5)
+      if (own.pad < 0 || C.pads[own.pad].spin !== 0) {
+        if (fanLand(w, b, fx, fz)) {
+          it.jump = true
+          br.jumpCool = 0.5
+        } else {
+          it.mx = 0
+          it.mz = 0
+        }
+      }
+    } else {
     const near = groundUnder(w, b.x + fx * 1.0, b.z + fz * 1.0, b.y + 0.5)
     if (near.y < b.y - 0.6 || near.y === -Infinity) {
+      const fan = onFan
       let far = false
-      for (const k of [2.2, 3.2, 4.2, 5.0]) {
-        const g = groundUnder(w, b.x + fx * k, b.z + fz * k, b.y + 1.2)
-        if (g.y > b.y - 1.2) far = true
+      if (fan) far = fanLand(w, b, fx, fz)
+      else {
+        for (const k of [2.2, 3.2, 4.2, 5.0]) {
+          const g = groundUnder(w, b.x + fx * k, b.z + fz * k, b.y + 1.2)
+          if (g.y > b.y - 1.2) far = true
+        }
       }
       if (far) {
         it.jump = true
         br.jumpCool = 0.5
+      } else if (fan) {
+        it.mx = 0
+        it.mz = 0
       }
+    }
     }
   }
   // preso (parado sem esperar nada): pula; encostado numa fileira de portas, recua um passo (dois robôs que

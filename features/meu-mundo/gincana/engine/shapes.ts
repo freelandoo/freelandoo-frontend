@@ -201,6 +201,25 @@ export class SoftGeo {
     return this.positions.length / 3
   }
 
+  /** Aplica a matriz aos vértices postos a partir do vértice `start` (juntar peças giradas numa malha só). */
+  transformSince(start: number, m: Matrix) {
+    const v = new Vector3()
+    const w = new Vector3()
+    for (let k = start * 3; k < this.positions.length; k += 3) {
+      v.set(this.positions[k], this.positions[k + 1], this.positions[k + 2])
+      Vector3.TransformCoordinatesToRef(v, m, w)
+      this.positions[k] = w.x
+      this.positions[k + 1] = w.y
+      this.positions[k + 2] = w.z
+      v.set(this.normals[k], this.normals[k + 1], this.normals[k + 2])
+      Vector3.TransformNormalToRef(v, m, w)
+      w.normalize()
+      this.normals[k] = w.x
+      this.normals[k + 1] = w.y
+      this.normals[k + 2] = w.z
+    }
+  }
+
   build(name: string, scene: Scene, material: Material, isStatic = true): Mesh {
     const mesh = new Mesh(name, scene)
     const vd = new VertexData()

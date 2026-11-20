@@ -14585,7 +14585,20 @@
     "gincanaHowMo2": "Os blocos vão e voltam: passe logo depois que um deles cruzar.",
     "gincanaHowMo3": "Atravesse o disco longe do eixo e pule a pá quando ela chegar.",
     "gincanaHowMo4": "Os cata-ventos giram cada um para um lado: procure o vão.",
-    "gincanaHowMo5": "As pedras descem rolando: troque de faixa cedo."
+    "gincanaHowMo5": "As pedras descem rolando: troque de faixa cedo.",
+    "gincanaPhHelices": "Hélices da Orbital",
+    "gincanaEvHelices": "Corrida das Hélices",
+    "gincanaPhHelicesPitch": "Hélices deitadas girando no vazio: pule de pá em pá, espere a pá certa no cubo e corra antes que ela vire.",
+    "gincanaSecHe1": "Hélices",
+    "gincanaSecHe2": "Doca",
+    "gincanaSecHe3": "Cubos",
+    "gincanaSecHe4": "Cais",
+    "gincanaSecHe5": "Subida",
+    "gincanaHowHe1": "Pule na pá quando ela vier na sua direção, não quando ela já estiver indo embora.",
+    "gincanaHowHe2": "As barras do corredor giram: pule quando a ponta chegar.",
+    "gincanaHowHe3": "No cubo, espere uma pá apontar para a saída e corra por cima dela.",
+    "gincanaHowHe4": "As plataformas do cais vão de um lado para o outro: acompanhe a de baixo.",
+    "gincanaHowHe5": "As pedras descem rolando: troque de faixa cedo."
   },
   "Sports": {
     "eyebrow": "Esportes",

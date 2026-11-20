@@ -15151,7 +15151,20 @@
     "gincanaHowMo2": "Los bloques van y vuelven: pasa justo después de que uno cruce.",
     "gincanaHowMo3": "Cruza el disco lejos del eje y salta el aspa cuando llegue.",
     "gincanaHowMo4": "Cada molinillo gira hacia un lado: busca el hueco.",
-    "gincanaHowMo5": "Las piedras bajan rodando: cambia de carril pronto."
+    "gincanaHowMo5": "Las piedras bajan rodando: cambia de carril pronto.",
+    "gincanaPhHelices": "Hélices de la Orbital",
+    "gincanaEvHelices": "Carrera de las Hélices",
+    "gincanaPhHelicesPitch": "Hélices tumbadas girando sobre el vacío: salta de aspa en aspa, espera la buena en el centro y corre antes de que gire.",
+    "gincanaSecHe1": "Hélices",
+    "gincanaSecHe2": "Muelle",
+    "gincanaSecHe3": "Ejes",
+    "gincanaSecHe4": "Embarcadero",
+    "gincanaSecHe5": "Subida",
+    "gincanaHowHe1": "Salta al aspa cuando venga hacia ti, no cuando ya se esté yendo.",
+    "gincanaHowHe2": "Las barras del pasillo giran: salta cuando llegue la punta.",
+    "gincanaHowHe3": "En el centro, espera a que un aspa apunte a la salida y corre por encima.",
+    "gincanaHowHe4": "Las plataformas del embarcadero van de un lado a otro: acompaña la de abajo.",
+    "gincanaHowHe5": "Las piedras bajan rodando: cambia de carril pronto."
   },
   "Sports": {
     "eyebrow": "Deportes",

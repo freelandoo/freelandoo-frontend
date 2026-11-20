@@ -609,6 +609,109 @@ function courseMoinhos(): Course {
   })
 }
 
+// ═══ helices — Hélices da Orbital ════════════════════════════════════════════
+
+/**
+ * Gincana (2026-11-20, vídeo 5): CORRIDA DAS HÉLICES — a 2ª fase da Cidade
+ * Orbital. Hélices deitadas no vazio: cada uma são 2 ou 3 pás retas cruzadas
+ * no mesmo cubo (caixas que giram juntas) e um disco no miolo. Quem pisa é
+ * levado pelo giro; entre uma hélice e a outra, o salto é de ponta a ponta.
+ * Nas hélices pares, a barra do cubo varre por cima (se pula). Caiu no vazio =
+ * volta ao último posto.
+ */
+export const HELICES = {
+  /** [x, z, nº de pás (2 = cruz, 3 = seis braços), meio-comprimento da pá, meia-largura, giro rad/s, barra] */
+  fans: [
+    [0, 30, 2, 7, 1.7, 0.5, 0],
+    [0, 46, 3, 7, 1.7, -0.55, 0],
+    [-2.5, 89, 3, 7.5, 1.9, 0.5, 1],
+    [2, 108.8, 2, 7.5, 1.9, -0.6, 0],
+    [-1.5, 128.4, 3, 7.5, 1.9, 0.62, 1],
+  ] as [number, number, number, number, number, number, number][],
+} as const
+
+function courseHelices(): Course {
+  const k = new CourseKit()
+  kitStart(k)
+  const fan = (x: number, z: number, n: number, L: number, hw: number, w: number, bar: number, s: number) => {
+    for (let i = 0; i < n; i++) {
+      const p = k.box(x, z, hw, L, 5, 1, s, (i * Math.PI) / n, 1.2)
+      k.pads[p].spin = w
+    }
+    const c = k.disc(x, z, hw * 1.9, 6, 1, s)
+    k.pads[c].spin = w
+    // a barra do cubo: gira ao contrário, rente ao tampo (se pula); o cubo é um poste (ninguém fica no eixo)
+    if (bar) {
+      k.sweep(x, z, DECK + 0.55, L - 0.4, 0.3, -w * 1.6, 0.6, true)
+      k.post(x, z, 1.1, DECK, DECK + 2.2, 4)
+    }
+  }
+  // ── 1. as duas primeiras hélices ──
+  k.box(0, 18.1, 3, 3, 0, 1, 1)
+  for (const f of HELICES.fans.slice(0, 2)) fan(f[0], f[1], f[2], f[3], f[4], f[5], f[6], 1)
+  // ── 2. a doca: ilha com o posto e o corredor das barras ──
+  k.box(0, 58, 4, 3, 0, 1, 2)
+  k.box(0, 69.5, 4.5, 8.5, 4, 1, 2)
+  k.sweep(0, 64.2, DECK + 0.55, 4.5, 0.3, 1.0, 0, true)
+  k.sweep(0, 74.8, DECK + 0.55, 4.5, 0.3, -1.15, 1, true)
+  k.box(0, 79.7, 2.5, 1.7, 0, 1, 3)
+  // ── 3. três hélices desencontradas, duas com a barra no cubo ──
+  for (const f of HELICES.fans.slice(2)) fan(f[0], f[1], f[2], f[3], f[4], f[5], f[6], 3)
+  // pilares parados entre uma hélice e a outra (a ponte entre os cubos)
+  k.box(0, 99.2, 2, 1.8, 0, 1, 3)
+  k.box(0, 118.6, 2, 1.8, 0, 1, 3)
+  // ── 4. o cais e as plataformas que vão e voltam ──
+  k.box(0, 138.5, 4, 2.6, 0, 1, 4)
+  for (const [z, ph] of [[145.5, 0], [152.5, 2.1], [159.5, 4.2]] as [number, number][]) {
+    const p = k.box(0, z, 2.6, 2.6, 4, 1, 4, 0, 1)
+    Object.assign(k.pads[p], { mx: 2.4, mz: 0, mw: 1.1, mph: ph })
+  }
+  k.box(0, 166.2, 4, 2.8, 0, 1, 4)
+  // ── 5. a subida das pedras ──
+  const z0 = 169
+  const finishZ = kitFinish(k, z0, 1.05, 6.8, 1.1)
+  for (const [x, z] of [[0, 16.5], [0, 57], [0, 79], [0, 99.2], [0, 118.6], [0, 139]] as [number, number][]) k.logo(x, z)
+  return k.done({
+    id: "helices",
+    checkpoints: [
+      { x: 0, z: -3.5, y: DECK, w: 7 },
+      { x: 0, z: 58, y: DECK, w: 3 },
+      { x: 0, z: 138.5, y: DECK, w: 3 },
+    ],
+    finishZ,
+    finishY: DECK + 6,
+    sections: [17.4, 55, 78, 136, z0],
+    minFinish: 20,
+    route: (r) =>
+      routeOf((add) => {
+        add(0, 10)
+        add(0, 17)
+        add(0, 20.5)
+        for (let z = 23; z <= 53; z += 1.5) add(0, z)
+        add(0, 56)
+        add(0, 59)
+        add(2.4, 61.5)
+        for (let z = 63; z <= 68.5; z += 1.5) add(2.4, z)
+        add(-2.4, 70)
+        for (let z = 71.5; z <= 78; z += 1.5) add(-2.4, z)
+        add(0, 78.5)
+        add(0, 81)
+        // nas hélices com barra, longe do cubo (de um lado); na do meio, pelo eixo
+        const sd = r(1) < 0.5 ? -1 : 1
+        for (let z = 82.5; z <= 135; z += 1.5) {
+          if (z > 96.5 && z < 101.5) add(0, z)
+          else if (z > 116 && z < 121) add(0, z)
+          else if (z < 97) add(-2.5 + sd * 2.6 * Math.max(0, 1 - Math.abs(z - 89) / 7), z)
+          else if (z < 117) add(2, z)
+          else add(-1.5 - sd * 2.6 * Math.max(0, 1 - Math.abs(z - 128.4) / 7), z)
+        }
+        add(0, 137)
+        for (let z = 140; z <= 165; z += 1.5) add(0, z)
+        routeFinish(add, z0, finishZ)
+      }),
+  })
+}
+
 // ═══ orbital — Cidade Orbital ════════════════════════════════════════════════
 
 /**
@@ -1211,6 +1314,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   canion: courseCanion(),
   moinhos: courseMoinhos(),
   orbital: courseOrbital(),
+  helices: courseHelices(),
   forja: courseForja(),
   altoforno: courseAltoForno(),
   fabrica: courseFabrica(),

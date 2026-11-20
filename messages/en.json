@@ -15171,7 +15171,20 @@
     "gincanaHowMo2": "The blocks slide back and forth: go right after one crosses.",
     "gincanaHowMo3": "Cross the disc away from the axle and jump the blade when it comes.",
     "gincanaHowMo4": "Each windmill spins its own way: look for the gap.",
-    "gincanaHowMo5": "Rocks roll down: switch lanes early."
+    "gincanaHowMo5": "Rocks roll down: switch lanes early.",
+    "gincanaPhHelices": "Orbital Propellers",
+    "gincanaEvHelices": "Propeller Race",
+    "gincanaPhHelicesPitch": "Flat propellers spinning over the void: hop from blade to blade, wait at the hub for the right blade and run before it turns away.",
+    "gincanaSecHe1": "Propellers",
+    "gincanaSecHe2": "Dock",
+    "gincanaSecHe3": "Hubs",
+    "gincanaSecHe4": "Pier",
+    "gincanaSecHe5": "Climb",
+    "gincanaHowHe1": "Jump onto a blade as it comes toward you, not when it is already leaving.",
+    "gincanaHowHe2": "The corridor bars spin: jump when the tip arrives.",
+    "gincanaHowHe3": "At the hub, wait for a blade to point at the exit and run along it.",
+    "gincanaHowHe4": "The pier platforms slide side to side: move with the one under you.",
+    "gincanaHowHe5": "Rocks roll down: switch lanes early."
   },
   "Sports": {
     "eyebrow": "Sports",

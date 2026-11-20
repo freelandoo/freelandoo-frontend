@@ -37,6 +37,7 @@ import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
+import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
@@ -75,6 +76,8 @@ export class CourseView {
   /** Esteira do Alto-Forno: as taliscas que descem a rampa. */
   private readonly altoforno: AltoFornoBelt | null = null
   private readonly mills: MoinhosMills | null = null
+  private readonly yard: HelicesYard | null = null
+  private bladeSeed = 0
   private readonly afBalls: AltoFornoBalls | null = null
   private readonly pusherMeshes: Mesh[] = []
   /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
@@ -241,6 +244,9 @@ export class CourseView {
         st.cylinder(q.r * 2.3, 0.04, at(q.x, q.y0 + 0.02, q.z), [0.03, 0.08, 0.07], 16)
         glow.cylinder(q.r * 1.6, 0.12, at(q.x, q.y1 + 0.05, q.z), [1, 0.9, 0.5], 18)
         glow.torus(q.r * 1.9, 0.08, at(q.x, q.y1 + 0.02, q.z), [1, 0.62, 0.2], 18)
+      } else if (q.r > 0.7 && theme.id === "helices") {
+        // Hélices da Orbital: a turbina do cubo
+        helicesHubPost(st, glow, q.x, q.z, q.r, q.y0, q.y1)
       } else if (q.r > 0.7 && theme.deco === "orbital") {
         // V-Orbital (ref. v3): eixo de aço roxo em seis faces, base larga, anéis de neon ciano, filetes acesos
         // nas arestas e o topo em magenta
@@ -398,9 +404,10 @@ export class CourseView {
       const bg = new SoftGeo()
       const len = s.both ? s.len * 2 : s.len
       const off = s.both ? 0 : s.len / 2
-      if (theme.id === "altoforno" || theme.id === "moinhos") {
+      if (theme.id === "altoforno" || theme.id === "moinhos" || theme.id === "helices") {
         const gl = new SoftGeo()
-        if (theme.id === "moinhos") moinhosSweep(bg, gl, s)
+        if (theme.id === "helices") helicesSweep(bg, gl, s)
+        else if (theme.id === "moinhos") moinhosSweep(bg, gl, s)
         else altoFornoSweep(bg, gl, s)
         const m = bg.build("gincana-bar", scene, toy, false)
         m.parent = node
@@ -646,9 +653,40 @@ export class CourseView {
     }
 
     // ── plataformas que andam e discos que giram (malha própria, posta a cada quadro) ──
+    // Hélices: as pás e o cubo de uma hélice giram juntos — uma malha por hélice (cada pá com o ângulo embutido)
+    const fans = new Map<string, Pad[]>()
+    if (theme.id === "helices") {
+      for (const p of course.pads) {
+        if (p.spin === 0 || p.mw !== 0 || p.gh !== 0) continue
+        const key = `${p.x},${p.z},${p.spin}`
+        fans.set(key, [...(fans.get(key) ?? []), p])
+      }
+      for (const group of fans.values()) {
+        const g = new SoftGeo()
+        const gl = new SoftGeo()
+        for (const p of group) {
+          const g0 = g.vertexCount
+          const l0 = gl.vertexCount
+          this.pad(g, gl, { ...p, x: 0, z: 0, rot: 0 }, true)
+          if (p.k !== 0 && p.rot !== 0) {
+            g.transformSince(g0, Matrix.RotationY(p.rot))
+            gl.transformSince(l0, Matrix.RotationY(p.rot))
+          }
+        }
+        const mesh = g.build("gincana-fan", scene, toy, false)
+        if (gl.vertexCount) {
+          const gm = gl.build("gincana-fan-glow", scene, this.glowMat, false)
+          gm.parent = mesh
+          this.meshes.push(gm)
+        }
+        mesh.position.set(group[0].x, 0, group[0].z)
+        this.movers.push({ mesh, p: { ...group[0], k: 0 } })
+      }
+    }
     for (const p of course.pads) {
       if (p.mw === 0 && p.spin === 0) continue
       if (p.gh !== 0) continue
+      if (fans.size && p.mw === 0 && fans.has(`${p.x},${p.z},${p.spin}`)) continue
       const g = new SoftGeo()
       const gl = new SoftGeo()
       this.pad(g, gl, { ...p, x: 0, z: 0, rot: 0 }, true)
@@ -1188,6 +1226,7 @@ export class CourseView {
     // ── esteiras: setas que andam no sentido da esteira ──
     if (theme.id === "altoforno") this.altoforno = new AltoFornoBelt(scene, toy, this.glowMat, course)
     if (theme.id === "moinhos") this.mills = new MoinhosMills(scene, toy, this.glowMat, course)
+    if (theme.id === "helices") this.yard = new HelicesYard(scene, toy, this.glowMat)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
@@ -1535,6 +1574,7 @@ export class CourseView {
     if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
     if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) return
     const millFloor = this.theme.id === "moinhos" && !dyn && moinhosFloor(g, p)
+    if (this.theme.id === "helices" && dyn && isHelixBlade(p)) return helicesBlade(g, glow, p, this.bladeSeed++)
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraStump(p)) return spinStump(g, glow, p)
@@ -1979,6 +2019,7 @@ export class CourseView {
     this.comportas?.update(tt)
     this.altoforno?.update(tt)
     this.mills?.update(tt)
+    this.yard?.update(tt)
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
@@ -2144,6 +2185,7 @@ export class CourseView {
     this.portoes?.dispose()
     this.altoforno?.dispose()
     this.mills?.dispose()
+    this.yard?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {
