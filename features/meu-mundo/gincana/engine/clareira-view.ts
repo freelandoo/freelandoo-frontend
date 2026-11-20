@@ -56,12 +56,13 @@ export function barkPaint(seed = 0, k = 11) {
 
 /** Tampo de madeira cortada: anéis (geometria — a tampa do cilindro só tem miolo e borda), rachas e lascas. */
 export function sliceTop(g: SoftGeo, x: number, y: number, z: number, r: number, seed: number) {
-  const step = r > 2.5 ? 0.34 : 0.28
+  const step = r > 5 ? 0.55 : r > 2.5 ? 0.34 : 0.28
+  const sides = r > 5 ? 36 : 28
   let k = 0
   for (let rr = r; rr > 0.25; rr -= step, k++) {
     const wob = 1 + (n01(seed, k) - 0.5) * 0.03
     const c = k === 0 ? mix(WOOD_A, [1, 0.9, 0.7], 0.25) : k % 2 ? WOOD_B : WOOD_A
-    g.cylinder(rr * 2 * wob, 0.06, at(x, y - 0.03 + k * 0.004, z), c, 28)
+    g.cylinder(rr * 2 * wob, 0.06, at(x, y - 0.03 + k * 0.004, z), c, sides)
   }
   g.cylinder(0.7, 0.06, at(x, y - 0.03 + k * 0.004 + 0.002, z), HEART, 16)
   // rachas: três do miolo para fora, finas e escuras (uma chega à borda)
@@ -69,6 +70,32 @@ export function sliceTop(g: SoftGeo, x: number, y: number, z: number, r: number,
     const a = seed * 1.7 + q * 2.1 + n01(seed, q) * 0.6
     const len = r * (q === 0 ? 0.95 : 0.45 + n01(q, seed) * 0.25)
     g.box(0.07, 0.02, len, at(x + Math.sin(a) * len * 0.5, y + k * 0.004 + 0.012, z + Math.cos(a) * len * 0.5, a), [0.36, 0.2, 0.1])
+  }
+}
+
+/**
+ * Setas de seiva ("›") mostrando para onde o tampo leva: um anel de 6 nas fatias pequenas; nas grandes
+ * (raio > 5) dois anéis (6 dentro, 10 fora) e setas maiores, que leem de longe.
+ */
+function sapArrows(g: SoftGeo, r: number, y: number, dir: number) {
+  const rings: [number, number, number][] = r > 5 ? [[0.42, 6, 1.5], [0.78, 10, 1.6]] : [[0.62, 6, 1]]
+  for (const [fr, n, sc] of rings) {
+    for (let q = 0; q < n; q++) {
+      const a = (q / n) * Math.PI * 2 + 0.3
+      const rr = r * fr
+      const cx = Math.cos(a) * rr
+      const cz = Math.sin(a) * rr
+      // rotation.y = spin·t no Babylon leva o ponto (cos a, sin a) para (sin a, −cos a)·spin
+      const head = Math.atan2(dir * Math.sin(a), -dir * Math.cos(a))
+      const tx = cx + Math.sin(head) * 0.25 * sc
+      const tz = cz + Math.cos(head) * 0.25 * sc
+      for (const s of [-1, 1]) {
+        const yaw = head + s * 0.7
+        // contorno escuro embaixo (lê sobre a madeira clara) e a seiva por cima
+        g.box(0.34 * sc, 0.03, 0.98 * sc, at(tx - Math.sin(yaw) * 0.45 * sc, y + 0.045, tz - Math.cos(yaw) * 0.45 * sc, yaw), [0.3, 0.16, 0.08])
+        g.box(0.22 * sc, 0.03, 0.86 * sc, at(tx - Math.sin(yaw) * 0.42 * sc, y + 0.07, tz - Math.cos(yaw) * 0.42 * sc, yaw), SAP_LIT)
+      }
+    }
   }
 }
 
@@ -88,9 +115,10 @@ export function spinSlice(g: SoftGeo, _glow: SoftGeo, p: Pad) {
     const yb = y - 1.15
     g.cylinder(r * 2 - 0.35, yb + 0.3, at(0, (yb - 0.3) / 2, 0), barkPaint(seed + 2, 11), 22, r * 2 - 0.15)
     g.cylinder(r * 2.35, 1.3, at(0, 0.35, 0), barkPaint(seed + 1, 13), 22, r * 2 - 0.3)
-    for (let k = 0; k < 5; k++) {
-      const a = (k / 5) * Math.PI * 2 + seed
-      g.tube(new Vector3(Math.cos(a) * r * 0.85, 1.0, Math.sin(a) * r * 0.85), new Vector3(Math.cos(a) * (r + 1.4), -0.3, Math.sin(a) * (r + 1.4)), 0.32, barkPaint(k, 5), 6)
+    const nr = r > 5 ? 8 : 5
+    for (let k = 0; k < nr; k++) {
+      const a = (k / nr) * Math.PI * 2 + seed
+      g.tube(new Vector3(Math.cos(a) * r * 0.85, 1.0, Math.sin(a) * r * 0.85), new Vector3(Math.cos(a) * (r + 1.4), -0.3, Math.sin(a) * (r + 1.4)), r > 5 ? 0.45 : 0.32, barkPaint(k, 5), 6)
     }
     for (let k = 0; k < 4; k++) {
       const a = (k / 4) * Math.PI * 2 + seed * 0.5
@@ -99,27 +127,11 @@ export function spinSlice(g: SoftGeo, _glow: SoftGeo, p: Pad) {
   }
   g.torus(r * 2 - 0.12, 0.34, at(0, y - 0.1, 0), barkPaint(seed, 17), 26)
   sliceTop(g, 0, y, 0, r - 0.22, seed)
-  // setas de seiva acesa: seis "›" no anel do meio, apontando para onde o tampo leva
-  const dir = Math.sign(p.spin || 1)
-  for (let q = 0; q < 6; q++) {
-    const a = (q / 6) * Math.PI * 2 + 0.3
-    const rr = r * 0.62
-    const cx = Math.cos(a) * rr
-    const cz = Math.sin(a) * rr
-    // rotation.y = spin·t no Babylon leva o ponto (cos a, sin a) para (sin a, −cos a)·spin
-    const head = Math.atan2(dir * Math.sin(a), -dir * Math.cos(a))
-    const tx = cx + Math.sin(head) * 0.25
-    const tz = cz + Math.cos(head) * 0.25
-    for (const s of [-1, 1]) {
-      const yaw = head + s * 0.7
-      // contorno escuro embaixo (lê sobre a madeira clara) e a seiva acesa por cima
-      g.box(0.34, 0.03, 0.98, at(tx - Math.sin(yaw) * 0.45, y + 0.045, tz - Math.cos(yaw) * 0.45, yaw), [0.3, 0.16, 0.08])
-      g.box(0.22, 0.03, 0.86, at(tx - Math.sin(yaw) * 0.42, y + 0.07, tz - Math.cos(yaw) * 0.42, yaw), SAP_LIT)
-    }
-  }
+  sapArrows(g, r, y, Math.sign(p.spin || 1))
   // musgo em tufos sobre a casca (lado de fora) e um par de cogumelinhos
-  for (let q = 0; q < 9; q++) {
-    const a = (q / 9) * Math.PI * 2 + n01(seed, q) * 0.5
+  const nm = Math.round(9 * Math.max(1, r / 3.4))
+  for (let q = 0; q < nm; q++) {
+    const a = (q / nm) * Math.PI * 2 + n01(seed, q) * 0.5
     const s = 0.45 + n01(q, seed) * 0.35
     g.sphere(s, at(Math.cos(a) * (r - 0.12), y - 0.02, Math.sin(a) * (r - 0.12)), q % 3 ? MOSS : MOSS_L, 4, 1.4, 0.45, 1)
   }
@@ -474,17 +486,20 @@ export function spinStump(g: SoftGeo, _glow: SoftGeo, p: Pad) {
   const y = p.y
   const seed = Math.round(p.z * 3)
   const H = p.d
-  g.cylinder(r * 2 - 0.08, H, at(0, y - H / 2 - 0.05, 0), barkPaint(seed, 13), 30, r * 2 + 0.05)
+  const big = r > 4
+  g.cylinder(r * 2 - 0.08, H, at(0, y - H / 2 - 0.05, 0), barkPaint(seed, big ? 19 : 13), big ? 40 : 30, r * 2 + 0.05)
   // pé que alarga e as raízes na água
   g.cylinder(r * 2.5, 1.6, at(0, 0.6, 0), barkPaint(seed + 1, 13), 24, r * 2)
-  for (let k = 0; k < 6; k++) {
-    const a = (k / 6) * Math.PI * 2 + seed
-    g.tube(new Vector3(Math.cos(a) * r * 0.9, 1.2, Math.sin(a) * r * 0.9), new Vector3(Math.cos(a) * (r + 1.5), -0.3, Math.sin(a) * (r + 1.5)), 0.3, barkPaint(k, 5), 6)
+  const nr = big ? 9 : 6
+  for (let k = 0; k < nr; k++) {
+    const a = (k / nr) * Math.PI * 2 + seed
+    g.tube(new Vector3(Math.cos(a) * r * 0.9, 1.2, Math.sin(a) * r * 0.9), new Vector3(Math.cos(a) * (r + 1.5), -0.3, Math.sin(a) * (r + 1.5)), big ? 0.45 : 0.3, barkPaint(k, 5), 6)
   }
   // casca grossa em volta do tampo e a faixa de musgo logo abaixo
   g.torus(r * 2 - 0.1, 0.3, at(0, y - 0.1, 0), barkPaint(seed, 17), 22)
-  for (let k = 0; k < 10; k++) {
-    const a = (k / 10) * Math.PI * 2 + n01(seed, k)
+  const nm = big ? 18 : 10
+  for (let k = 0; k < nm; k++) {
+    const a = (k / nm) * Math.PI * 2 + n01(seed, k)
     g.sphere(0.6 + n01(k, seed) * 0.3, at(Math.cos(a) * r, y - 0.35 - n01(seed, k + 3) * 0.5, Math.sin(a) * r), k % 3 ? MOSS : MOSS_L, 4, 0.5, 1.1, 1)
   }
   // orelhas-de-pau na coluna (duas alturas)
@@ -495,19 +510,7 @@ export function spinStump(g: SoftGeo, _glow: SoftGeo, p: Pad) {
     g.sphere(0.8 - (k % 2) * 0.2, at(Math.cos(a) * (r + 0.05), yy, Math.sin(a) * (r + 0.05), -a), (_x, ty) => (ty > 0 ? [1, 0.62, 0.2] : [0.82, 0.4, 0.12]), 6, 1, 0.28, 1)
   }
   sliceTop(g, 0, y, 0, r - 0.2, seed)
-  const dir = Math.sign(p.spin || 1)
-  for (let q = 0; q < 4; q++) {
-    const a = (q / 4) * Math.PI * 2 + 0.5
-    const rr = r * 0.6
-    const head = Math.atan2(dir * Math.sin(a), -dir * Math.cos(a))
-    const tx = Math.cos(a) * rr + Math.sin(head) * 0.2
-    const tz = Math.sin(a) * rr + Math.cos(head) * 0.2
-    for (const s of [-1, 1]) {
-      const yaw = head + s * 0.7
-      g.box(0.3, 0.03, 0.8, at(tx - Math.sin(yaw) * 0.36, y + 0.045, tz - Math.cos(yaw) * 0.36, yaw), [0.3, 0.16, 0.08])
-      g.box(0.2, 0.03, 0.7, at(tx - Math.sin(yaw) * 0.34, y + 0.07, tz - Math.cos(yaw) * 0.34, yaw), SAP_LIT)
-    }
-  }
+  sapArrows(g, r, y, Math.sign(p.spin || 1))
   // cogumelo aceso de lado, na casca (lanterna para a noite)
   const a = seed * 0.7
   const mx = Math.cos(a) * (r + 0.15)
