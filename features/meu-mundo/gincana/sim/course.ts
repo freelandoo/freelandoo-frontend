@@ -177,6 +177,10 @@ export interface Pendulum {
   amp: number
   w: number
   ph: number
+  /** Carrinho (Crosta, 20/11): o eixo corre de lado na viga, ±`tx` m, giro `tw` rad/s, fase `tph`. Sem, parado. */
+  tx?: number
+  tw?: number
+  tph?: number
 }
 
 /** Luva de boxe (ou pistão) que soca para dentro do campo a partir de x0 (dir = ±1). */
@@ -824,7 +828,10 @@ export class CourseKit {
       s.acc *= f * f
       s.wMax *= f
     }
-    for (const q of this.pendulums) q.w *= f
+    for (const q of this.pendulums) {
+      q.w *= f
+      if (q.tw) q.tw *= f
+    }
     for (const g of this.gloves) g.period /= f
     for (const q of this.pushers) q.w *= f
     for (const q of this.rotors) q.w *= f
@@ -921,7 +928,11 @@ export function sweeperW(s: Sweeper, t: number) {
 export function pendulumAt(p: Pendulum, t: number) {
   const th = p.amp * Math.sin(p.w * t + p.ph)
   const thd = p.amp * p.w * Math.cos(p.w * t + p.ph)
-  return { x: p.x + p.len * Math.sin(th), y: p.py - p.len * Math.cos(th), z: p.z, vx: p.len * Math.cos(th) * thd, th }
+  // carrinho: o eixo anda de lado (o ponto mais baixo do golpe varre a pista toda, até a beira)
+  const tw = p.tw ?? 0
+  const px = p.x + (p.tx ?? 0) * Math.sin(tw * t + (p.tph ?? 0))
+  const pv = (p.tx ?? 0) * tw * Math.cos(tw * t + (p.tph ?? 0))
+  return { x: px + p.len * Math.sin(th), y: p.py - p.len * Math.cos(th), z: p.z, vx: p.len * Math.cos(th) * thd + pv, th, px }
 }
 
 /**
@@ -1302,6 +1313,10 @@ export function reprise(C: Course, o: { z0?: number; z1?: number; base?: number;
   each(C.pendulums, out.pendulums, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, py: q.py + dy }), (q, k, ph) => {
     q.w *= k
     q.ph += ph
+    if (q.tw) {
+      q.tw *= k
+      q.tph = (q.tph ?? 0) + ph * 0.7
+    }
   })
   each(C.gloves, out.gloves, (q) => q.z, (q, dz, dy) => ({ ...q, z: q.z + dz, y: q.y + dy }), (q, k, ph) => {
     q.period /= k

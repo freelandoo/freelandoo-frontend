@@ -907,7 +907,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     const p = C.pendulums[i]
     const ahead = p.z - b.z
     // decide entre 4,6 e 2,4 m (freia em ~0,6 m e fica fora do alcance); mais perto, vai
-    if (ahead < 2.4 || ahead > 4.6 || Math.abs(p.x - b.x) > p.len * Math.sin(p.amp) + 2) continue
+    if (ahead < 2.4 || ahead > 4.6 || Math.abs(p.x - b.x) > p.len * Math.sin(p.amp) + 2 + (p.tx ?? 0)) continue
     const reach = p.R + GINCANA.bodyR + 0.3
     const slope = it.mx / Math.max(0.2, it.mz)
     let near = false

@@ -2043,7 +2043,9 @@ export class CourseView {
     for (let i = 0; i < C.pendulums.length; i++) {
       const p = C.pendulums[i]
       const q = pendulumAt(p, tt)
-      this.dir.set(q.x - p.x, q.y - p.py, 0).normalize()
+      // carrinho (Crosta): o eixo anda de lado na viga
+      this.swings[i].position.x = q.px
+      this.dir.set(q.x - q.px, q.y - p.py, 0).normalize()
       Quaternion.FromUnitVectorsToRef(this.up, this.dir, this.q)
       this.swings[i].rotationQuaternion!.copyFrom(this.q)
     }

@@ -920,6 +920,12 @@ export const CROSTA = {
   hamR: 1.25,
   hamAmp: [0.8, 1.0] as [number, number],
   hamW: 2.0,
+  /**
+   * 20/11 (o Alex: "se a pessoa for pelos cantos ela nunca é atingida"): o malho fica num CARRINHO que corre de
+   * lado na viga do pórtico (±`tx` = meia largura do tabuleiro − `edge`), então o golpe baixo chega até a beira.
+   * Giro do carrinho `tw` rad/s (mais lento que o balanço: o lugar seguro muda a cada passada).
+   */
+  trolley: { edge: 1.2, tw: 0.85 },
   balls: { every: 0.85, v: 7.5, R: 1.25 },
 } as const
 
@@ -933,7 +939,13 @@ function courseCrosta(): Course {
   k.box(0, 96.6, 6, 3, 2, 1, 4)
   k.box(0, 121.7, 7.4, 3, 2, 1, 5)
   // os malhos: pêndulo pendurado no pórtico, balança de lado (cobre ±6 m)
-  for (const [z, ph] of CROSTA.hammers) k.swing(0, z, DECK + 9, 7.6, CROSTA.hamR, z > 70 && z < 95 ? CROSTA.hamAmp[0] : CROSTA.hamAmp[1], CROSTA.hamW, ph)
+  CROSTA.hammers.forEach(([z, ph], i) => {
+    k.swing(0, z, DECK + 9, 7.6, CROSTA.hamR, z > 70 && z < 95 ? CROSTA.hamAmp[0] : CROSTA.hamAmp[1], CROSTA.hamW, ph)
+    // o tabuleiro onde o malho está: o carrinho corre até `edge` da beira
+    const g = CROSTA.grids.find(([, z0, , rows]) => z >= z0 && z <= z0 + rows * CROSTA.step)
+    const half = g ? (g[2] * CROSTA.step) / 2 : 6
+    Object.assign(k.pendulums[k.pendulums.length - 1], { tx: Math.max(1, half - CROSTA.trolley.edge), tw: CROSTA.trolley.tw, tph: i * 2.3 })
+  })
   const z0 = 124.7
   const finishZ = kitFinish(k, z0, CROSTA.balls.every, CROSTA.balls.v, CROSTA.balls.R)
   for (const [x, z] of [[0, 37.5], [0, 68.6], [0, 96.6], [0, 121.7]] as [number, number][]) k.logo(x, z)
