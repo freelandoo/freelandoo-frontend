@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "orbital" | "forja" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "orbital", "forja", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "orbital" | "forja" | "altoforno" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "orbital", "forja", "altoforno", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -328,6 +328,10 @@ export interface Balls {
   v: number
   R: number
   zEnd: number
+  /** Alto-Forno: a bola QUICA (altura do quique em m, s por quique) e vai de lado (± m) — dá para passar por baixo */
+  hop?: number
+  hopT?: number
+  drift?: number
 }
 
 /** Ponto da rota dos computadores; `m` = índice da plataforma que anda (mira nela onde estiver). */
@@ -810,8 +814,17 @@ export function ballsAt(c: Course, seed: number, t: number, out: number[]) {
     const z = R.z1 - B.v * (t - i * B.every)
     if (z < B.zEnd || z > R.z1) continue
     // depois do pé da rampa a bola cai na água
-    const y = z >= R.z0 ? rampTop(c, z) + B.R : R.y0 + B.R - ((R.z0 - z) / B.v) ** 2 * 12
-    out.push(R.x + B.lanes[lane], y, z, lane, i)
+    const age = t - i * B.every
+    let y = z >= R.z0 ? rampTop(c, z) + B.R : R.y0 + B.R - ((R.z0 - z) / B.v) ** 2 * 12
+    let x = R.x + B.lanes[lane]
+    if (B.hop) {
+      // quique: arco de parábola (|sen| achatado embaixo), fase própria de cada bola; o lado vai e volta
+      const hopT = B.hopT ?? 0.6
+      const u = ((age + (courseHash(seed, i + 7) % 100) / 100 * hopT) / hopT) % 1
+      if (z >= R.z0) y += B.hop * 4 * u * (1 - u)
+      x += (B.drift ?? 0) * Math.sin(age * 1.9 + i * 2.3)
+    }
+    out.push(x, y, z, lane, i)
   }
   return out
 }

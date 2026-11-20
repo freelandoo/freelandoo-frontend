@@ -37,6 +37,7 @@ import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
+import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
@@ -70,6 +71,9 @@ export class CourseView {
   private readonly comportas: ComportasGates | null = null
   /** Portões de Gelo: os portões de gelo (instanciados por largura), o estilhaço e a racha. */
   private readonly portoes: PortoesDoors | null = null
+  /** Esteira do Alto-Forno: as taliscas que descem a rampa. */
+  private readonly altoforno: AltoFornoBelt | null = null
+  private readonly afBalls: AltoFornoBalls | null = null
   private readonly pusherMeshes: Mesh[] = []
   /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
   private readonly wallSegs: InstancedMesh[] = []
@@ -217,6 +221,9 @@ export class CourseView {
       } else if (theme.id === "comportas") {
         // Comportas da Usina: bobina de cobre
         comportasPost(st, glow, q)
+      } else if (theme.id === "altoforno") {
+        // Esteira do Alto-Forno: bigorna
+        altoFornoAnvil(st, glow, q)
       } else if (q.y0 < DECK - 0.1) {
         // poste da luva: sai da água, com anéis
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(col, darker(col, 0.8), 0.8, 0), 20)
@@ -327,6 +334,10 @@ export class CourseView {
     // marcos das portas: pilares entre elas (só desenho; a fileira inteira é a regra)
     const doorRows = theme.id === "portoes" ? [] : [...new Set(course.doors.map((d) => d.row))]
     if (theme.id === "portoes") portoesFrames(st, glow, course)
+    if (theme.id === "altoforno") {
+      altoFornoMouth(st, glow, course)
+      altoFornoGrate(st, glow, course)
+    }
     for (const row of doorRows) {
       const ds = course.doors.filter((d) => d.row === row)
       const xs = ds.map((d) => d.x - d.hw).concat([ds[ds.length - 1].x + ds[ds.length - 1].hw])
@@ -340,7 +351,7 @@ export class CourseView {
       }
     }
     if (city) this.cityExtras(st)
-    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low)
+    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" ? course.finishZ + 40 : 64)
     if (theme.id === "clareira") cannonGate(st, glow)
     // alvos de programa de TV: fora da Floresta (a referência não tem)
     if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)
@@ -377,6 +388,17 @@ export class CourseView {
       const bg = new SoftGeo()
       const len = s.both ? s.len * 2 : s.len
       const off = s.both ? 0 : s.len / 2
+      if (theme.id === "altoforno") {
+        const gl = new SoftGeo()
+        altoFornoSweep(bg, gl, s)
+        const m = bg.build("gincana-bar", scene, toy, false)
+        const mg = gl.build("gincana-bar-fire", scene, this.glowMat, false)
+        m.parent = node
+        mg.parent = node
+        this.sweepNodes.push(node)
+        this.meshes.push(m, mg)
+        continue
+      }
       if (theme.deco === "forest") {
         // Floresta (ref. v3): a barra é uma RAIZ retorcida (casca em sulcos, cipó enrolado, folhas) — mesma grossura da regra
         const bark = (x: number, y: number, z: number): RGB => {
@@ -558,7 +580,8 @@ export class CourseView {
     }
 
     // ── bolas da subida (do tema) ──
-    if (course.balls) {
+    if (course.balls && theme.id === "altoforno") this.afBalls = new AltoFornoBalls(scene, toy, this.glowMat, course.balls.R)
+    else if (course.balls) {
       const R = course.balls.R
       const bb = new SoftGeo()
       const paint = this.ballPaint()
@@ -1136,8 +1159,10 @@ export class CourseView {
     }
 
     // ── esteiras: setas que andam no sentido da esteira ──
+    if (theme.id === "altoforno") this.altoforno = new AltoFornoBelt(scene, toy, this.glowMat, course)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
+      if (theme.id === "altoforno" && isBeltRamp(p)) continue
       const tex = new DynamicTexture("gincana-belt", { width: 64, height: 64 }, scene, true)
       const g = tex.getContext() as CanvasRenderingContext2D
       g.fillStyle = "#1a1c22"
@@ -1479,6 +1504,7 @@ export class CourseView {
       comportasFloor(g, glow, p)
     }
     if (this.theme.id === "portoes") portoesFloor(g, glow, p)
+    if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraStump(p)) return spinStump(g, glow, p)
@@ -1904,6 +1930,7 @@ export class CourseView {
         b.rotation.x = -this.balls[k + 2] / C.balls.R
       }
       for (let i = used; i < this.ballPool.length; i++) this.ballPool[i].setEnabled(false)
+      this.afBalls?.update(this.balls, C.balls.R)
       if (this.fruitPools.length) {
         // Clareira: a fruta da faixa (as do conjunto comum ficam escondidas)
         for (const b of this.ballPool) b.setEnabled(false)
@@ -1920,6 +1947,7 @@ export class CourseView {
       }
     }
     this.comportas?.update(tt)
+    this.altoforno?.update(tt)
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
@@ -2083,6 +2111,8 @@ export class CourseView {
     for (const dn of this.drumNodes) dn.node.dispose()
     for (const m of this.doorMeshes) m.dispose()
     this.portoes?.dispose()
+    this.altoforno?.dispose()
+    this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {
       b.mesh.dispose()

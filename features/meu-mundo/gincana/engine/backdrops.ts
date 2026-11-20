@@ -26,7 +26,8 @@ const side = (i: number, d: number) => (i % 2 ? d : -d)
 const Z0 = -40
 const Z1 = 300
 
-export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, low: boolean) {
+/** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada). */
+export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, low: boolean, castleZ = 64) {
   const n = low ? 0.6 : 1
   switch (deco) {
     case "forest":
@@ -36,7 +37,7 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
     case "orbital":
       return orbital(lit, glow, n)
     case "forge":
-      return forge(lit, glow, ctx, n)
+      return forge(lit, glow, ctx, n, castleZ)
     case "factory":
       return factory(lit, glow, ctx, n)
     case "ice":
@@ -443,7 +444,7 @@ function forgeCastle(lit: SoftGeo, glow: SoftGeo, cx: number, cz: number) {
   for (const sx of [-1, 1]) for (const k of [0.3, 0.7]) lit.box(2, 14, 4, at(cx + sx * W * (k - 0.5) * 2 * 0.5 + sx * 6, 6, cz - 6), stone(14))
 }
 
-function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
+function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: number) {
   const rock: RGB = [0.16, 0.12, 0.11]
   const count = Math.round(8 * n)
   for (let i = 0; i < count; i++) {
@@ -484,7 +485,7 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
     lit.sphere(s, at(x, 0.2, z, rnd(i, 23) * 5), rock, 6, 1.2, 0.7, 1)
     if (i % 3 === 0) glow.sphere(s * 0.35, at(x, s * 0.4, z), [1, 0.55, 0.1], 5)
   }
-  forgeCastle(lit, glow, 0, 64)
+  forgeCastle(lit, glow, 0, castleZ)
   // brasas no ar
   for (let i = 0; i < Math.round(60 * n); i++) glow.sphere(0.22, at(side(i, 4 + rnd(i, 30) * 30), 2 + rnd(i, 31) * 22, Z0 + rnd(i, 32) * (Z1 - Z0)), [1, 0.62, 0.2], 3)
 }

@@ -67,7 +67,7 @@ type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind:
 
 // Gincana 3 (G3-13): o programa abre com uma corrida, segue com duas provas de sobrevivência/coleta
 // (diferentes) e fecha na final, a Coroa da Torre (vaga 1). Não classificou = fim do programa.
-const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes"]
+const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno"]
 const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
 const SHOW_FINAL = "coroa"
 function drawShow(): string[] {

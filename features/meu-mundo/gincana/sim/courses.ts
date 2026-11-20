@@ -562,6 +562,84 @@ function courseForja(): Course {
   })
 }
 
+// ═══ altoforno — Esteira do Alto-Forno (2ª fase da Forja) ═════════════════════
+
+/**
+ * 20/11 (pedido do Alex, 3º vídeo de referência: tipo de prova "esteira subindo contra você com o canhão no
+ * alto atirando coisas que quicam"): na Forja de Kragor, a esteira de ferro sobe 80 m até a boca do
+ * alto-forno e PUXA PARA TRÁS; lá de cima o canhão cospe bolas de ferro em brasa que descem QUICANDO e indo
+ * de lado (no alto do quique dá para passar por baixo). Bigornas nas bordas, o patamar com a barra de fogo
+ * que gira e a esteira curta até a chegada.
+ */
+export const ALTOFORNO = {
+  z0: 40,
+  z1: 120,
+  rise: 10,
+  hx: 7,
+  belt: -2.4,
+  lanes: [-4.8, -2.4, 0, 2.4, 4.8],
+} as const
+
+function courseAltoForno(): Course {
+  const K = ALTOFORNO
+  const k = new CourseKit()
+  kitStart(k)
+  // ── 1. o pátio da fundição: aquecimento com duas barras de fogo baixas ──
+  k.box(0, 27.5, 8, 12.4, 6, 7, 1)
+  k.sweep(0, 28, DECK + 0.5, 7, 0.35, 1.4, 0, true)
+  // ── 2–3. a esteira grande (a 1ª rampa: é ela que tem as bolas) ──
+  const ramp = k.slope(0, K.z0, K.z1, DECK, DECK + K.rise, K.hx, 6, 7, 2)
+  k.pads[ramp].bz = K.belt
+  // bigornas nas bordas (para quem foge da bola pelo canto: um tranco)
+  for (let z = K.z0 + 8; z < K.z1 - 4; z += 12) {
+    for (const s of [-1, 1]) {
+      const zz = z + (s > 0 ? 6 : 0)
+      const y = DECK + (K.rise * (zz - K.z0)) / (K.z1 - K.z0)
+      k.post(s * (K.hx - 0.7), zz, 0.6, y, y + 1.3, 3)
+    }
+  }
+  k.balls = { lanes: K.lanes, every: 0.95, v: 9, R: 1.25, zEnd: K.z0 - 2.2, hop: 1.7, hopT: 0.62, drift: 0.9 }
+  // ── 4. o patamar do alto-forno: a barra de fogo que gira ──
+  const top = DECK + K.rise
+  k.box(0, 127.5, 8, 7.5, 6, 7, 4, 0, 1.4, top)
+  k.sweep(0, 127.5, top + 0.6, 7.6, 0.4, 1.7, 0, true)
+  // ── 5. esteira curta até a chegada e o patamar ──
+  const z2 = 135
+  const z3 = 163
+  const fin = k.slope(0, z2, z3, top, top + 4, 6, 6, 7, 5)
+  k.pads[fin].bz = K.belt * 0.6
+  k.box(0, z3 + 7.8, 9, 7.8, 1, 0, 6, 0, 1.6, top + 4)
+  for (const [x, z, y] of [[0, 20, DECK], [-4.4, 60, DECK + 2.5], [4.4, 90, DECK + 6.25], [0, 145, top + 1.4]] as [number, number, number][]) k.logo(x, z, y)
+  const finishZ = z3 + 8.8
+  return k.done({
+    id: "altoforno",
+    checkpoints: [
+      { x: 0, z: -3.5, y: DECK, w: 7 },
+      { x: 0, z: 36, y: DECK, w: 6 },
+      { x: 0, z: 123, y: top, w: 6 },
+      { x: 0, z: 133, y: top, w: 6 },
+    ],
+    finishZ,
+    finishY: top + 4,
+    sections: [15.1, K.z0, 80, K.z1, z2],
+    minFinish: 20,
+    route: (r) =>
+      routeOf((add) => {
+        const side = r(1) < 0.5 ? -1 : 1
+        add(side * 1.2, 10)
+        add(side * 0.6, 16)
+        add(side * 4.5, 24)
+        add(side * 4.5, 32)
+        for (let z = K.z0 + 1; z <= K.z1; z += 2.5) add(0, z)
+        add(0, 124)
+        add(0, 131)
+        for (let z = z2 + 1; z <= z3; z += 2.5) add(0, z)
+        add(0, finishZ - 2)
+        add(0, finishZ + 3)
+      }),
+  })
+}
+
 // ═══ fabrica — Fábrica ═══════════════════════════════════════════════════════
 
 /**
@@ -1027,6 +1105,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   canion: courseCanion(),
   orbital: courseOrbital(),
   forja: courseForja(),
+  altoforno: courseAltoForno(),
   fabrica: courseFabrica(),
   comportas: courseComportas(),
   gelo: courseGelo(),

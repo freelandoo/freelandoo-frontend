@@ -15125,7 +15125,20 @@
     "gincanaHowPt2": "¿Viste a alguien pasar? Ese portón está abierto. El hielo liso resbala: empieza a frenar antes.",
     "gincanaHowPt3": "Bloques de hielo se deslizan de lado en el lago: pasa detrás de ellos.",
     "gincanaHowPt4": "El puente y el pasillo tienen pocos portones de verdad: la fila se aprieta, lánzate para pasar.",
-    "gincanaHowPt5": "Las estalactitas se balancean en el pasillo; después solo queda la subida."
+    "gincanaHowPt5": "Las estalactitas se balancean en el pasillo; después solo queda la subida.",
+    "gincanaPhAltoForno": "Cinta del Alto Horno",
+    "gincanaEvAltoForno": "Cinta del Alto Horno",
+    "gincanaPhAltoFornoPitch": "La segunda carrera de la Forja: sube la cinta de hierro que te arrastra hacia atrás mientras el cañón del alto horno escupe bolas al rojo que rebotan cuesta abajo.",
+    "gincanaSecAf1": "Patio de la fundición",
+    "gincanaSecAf2": "Cinta",
+    "gincanaSecAf3": "Boca del horno",
+    "gincanaSecAf4": "Barra de fuego",
+    "gincanaSecAf5": "Última cinta",
+    "gincanaHowAf1": "Las barras de fuego del patio giran bajo: salta a tiempo.",
+    "gincanaHowAf2": "La cinta te arrastra hacia atrás: no dejes de correr.",
+    "gincanaHowAf3": "Las bolas rebotan y se van de lado. En lo alto del rebote puedes pasar por debajo.",
+    "gincanaHowAf4": "Arriba, la barra de fuego gira: salta cuando llegue.",
+    "gincanaHowAf5": "La última cinta es más débil: corre hasta la línea."
   },
   "Sports": {
     "eyebrow": "Deportes",

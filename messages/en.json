@@ -15145,7 +15145,20 @@
     "gincanaHowPt2": "Saw someone go through? That gate is open. The smooth ice is slippery: start braking early.",
     "gincanaHowPt3": "Ice blocks slide sideways on the lake: pass behind them.",
     "gincanaHowPt4": "The bridge and the corridor have few real gates: the line gets tight, dive to push through.",
-    "gincanaHowPt5": "Icicles swing in the corridor; after that it's just the climb."
+    "gincanaHowPt5": "Icicles swing in the corridor; after that it's just the climb.",
+    "gincanaPhAltoForno": "Blast Furnace Conveyor",
+    "gincanaEvAltoForno": "Blast Furnace Conveyor",
+    "gincanaPhAltoFornoPitch": "The Forge's second race: climb the iron conveyor that pulls you back while the furnace cannon spits glowing balls that bounce down the slope.",
+    "gincanaSecAf1": "Foundry yard",
+    "gincanaSecAf2": "Conveyor",
+    "gincanaSecAf3": "Furnace mouth",
+    "gincanaSecAf4": "Fire bar",
+    "gincanaSecAf5": "Last conveyor",
+    "gincanaHowAf1": "The yard's fire bars spin low: jump at the right time.",
+    "gincanaHowAf2": "The conveyor pulls you back: keep running.",
+    "gincanaHowAf3": "The balls bounce and drift sideways. At the top of a bounce you can run under them.",
+    "gincanaHowAf4": "Up top, the fire bar spins: jump when it comes.",
+    "gincanaHowAf5": "The last conveyor is weaker: run to the line."
   },
   "Sports": {
     "eyebrow": "Sports",
