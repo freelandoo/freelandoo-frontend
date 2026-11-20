@@ -131,7 +131,9 @@ function rowGantry(g: SoftGeo, glow: SoftGeo, row: Rotor[], floor: number) {
 // janelas acesas, a chaminé com as faixas, o mastro com luz; inclinado no gelo, com placas de gelo empilhadas ──
 const HULL_R: RGB = [0.62, 0.12, 0.1]
 const HULL_K: RGB = [0.08, 0.08, 0.1]
-const WHITE: RGB = [0.9, 0.92, 0.94]
+const WHITE: RGB = [0.95, 0.97, 1]
+const SNOW_N: RGB = [0.96, 0.99, 1]
+const SNOW_G: RGB = [0.78, 0.88, 0.98]
 function icebreaker(g: SoftGeo, glow: SoftGeo, x: number, z: number, yaw: number, tilt: number) {
   const base = at(0, 0, 0, yaw, 0, tilt).multiply(at(x, -1, z))
   const B = (w: number, h: number, d: number, lx: number, ly: number, lz: number, paint: Parameters<SoftGeo["box"]>[4], ry = 0) => g.box(w, h, d, at(lx, ly, lz, ry).multiply(base), paint)
@@ -152,19 +154,73 @@ function icebreaker(g: SoftGeo, glow: SoftGeo, x: number, z: number, yaw: number
   // proa reforçada: a cunha (duas chapas inclinadas) com a cinta de aço clara
   for (const s of [-1, 1]) B(0.4, 6, 5, s * 0.9, 3, LEN / 2 + 1.5, (_x, y) => (y < -0.4 ? HULL_R : HULL_K), s * 0.5)
   B(1.2, 0.4, 6, 0, 1.6, LEN / 2 + 1.4, [0.6, 0.62, 0.66])
-  // convés e a ponte de comando (dois andares brancos com janelas acesas) e a asa da ponte
-  B(W * 0.92, 0.2, LEN * 0.9, 0, 6.15, 0, [0.4, 0.38, 0.36])
-  B(6.6, 3, 7, 0, 7.7, -3, WHITE)
-  B(5.4, 2.4, 5.6, 0, 10.4, -3.4, WHITE)
-  B(8.4, 0.25, 2.2, 0, 11.7, -1.2, WHITE)
-  for (let k = 0; k < 5; k++) glow.box(0.7, 0.8, 0.06, at((k - 2) * 1.0, 10.7, -0.56).multiply(base), LAMP)
-  for (let k = 0; k < 4; k++) glow.box(0.9, 0.7, 0.06, at((k - 1.5) * 1.4, 7.9, 0.53).multiply(base), LAMP)
-  // chaminé com as faixas (amarela e preta), boca escura e fumaça parada de gelo
-  g.cylinder(2.4, 5, at(0, 11.2, -9.5).multiply(base), (_x, y) => (y > 1.6 ? HULL_K : y > 0.8 ? HAZ_Y : HULL_R), 14)
-  g.cylinder(2.0, 0.1, at(0, 13.75, -9.5).multiply(base), [0.03, 0.03, 0.03], 14)
-  // mastro com a luz no alto e dois cabos até o convés
-  g.box(0.25, 8, 0.25, at(0, 15.5, 2).multiply(base), [0.6, 0.62, 0.66])
-  glow.sphere(0.6, at(0, 19.6, 2).multiply(base), [1, 0.3, 0.2], 8)
+  // convés (madeira gasta com neve em manchas) e a borda branca
+  B(W * 0.92, 0.2, LEN * 0.9, 0, 6.15, 0, (x, _y, z) => (Math.sin(x * 1.7 + z * 0.9) > 0.35 ? SNOW_N : [0.34, 0.32, 0.3]))
+  for (const s of [-1, 1]) B(0.3, 0.6, LEN * 0.86, s * (W * 0.46 - 0.15), 6.55, 0, WHITE)
+  // superestrutura branca em três andares que recuam (casaria → convés de botes → ponte), com fileiras de
+  // janelas acesas nos dois lados e na frente, a laje de neve em cada teto e os pingentes de gelo nas beiradas
+  const tiers: [number, number, number, number, number][] = [
+    // largura, altura, comprimento, z do centro, y da base
+    [7.6, 2.8, 16, -3, 6.25],
+    [6.6, 2.6, 11, -4, 9.05],
+    [8.8, 2.4, 4.4, -1.2, 11.65],
+  ]
+  tiers.forEach(([w, h, d, cz, y0], t) => {
+    B(w, h, d, 0, y0 + h / 2, cz, (_x, y) => mix(WHITE, [0.62, 0.66, 0.72], y < -h / 2 + 0.3 ? 0.6 : 0))
+    glow.box(w + 0.3, 0.22, d + 0.3, at(0, y0 + h + 0.11, cz).multiply(base), SNOW_G)
+    // faixa escura sob as janelas (dá peso) e as janelas acesas
+    {
+      const wy = y0 + h * 0.58
+      const nw = Math.floor(d / 1.5)
+      for (const s of [-1, 1]) {
+        B(0.05, 0.16, d * 0.94, s * (w / 2 + 0.02), wy - 0.55, cz, [0.2, 0.22, 0.26])
+        for (let k = 0; k < nw; k++) {
+          if (n01(k, t, s) < 0.18) continue
+          glow.box(0.06, t === 2 ? 1 : 0.7, t === 2 ? 1.1 : 0.8, at(s * (w / 2 + 0.03), wy, cz - d / 2 + (k + 0.5) * (d / nw)).multiply(base), LAMP)
+        }
+      }
+      const nf = Math.floor(w / 1.3)
+      for (let k = 0; k < nf; k++) glow.box(t === 2 ? 1 : 0.75, t === 2 ? 1 : 0.7, 0.06, at(-w / 2 + (k + 0.5) * (w / nf), wy, cz + d / 2 + 0.03).multiply(base), LAMP)
+    }
+    // pingentes: cones de gelo pendurados na beira do teto, de tamanhos alternados
+    const ni = Math.floor((d + w) / 0.9)
+    for (let k = 0; k < ni; k++) {
+      const onSide = k < ni * (d / (d + w))
+      const u = onSide ? k / (ni * (d / (d + w))) : (k - ni * (d / (d + w))) / (ni * (w / (d + w)))
+      const L = 0.4 + n01(k, t, 7) * 0.9
+      const px = onSide ? (k % 2 ? -1 : 1) * (w / 2 + 0.1) : -w / 2 + u * w
+      const pz = onSide ? cz - d / 2 + u * d : cz + d / 2 + 0.1
+      glow.cylinder(0.22, L, at(px, y0 + h - L / 2, pz, 0, Math.PI).multiply(base), (_x, y) => (y > 0 ? SNOW_G : [0.42, 0.78, 1]), 4, 0)
+    }
+  })
+  // varal de luzes ao longo da borda do convés
+  for (const s of [-1, 1]) for (let lz = -LEN * 0.4; lz < LEN * 0.42; lz += 2.2) glow.sphere(0.32, at(s * (W * 0.46 - 0.15), 7.05, lz).multiply(base), LAMP, 4)
+  // asa da ponte (passadiço dos lados) com a grade
+  B(12, 0.2, 1.6, 0, 11.65, 1.4, WHITE)
+  for (const s of [-1, 1]) B(0.08, 0.8, 1.6, s * 6, 12.05, 1.4, [0.7, 0.72, 0.76])
+  // botes salva-vidas laranja pendurados no 2º andar
+  for (const s of [-1, 1]) for (const bz of [-7, -2.5]) {
+    g.cylinder(1.1, 3.2, at(s * 3.9, 10.4, bz, 0, Math.PI / 2).multiply(base), (_x, _y, z) => (z < -0.15 ? [0.92, 0.94, 0.96] : [0.95, 0.42, 0.08]), 8)
+    B(0.12, 1.2, 0.12, s * 3.6, 11.2, bz - 1.2, STEEL_L)
+    B(0.12, 1.2, 0.12, s * 3.6, 11.2, bz + 1.2, STEEL_L)
+  }
+  // chaminé grande: vermelha, faixa branca, topo preto, boca escura e o boné de neve
+  g.cylinder(3.4, 4.6, at(0, 13.4, -9.5).multiply(base), (_x, y) => (y < 0 ? mix(HULL_R, HULL_K, 0.3) : [0.78, 0.16, 0.12]), 14, 3.3)
+  g.cylinder(3.3, 1.1, at(0, 16.25, -9.5).multiply(base), WHITE, 14, 3.25)
+  g.cylinder(3.25, 1.5, at(0, 17.55, -9.5).multiply(base), HULL_K, 14, 3.1)
+  g.cylinder(2.7, 0.12, at(0, 18.35, -9.5).multiply(base), [0.03, 0.03, 0.03], 14)
+  glow.cylinder(3.5, 0.3, at(0, 18.2, -9.5).multiply(base), SNOW_G, 14, 3.3)
+  for (const s of [-1, 1]) g.cylinder(0.3, 2.4, at(s * 0.9, 19.3, -9.9).multiply(base), STEEL_D, 6)
+  // mastro com antenas, a luz vermelha no alto e o holofote aceso
+  g.box(0.3, 9, 0.3, at(0, 18.1, -0.5).multiply(base), STEEL_L)
+  g.box(4.2, 0.18, 0.18, at(0, 20.4, -0.5).multiply(base), STEEL_L)
+  g.box(2.6, 0.18, 0.18, at(0, 21.8, -0.5).multiply(base), STEEL_L)
+  glow.sphere(0.6, at(0, 22.8, -0.5).multiply(base), [1, 0.3, 0.2], 8)
+  glow.sphere(0.5, at(0, 14.6, 2.2).multiply(base), [1, 0.95, 0.8], 8)
+  // guindaste da proa (amarelo) e as amarras com neve
+  B(0.9, 4, 0.9, 0, 8.2, 9, HAZ_Y)
+  g.box(0.4, 0.4, 7, at(0, 10, 11.6, 0, -0.45).multiply(base), (_x, _y, z) => (Math.floor(z * 1.2) % 2 ? HAZ_Y : HAZ_K))
+  for (const bz of [5, 13]) g.cylinder(0.8, 0.6, at(0, 6.55, bz).multiply(base), STEEL_D, 8)
   // gelo empilhado em volta do casco (placas inclinadas) e a crosta branca no convés da proa
   for (let k = 0; k < 16; k++) {
     const u = k / 16

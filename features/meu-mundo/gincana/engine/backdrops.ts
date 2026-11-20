@@ -430,8 +430,10 @@ function ice(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
     const d = 4 + rnd(i, 202) * 6
     const y = 0.25 + rnd(i, 203) * 0.5
     const yaw = rnd(i, 204) * 3
-    lit.cylinder(d, 1, at(x, y, z, yaw), (_x, yy) => mix([0.18, 0.5, 0.78], [0.55, 0.85, 1], yy + 0.5), 6, d * 1.04)
-    lit.cylinder(d * 1.02, 0.3, at(x, y + 0.6, z, yaw), (xx, _yy, zz) => (Math.hypot(xx, zz) > d * 0.42 ? [0.72, 0.9, 1] : [0.94, 0.98, 1]), 6)
+    // estaleiro: placas redondas (a miniatura mostra discos de gelo); nas outras, sextavadas
+    const fs = phase === "estaleiro" ? 10 : 6
+    lit.cylinder(d, 1, at(x, y, z, yaw), (_x, yy) => mix([0.18, 0.5, 0.78], [0.55, 0.85, 1], yy + 0.5), fs, d * 1.04)
+    lit.cylinder(d * 1.02, 0.3, at(x, y + 0.6, z, yaw), (xx, _yy, zz) => (Math.hypot(xx, zz) > d * 0.42 ? [0.72, 0.9, 1] : [0.94, 0.98, 1]), fs)
     // rachadura funda (uma placa em cada três)
     if (i % 3 === 0) lit.box(d * 0.8, 0.05, 0.12, at(x, y + 0.76, z, yaw + 0.7), [0.3, 0.6, 0.85])
     for (let k = 0; k < 6; k++) {

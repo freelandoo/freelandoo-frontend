@@ -19,7 +19,7 @@
 
 import type { SoftGeo, RGB } from "./shapes"
 import { at, mix } from "./shapes"
-import { Z0, Z1, rnd } from "./backdrop-base"
+import { Z0, Z1, rnd, side } from "./backdrop-base"
 
 const DEEP: RGB = [0.1, 0.28, 0.56]
 const CYAN: RGB = [0.48, 0.8, 0.98]
@@ -108,6 +108,14 @@ export function iceSea(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
   }
   // gelo: postes de aço com lâmpada âmbar dos dois lados da fila de tubos
   if (phase === "gelo") for (let z = 10; z < Z1 - 70; z += 14) for (const s of [-1, 1]) icePost(lit, glow, s * 8.6, z + (s > 0 ? 7 : 0), 13)
+  // estaleiro: icebergs tabulares (mesa larga de paredes retas, neve por cima, faixas e a rachadura acesa)
+  if (phase === "estaleiro")
+    for (let i = 0; i < Math.round(12 * n); i++) {
+      const x = side(i, 22 + rnd(i, 60) * 18)
+      const z = Z0 + 30 + i * ((Z1 - Z0 - 40) / 12) + rnd(i, 61) * 10
+      if (x < 0 && z > 45 && z < 100) continue // o quebra-gelo encalhado mora aqui
+      tabularBerg(lit, glow, x, z, 8 + rnd(i, 62) * 10, 4 + rnd(i, 63) * 5, i)
+    }
   // 2. penhascos dos dois lados: uma fila perto (x ≈ 46–60, 14–30 m) e uma ao longe mais alta (x ≈ 110–150,
   // 30–60 m), com vãos de mar entre os blocos; frente virada para a prova
   for (const s of [-1, 1]) {
@@ -120,6 +128,22 @@ export function iceSea(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
       }
     }
   }
+}
+
+/** Iceberg tabular: o corpo em 3 degraus que recuam (azul fundo → ciano → claro), a laje de neve com beira, a
+ * rachadura acesa numa face e as placas soltas na base. */
+function tabularBerg(lit: SoftGeo, glow: SoftGeo, x: number, z: number, w: number, h: number, k: number) {
+  const yaw = rnd(k, 70) * 3
+  const d = w * (0.6 + rnd(k, 71) * 0.4)
+  for (let t = 0; t < 3; t++) {
+    const f = 1 - t * 0.08
+    const y0 = -0.6 + (t * h) / 3
+    lit.box(w * f, h / 3 + 0.05, d * f, at(x, y0 + h / 6, z, yaw), (_x, y) => mix(t === 0 ? DEEP : CYAN, t === 2 ? PALE : CYAN, (y / (h / 3) + 0.5) * 0.8))
+  }
+  lit.box(w * 0.82, 0.5, d * 0.82, at(x, h - 0.35, z, yaw), SNOW)
+  lit.box(w * 0.86, 0.12, d * 0.86, at(x, h - 0.62, z, yaw), PALE)
+  if (k % 2) glow.box(0.15, h * 0.7, 0.1, at(x + Math.cos(yaw) * w * 0.2, h * 0.45, z - Math.sin(yaw) * w * 0.2, yaw), [0.5, 0.88, 1])
+  for (let j = 0; j < 3; j++) lit.box(2 + rnd(k, 80 + j) * 2, 0.5, 1.6 + rnd(k, 90 + j) * 1.5, at(x + side(j + k, w * 0.55 + 1), 0.1, z + (rnd(k, 95 + j) - 0.5) * d, rnd(k, 99 + j) * 3), (_x, y) => (y > 0 ? SNOW : CYAN))
 }
 
 /**
