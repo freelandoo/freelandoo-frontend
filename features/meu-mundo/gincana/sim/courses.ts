@@ -1623,6 +1623,11 @@ export const TANQUE = {
   /** Óleo derramado: a corrida fica nesta fração e o pé escorrega (atrito). */
   oilRun: 0.55,
   oilGrip: 0.3,
+  /**
+   * 20/11 (pedido do Alex: "esses propulsores na parede precisam ter um curso maior e chegar ao outro lado"):
+   * o pistão da rampa vai até a borda de lá (sobra só a beirada); os do patamar largo seguem até o meio.
+   */
+  pistonReach: 2 * 3.1 + 1.6 - 1.0 - 0.15,
 } as const
 
 function courseTanque(): Course {
@@ -1662,7 +1667,7 @@ function courseTanque(): Course {
   k.swing(2.5, 78.5, Y[2] + 8, 6.6, 0.9, 0.9, 1.9, 1.6)
   // ── 3. rampa dos pistões (esquerda) ──
   ramp(2, 3)
-  pistons(2, K.punch3, 3.4, 2.2)
+  pistons(2, K.punch3, K.pistonReach, 3.0)
   oilRamp(2, 90, 100, 1.5, 1.4, 3)
   land(2, 3)
   k.pusher(-2.6, 108, 1.2, 1.2, 1.8, 3.6, 0, 1.0, 0, Y[3])
@@ -1671,7 +1676,7 @@ function courseTanque(): Course {
   // 4ª rampa (direita): óleo em quase tudo + pistões da parede de fora
   ramp(3, 4)
   oilRamp(3, 115, 137, 0, K.rhx - 0.25, 4)
-  pistons(3, K.punch4, 3.6, 2.0)
+  pistons(3, K.punch4, K.pistonReach, 2.8)
   land(3, 4)
   oilLand(3, -3.5, 145.6, 4, 1.3, 4)
   k.swing(-2.8, 141, Y[4] + 8, 6.6, 0.9, 0.95, 2.0, 0.5)
@@ -1688,7 +1693,7 @@ function courseTanque(): Course {
   // 6ª rampa (direita): a mais estreita, óleo inteiro e os pistões em sequência
   ramp(5, 4, 2.7)
   oilRamp(5, 181, 203, 0, 2.45, 4)
-  pistons(5, K.punch6, 3.2, 1.8)
+  pistons(5, K.punch6, K.pistonReach, 2.6)
   land(5, 4)
   k.swing(-2.5, 207, Y[6] + 8, 6.6, 0.9, 1.0, 2.1, 0)
   k.swing(2.5, 210, Y[6] + 8, 6.6, 0.9, 1.0, 2.1, 1.7)
@@ -1704,9 +1709,9 @@ function courseTanque(): Course {
   return k.done({
     id: "tanque",
     mode: "race",
-    limit: 150,
+    limit: 170, // 20/11: pistões de curso longo
     // 3 s de folga; o óleo afoga a largada aos ~11 s e passa do topo perto do fim
-    rise: { y0: 0, y1: Y[7] + 2, t0: 3, t1: 112 },
+    rise: { y0: 0, y1: Y[7] + 2, t0: 3, t1: 136 }, // 20/11: +24 s pelos pistões que atravessam a rampa
     checkpoints: [{ x: 0, z: -3.5, y: DECK, w: 7 }, ...[0, 1, 2, 3, 4, 5].map((i) => ({ x: 0, z: L(i), y: Y[i + 1], w: 6 }))],
     finishZ,
     finishY: Y[7],

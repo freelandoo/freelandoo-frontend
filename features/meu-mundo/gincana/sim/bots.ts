@@ -956,9 +956,11 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     const enter = (ahead - 1.6) / vRun
     const leave = (ahead + 1.6) / vRun
     let hot = false
-    for (const f of [0, 0.5, 1]) {
+    // pistão de curso longo (Tanque, 20/11: atravessa a rampa toda): vale onde a cabeça ESTARÁ, também voltando
+    const long = g.reach > 5
+    for (const f of long ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1]) {
       const q = gloveAt(g, t + Math.max(0, enter + (leave - enter) * f))
-      if (q.hot || q.u > 0.5) hot = true
+      if (long ? q.e > 0.02 && Math.abs(q.x - b.x) < g.R + GINCANA.bodyR + 0.5 : q.hot || q.u > 0.5) hot = true
     }
     if (hot && botRand(br.seed, br.slot * 89 + i, Math.floor(t / g.period)) < br.skill + 0.1) go = 0
   }
