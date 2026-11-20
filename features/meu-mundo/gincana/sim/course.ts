@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "tanque" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "tanque", "gelo", "portoes", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "tanque" | "gelo" | "portoes" | "estaleiro" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "tanque", "gelo", "portoes", "estaleiro", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -515,6 +515,40 @@ export interface Plank {
   w: number
   ph: number
 }
+/**
+ * Estaleiro do Quebra-Gelo: HÉLICE EM PÉ que gira de frente para quem corre (em volta do eixo z). `n` pás de
+ * comprimento `L` a partir do cubo (x, y, z), meia largura `hw`, meia espessura `hz` (em z); `w` rad/s
+ * (+ = anti-horário visto de trás). As pás varrem o chão embaixo do cubo: passa-se pelo vão entre elas.
+ */
+export interface Rotor {
+  x: number
+  z: number
+  y: number
+  L: number
+  n: number
+  hw: number
+  hz: number
+  w: number
+  ph: number
+}
+export function rotorAngle(q: Rotor, k: number, t: number) {
+  return q.ph + (k * Math.PI * 2) / q.n + q.w * t
+}
+/** A pá que pega o ponto (x, y) no plano da hélice (folga `r`), ou −1. */
+export function rotorBladeAt(q: Rotor, x: number, y: number, t: number, r: number) {
+  const px = x - q.x
+  const py = y - q.y
+  for (let k = 0; k < q.n; k++) {
+    const a = rotorAngle(q, k, t)
+    const c = Math.cos(a)
+    const s = Math.sin(a)
+    const along = px * c + py * s
+    if (along < 0.3 || along > q.L + r) continue
+    if (Math.abs(px * s - py * c) < q.hw + r) return k
+  }
+  return -1
+}
+
 export function plankAngle(P: Plank, t: number) {
   return P.amp * Math.sin(P.w * t + P.ph)
 }
@@ -548,6 +582,8 @@ export interface Course {
   /** Serraria da Lua: toras atravessadas com cravos e tábuas que balançam. */
   logs: Log[]
   planks: Plank[]
+  /** Estaleiro do Quebra-Gelo: hélices em pé que giram de frente. */
+  rotors: Rotor[]
   /** Gincana 3: a grade do Relógio da Praça. */
   memory: Memory | null
   /** Gincana 3 (Coroa da Torre): a linha fica acima do chão — só cruza quem pula (pegar a coroa). */
@@ -597,6 +633,10 @@ export class CourseKit {
   readonly drums: Drum[] = []
   readonly logs: Log[] = []
   readonly planks: Plank[] = []
+  readonly rotors: Rotor[] = []
+  rotor(x: number, z: number, y: number, L: number, n: number, hw: number, hz: number, w: number, ph = 0) {
+    this.rotors.push({ x, z, y, L, n, hw, hz, w, ph })
+  }
   log(x: number, z: number, y: number, R: number, hx: number, w: number, rows: number, pitch: number, ph = 0) {
     this.logs.push({ x, z, y, R, hx, w, rows, pitch, ph })
   }
@@ -705,6 +745,7 @@ export class CourseKit {
       drums: this.drums,
       logs: this.logs,
       planks: this.planks,
+      rotors: this.rotors,
       memory: o.memory ?? null,
       crown: o.crown ?? false,
       pads: this.pads,

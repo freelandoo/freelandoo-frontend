@@ -15209,7 +15209,21 @@
     "gincanaHowTq2": "Las prensas van y vienen de lado en la rampa: pasa cuando la tuya esté en el otro extremo.",
     "gincanaHowTq3": "Los pistones golpean desde la pared y te tiran al aceite: sube por el lado de dentro de la rampa.",
     "gincanaHowTq4": "Los ganchos de la grúa se balancean sobre los rellanos: pasa cuando el tuyo vuelva.",
-    "gincanaHowTq5": "La última rampa sale por lo alto del tanque. El aceite no para: quien se quede atrás queda fuera."
+    "gincanaHowTq5": "La última rampa sale por lo alto del tanque. El aceite no para: quien se quede atrás queda fuera.",
+    "gincanaPhEstaleiro": "Astillero del Rompehielos",
+    "gincanaEvEstaleiro": "Hélices de Pie",
+    "gincanaPhEstaleiroPitch": "La tercera carrera del Mar de Hielo, en el astillero de los rompehielos: témpanos con la barra que barre y las hélices gigantes de los barcos girando de pie. Pasa por el hueco entre las palas.",
+    "gincanaSecEs1": "Témpanos",
+    "gincanaSecEs2": "Muelle de las hélices",
+    "gincanaSecEs3": "Patio",
+    "gincanaSecEs4": "Dique seco",
+    "gincanaSecEs5": "Hélice gigante",
+    "gincanaHowEs1": "En los témpanos la barra de proa barre en círculo: salta cuando llegue.",
+    "gincanaHowEs2": "Las hélices giran de pie, de frente a ti: corre por el hueco justo después de que la pala pase por el suelo.",
+    "gincanaHowEs3": "En el patio las hélices están lado a lado en dos filas: elige el hueco y el momento.",
+    "gincanaHowEs4": "La pala te tira hacia el lado del giro y hacia atrás: cerca de la punta el hueco se abre antes.",
+    "gincanaHowEs5": "En la subida del dique seco, la hélice gigante atravesada. Después, la meta.",
+    "gincanaHitBlade": "¡Golpe de la pala!"
   },
   "Sports": {
     "eyebrow": "Deportes",

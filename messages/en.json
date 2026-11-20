@@ -15229,7 +15229,21 @@
     "gincanaHowTq2": "The presses slide back and forth across the ramp: go when yours is at the other end.",
     "gincanaHowTq3": "The pistons punch out of the wall and knock you into the oil: climb on the inner side of the ramp.",
     "gincanaHowTq4": "The crane hooks swing over the landings: go when yours swings back.",
-    "gincanaHowTq5": "The last ramp climbs out over the top of the tank. The oil doesn't stop: whoever falls behind is out."
+    "gincanaHowTq5": "The last ramp climbs out over the top of the tank. The oil doesn't stop: whoever falls behind is out.",
+    "gincanaPhEstaleiro": "Icebreaker Shipyard",
+    "gincanaEvEstaleiro": "Standing Propellers",
+    "gincanaPhEstaleiroPitch": "The Ice Sea's third race, at the icebreaker shipyard: ice floes with a sweeping bar and the ships' giant propellers spinning upright. Run through the gap between the blades.",
+    "gincanaSecEs1": "Ice floes",
+    "gincanaSecEs2": "Propeller pier",
+    "gincanaSecEs3": "Yard",
+    "gincanaSecEs4": "Dry dock",
+    "gincanaSecEs5": "Giant propeller",
+    "gincanaHowEs1": "On the ice floes the bow bar sweeps around: jump when it reaches you.",
+    "gincanaHowEs2": "The propellers spin upright, facing you: run through the gap right after a blade sweeps the floor.",
+    "gincanaHowEs3": "In the yard the propellers stand side by side in two rows: pick your gap and your moment.",
+    "gincanaHowEs4": "A blade knocks you toward its spin and back: near the tip the gap opens sooner.",
+    "gincanaHowEs5": "On the climb out of the dry dock, the giant propeller blocks the way. Then the finish.",
+    "gincanaHitBlade": "Hit by a blade!"
   },
   "Sports": {
     "eyebrow": "Sports",

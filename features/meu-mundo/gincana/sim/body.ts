@@ -24,6 +24,7 @@ import {
   LOG_EDGE,
   logAt,
   logRowAngle,
+  rotorBladeAt,
   logSpikeCount,
   logSpikeX,
   plankAngle,
@@ -643,6 +644,18 @@ function hazards(b: Runner, w: RunWorld, out: RunEvent[] | null) {
         knock(b, Math.sign(b.x - logSpikeX(L, k, j) || 1) * 1.5, 5.5, -Math.sign(L.w || 1) * 7.5, "bar", out)
         break
       }
+    }
+  }
+  // hélice em pé: a pá que passa pelo corpo joga para o lado do giro e para trás
+  for (const q of C.rotors) {
+    if (Math.abs(b.z - q.z) > q.hz + R) continue
+    for (const hy of [0.45, 0.9, 1.35]) {
+      const y = b.y + hy
+      if (rotorBladeAt(q, b.x, y, t, R) < 0) continue
+      const vx = -q.w * (y - q.y)
+      const vy = q.w * (b.x - q.x)
+      knock(b, Math.sign(vx || 1) * Math.min(9, 4 + Math.abs(vx)), 4.5 + Math.max(0, Math.min(3, vy)), -6.5, "bar", out)
+      break
     }
   }
   if (C.balls && w.balls.length && C.ramp && b.z > C.ramp.z0 - 5) {

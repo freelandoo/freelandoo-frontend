@@ -67,7 +67,7 @@ type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind:
 
 // Gincana 3 (G3-13): o programa abre com uma corrida, segue com duas provas de sobrevivência/coleta
 // (diferentes) e fecha na final, a Coroa da Torre (vaga 1). Não classificou = fim do programa.
-const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque"]
+const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque", "estaleiro"]
 const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
 const SHOW_FINAL = "coroa"
 function drawShow(): string[] {
@@ -293,7 +293,9 @@ function GincanaScreen({
         case "hit":
           say(
             n.by === "bar"
-              ? tt("gincanaHitBar", "Barrada!")
+              ? theme.id === "estaleiro"
+                ? tt("gincanaHitBlade", "Pancada da pá!")
+                : tt("gincanaHitBar", "Barrada!")
               : n.by === "swing"
                 ? theme.id === "tanque"
                   ? tt("gincanaHitHook", "Pancada do gancho!")

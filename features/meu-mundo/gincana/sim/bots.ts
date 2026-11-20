@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, logRowAngle, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, logRowAngle, rotorBladeAt, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -936,6 +936,20 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
       }
     }
     if (bad && botRand(br.seed, br.slot * 53 + i, Math.floor(t * 0.7)) < br.skill + 0.15) go = 0
+  }
+  // Quebra-Gelo: hélice em pé adiante — só entra se nenhuma pá passar pelo corpo enquanto atravessa
+  for (let i = 0; i < C.rotors.length; i++) {
+    const q = C.rotors[i]
+    const ahead = q.z - q.hz - b.z
+    if (ahead < 0.05 || ahead > 2.4 || Math.abs(b.x - q.x) > q.L + 0.5) continue
+    const arrive = ahead / vRun
+    const leave = arrive + (q.hz * 2 + GINCANA.bodyR * 2 + 0.3) / vRun
+    let bad = false
+    for (let f = 0; f <= 1.001 && !bad; f += 0.2) {
+      const tt = t + arrive - 0.1 + (leave - arrive + 0.25) * f
+      for (const hy of [0.5, 1.3]) if (rotorBladeAt(q, b.x, b.y + hy, tt, GINCANA.bodyR + 0.2) >= 0) bad = true
+    }
+    if (bad && botRand(br.seed, br.slot * 67 + i, Math.floor(t * 0.8)) < br.skill + 0.15) go = 0
   }
   if (go === 0) br.waited += dt
   if (go === 0 && br.waited < 6 + br.skill * 4) {

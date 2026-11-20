@@ -14643,7 +14643,21 @@
     "gincanaHowTq2": "As prensas vão e voltam de lado na rampa: passe quando a sua estiver na outra ponta.",
     "gincanaHowTq3": "Os pistões socam da parede e jogam no óleo: suba pelo lado de dentro da rampa.",
     "gincanaHowTq4": "Os ganchos do guindaste balançam sobre os patamares: passe quando o seu voltar.",
-    "gincanaHowTq5": "A última rampa sai pelo alto do tanque. O óleo não para: quem ficar para trás está fora."
+    "gincanaHowTq5": "A última rampa sai pelo alto do tanque. O óleo não para: quem ficar para trás está fora.",
+    "gincanaPhEstaleiro": "Estaleiro do Quebra-Gelo",
+    "gincanaEvEstaleiro": "Hélices de Pé",
+    "gincanaPhEstaleiroPitch": "A terceira corrida do Mar de Gelo, no estaleiro dos quebra-gelos: banquisas com a barra que varre e as hélices gigantes dos navios girando de pé. Passe pelo vão entre as pás.",
+    "gincanaSecEs1": "Banquisas",
+    "gincanaSecEs2": "Cais das hélices",
+    "gincanaSecEs3": "Pátio",
+    "gincanaSecEs4": "Dique seco",
+    "gincanaSecEs5": "Hélice gigante",
+    "gincanaHowEs1": "Nas banquisas a barra de proa varre em roda: pule quando ela chegar.",
+    "gincanaHowEs2": "As hélices giram de pé, de frente para você: corra pelo vão logo depois que a pá passar no chão.",
+    "gincanaHowEs3": "No pátio as hélices ficam lado a lado em duas fileiras: escolha o vão e a hora.",
+    "gincanaHowEs4": "A pá derruba para o lado do giro e joga para trás: perto da ponta o vão abre antes.",
+    "gincanaHowEs5": "Na subida do dique seco, a hélice gigante atravessada. Depois é a chegada.",
+    "gincanaHitBlade": "Pancada da pá!"
   },
   "Sports": {
     "eyebrow": "Esportes",
