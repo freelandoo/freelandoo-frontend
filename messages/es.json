@@ -15092,7 +15092,12 @@
     "gincanaHowCl2": "Frutas gigantes bajan por cuatro carriles: las piedras de musgo entre los carriles protegen.",
     "gincanaHowCl3": "Los tocones suben en escalera y giran: salta de uno a otro. Si caes al pantano, vuelves al puesto.",
     "gincanaHowCl4": "El nenúfar gira despacio y las semillas colgadas se balancean: pasa cuando la tuya vuelva.",
-    "gincanaHowCl5": "Pisa un hongo para salir lanzado a lo alto del barranco. Después, la subida a la meta."
+    "gincanaHowCl5": "Pisa un hongo para salir lanzado a lo alto del barranco. Después, la subida a la meta.",
+    "rewardNectarStolen": "Néctar para Nívea",
+    "rkNcNivea": "Néctar de Nívea",
+    "rkNcNiveaHow": "Perder o huir de un monstruo de la calle o de un Dominio le da a Nívea el {pct}% del néctar que llevas (de {min} a {max}).",
+    "rkNcTheftList": "Registro del robo",
+    "rkNcTheftLine": "Robado por un monstruo: {mob}"
   },
   "Sports": {
     "eyebrow": "Deportes",

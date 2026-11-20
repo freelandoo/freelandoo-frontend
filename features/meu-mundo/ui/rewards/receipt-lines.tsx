@@ -8,7 +8,7 @@
 // vital mostra o valor pela consequência (menos estresse é bom).
 
 import type { CSSProperties } from "react"
-import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import type { Receipt } from "../../data"
 import { RANK, rankOf } from "../kit/aether-tokens"
 import { FLOAT_COLOR, SP } from "../kit/steam/steam-tokens"
@@ -29,6 +29,7 @@ interface Line {
 
 export function ReceiptLines({ receipt, delay = 550 }: { receipt: Receipt; delay?: number }) {
   const t = useTranslations("MeuMundo")
+  const locale = useLocale()
   const xp = receipt.deltas.xp
   const lines: Line[] = []
   if (xp && xp.xp > 0) lines.push({ key: "xp", icon: "✦", label: t("rewardXp", "XP de aventura"), value: `+${xp.xp}`, color: FLOAT_COLOR.xp })
@@ -56,6 +57,17 @@ export function ReceiptLines({ receipt, delay = 550 }: { receipt: Receipt; delay
   }
   const coins = Math.round(Number(receipt.deltas.coins) || 0)
   if (coins > 0) lines.push({ key: "coins", icon: "◉", label: t("rewardCoins", "Moedas"), value: `+${coins}`, color: "#F2B705" })
+  // O roubo da Nívea: perder ou fugir de um monstro tira néctar da carteira (o servidor diz quanto)
+  const stolen = Math.round(Number(receipt.deltas.nectar?.stolenMl) || 0)
+  if (stolen > 0)
+    lines.push({
+      key: "nectar",
+      icon: "💧",
+      label: t("rewardNectarStolen", "Néctar para a Nívea"),
+      value: `−${(stolen / 1000).toLocaleString(locale, { maximumFractionDigits: 2 })} L`,
+      color: "#B57BFF",
+      valueColor: SP.red,
+    })
   for (const it of receipt.items || []) {
     if (it.qty <= 0) continue
     const r = RANK[rankOf(it)]

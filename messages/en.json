@@ -15112,7 +15112,12 @@
     "gincanaHowCl2": "Giant fruit rolls down four lanes: the mossy stones between the lanes give cover.",
     "gincanaHowCl3": "The stumps climb like stairs and spin: jump from one to the next. Fall in the swamp and you go back to the checkpoint.",
     "gincanaHowCl4": "The lily pad spins slowly and the hanging seeds swing: go when yours swings back.",
-    "gincanaHowCl5": "Step on a mushroom to be launched to the top of the bank. Then, the climb to the finish."
+    "gincanaHowCl5": "Step on a mushroom to be launched to the top of the bank. Then, the climb to the finish.",
+    "rewardNectarStolen": "Nectar to Nívea",
+    "rkNcNivea": "Nívea's nectar",
+    "rkNcNiveaHow": "Losing to or fleeing from a street or Domain monster gives Nívea {pct}% of the nectar you carry ({min} to {max}).",
+    "rkNcTheftList": "Theft log",
+    "rkNcTheftLine": "Stolen by a monster: {mob}"
   },
   "Sports": {
     "eyebrow": "Sports",

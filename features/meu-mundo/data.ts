@@ -264,6 +264,8 @@ export interface Receipt {
     attrs?: Partial<Record<PracticeAttr, number>>
     vitals?: Partial<Record<"energy" | "stress" | "satiety" | "mood" | "health", number>>
     coins?: number
+    /** O roubo da Nívea (mig 462): derrota ou fuga de monstro da rua/Domínio tirou néctar da carteira. */
+    nectar?: { stolenMl: number; pendingMl: number }
   }
   /** E3: fragmento traz `progress` (quanto tem / quanto pede o item `of`). */
   items: { id: string; qty: number; rarity?: string; /** classe de raridade (E…Divina), do servidor */ rank?: string; progress?: { of: string; have: number; need: number } }[]
@@ -635,6 +637,12 @@ export interface NectarWallet {
   pactBonus?: number
   /** o coletor de néctar: liberado no nível 5 do treinador; mostra `earnedMl`, sem limite */
   collector?: { unlocked: boolean; level: number }
+  /** O contador "Néctar da Nívea": tudo o que os monstros já roubaram (mig 462). */
+  nivea?: { totalMl: number }
+  /** O extrato do roubo da conta (as mais novas primeiro). */
+  thefts?: { kind: string; origin: "mob" | "domain"; ml: number; at: string }[]
+  /** A regra do roubo (10%, entre 0,1 L e 2 L). */
+  theft?: { pct: number; minMl: number; maxMl: number }
 }
 export const getNectarWallet = (token: string) => call<NectarWallet>(token, "GET", "/nectar")
 // ═══ lore v2 N3: domingo na estátua (entrega, corrida Raposas × Vampiros, meta no admin) ═══

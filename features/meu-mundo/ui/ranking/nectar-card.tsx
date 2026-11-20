@@ -43,6 +43,15 @@ export function NectarCard({ t, locale, gameName }: { t: Tr; locale: string; gam
 
   if (!w) return <div className="mb-3 h-[74px]" style={{ background: MM.card }} aria-hidden />
 
+  const mobName = (k: string) =>
+    ({
+      stone: t("laminasMobStoneGolem", "Golem de Pedra"),
+      cavaleiro: t("laminasMobKnight", "Cavaleiro Dourado"),
+      wolf: t("laminasMobWolf", "Lobos de Ferrugem"),
+      ciborgue: t("laminasMobGolem", "Ciborgue"),
+      garras: t("laminasMobHarpy", "Dama das Garras"),
+      brute: t("laminasMobBrute", "Brutamontes"),
+    })[k] ?? k
   const ordinal = (p: number) => t("rkNcPos", "{n}º").replace("{n}", String(p))
   return (
     <section className="mb-3 px-3 py-2.5" style={{ background: MM.rubySoft, border: `1px solid ${MM.goldBorder}` }} aria-label={t("rkNcTitle", "Néctar para entregar")}>
@@ -72,6 +81,42 @@ export function NectarCard({ t, locale, gameName }: { t: Tr; locale: string; gam
             </li>
           ))}
         </ul>
+      )}
+
+      {/* O roubo da Nívea (mig 462): o contador de tudo o que os monstros levaram + o extrato da conta */}
+      {w.nivea && (
+        <div className="mt-2.5 px-2.5 py-2" style={{ background: "rgba(60,22,80,0.35)", border: "1px solid rgba(181,123,255,0.45)" }}>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 shrink-0 rotate-45" style={{ background: "linear-gradient(135deg, #7CFFB0 0%, #B57BFF 100%)", boxShadow: "0 0 8px rgba(181,123,255,0.7)" }} aria-hidden />
+            <p className={`${archivo.className} min-w-0 flex-1 text-[11px] font-semibold uppercase tracking-wide`} style={{ color: "#D5B3FF" }}>
+              {t("rkNcNivea", "Néctar da Nívea")}
+            </p>
+            <span className={`${teko.className} shrink-0 text-[24px] leading-none tabular-nums`} style={{ color: "#EBDDFF" }}>
+              {liters(w.nivea.totalMl, locale)}
+            </span>
+          </div>
+          <p className="mt-1 text-[11px] leading-snug" style={{ color: MM.muted }}>
+            {t("rkNcNiveaHow", "Perder ou fugir de um monstro da rua ou de um Domínio dá à Nívea {pct}% do néctar que você carrega (de {min} a {max}).")
+              .replace("{pct}", String(Math.round((w.theft?.pct ?? 0.1) * 100)))
+              .replace("{min}", liters(w.theft?.minMl ?? 100, locale))
+              .replace("{max}", liters(w.theft?.maxMl ?? 2000, locale))}
+          </p>
+          {w.thefts && w.thefts.length > 0 && (
+            <ul className="mt-1.5 space-y-0.5" aria-label={t("rkNcTheftList", "Extrato do roubo")}>
+              {w.thefts.slice(0, 5).map((x) => (
+                <li key={x.at} className="flex justify-between gap-2 text-[11px]" style={{ color: MM.text }}>
+                  <span className="shrink-0 tabular-nums" style={{ color: MM.muted }}>
+                    {new Date(x.at).toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{t("rkNcTheftLine", "Roubado por um monstro: {mob}").replace("{mob}", mobName(x.kind))}</span>
+                  <span className="shrink-0 tabular-nums" style={{ color: "#FF8A8A" }}>
+                    −{liters(x.ml, locale)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {/* D4: os pactos dos deuses vencidos (néctar extra no jogo do deus para um povo) */}
