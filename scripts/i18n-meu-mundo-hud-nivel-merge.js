@@ -6,6 +6,7 @@ const path = require("path")
 
 const KEYS = {
   hudLevelShort: ["Nv.", "Lv.", "Nv."],
+  hudPowerShort: ["Poder", "Power", "Poder"],
 }
 const dir = path.join(__dirname, "..", "messages")
 let changed = 0

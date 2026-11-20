@@ -20,13 +20,12 @@
 import { useEffect, useState } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
-import { CHARACTER_CHANGED, TRAINER_CHANGED, getAdventure, type TrainerDelta } from "../../data"
+import { CHARACTER_CHANGED, getAdventure } from "../../data"
 import type { BodyId } from "../../types"
 import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
 import { archivo } from "../status/evo-skin"
-import { TYPE } from "../kit/type-scale"
-import { FightPlate, plateWidth } from "./fight-plate"
+import { FightPlate } from "./fight-plate"
 import { useDrawerOpen } from "./hud-kit"
 import { useGameCovered } from "./game-cover"
 import c from "./char-hud.module.css"
@@ -58,8 +57,6 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
   const hidden = hiddenProp || drawerOpen || covered
   // nível + XP dentro do nível (into/need) — do servidor
   const [adv, setAdv] = useState<{ level: number; into: number; need: number } | null>(null)
-  // F2: nível do treinador (a conta; não zera ao trocar de personagem)
-  const [trainer, setTrainer] = useState<number | null>(null)
   const [pw, setPw] = useState(64)
 
   // tamanho pela tela
@@ -80,27 +77,18 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
         void getAdventure(token).then((r) => {
           if (alive && r.ok) {
             setAdv({ level: r.data.adventure.level, into: r.data.adventure.into, need: r.data.adventure.need })
-            if (r.data.trainer) setTrainer(r.data.trainer.level)
           }
         })
     }
     load()
     window.addEventListener(CHARACTER_CHANGED, load)
-    const onTrainer = (e: Event) => {
-      const d = (e as CustomEvent<TrainerDelta>).detail
-      if (d && typeof d.to === "number" && d.to > 0) setTrainer(d.to)
-    }
-    window.addEventListener(TRAINER_CHANGED, onTrainer)
     const off = onCelebrate((r) => {
       const x = r.deltas?.xp
       if (x && typeof x.to === "number" && x.to > 0) setAdv({ level: x.to, into: x.into, need: x.need })
-      const tr = r.deltas?.trainer
-      if (tr && typeof tr.to === "number" && tr.to > 0) setTrainer(tr.to)
     })
     return () => {
       alive = false
       window.removeEventListener(CHARACTER_CHANGED, load)
-      window.removeEventListener(TRAINER_CHANGED, onTrainer)
       off()
     }
   }, [])
@@ -138,21 +126,13 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
         hpMax={adv ? (adv.need > 0 ? adv.need : 1) : 1}
         label={<><span style={{ fontSize: "0.45em", marginRight: "0.18em", letterSpacing: 0 }}>{t("hudLevelShort", "Nv.")}</span>{adv ? adv.level : "–"}</>}
         // o PODER fica embaixo das tiras, do mesmo tamanho, sem barra
-        extra={{ value: pow, title: t("stPower", "PODER") }}
+        extra={{ value: pow, title: t("stPower", "PODER"), prefix: t("hudPowerShort", "Poder") }}
         chaoK={HUD_CHAO}
         calm
         stam={energy / 100}
         // estresse = a tira violeta (a mesma cor do poder na luta); acende no alto
         power={{ v: stress / 100, ready: stress >= 70 }}
-      >
-        <div className={c.foot} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 6, fontSize: Math.max(TYPE.label, Math.min(TYPE.body, pw * 0.2)) }}>
-          {trainer != null && (
-            <span className={c.level} style={{ color: "#7FD8FF" }} title={t("hudTrainerHint", "Nível do treinador: é da sua conta e abre os capítulos da história")}>
-              {t("hudTrainerShort", "Tr. {n}").replace("{n}", String(trainer))}
-            </span>
-          )}
-        </div>
-      </FightPlate>
+      />
       {/* leitor de tela: os três valores por extenso */}
       {v && (
         <ul className="sr-only">

@@ -93,7 +93,7 @@ export interface FightPlateProps {
   /** O que vai no lugar do número grande (padrão: o valor da barra). O HUD mostra o NÍVEL. */
   label?: ReactNode
   /** Um segundo número grande, sem barra, embaixo das tiras (o PODER no HUD). */
-  extra?: { value: number; title?: string }
+  extra?: { value: number; title?: string; prefix?: ReactNode }
   style?: CSSProperties
 }
 
@@ -304,6 +304,7 @@ export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, h
             title={extra.title}
             style={{ left: xBarra - (mirrored ? passa : 0), top: extraTop, width: larg + passa, height: numSize * 1.05, justifyContent: mirrored ? "flex-start" : "flex-end", ...numStyle }}
           >
+            {extra.prefix != null && <span style={{ fontSize: "0.45em", marginRight: "0.25em", letterSpacing: 0 }}>{extra.prefix}</span>}
             {Math.round(extra.value)}
           </div>
         )}
