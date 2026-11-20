@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "orbital" | "forja" | "altoforno" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "orbital", "forja", "altoforno", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "moinhos" | "orbital" | "forja" | "altoforno" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "moinhos", "orbital", "forja", "altoforno", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -410,6 +410,8 @@ export interface Drum {
   R: number
   f: number
   rings: DrumRing[]
+  /** Trilha dos Moinhos: o lado é parede (moenda no chão); no Rolo de Gelo, não */
+  wall: boolean
 }
 
 /** Quanto o anel girou até t (acelera: o dobro da velocidade aos 80 s). */
@@ -422,7 +424,7 @@ export function drumSpeed(r: DrumRing, t: number) {
   return r.w * (1 + t / 80)
 }
 
-const DRUM_EDGE = 0.93
+export const DRUM_EDGE = 0.93
 
 /**
  * O chão do cilindro em (x, z) no tempo t: topo, anel e o ângulo da superfície (0 = topo, + = lado +x).
@@ -519,8 +521,8 @@ export class CourseKit {
   balls: Balls | null = null
   readonly gems: Gem[] = []
   readonly drums: Drum[] = []
-  drum(x: number, z0: number, y: number, R: number, rings: DrumRing[], f = 0.6) {
-    this.drums.push({ x, z0, y, R, f, rings })
+  drum(x: number, z0: number, y: number, R: number, rings: DrumRing[], f = 0.6, wall = false) {
+    this.drums.push({ x, z0, y, R, f, rings, wall })
   }
   gem(x: number, z: number, y: number, v: number, t0: number, back: number) {
     this.gems.push({ x, z, y, v, t0, back })

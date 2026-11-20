@@ -15158,7 +15158,20 @@
     "gincanaHowAf2": "The conveyor pulls you back: keep running.",
     "gincanaHowAf3": "The balls bounce and drift sideways. At the top of a bounce you can run under them.",
     "gincanaHowAf4": "Up top, the fire bar spins: jump when it comes.",
-    "gincanaHowAf5": "The last conveyor is weaker: run to the line."
+    "gincanaHowAf5": "The last conveyor is weaker: run to the line.",
+    "gincanaPhMoinhos": "Mill Trail",
+    "gincanaEvMoinhos": "Mill Race",
+    "gincanaPhMoinhosPitch": "Rolling millstones, sandstone blocks sweeping the trail, mill blades over two discs and a field of windmills. Make it before the spots run out.",
+    "gincanaSecMo1": "Millstones",
+    "gincanaSecMo2": "Blocks",
+    "gincanaSecMo3": "Blades",
+    "gincanaSecMo4": "Windmills",
+    "gincanaSecMo5": "Climb",
+    "gincanaHowMo1": "Run in the gap between the millstones: the roller spins and throws you aside.",
+    "gincanaHowMo2": "The blocks slide back and forth: go right after one crosses.",
+    "gincanaHowMo3": "Cross the disc away from the axle and jump the blade when it comes.",
+    "gincanaHowMo4": "Each windmill spins its own way: look for the gap.",
+    "gincanaHowMo5": "Rocks roll down: switch lanes early."
   },
   "Sports": {
     "eyebrow": "Sports",

@@ -16,6 +16,7 @@ import {
   DECK,
   GINCANA,
   doorsOpen,
+  DRUM_EDGE,
   drumAt,
   drumSpeed,
   gloveAt,
@@ -367,6 +368,22 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
     if (d >= q.r + R || d < 1e-6) continue
     b.x = q.x + (dx / d) * (q.r + R)
     b.z = q.z + (dz / d) * (q.r + R)
+  }
+  // moenda (cilindro com lado): abaixo de 60% da altura é parede — empurra de lado; dá para subir pulando
+  for (const d of C.drums) {
+    if (!d.wall) continue
+    let len = 0
+    for (const r of d.rings) len += r.len
+    if (b.z < d.z0 - R || b.z > d.z0 + len + R || b.y >= d.y + d.R * 0.6 || b.y + H <= d.y - d.R) continue
+    const half = d.R * DRUM_EDGE + R
+    const dx = b.x - d.x
+    if (Math.abs(dx) >= half) continue
+    // pelas pontas (entrando de frente) empurra para trás/para a frente; senão de lado
+    const oz = Math.min(b.z - (d.z0 - R), d.z0 + len + R - b.z)
+    const ox = half - Math.abs(dx)
+    if (oz < ox) b.z = b.z - (d.z0 - R) < d.z0 + len + R - b.z ? d.z0 - R : d.z0 + len + R
+    else b.x = d.x + Math.sign(dx || 1) * half
+    sawLedge(d.y + d.R, Math.sign(dx || 1), 0)
   }
   // ladrilhos caídos não seguram, e os de pé têm lado
   for (let i = 0; i < C.tiles.length; i++) {

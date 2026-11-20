@@ -14572,7 +14572,20 @@
     "gincanaHowAf2": "A esteira puxa você para trás: não pare de correr.",
     "gincanaHowAf3": "As bolas quicam e vão de lado. No alto do quique dá para passar por baixo.",
     "gincanaHowAf4": "Lá em cima, a barra de fogo gira: pule quando ela chegar.",
-    "gincanaHowAf5": "A última esteira é mais fraca: corra até a linha."
+    "gincanaHowAf5": "A última esteira é mais fraca: corra até a linha.",
+    "gincanaPhMoinhos": "Trilha dos Moinhos",
+    "gincanaEvMoinhos": "Corrida dos Moinhos",
+    "gincanaPhMoinhosPitch": "Moendas de pedra rolando, blocos de arenito que varrem a trilha, pás de moinho sobre dois discos e um campo de cata-ventos. Chegue antes da vaga fechar.",
+    "gincanaSecMo1": "Moendas",
+    "gincanaSecMo2": "Blocos",
+    "gincanaSecMo3": "Pás",
+    "gincanaSecMo4": "Cata-ventos",
+    "gincanaSecMo5": "Subida",
+    "gincanaHowMo1": "Ande no vão entre as moendas: o rolo gira e joga você para o lado.",
+    "gincanaHowMo2": "Os blocos vão e voltam: passe logo depois que um deles cruzar.",
+    "gincanaHowMo3": "Atravesse o disco longe do eixo e pule a pá quando ela chegar.",
+    "gincanaHowMo4": "Os cata-ventos giram cada um para um lado: procure o vão.",
+    "gincanaHowMo5": "As pedras descem rolando: troque de faixa cedo."
   },
   "Sports": {
     "eyebrow": "Esportes",

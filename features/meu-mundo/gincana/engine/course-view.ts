@@ -37,6 +37,7 @@ import { buildCity, type GincanaCity } from "./city-view"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
+import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
@@ -73,6 +74,7 @@ export class CourseView {
   private readonly portoes: PortoesDoors | null = null
   /** Esteira do Alto-Forno: as taliscas que descem a rampa. */
   private readonly altoforno: AltoFornoBelt | null = null
+  private readonly mills: MoinhosMills | null = null
   private readonly afBalls: AltoFornoBalls | null = null
   private readonly pusherMeshes: Mesh[] = []
   /** Gincana 3: pedaços das paredes de brasa (um conjunto por onda que cabe na arena) e as muretas. */
@@ -224,6 +226,9 @@ export class CourseView {
       } else if (theme.id === "altoforno") {
         // Esteira do Alto-Forno: bigorna
         altoFornoAnvil(st, glow, q)
+      } else if (theme.id === "moinhos") {
+        // Trilha dos Moinhos: mastro do catavento
+        moinhosMast(st, q)
       } else if (q.y0 < DECK - 0.1) {
         // poste da luva: sai da água, com anéis
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(col, darker(col, 0.8), 0.8, 0), 20)
@@ -334,6 +339,11 @@ export class CourseView {
     // marcos das portas: pilares entre elas (só desenho; a fileira inteira é a regra)
     const doorRows = theme.id === "portoes" ? [] : [...new Set(course.doors.map((d) => d.row))]
     if (theme.id === "portoes") portoesFrames(st, glow, course)
+    if (theme.id === "moinhos") {
+      moinhosFrames(st, glow, course)
+      moinhosTracks(st, course)
+      moinhosDrumShadows(st, course)
+    }
     if (theme.id === "altoforno") {
       altoFornoMouth(st, glow, course)
       altoFornoGrate(st, glow, course)
@@ -388,15 +398,19 @@ export class CourseView {
       const bg = new SoftGeo()
       const len = s.both ? s.len * 2 : s.len
       const off = s.both ? 0 : s.len / 2
-      if (theme.id === "altoforno") {
+      if (theme.id === "altoforno" || theme.id === "moinhos") {
         const gl = new SoftGeo()
-        altoFornoSweep(bg, gl, s)
+        if (theme.id === "moinhos") moinhosSweep(bg, gl, s)
+        else altoFornoSweep(bg, gl, s)
         const m = bg.build("gincana-bar", scene, toy, false)
-        const mg = gl.build("gincana-bar-fire", scene, this.glowMat, false)
         m.parent = node
-        mg.parent = node
+        this.meshes.push(m)
+        if (gl.vertexCount) {
+          const mg = gl.build("gincana-bar-fire", scene, this.glowMat, false)
+          mg.parent = node
+          this.meshes.push(mg)
+        }
         this.sweepNodes.push(node)
-        this.meshes.push(m, mg)
         continue
       }
       if (theme.deco === "forest") {
@@ -656,6 +670,8 @@ export class CourseView {
       // o que empurra é perigo: listra diagonal amarela e preta (na cidade, as faixas de antes)
       if (theme.id === "portoes") {
         portoesBlock(pg, q.hx, q.hz, q.h)
+      } else if (theme.id === "moinhos") {
+        moinhosBlock(pg, q.hx, q.hz, q.h, this.pusherMeshes.length)
       } else if (theme.deco === "factory") {
         // V-Fábrica (ref. v3): prensa num carro — cabeça listrada de perigo, carcaça verde-petróleo com
         // friso de latão, engrenagem de latão nas duas faces e o pistão cromado subindo até o pórtico
@@ -753,7 +769,7 @@ export class CourseView {
     // escuros nas juntas, geada clara nas quinas e a boca do buraco acesa (aviso de perigo) ──
     // V-Gelo (ref. v3): pórtico de gelo em cada ponta do rolo — colunas de blocos de gelo com tampa de
     // neve, viga de madeira com cintas de ferro e pingentes grandes, lampião aceso no alto e friso magenta
-    if (course.drums.length) {
+    if (course.drums.length && theme.id !== "moinhos") {
       const pg = new SoftGeo()
       const pl = new SoftGeo()
       const d0 = course.drums[0]
@@ -798,6 +814,17 @@ export class CourseView {
         node.position.set(d.x, d.y, z0 + ring.len / 2)
         const g = new SoftGeo()
         const gl = new SoftGeo()
+        if (theme.id === "moinhos") {
+          moinhosDrum(g, gl, d.R, ring.len, ring.w, di)
+          const mesh = g.build(`gincana-drum-m-${di}-${ri}`, scene, this.toy, false)
+          const gm = gl.build(`gincana-drum-g-${di}-${ri}`, scene, this.glowMat, false)
+          mesh.parent = node
+          gm.parent = node
+          this.meshes.push(mesh, gm)
+          this.drumNodes.push({ node, d: di, r: ri })
+          z0 += ring.len
+          return
+        }
         const N = 56
         const inHole = (m: number) =>
           ring.holes.some((h) => {
@@ -1160,6 +1187,7 @@ export class CourseView {
 
     // ── esteiras: setas que andam no sentido da esteira ──
     if (theme.id === "altoforno") this.altoforno = new AltoFornoBelt(scene, toy, this.glowMat, course)
+    if (theme.id === "moinhos") this.mills = new MoinhosMills(scene, toy, this.glowMat, course)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
@@ -1505,6 +1533,8 @@ export class CourseView {
     }
     if (this.theme.id === "portoes") portoesFloor(g, glow, p)
     if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
+    if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) return
+    const millFloor = this.theme.id === "moinhos" && !dyn && moinhosFloor(g, p)
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraStump(p)) return spinStump(g, glow, p)
@@ -1592,7 +1622,7 @@ export class CourseView {
     } else if (ice) {
       // gelo: tampo brilhante com rachaduras
       g.roundBox(p.hx * 2 - 0.2, 0.04, L - 0.2, 0.02, m(0.005), mix(top, [1, 1, 1], 0.45), 2)
-    } else if (!dyn) {
+    } else if (!dyn && !millFloor) {
       // tampo do tema: faixas largas de duas cores
       g.roundBox(p.hx * 2 - 0.3, 0.03, L - 0.3, 0.02, m(0.002), (x, _y, z) => (Math.floor((x + z * 0.3) / 1.6) % 2 ? mix(top, C[7], 0.12) : top), 2)
       this.grout(g, glow, p, top, L, pitch, yc)
@@ -1948,6 +1978,7 @@ export class CourseView {
     }
     this.comportas?.update(tt)
     this.altoforno?.update(tt)
+    this.mills?.update(tt)
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
@@ -2112,6 +2143,7 @@ export class CourseView {
     for (const m of this.doorMeshes) m.dispose()
     this.portoes?.dispose()
     this.altoforno?.dispose()
+    this.mills?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {
