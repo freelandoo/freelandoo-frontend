@@ -20,7 +20,7 @@ import { CITY, islandGeometry, type RockBuf } from "../../paint/engine/world-vie
 
 /** Borda do cais (|x|), altura do cais e até onde a cidade vai no canal (z). */
 // miniaturas (20/11): canal estreito com as fachadas coladas (era 76: os sobrados sumiam lá longe)
-const QUAY_X = 40
+export const QUAY_X = 40
 const QUAY_Y = 5
 const Z0 = -240
 const Z1 = 520

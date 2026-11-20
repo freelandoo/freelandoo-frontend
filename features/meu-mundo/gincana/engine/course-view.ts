@@ -33,7 +33,8 @@ import { AirshipFleet, SP, SteamStage, fleetRing, gearArch, place, tierOf } from
 import { postLantern, steamLamp } from "../../engine/steampunk/kit"
 import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
 import { CITY } from "../../paint/engine/world-view"
-import { buildCity, type GincanaCity } from "./city-view"
+import { QUAY_X, buildCity, type GincanaCity } from "./city-view"
+import { foamRing, glint, lampStreak } from "./backdrop-agua"
 import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
@@ -424,7 +425,7 @@ export class CourseView {
         for (const x of xs) for (const fz of [-0.42, 0.42]) glow.roundBox(0.12, h - 0.2, 0.05, 0.03, at(x, DECK + h / 2 + 0.1, ds[0].z + fz), this.neon, 2)
       }
     }
-    if (city) this.cityExtras(st)
+    if (city) this.cityExtras(st, glow)
     else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" || theme.id === "crosta" ? course.finishZ + 40 : 64, course.finishZ, course.pads, theme.id)
     if (theme.id === "clareira") cannonGate(st, glow)
     // alvos de programa de TV: fora da Floresta (a referência não tem)
@@ -1606,14 +1607,18 @@ export class CourseView {
   }
 
   /** Boias, faróis e o resto do canal da cidade (a cara de antes). */
-  private cityExtras(st: SoftGeo) {
+  private cityExtras(st: SoftGeo, wglow: SoftGeo) {
+    // percurso dobrado (20/11): faróis e postes até a chegada (paravam em z 270)
+    const endZ = Math.min(this.course.finishZ, 900)
+    // água: fio de espuma no pé do cais dos dois lados (a onda batendo na pedra)
+    for (const s of [-1, 1]) for (let z = -40, k = 0; z < endZ + 60; z += 2.4, k++) glint(wglow, s * (QUAY_X - 0.5 - ((k * 7) % 5) * 0.12), 0.07, z, 1.4 + ((k * 13) % 7) * 0.2, 0.32, [0.86, 0.94, 0.98], Math.PI / 2)
     const C = this.C
     const PINK = C[2]
     const ORANGE = C[0]
     const PURPLE = C[4]
     const BLUE = C[6]
     const LIME = C[5]
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < Math.max(26, Math.ceil((endZ + 20) / 11)); i++) {
       const s = i % 2 ? 1 : -1
       const z = -10 + i * 11
       const x = s * (17 + ((i * 7) % 11))
@@ -1621,15 +1626,20 @@ export class CourseView {
       st.cylinder(2.6, 1.2, at(x, 0.5, z), stripesY(col, SP.iron, 0.4, 0), 12)
       st.sphere(1.4, at(x, 1.2, z), SP.iron, 10, 1, 0.7, 1)
       postLantern(this.stage.ctx, x, 1.55, z, 1.2)
+      // água: o reflexo curto do lampião
+      lampStreak(wglow, x, z - 1.6, 6, [1, 0.82, 0.5], i)
     }
     const { props, glow } = this.stage.ctx
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < Math.max(10, Math.ceil((endZ - 20) / 28)); i++) {
       const s = i % 2 ? 1 : -1
       const z = 20 + i * 28
       const x = s * (27 + ((i * 13) % 8))
       const h = 14 + ((i * 11) % 12)
       const band = [PINK, ORANGE, PURPLE, BLUE, LIME][i % 5]
       props.cylinder(9, 1.6, place(x, 0.2, z), SP.stoneDark, 12)
+      // água: espuma na base do farol e o reflexo comprido da lanterna
+      foamRing(wglow, x, z, 4.7, 700 + i)
+      lampStreak(wglow, x, z - 5.2, 18, [1, 0.9, 0.62], 800 + i)
       props.cone(4.6, 6.4, h, place(x, h / 2, z), SP.brick, 12)
       for (const k of [0.3, 0.62]) props.cylinder(5.9 - k * 1.6, 0.9, place(x, h * k, z), band, 12)
       props.cylinder(6, 0.5, place(x, h + 0.25, z), SP.iron, 12)

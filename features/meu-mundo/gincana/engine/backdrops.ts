@@ -14,7 +14,8 @@ import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../en
 import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
-import { foamRing, mesaTower, sunPath } from "./backdrop-canion"
+import { mesaTower } from "./backdrop-canion"
+import { fallSplash, foamRing, glowRipple, lightPath } from "./backdrop-agua"
 import { farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
@@ -61,10 +62,16 @@ function forest(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
       const k = i * 2 + (s > 0 ? 1 : 0)
       const x = s * (17 + rnd(k, 200) * 9)
       const zz = z + rnd(k, 201) * 7
-      tallTrunk(lit, glow, x, zz, deckY(zz) + 46 + rnd(k, 202) * 18, 2.4 + rnd(k, 203) * 1.4, k)
+      const d = 2.4 + rnd(k, 203) * 1.4
+      tallTrunk(lit, glow, x, zz, deckY(zz) + 46 + rnd(k, 202) * 18, d, k)
+      // água (miniatura): anel verde aceso em volta das raízes
+      glowRipple(glow, x, zz, d * 1.25, [0.45, 1, 0.62], 2)
     }
   }
   farWall(lit, Z0, Z1)
+  // água (miniatura): o reflexo da lua (prata-lilás) do horizonte até a largada e anéis acesos soltos no pântano
+  lightPath(glow, { xFar: -40, xNear: -6, z0: Z0 + 20, z1: Z1 + 40, srcZ: Z1 + 140, core: [0.9, 0.96, 1], edge: [0.6, 0.62, 0.95], hwNear: 5, hwFar: 22, step: 1.6, fill: 4, w: 0.12 }, 300)
+  for (let i = 0; i < Math.round(30 * n); i++) glowRipple(glow, side(i, 9 + rnd(i, 500) * 22), Z0 + rnd(i, 501) * (Z1 - Z0), 0.8 + rnd(i, 502) * 1.6, [0.4, 1, 0.6])
   // 2ª fileira (|x| 32–60) e 3ª (|x| 62–130, mais azulada): o fundo fechado de troncos da miniatura
   // (as árvores-bonsai com flores soltas no céu saíram — a miniatura não tem)
   for (let z = Z0 - 20, i = 0; z < Z1 + 40; z += 9, i++) {
@@ -221,9 +228,11 @@ function canyon(lit: SoftGeo, glow: SoftGeo, n: number, wet = false) {
         const w = w0 * (0.75 + rnd(k, 2) * 0.6)
         const yTop = deckY(zz) + 6 + bi * 8 + rnd(k, 3) * (14 + bi * 10)
         const mx = s * (x0 + rnd(k, 4) * dx)
-        const bottom = mesaTower(lit, glow, mx, yTop, zz, w, c0 + Math.floor(rnd(k, 5) * 3), k, k % 3 === 0, bi === 2)
+        const { bottom, fallX } = mesaTower(lit, glow, mx, yTop, zz, w, c0 + Math.floor(rnd(k, 5) * 3), k, k % 3 === 0, bi === 2)
         // água (Moinhos): espuma onde o pião entra na água
         // (se as fiadas já entram na água, o anel abraça a coluna; senão, o pião na altura da água)
+        // e no pé da cachoeira (quando ela chega na água)
+        if (wet && bi < 2 && !Number.isNaN(fallX) && bottom < 6) fallSplash(glow, fallX, zz, k)
         if (wet && bottom < 0 && bi < 2) foamRing(glow, mx, zz, bottom + w * 0.7 < 0 ? w * 0.47 : w * (0.05 + 0.3 * (-bottom / (w * 0.7))) + 0.5, k)
       }
     }
@@ -232,7 +241,8 @@ function canyon(lit: SoftGeo, glow: SoftGeo, n: number, wet = false) {
   glow.sphere(90, at(0, 18, 560), (x, y) => mix([1, 0.62, 0.3], [1, 0.92, 0.5], Math.max(0, 1 - Math.hypot(x, y) / 45)), 16, 1, 1, 0.2)
   glow.torus(118, 6, at(0, 18, 566, 0, Math.PI / 2, 0), [1, 0.7, 0.62], 40)
   // água (Moinhos): o reflexo do sol no lugar do mar de nuvens e das brasas
-  if (wet) sunPath(glow, Z0 + 30, 545, 560)
+  // o sol baixo (x 0, z 560): miolo dourado, borda laranja-rosada, mais largo que a pista
+  if (wet) lightPath(glow, { xFar: 0, xNear: 0, z0: Z0 + 30, z1: 545, srcZ: 560, core: [1, 0.95, 0.66], edge: [1, 0.5, 0.36], hwNear: 14, hwFar: 44, step: 1.1, fill: 7 })
   // mar de nuvens embaixo da prova (o abismo some nas nuvens, como na referência)
   for (let i = 0; i < (wet ? 0 : Math.round(70 * n)); i++) {
     const x = side(i, 4 + rnd(i, 80) * 90)
