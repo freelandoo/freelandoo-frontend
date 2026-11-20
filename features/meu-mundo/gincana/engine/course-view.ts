@@ -47,6 +47,7 @@ import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serr
 import { EstaleiroView } from "./estaleiro-view"
 import { GangorrasView } from "./gangorras-view"
 import { FabricaLava } from "./fabrica-view"
+import { paintLavaGrate } from "./backdrop-fabrica"
 import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
 import { CANION_SKIN, HELICES_SKIN, canionTileIdle, canionTileLit } from "./canion-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
@@ -406,7 +407,7 @@ export class CourseView {
       }
     }
     if (city) this.cityExtras(st)
-    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" || theme.id === "crosta" ? course.finishZ + 40 : 64, course.finishZ, course.pads)
+    else buildBackdrop(theme.deco, st, glow, this.stage.ctx, low, theme.id === "altoforno" || theme.id === "crosta" ? course.finishZ + 40 : 64, course.finishZ, course.pads, theme.id)
     if (theme.id === "clareira") cannonGate(st, glow)
     // alvos de programa de TV: fora da Floresta (a referência não tem)
     if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)
@@ -1467,6 +1468,7 @@ export class CourseView {
         g.stroke()
       }
     }
+    if (this.theme.id === "fabrica") paintLavaGrate(g)
     tex.update(false)
     tex.wrapU = Texture.WRAP_ADDRESSMODE
     tex.wrapV = Texture.WRAP_ADDRESSMODE
@@ -2259,7 +2261,8 @@ export class CourseView {
       c.mesh.scaling.set(k, 2 - k, k)
     }
     const F = this.theme.fluid
-    const sp = F.kind === "lava" ? 0.4 : 1
+    // Fábrica: a grade sextavada sobre a lava é fixa
+    const sp = this.theme.id === "fabrica" ? 0 : F.kind === "lava" ? 0.4 : 1
     this.waterTex.uOffset = (clock * 0.012 * sp) % 1
     this.waterTex.vOffset = (clock * 0.02 * sp) % 1
     if (this.clouds) this.clouds.position.x = Math.sin(clock * 0.01) * 12

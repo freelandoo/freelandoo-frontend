@@ -16,10 +16,12 @@ import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
 import { tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
+import { fabricaHall } from "./backdrop-fabrica"
 
 /** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada).
- * `finishZ`/`pads` (20/11): o fundo vai até o fim da prova (percurso dobrado) e sabe a altura do chão (`deckY`). */
-export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, low: boolean, castleZ = 64, finishZ = 260, pads: readonly Pad[] = []) {
+ * `finishZ`/`pads` (20/11): o fundo vai até o fim da prova (percurso dobrado) e sabe a altura do chão (`deckY`).
+ * `phase` (metade C, 20/11): a Fábrica e o Mar de Gelo desenham o fundo pela miniatura de cada fase. */
+export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, low: boolean, castleZ = 64, finishZ = 260, pads: readonly Pad[] = [], phase = "") {
   setSpan(finishZ, pads)
   const n = (low ? 0.6 : 1) * spanK()
   switch (deco) {
@@ -32,9 +34,9 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
     case "forge":
       return forge(lit, glow, ctx, n, castleZ)
     case "factory":
-      return factory(lit, glow, ctx, n)
+      return factory(lit, glow, ctx, n, phase)
     case "ice":
-      return ice(lit, glow, n)
+      return ice(lit, glow, n, phase)
     default:
       return
   }
@@ -463,7 +465,8 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: n
 
 // ── Fábrica ──────────────────────────────────────────────────────────────────
 
-function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
+function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, phase: string) {
+  if (phase === "fabrica") return fabricaHall(lit, glow, ctx, n / spanK())
   // a silhueta de fábricas do kit steampunk dos dois lados
   factorySkyline(ctx, -95, 130, 50, Math.round(12 * n), -2, 21, 1.4)
   factorySkyline(ctx, 95, 130, 50, Math.round(12 * n), -2, 37, 1.4)
@@ -501,7 +504,8 @@ function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number) {
 
 // ── Mar de Gelo ──────────────────────────────────────────────────────────────
 
-function ice(lit: SoftGeo, glow: SoftGeo, n: number) {
+function ice(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
+  void phase
   const white: RGB = [0.92, 0.96, 1]
   const blue: RGB = [0.6, 0.78, 0.94]
   // montanhas nevadas ao longe
