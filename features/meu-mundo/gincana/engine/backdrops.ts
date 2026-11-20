@@ -14,7 +14,7 @@ import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../en
 import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
-import { mesaTower } from "./backdrop-canion"
+import { foamRing, mesaTower, sunPath } from "./backdrop-canion"
 import { farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
@@ -31,7 +31,7 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
     case "forest":
       return forest(lit, glow, n, phase)
     case "canyon":
-      return canyon(lit, glow, n)
+      return canyon(lit, glow, n, phase === "moinhos")
     case "orbital":
       return orbital(lit, glow, n)
     case "forge":
@@ -205,7 +205,7 @@ function rockIsland(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, z: num
   }
 }
 
-function canyon(lit: SoftGeo, glow: SoftGeo, n: number) {
+function canyon(lit: SoftGeo, glow: SoftGeo, n: number, wet = false) {
   // miniaturas (20/11): mesas-coluna de arenito em 3 faixas, perto/meio/longe, em alturas diferentes
   const bands: [number, number, number, number, number][] = [
     // |x| de, |x| até, passo em z, largura, fiadas
@@ -220,15 +220,21 @@ function canyon(lit: SoftGeo, glow: SoftGeo, n: number) {
         const zz = z + rnd(k, 1) * step * 0.6
         const w = w0 * (0.75 + rnd(k, 2) * 0.6)
         const yTop = deckY(zz) + 6 + bi * 8 + rnd(k, 3) * (14 + bi * 10)
-        mesaTower(lit, glow, s * (x0 + rnd(k, 4) * dx), yTop, zz, w, c0 + Math.floor(rnd(k, 5) * 3), k, k % 3 === 0, bi === 2)
+        const mx = s * (x0 + rnd(k, 4) * dx)
+        const bottom = mesaTower(lit, glow, mx, yTop, zz, w, c0 + Math.floor(rnd(k, 5) * 3), k, k % 3 === 0, bi === 2)
+        // água (Moinhos): espuma onde o pião entra na água
+        // (se as fiadas já entram na água, o anel abraça a coluna; senão, o pião na altura da água)
+        if (wet && bottom < 0 && bi < 2) foamRing(glow, mx, zz, bottom + w * 0.7 < 0 ? w * 0.47 : w * (0.05 + 0.3 * (-bottom / (w * 0.7))) + 0.5, k)
       }
     }
   })
   // o sol do fim de tarde, grande e baixo à frente da prova (miolo amarelo, borda laranja, halo rosado)
   glow.sphere(90, at(0, 18, 560), (x, y) => mix([1, 0.62, 0.3], [1, 0.92, 0.5], Math.max(0, 1 - Math.hypot(x, y) / 45)), 16, 1, 1, 0.2)
   glow.torus(118, 6, at(0, 18, 566, 0, Math.PI / 2, 0), [1, 0.7, 0.62], 40)
+  // água (Moinhos): o reflexo do sol no lugar do mar de nuvens e das brasas
+  if (wet) sunPath(glow, Z0 + 30, 545, 560)
   // mar de nuvens embaixo da prova (o abismo some nas nuvens, como na referência)
-  for (let i = 0; i < Math.round(70 * n); i++) {
+  for (let i = 0; i < (wet ? 0 : Math.round(70 * n)); i++) {
     const x = side(i, 4 + rnd(i, 80) * 90)
     const z = Z0 + rnd(i, 81) * (Z1 - Z0 + 60)
     const s = 12 + rnd(i, 82) * 16
@@ -243,7 +249,7 @@ function canyon(lit: SoftGeo, glow: SoftGeo, n: number) {
     rockIsland(lit, glow, x, y, z, s, 1, i + 100, false, i % 3 === 0)
   }
   // brasas de sol no fundo do abismo
-  for (let i = 0; i < Math.round(30 * n); i++) glow.sphere(0.5, at(side(i, 6 + rnd(i, 40) * 20), -6 - rnd(i, 41) * 10, Z0 + rnd(i, 42) * (Z1 - Z0)), [1, 0.6, 0.3], 3)
+  for (let i = 0; i < (wet ? 0 : Math.round(30 * n)); i++) glow.sphere(0.5, at(side(i, 6 + rnd(i, 40) * 20), -6 - rnd(i, 41) * 10, Z0 + rnd(i, 42) * (Z1 - Z0)), [1, 0.6, 0.3], 3)
 }
 
 // ── Cidade Orbital ───────────────────────────────────────────────────────────

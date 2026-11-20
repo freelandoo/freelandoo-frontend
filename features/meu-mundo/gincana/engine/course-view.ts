@@ -202,6 +202,8 @@ export class CourseView {
       const cloudG = new SoftGeo()
       for (let i = 0; i < 18; i++) {
         const a = (i / 18) * Math.PI * 2 + Math.sin(i * 7.1) * 0.2
+        // Cânion: nenhuma nuvem na frente do sol (ele fica em x 0, z 560)
+        if (theme.deco === "canyon" && Math.cos(a) > 0.8) continue
         const dist = 190 + ((i * 53) % 110)
         const cx = Math.sin(a) * dist
         const cz = 130 + Math.cos(a) * dist
@@ -211,7 +213,9 @@ export class CourseView {
           const s = 14 + ((k * 13 + i * 5) % 12)
           // Cânion (ref. v3): nuvem de pôr do sol — rosada embaixo, quase branca em cima
           const cloudPaint = theme.deco === "canyon" ? (_x: number, y: number): RGB => mix([0.98, 0.68, 0.72], [1, 0.95, 0.9], Math.min(1, Math.max(0, y / s + 0.5))) : WHITE
-          cloudG.sphere(s, at(cx + (k - n / 2) * 8, cy + Math.sin(k * 2.1 + i) * 3, cz + Math.cos(k * 1.7) * 5), cloudPaint, 8, 1, 0.62, 1)
+          // Cânion: nuvem alongada e achatada (fiapo de fim de tarde), não bola
+          if (theme.deco === "canyon") cloudG.sphere(s, at(cx + (k - n / 2) * 11, cy + Math.sin(k * 2.1 + i) * 1.5, cz + Math.cos(k * 1.7) * 4, a), cloudPaint, 8, 1.7, 0.32, 0.8)
+          else cloudG.sphere(s, at(cx + (k - n / 2) * 8, cy + Math.sin(k * 2.1 + i) * 3, cz + Math.cos(k * 1.7) * 5), cloudPaint, 8, 1, 0.62, 1)
         }
       }
       this.clouds = cloudG.build("gincana-clouds", scene, this.cloudMat, false)
@@ -1658,7 +1662,8 @@ export class CourseView {
     this.sky.set(n)
     this.stage.setNight(n)
     this.city?.setNight(n)
-    Color3.LerpToRef(new Color3(0.94, 0.88, 0.8), new Color3(0.16, 0.18, 0.3), n, this.cloudMat.emissiveColor)
+    // Cânion: de noite a nuvem fica malva (a do céu da arte), não a bola azul-marinho
+    Color3.LerpToRef(new Color3(0.94, 0.88, 0.8), this.theme.deco === "canyon" ? new Color3(0.6, 0.42, 0.56) : new Color3(0.16, 0.18, 0.3), n, this.cloudMat.emissiveColor)
     const F = this.theme.fluid
     if (F.glow > 0) {
       // lava e vazio brilham sozinhos
@@ -1666,8 +1671,10 @@ export class CourseView {
       this.waterMat.emissiveColor.set(k, k, k)
       this.waterMat.diffuseColor.set(1 - k * 0.5, 1 - k * 0.5, 1 - k * 0.5)
     } else {
-      Color3.LerpToRef(new Color3(0.25, 0.32, 0.34), new Color3(0.01, 0.05, 0.08), n, this.waterMat.emissiveColor)
-      Color3.LerpToRef(new Color3(1, 1, 1), new Color3(0.2, 0.32, 0.38), n, this.waterMat.diffuseColor)
+      // Cânion: a água do fim de tarde puxa o roxo do céu (não vira petróleo preto)
+      const dusk = this.theme.deco === "canyon"
+      Color3.LerpToRef(new Color3(0.25, 0.32, 0.34), dusk ? new Color3(0.14, 0.1, 0.2) : new Color3(0.01, 0.05, 0.08), n, this.waterMat.emissiveColor)
+      Color3.LerpToRef(new Color3(1, 1, 1), dusk ? new Color3(0.5, 0.42, 0.62) : new Color3(0.2, 0.32, 0.38), n, this.waterMat.diffuseColor)
     }
     if (this.aurora) this.aurora.setEnabled(n > 0.3)
     if (this.auroraMat) this.auroraMat.alpha = 0.1 + 0.3 * n

@@ -45,7 +45,7 @@ function brick(base: RGB, bh: number, seed: number) {
  * fiada (silhueta quebrada). Tampa de grama com franja que cai, 1–2 acácias, e (às vezes) a cachoeira acesa
  * na face que olha a prova. Embaixo, um pião curto que some nas nuvens.
  */
-export function mesaTower(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, z: number, w: number, courses: number, seed: number, fall: boolean, far = false) {
+export function mesaTower(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, z: number, w: number, courses: number, seed: number, fall: boolean, far = false): number {
   const bh = 3.4 + rnd(seed, 1) * 1.6
   let y = yTop
   const face = -Math.sign(x) || 1
@@ -110,5 +110,42 @@ export function mesaTower(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, 
     glow.box(0.8, fh, 3.4, at(fx, yTop - fh / 2, z), (xx, yy, zz): RGB => mix([0.5, 0.82, 0.95], [1, 1, 1], Math.abs(Math.sin(yy * 0.8 + zz * 2.2)) > 0.6 ? 0.75 : 0.15))
     glow.box(1.4, 0.3, 3.8, at(fx - face * 0.4, yTop + 0.5, z), [0.6, 0.9, 1])
     glow.sphere(6, at(fx, yTop - fh, z), [0.95, 0.94, 1], 4, 1, 0.5, 1)
+  }
+  return y - deep
+}
+
+/** Água dos Moinhos (20/11): o reflexo do sol baixo (faixa de tracinhos dourados do horizonte até a largada,
+ * mais densa e quente perto do sol) — o sol é o de `canyon()` em x 0, z 560. */
+export function sunPath(glow: SoftGeo, z0: number, z1: number, sunZ: number) {
+  for (let z = z0, i = 0; z < z1; z += 0.9, i++) {
+    const u = Math.max(0, Math.min(1, (z - z0) / (sunZ - z0)))
+    // a faixa passa dos dois lados da pista (largura > a da prova) e fica cheia perto do sol
+    const hw = 14 + u * 30
+    const nRow = 2 + Math.floor(u * u * 7 + rnd(i, 1) * 2)
+    for (let k = 0; k < nRow; k++) {
+      const v = rnd(i, 2 + k) * 2 - 1
+      const x = v * Math.abs(v) * hw
+      const edge = Math.abs(x) / hw
+      const len = (1 + rnd(i, 5 + k) * (2 + u * 6)) * (1.1 - edge)
+      // miolo dourado, borda laranja-rosada
+      const c = mix(mix([1, 0.95, 0.66], [1, 0.5, 0.36], edge), [1, 0.98, 0.85], rnd(i, 7 + k) > 0.85 ? 0.6 : 0)
+      glow.box(len, 0.04, 0.22 + u * 0.4, at(x, 0.07, z + rnd(i, 8 + k) * 0.8), c)
+    }
+  }
+}
+
+/** Espuma acesa onde a pedra entra na água: anel de gomos achatados + 2º anel mais largo e ralo. */
+export function foamRing(glow: SoftGeo, x: number, z: number, r: number, seed: number) {
+  const n = Math.max(9, Math.round(r * 3.4))
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2 + rnd(seed, k) * 0.3
+    const rr = r * (1.02 + rnd(seed, 20 + k) * 0.1)
+    // gomo = placa fina tangente ao anel (12 tri; a esfera achatada custava 8× mais e de longe é igual)
+    glow.box(1.1 + rnd(seed, 40 + k) * 1.2, 0.04, 0.5 + rnd(seed, 50 + k) * 0.5, at(x + Math.cos(a) * rr, 0.06, z + Math.sin(a) * rr, -a + Math.PI / 2), [0.9, 0.96, 0.98])
+  }
+  for (let k = 0; k < n; k += 2) {
+    const a = (k / n) * Math.PI * 2 + 0.4
+    const rr = r * 1.3 + rnd(seed, 60 + k) * r * 0.25
+    glow.box(1.2 + rnd(seed, 70 + k) * 1.4, 0.03, 0.26, at(x + Math.cos(a) * rr, 0.05, z + Math.sin(a) * rr, -a + Math.PI / 2), [0.6, 0.82, 0.84])
   }
 }
