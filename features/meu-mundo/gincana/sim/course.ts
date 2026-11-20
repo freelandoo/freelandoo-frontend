@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "orbital" | "helices" | "forja" | "altoforno" | "fabrica" | "comportas" | "gelo" | "portoes" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "orbital", "helices", "forja", "altoforno", "fabrica", "comportas", "gelo", "portoes", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -452,6 +452,69 @@ export function drumAt(d: Drum, x: number, z: number, t: number) {
   return null
 }
 
+/**
+ * Serraria da Lua (20/11): TORA deitada atravessada na pista (eixo em x), girando a `w` rad/s — positivo = o
+ * topo anda para −z, contra quem corre. Tem `rows` fileiras de cravos (desencontradas, um a cada `pitch` m)
+ * que passam por cima e derrubam para trás. Abaixo de 60% da altura o lado é parede (sobe pulando).
+ */
+export interface Log {
+  x: number
+  z: number
+  y: number
+  R: number
+  hx: number
+  w: number
+  rows: number
+  pitch: number
+  ph: number
+}
+export const LOG_EDGE = 0.93
+/** A ponta do cravo fica isto acima da casca; o raio do que machuca em volta dela. */
+export const SPIKE_OUT = 0.55
+export const SPIKE_R = 0.3
+
+/** O chão da tora em (x, z): topo e o ângulo da superfície (0 = topo, + = lado +z). null = fora dela. */
+export function logAt(L: Log, x: number, z: number) {
+  const dz = z - L.z
+  if (Math.abs(x - L.x) > L.hx || Math.abs(dz) > L.R * LOG_EDGE) return null
+  return { top: L.y + Math.sqrt(L.R * L.R - dz * dz), th: Math.asin(dz / L.R) }
+}
+
+/** Ângulo da fileira k de cravos em t (0 = topo, + = lado +z). */
+export function logRowAngle(L: Log, k: number, t: number) {
+  return L.ph + (k * Math.PI * 2) / L.rows - L.w * t
+}
+
+/** Quantos cravos tem a fileira k e o x do j-ésimo (as ímpares ficam no meio das pares). */
+export function logSpikeCount(L: Log, k: number) {
+  return Math.max(1, Math.floor((2 * L.hx) / L.pitch) - (k % 2))
+}
+export function logSpikeX(L: Log, k: number, j: number) {
+  return L.x - L.hx + L.pitch * (j + 0.5 + (k % 2) * 0.5)
+}
+
+/**
+ * Serraria da Lua: TÁBUA que balança de lado (gira em volta do eixo z, no centro). `amp` rad, `w` rad/s;
+ * ângulo + = o lado +x sobe. Quem está em cima escorrega para o lado que desce.
+ */
+export interface Plank {
+  x: number
+  z: number
+  hx: number
+  hz: number
+  y: number
+  amp: number
+  w: number
+  ph: number
+}
+export function plankAngle(P: Plank, t: number) {
+  return P.amp * Math.sin(P.w * t + P.ph)
+}
+/** Tampo da tábua em x no tempo t. */
+export function plankTop(P: Plank, x: number, t: number) {
+  return P.y + Math.tan(plankAngle(P, t)) * (x - P.x)
+}
+
 /** Zona do rei do pedaço: círculo (x, z, r) com o chão em y. */
 export interface Zone {
   x: number
@@ -474,6 +537,9 @@ export interface Course {
   walls: Walls | null
   /** Gincana 3: cilindros que giram (Rolo de Gelo). */
   drums: Drum[]
+  /** Serraria da Lua: toras atravessadas com cravos e tábuas que balançam. */
+  logs: Log[]
+  planks: Plank[]
   /** Gincana 3: a grade do Relógio da Praça. */
   memory: Memory | null
   /** Gincana 3 (Coroa da Torre): a linha fica acima do chão — só cruza quem pula (pegar a coroa). */
@@ -521,6 +587,14 @@ export class CourseKit {
   balls: Balls | null = null
   readonly gems: Gem[] = []
   readonly drums: Drum[] = []
+  readonly logs: Log[] = []
+  readonly planks: Plank[] = []
+  log(x: number, z: number, y: number, R: number, hx: number, w: number, rows: number, pitch: number, ph = 0) {
+    this.logs.push({ x, z, y, R, hx, w, rows, pitch, ph })
+  }
+  plank(x: number, z: number, hx: number, hz: number, amp: number, w: number, ph: number, y = DECK) {
+    this.planks.push({ x, z, hx, hz, y, amp, w, ph })
+  }
   drum(x: number, z0: number, y: number, R: number, rings: DrumRing[], f = 0.6, wall = false) {
     this.drums.push({ x, z0, y, R, f, rings, wall })
   }
@@ -615,6 +689,8 @@ export class CourseKit {
       zone: o.zone ?? null,
       walls: o.walls ?? null,
       drums: this.drums,
+      logs: this.logs,
+      planks: this.planks,
       memory: o.memory ?? null,
       crown: o.crown ?? false,
       pads: this.pads,

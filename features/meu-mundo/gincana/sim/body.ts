@@ -19,6 +19,15 @@ import {
   DRUM_EDGE,
   drumAt,
   drumSpeed,
+  LOG_EDGE,
+  logAt,
+  logRowAngle,
+  logSpikeCount,
+  logSpikeX,
+  plankAngle,
+  plankTop,
+  SPIKE_OUT,
+  SPIKE_R,
   gloveAt,
   memIndexAt,
   memUp,
@@ -101,6 +110,8 @@ export interface Runner {
   pad: number
   /** Cilindro embaixo (Rolo de Gelo; −1 = nenhum): arrasta para o lado. */
   drum: number
+  /** Serraria da Lua: tora (i) ou tábua (ROLL_PLANK + i) embaixo; −1 = nenhuma. */
+  roll: number
   /** Atrito do chão embaixo (gelo < 1). */
   fric: number
   /** Agarrando a vaga (−1 = ninguém), há quanto tempo e a espera para agarrar de novo. */
@@ -200,6 +211,7 @@ export function newRunner(course: Course, slot: number): Runner {
     pz: p.z,
     pad: -1,
     drum: -1,
+    roll: -1,
     fric: 1,
     grab: -1,
     grabT: 0,
@@ -298,8 +310,33 @@ export function groundUnder(w: RunWorld, x: number, z: number, reach: number) {
       drum = i
     }
   }
-  return { y: best, tile, pad, bounce, drum }
+  // Serraria: toras e tábuas (também só quando são o chão mais alto)
+  let roll = -1
+  for (let i = 0; i < C.logs.length; i++) {
+    const g = logAt(C.logs[i], x, z)
+    if (g && g.top <= reach && g.top > best) {
+      best = g.top
+      tile = pad = drum = -1
+      bounce = 0
+      roll = i
+    }
+  }
+  for (let i = 0; i < C.planks.length; i++) {
+    const P = C.planks[i]
+    if (Math.abs(x - P.x) > P.hx + EDGE || Math.abs(z - P.z) > P.hz + EDGE) continue
+    const top = plankTop(P, Math.max(P.x - P.hx, Math.min(P.x + P.hx, x)), w.t)
+    if (top <= reach && top > best) {
+      best = top
+      tile = pad = drum = -1
+      bounce = 0
+      roll = ROLL_PLANK + i
+    }
+  }
+  return { y: best, tile, pad, bounce, drum, roll }
 }
+
+/** No campo `roll`: índice da tora; a partir daqui, tábua. */
+export const ROLL_PLANK = 1000
 
 /** Ondas de parede do passo (reaproveitado: nada de lixo a 60 Hz). */
 const WALL_TMP: WallWave[] = []
@@ -384,6 +421,35 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
     if (oz < ox) b.z = b.z - (d.z0 - R) < d.z0 + len + R - b.z ? d.z0 - R : d.z0 + len + R
     else b.x = d.x + Math.sign(dx || 1) * half
     sawLedge(d.y + d.R, Math.sign(dx || 1), 0)
+  }
+  // tora: a metade de baixo (60%) é parede — empurra para a frente/para trás (pelas pontas, de lado)
+  for (const L of C.logs) {
+    if (b.y >= L.y + L.R * 0.6 || b.y + H <= L.y - L.R) continue
+    const halfZ = L.R * LOG_EDGE + R
+    const dz = b.z - L.z
+    const ox = L.hx + R - Math.abs(b.x - L.x)
+    const oz = halfZ - Math.abs(dz)
+    if (ox <= 0 || oz <= 0) continue
+    if (ox < oz) b.x = L.x + Math.sign(b.x - L.x || 1) * (L.hx + R)
+    else b.z = L.z + Math.sign(dz || -1) * halfZ
+    sawLedge(L.y + L.R, 0, Math.sign(dz || -1))
+  }
+  // tábua: a beira que ficou acima do pé é parede (dá para subir na beira)
+  for (const P of C.planks) {
+    const top = plankTop(P, Math.max(P.x - P.hx, Math.min(P.x + P.hx, b.x)), w.t)
+    if (top <= lift || top - 0.5 >= b.y + H) continue
+    const lx = b.x - P.x
+    const lz = b.z - P.z
+    const ox = P.hx + R - Math.abs(lx)
+    const oz = P.hz + R - Math.abs(lz)
+    if (ox <= 0 || oz <= 0) continue
+    if (ox < oz) {
+      b.x = P.x + Math.sign(lx || 1) * (P.hx + R)
+      sawLedge(top, Math.sign(lx || 1), 0)
+    } else {
+      b.z = P.z + Math.sign(lz || 1) * (P.hz + R)
+      sawLedge(top, 0, Math.sign(lz || 1))
+    }
   }
   // ladrilhos caídos não seguram, e os de pé têm lado
   for (let i = 0; i < C.tiles.length; i++) {
@@ -555,6 +621,26 @@ function hazards(b: Runner, w: RunWorld, out: RunEvent[] | null) {
       b.z = g.z + (dz / d) * (g.R + R)
     }
   }
+  // cravos das toras: a fileira que passa por cima derruba para trás (para onde o topo anda)
+  for (const L of C.logs) {
+    if (Math.abs(b.z - L.z) > L.R + SPIKE_OUT + 1 || Math.abs(b.x - L.x) > L.hx + 1) continue
+    if (b.y > L.y + L.R + SPIKE_OUT + 0.6) continue
+    const rr = L.R + SPIKE_OUT * 0.7
+    for (let k = 0; k < L.rows; k++) {
+      const a = logRowAngle(L, k, t)
+      const cy = Math.cos(a)
+      if (cy < -0.1) continue
+      const sy = L.y + cy * rr
+      const sz = L.z + Math.sin(a) * rr
+      if (Math.abs(b.z - sz) > SPIKE_R + R + 0.1) continue
+      const n = logSpikeCount(L, k)
+      for (let j = 0; j < n; j++) {
+        if (sphereGap(b, logSpikeX(L, k, j), sy, sz) >= SPIKE_R + R) continue
+        knock(b, Math.sign(b.x - logSpikeX(L, k, j) || 1) * 1.5, 5.5, -Math.sign(L.w || 1) * 7.5, "bar", out)
+        break
+      }
+    }
+  }
   if (C.balls && w.balls.length && C.ramp && b.z > C.ramp.z0 - 5) {
     const bl = w.balls
     const BR = C.balls.R
@@ -592,6 +678,7 @@ export function respawn(b: Runner, course: Course) {
   b.hitCool = 0
   b.pad = -1
   b.drum = -1
+  b.roll = -1
   b.fric = 1
   b.grab = -1
 }
@@ -605,6 +692,22 @@ function carry(b: Runner, w: RunWorld, dt: number) {
     if (d && g) {
       b.x += drumSpeed(d.rings[g.ring], w.t) * (g.top - d.y) * dt
       b.x += Math.sin(g.th) * 3.2 * dt
+    }
+    return
+  }
+  if (b.ground && b.roll >= 0) {
+    if (b.roll >= ROLL_PLANK) {
+      // tábua inclinada: escorrega para o lado que desce
+      const P = w.course.planks[b.roll - ROLL_PLANK]
+      if (P) b.x -= Math.sin(plankAngle(P, w.t)) * 8 * dt
+    } else {
+      // tora: o chão anda para −z (w·altura acima do eixo) e a curva escorrega para fora
+      const L = w.course.logs[b.roll]
+      const g = L ? logAt(L, b.x, b.z) : null
+      if (L && g) {
+        b.z -= L.w * (g.top - L.y) * dt
+        b.z += Math.sin(g.th) * 3.2 * dt
+      }
     }
     return
   }
@@ -678,6 +781,7 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
       const g = groundUnder(w, b.x, b.z, b.y + 0.1)
       b.pad = g.pad
       b.drum = g.drum
+      b.roll = g.roll
     }
     return
   }
@@ -780,7 +884,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     b.vy = 0
     b.pad = g.pad
     b.drum = g.drum
-    b.fric = g.pad >= 0 ? C.pads[g.pad].f : g.drum >= 0 ? C.drums[g.drum].f : 1
+    b.roll = g.roll
+    b.fric = g.pad >= 0 ? C.pads[g.pad].f : g.drum >= 0 ? C.drums[g.drum].f : g.roll >= 0 && g.roll < ROLL_PLANK ? 0.8 : 1
     if (!b.ground) {
       b.ground = true
       // pousou: mergulho vira deslize; derrubado fica no chão o resto do tempo
@@ -810,12 +915,14 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     b.vy = 0
     b.pad = g.pad
     b.drum = g.drum
+    b.roll = g.roll
   } else {
     if (b.ground) b.vy = Math.min(b.vy, 0)
     b.ground = false
     b.air += dt
     b.pad = -1
     b.drum = -1
+    b.roll = -1
   }
 
   // relógio dos estados sem controle

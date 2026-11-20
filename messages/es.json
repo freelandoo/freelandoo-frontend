@@ -15164,7 +15164,20 @@
     "gincanaHowHe2": "Las barras del pasillo giran: salta cuando llegue la punta.",
     "gincanaHowHe3": "En el centro, espera a que un aspa apunte a la salida y corre por encima.",
     "gincanaHowHe4": "Las plataformas del embarcadero van de un lado a otro: acompaña la de abajo.",
-    "gincanaHowHe5": "Las piedras bajan rodando: cambia de carril pronto."
+    "gincanaHowHe5": "Las piedras bajan rodando: cambia de carril pronto.",
+    "gincanaPhSerraria": "Aserradero de la Luna",
+    "gincanaEvSerraria": "Carrera del Aserradero",
+    "gincanaPhSerrariaPitch": "La tercera carrera del Bosque, en el aserradero de los leñadores: troncos con púas rodando hacia ti, el puente de las hachas, tablas que se balancean y el patio de los troncos grandes.",
+    "gincanaSecSe1": "Troncos",
+    "gincanaSecSe2": "Hachas",
+    "gincanaSecSe3": "Tablas",
+    "gincanaSecSe4": "Troncos grandes",
+    "gincanaSecSe5": "Subida",
+    "gincanaHowSe1": "Los troncos ruedan hacia ti: espera a que la fila de púas pase por debajo y salta. Dos de ellos dejan un hueco a un lado.",
+    "gincanaHowSe2": "Las hachas barren el puente de lado a lado: corre justo después de que pase la tuya.",
+    "gincanaHowSe3": "Las tablas se balancean y te tiran hacia el lado que baja: quédate en el medio y elige una fila.",
+    "gincanaHowSe4": "Los troncos grandes ruedan más despacio, con un hacha en el hueco entre ellos: espera el momento justo.",
+    "gincanaHowSe5": "Bajan troncos por la rampa: cambia de carril temprano."
   },
   "Sports": {
     "eyebrow": "Deportes",

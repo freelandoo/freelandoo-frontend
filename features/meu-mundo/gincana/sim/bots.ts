@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, logRowAngle, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -805,6 +805,25 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     }
     if (block && botRand(br.seed, br.slot * 71 + i, Math.floor((t * q.w) / 3.14)) < br.skill + 0.1) go = 0
   }
+  // Serraria: tora adiante — espera a fileira de cravos passar por baixo antes de subir (a que desce pela frente
+  // derruba quem está encostado; a que vem por cima pega quem está no topo)
+  for (let i = 0; i < C.logs.length; i++) {
+    const L = C.logs[i]
+    const ahead = L.z - L.R - b.z
+    if (ahead < 0.1 || ahead > 2.6 || Math.abs(b.x - L.x) > L.hx) continue
+    const arrive = ahead / vRun + 0.25
+    let bad = false
+    for (let k = 0; k < L.rows; k++) {
+      for (const dtk of [arrive - 0.15, arrive, arrive + 0.25]) {
+        let a = logRowAngle(L, k, t + dtk) % (Math.PI * 2)
+        if (a > Math.PI) a -= Math.PI * 2
+        if (a < -Math.PI) a += Math.PI * 2
+        // de pouco atrás do topo até a frente: é por onde o corpo passa
+        if (a < 0.55 && a > -1.45) bad = true
+      }
+    }
+    if (bad && botRand(br.seed, br.slot * 53 + i, Math.floor(t * 0.7)) < br.skill + 0.15) go = 0
+  }
   if (go === 0) br.waited += dt
   if (go === 0 && br.waited < 6 + br.skill * 4) {
     it.mx = 0
@@ -819,6 +838,15 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   fanRide(br, b, w, it)
   // barra chegando: pula na hora (com o erro da habilidade)
   barJump(br, b, w, it)
+  // Serraria: tora atravessada logo à frente — pula para subir nela (a parede de baixo não deixa passar)
+  if (b.ground && br.jumpCool <= 0) {
+    for (const L of C.logs) {
+      const ahead = L.z - L.R - b.z
+      if (ahead < 0.15 || ahead > 1.15 || Math.abs(b.x - L.x) > L.hx + 0.2 || L.y + L.R < b.y + 0.5) continue
+      it.jump = true
+      br.jumpCool = 0.5
+    }
+  }
   // ladrilho tremendo embaixo: pula para o próximo
   if (b.ground && br.jumpCool <= 0) {
     for (let i = 0; i < C.tiles.length; i++) {

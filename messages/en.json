@@ -15184,7 +15184,20 @@
     "gincanaHowHe2": "The corridor bars spin: jump when the tip arrives.",
     "gincanaHowHe3": "At the hub, wait for a blade to point at the exit and run along it.",
     "gincanaHowHe4": "The pier platforms slide side to side: move with the one under you.",
-    "gincanaHowHe5": "Rocks roll down: switch lanes early."
+    "gincanaHowHe5": "Rocks roll down: switch lanes early.",
+    "gincanaPhSerraria": "Moonlit Sawmill",
+    "gincanaEvSerraria": "Sawmill Race",
+    "gincanaPhSerrariaPitch": "The Forest's third race, at the woodcutters' sawmill: spiked logs rolling at you, the bridge of axes, swaying planks and the yard of big logs.",
+    "gincanaSecSe1": "Logs",
+    "gincanaSecSe2": "Axes",
+    "gincanaSecSe3": "Planks",
+    "gincanaSecSe4": "Big logs",
+    "gincanaSecSe5": "Climb",
+    "gincanaHowSe1": "The logs roll toward you: wait for the row of spikes to pass underneath and jump. Two of them leave a gap at the side.",
+    "gincanaHowSe2": "The axes sweep the bridge from side to side: run right after yours goes by.",
+    "gincanaHowSe3": "The planks sway and tip you toward the low side: stay in the middle and pick a lane.",
+    "gincanaHowSe4": "The big logs roll slower, with an axe in the gap between them: wait for the right moment.",
+    "gincanaHowSe5": "Logs roll down the ramp: switch lanes early."
   },
   "Sports": {
     "eyebrow": "Sports",

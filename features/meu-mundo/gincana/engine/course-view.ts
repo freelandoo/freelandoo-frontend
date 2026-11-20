@@ -40,6 +40,7 @@ import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./c
 import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
+import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serraria-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
@@ -94,6 +95,7 @@ export class CourseView {
   private crownMesh: Mesh | null = null
   /** Gincana 3: anéis do Rolo de Gelo (um nó por anel, gira em z). */
   private readonly drumNodes: { node: TransformNode; d: number; r: number }[] = []
+  private serraria: SerrariaView | null = null
   /** Gincana 3: Relógio da Praça — ladrilhos, símbolos [símbolo][ladrilho], o símbolo no mostrador e o ponteiro. */
   private readonly memTiles: InstancedMesh[] = []
   private readonly memSyms: InstancedMesh[][] = []
@@ -282,6 +284,10 @@ export class CourseView {
         portoesSwingGantry(st, glow, x0, x1, z, py)
         continue
       }
+      if (theme.id === "serraria") {
+        serrariaGantry(st, glow, x0, x1, z, py)
+        continue
+      }
       if (theme.deco === "forest") {
         // Floresta: dois troncos e um GALHO grosso de trave, com musgo, folhas e flores acesas penduradas
         const bark = (x: number, y: number, zz: number): RGB => {
@@ -463,8 +469,9 @@ export class CourseView {
     // ── pêndulos: haste e a bola/martelo/estalactite do tema ──
     for (const p of course.pendulums) {
       const pg = new SoftGeo()
-      if (theme.id === "portoes") {
-        portoesIcicle(pg, p.len, p.R)
+      if (theme.id === "portoes" || theme.id === "serraria") {
+        if (theme.id === "serraria") serrariaAxe(pg, p.len, p.R)
+        else portoesIcicle(pg, p.len, p.R)
         const m = pg.build("gincana-swing", scene, toy, false)
         m.position.set(p.x, p.py, p.z)
         m.rotationQuaternion = new Quaternion()
@@ -1227,6 +1234,7 @@ export class CourseView {
     if (theme.id === "altoforno") this.altoforno = new AltoFornoBelt(scene, toy, this.glowMat, course)
     if (theme.id === "moinhos") this.mills = new MoinhosMills(scene, toy, this.glowMat, course)
     if (theme.id === "helices") this.yard = new HelicesYard(scene, toy, this.glowMat)
+    if (course.logs.length || course.planks.length) this.serraria = new SerrariaView(scene, toy, this.glowMat, course)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
@@ -1573,7 +1581,7 @@ export class CourseView {
     if (this.theme.id === "portoes") portoesFloor(g, glow, p)
     if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
     if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) return
-    const millFloor = this.theme.id === "moinhos" && !dyn && moinhosFloor(g, p)
+    const millFloor = (this.theme.id === "moinhos" && !dyn && moinhosFloor(g, p)) || (this.theme.id === "serraria" && !dyn && serrariaFloor(g, p))
     if (this.theme.id === "helices" && dyn && isHelixBlade(p)) return helicesBlade(g, glow, p, this.bladeSeed++)
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraSlice(p)) return spinSlice(g, glow, p)
@@ -2020,6 +2028,7 @@ export class CourseView {
     this.altoforno?.update(tt)
     this.mills?.update(tt)
     this.yard?.update(tt)
+    this.serraria?.update(tt)
     for (const m of this.movers) {
       const sh = padShift(m.p, tt)
       m.mesh.position.set(m.p.x + sh.dx, 0, m.p.z + sh.dz)
@@ -2186,6 +2195,7 @@ export class CourseView {
     this.altoforno?.dispose()
     this.mills?.dispose()
     this.yard?.dispose()
+    this.serraria?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

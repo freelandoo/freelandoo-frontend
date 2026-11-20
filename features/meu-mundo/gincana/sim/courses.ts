@@ -449,6 +449,107 @@ function courseClareira(): Course {
   })
 }
 
+// ═══ serraria — Serraria da Lua (3ª fase da Floresta) ════════════════════════
+
+/**
+ * 20/11 (pedido do Alex, 11º vídeo de referência: tipo de prova "pista de troncos e machados"): a serraria dos
+ * lenhadores na Floresta da Lua, de noite. Toras deitadas ATRAVESSADAS na pista que rolam contra quem corre, com
+ * fileiras de cravos (`Log`; duas delas deixam um desvio pelo lado), a ponte estreita dos machados de lenhador
+ * (pêndulos que varrem a ponte), as tábuas que balançam de lado (`Plank`, duas filas desencontradas) e o
+ * pátio das toras grandes com um machado por cima, antes da subida.
+ */
+export const SERRARIA = {
+  /** toras do pátio: [x, z, meia largura, giro rad/s, fase dos cravos] */
+  logs: [
+    [0, 23, 7.6, 1.25, 0],
+    [-2.2, 32, 5.4, 1.5, 1.1],
+    [2.2, 41, 5.4, -1.35, 2.3],
+    [0, 50, 7.6, 1.6, 0.6],
+  ] as [number, number, number, number, number][],
+  logR: 1.15,
+  /** machados da ponte: z e fase */
+  axes: [
+    [70, 0],
+    [77.5, 1.4],
+    [85, 2.7],
+    [92.5, 0.8],
+  ] as [number, number][],
+  axeLen: 6.2,
+  /** tábuas: z dos centros (duas filas, x = ±2.6) */
+  planks: [111.2, 117.2, 123.2, 129.2, 135.2],
+  plankX: 2.6,
+  /** pátio das toras grandes: [z, giro] */
+  bigLogs: [
+    [157, 1.2],
+    [172, 1.4],
+  ] as [number, number][],
+  bigR: 1.3,
+} as const
+
+function courseSerraria(): Course {
+  const K = SERRARIA
+  const k = new CourseKit()
+  kitStart(k)
+  // ── 1. as toras com cravos ──
+  k.box(0, 37, 8.2, 21.9, 0, 1, 1)
+  for (const [x, z, hx, w, ph] of K.logs) k.log(x, z, DECK + 0.05, K.logR, hx, w, 2, 3.0, ph)
+  // ── 2. a ponte dos machados ──
+  k.box(0, 62.5, 3.6, 3.4, 5, 1, 2)
+  k.box(0, 82, 1.7, 16.1, 0, 1, 2)
+  for (const [z, ph] of K.axes) k.swing(0, z, DECK + 7.6, K.axeLen, 0.8, 1.0, 1.85, ph)
+  k.box(0, 102, 3.6, 3.9, 5, 1, 3)
+  // ── 3. as tábuas que balançam ──
+  K.planks.forEach((z, i) => {
+    k.plank(-K.plankX, z, 2.4, 2.9, 0.3, 1.35, i * 1.15)
+    k.plank(K.plankX, z, 2.4, 2.9, 0.3, 1.35, i * 1.15 + Math.PI)
+  })
+  // ── 4. o pátio das toras grandes, com um machado no vão entre elas ──
+  k.box(0, 160, 8.2, 21.9, 5, 1, 4)
+  for (const [z, w] of K.bigLogs) k.log(0, z, DECK + 0.05, K.bigR, 7.8, w, 2, 2.8, z * 0.3)
+  k.swing(0, (K.bigLogs[0][0] + K.bigLogs[1][0]) / 2, DECK + 7.6, K.axeLen, 0.8, 1.0, 1.6, 0.5)
+  // ── 5. a subida ──
+  const z0 = 182
+  const finishZ = kitFinish(k, z0, 1.15, 6.5, 1.1)
+  for (const [x, z] of [[0, 18], [6.6, 32], [-6.6, 41], [0, 62.5], [0, 102], [0, 144]] as [number, number][]) k.logo(x, z)
+  return k.done({
+    id: "serraria",
+    checkpoints: [
+      { x: 0, z: -3.5, y: DECK, w: 7 },
+      { x: 0, z: 62.5, y: DECK, w: 3 },
+      { x: 0, z: 102, y: DECK, w: 3 },
+      { x: 0, z: 144, y: DECK, w: 6 },
+    ],
+    finishZ,
+    finishY: DECK + 6,
+    sections: [15.1, 59.1, 98.1, 138.1, z0],
+    minFinish: 20,
+    route: (r) =>
+      routeOf((add) => {
+        add(0, 10)
+        add(0, 17)
+        add(0, 21)
+        add(0, 26)
+        // 2ª e 3ª toras: metade desvia pelo vão do lado, metade passa por cima
+        const s2 = r(1) < 0.5
+        const s3 = r(2) < 0.5
+        add(s2 ? 6.2 : -2.2, 29)
+        add(s2 ? 6.2 : -2.2, 35)
+        add(s3 ? -6.2 : 2.2, 38)
+        add(s3 ? -6.2 : 2.2, 44)
+        add(0, 47)
+        add(0, 53)
+        add(0, 57)
+        for (let z = 60; z <= 104; z += 2) add(0, z)
+        const c = r(3) < 0.5 ? -1 : 1
+        add(c * K.plankX, 107)
+        for (let z = 109; z <= 137; z += 2) add(c * K.plankX, z)
+        add(0, 141)
+        for (let z = 145; z <= 180; z += 2.5) add(0, z)
+        routeFinish(add, z0, finishZ)
+      }),
+  })
+}
+
 // ═══ canion — Cânion ═════════════════════════════════════════════════════════
 
 /**
@@ -1311,6 +1412,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   cidade: courseCidade(),
   floresta: courseFloresta(),
   clareira: courseClareira(),
+  serraria: courseSerraria(),
   canion: courseCanion(),
   moinhos: courseMoinhos(),
   orbital: courseOrbital(),
