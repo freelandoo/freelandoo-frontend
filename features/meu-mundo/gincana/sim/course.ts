@@ -497,6 +497,8 @@ export interface Walls {
   z1: number
   y: number
   every: number
+  /** 20/11: o intervalo cai de `every` até `every1` ao longo de `ramp` s (as ondas vêm cada vez mais seguidas). */
+  every1?: number
   t0: number
   v0: number
   v1: number
@@ -1157,18 +1159,46 @@ export function doorsOpen(c: Course, seed: number): Uint8Array {
   return out
 }
 
+/** Intervalo entre ondas no tempo τ (desde t0): de `every` a `every1` em `ramp` s. */
+function waveEvery(W: Walls, tau: number) {
+  const e1 = W.every1 ?? W.every
+  return W.every + (e1 - W.every) * Math.max(0, Math.min(1, tau / W.ramp))
+}
+/** Quantas ondas já saíram no tempo τ (contínuo; a onda i sai quando passa de i). */
+function waveIndex(W: Walls, tau: number) {
+  if (tau <= 0) return tau / W.every
+  const e0 = W.every
+  const e1 = W.every1 ?? e0
+  if (e1 === e0) return tau / e0
+  const a = (e1 - e0) / W.ramp
+  const u = Math.min(tau, W.ramp)
+  const n = Math.log(1 + (a * u) / e0) / a
+  return tau > W.ramp ? n + (tau - W.ramp) / e1 : n
+}
+/** Tempo (desde t0) em que sai a onda i (inverso de waveIndex). */
+function waveTime(W: Walls, i: number) {
+  const e0 = W.every
+  const e1 = W.every1 ?? e0
+  if (e1 === e0) return i * e0
+  const a = (e1 - e0) / W.ramp
+  const nR = Math.log(1 + (a * W.ramp) / e0) / a
+  if (i <= nR) return (e0 * (Math.exp(a * i) - 1)) / a
+  return W.ramp + (i - nR) * e1
+}
+
 /** Ondas de parede na arena no tempo t (Paredes de Brasa); `out` é reaproveitado. */
 export function wallsAt(c: Course, seed: number, t: number, out: WallWave[]) {
   out.length = 0
   const W = c.walls
   if (!W || t < W.t0) return out
   const span = (W.z0 - W.z1) / W.v0
-  const i1 = Math.floor((t - W.t0) / W.every)
-  const i0 = Math.max(0, Math.floor((t - W.t0 - span) / W.every))
+  const i1 = Math.floor(waveIndex(W, t - W.t0))
+  const i0 = Math.max(0, Math.floor(waveIndex(W, t - W.t0 - span)) - 1)
   const n = Math.round((2 * W.hw) / W.seg)
   for (let i = i0; i <= i1; i++) {
     // depois de 40 s as ímpares chegam logo atrás da anterior (pares de paredes)
-    const T = W.t0 + i * W.every - (i % 2 && W.t0 + i * W.every > 40 ? W.every * 0.45 : 0)
+    const Ti = W.t0 + waveTime(W, i)
+    const T = Ti - (i % 2 && Ti > 40 ? waveEvery(W, Ti - W.t0) * 0.45 : 0)
     const v = W.v0 + (W.v1 - W.v0) * Math.min(1, T / W.ramp)
     const z = W.z0 - v * (t - T)
     if (z < W.z1 || z > W.z0) continue

@@ -877,7 +877,7 @@ export class CourseView {
         this.wallBases.push(base)
       }
       // ondas ao mesmo tempo na arena: o caminho inteiro na velocidade mais lenta, mais uma
-      const waves = Math.ceil((Wl.z0 - Wl.z1) / Wl.v0 / (Wl.every * 0.55)) + 1
+      const waves = Math.ceil((Wl.z0 - Wl.z1) / Wl.v0 / (Math.min(Wl.every, Wl.every1 ?? Wl.every) * 0.55)) + 1
       for (let k = 0; k < waves * n; k++) {
         const m = segBase.createInstance(`gincana-wall-${k}`)
         m.isPickable = false

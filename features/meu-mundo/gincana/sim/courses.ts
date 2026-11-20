@@ -1347,7 +1347,9 @@ function courseForja(): Course {
     mode: "survive",
     qualify: 0.5,
     limit: 100,
-    walls: { hw: 11, z0: 13, z1: -14, y: DECK, every: 3.2, t0: 2, v0: 3.4, v1: 11, ramp: 60, seg: 2.2, tall: 3.2, low: 0.9 },
+    // 20/11 (o Alex: "aumente a velocidade das paredes e faça vir com mais frequência"): o intervalo cai de 3,2 s
+    // para 1,9 s e a velocidade sobe de 3,6 a 13 m/s, os dois em 45 s (antes: 3,2 s fixo, 3,4 → 11 em 60 s)
+    walls: { hw: 11, z0: 13, z1: -14, y: DECK, every: 3.2, every1: 1.9, t0: 2, v0: 3.6, v1: 13, ramp: 45, seg: 2.2, tall: 3.2, low: 0.9 },
     checkpoints: [{ x: 0, z: -2, y: DECK, w: 6 }],
     finishZ: 40,
     finishY: 90,
