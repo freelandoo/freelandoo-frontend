@@ -297,9 +297,11 @@ export class CourseView {
       const py = row[0].py
       // Clareira: o pórtico fica fora da vitória-régia que gira (r 9) e da rampa
       const span = theme.id === "clareira" ? 10.5 : theme.id === "tanque" ? 10.6 : 5.5
-      const x0 = Math.min(...row.map((p) => p.x)) - span
-      const x1 = Math.max(...row.map((p) => p.x)) + span
-      if (theme.id === "portoes") {
+      // Aros (20/11): a viga atravessa a ladeira inteira (14 m) e os pilares ficam fora da pista
+      const x0 = theme.id === "aros" ? -8.2 : Math.min(...row.map((p) => p.x)) - span
+      const x1 = theme.id === "aros" ? 8.2 : Math.max(...row.map((p) => p.x)) + span
+      if (theme.id === "portoes" || theme.id === "aros") {
+        // Aros (20/11): as estalactites da 2ª descida usam o pórtico de gelo dos Portões (mesmo Domínio)
         portoesSwingGantry(st, glow, x0, x1, z, py)
         continue
       }
@@ -505,7 +507,7 @@ export class CourseView {
         this.swings.push(m)
         continue
       }
-      if (theme.id === "portoes" || theme.id === "serraria" || theme.id === "tanque") {
+      if (theme.id === "portoes" || theme.id === "aros" || theme.id === "serraria" || theme.id === "tanque") {
         if (theme.id === "serraria") serrariaAxe(pg, p.len, p.R)
         else if (theme.id === "tanque") tanqueHook(pg, p.len, p.R)
         else portoesIcicle(pg, p.len, p.R)
