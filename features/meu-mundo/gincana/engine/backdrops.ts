@@ -15,6 +15,7 @@ import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
 import { tallTrunk } from "./backdrop-floresta"
+import { orbitalField } from "./backdrop-orbital"
 
 /** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada).
  * `finishZ`/`pads` (20/11): o fundo vai até o fim da prova (percurso dobrado) e sabe a altura do chão (`deckY`). */
@@ -346,39 +347,8 @@ function orbital(lit: SoftGeo, glow: SoftGeo, n: number) {
   lit.sphere(170, at(170, 40, 420), stripesY([0.42, 0.3, 0.7], [0.66, 0.42, 0.78], 18, 0.1), 20)
   glow.torus(300, 4, at(170, 40, 420, 0.3, 0.35, 0.2), [0.5, 0.8, 1], 48)
   glow.sphere(30, at(-160, 90, 260), [1, 0.86, 0.6], 12)
-  // torres com faixas de neon
-  const count = Math.round(20 * n)
-  for (let i = 0; i < count; i++) {
-    const x = side(i, 30 + rnd(i) * 50)
-    const z = Z0 + (i / count) * (Z1 - Z0) + rnd(i, 1) * 8
-    const w = 5 + rnd(i, 2) * 7
-    const h = 18 + rnd(i, 3) * 40
-    const y0 = -10 - rnd(i, 4) * 10
-    lit.roundBox(w, h, w, 0.6, at(x, y0 + h / 2, z, rnd(i, 5)), [0.82, 0.86, 0.94], 4)
-    const neon: RGB = i % 3 === 0 ? [1, 0.3, 0.75] : i % 3 === 1 ? [0.3, 0.9, 1] : [0.7, 0.5, 1]
-    for (let k = 1; k <= 3; k++) glow.roundBox(w + 0.3, 0.35, w + 0.3, 0.1, at(x, y0 + (h * k) / 4, z, rnd(i, 5)), neon, 2)
-    glow.sphere(1.2, at(x, y0 + h + 1, z), neon, 6)
-  }
-  // ilhas-cidade flutuando: disco com torres, a ponta embaixo e o anel aceso (referência da Orbital)
-  for (let i = 0; i < Math.round(7 * n); i++) {
-    const x = side(i + 1, 34 + rnd(i, 120) * 40)
-    const z = Z0 + 30 + i * 45
-    const y = 6 + rnd(i, 121) * 22
-    const r = 7 + rnd(i, 122) * 5
-    lit.cylinder(r * 2, 1.6, at(x, y, z), [0.36, 0.34, 0.5], 24)
-    lit.cylinder(0.3, r * 1.6, at(x, y - 0.8 - r * 0.8, z), [0.26, 0.24, 0.38], 12, r * 1.7)
-    glow.torus(r * 2 + 0.4, 0.3, at(x, y - 0.3, z), i % 2 ? [1, 0.35, 0.8] : [0.35, 0.9, 1], 18)
-    for (let k = 0; k < 5; k++) {
-      const a = k * 1.3 + i
-      const tr = r * (0.2 + rnd(i, 123 + k) * 0.5)
-      const th = 4 + rnd(i, 130 + k) * 12
-      const tx = x + Math.cos(a) * tr
-      const tz = z + Math.sin(a) * tr
-      lit.roundBox(1.8, th, 1.8, 0.3, at(tx, y + 0.8 + th / 2, tz), [0.78, 0.8, 0.92], 3)
-      glow.roundBox(1.9, 0.25, 1.9, 0.08, at(tx, y + 0.8 + th * 0.7, tz), k % 2 ? [1, 0.35, 0.8] : [0.35, 0.9, 1], 2)
-      lit.cylinder(0.05, 2.2, at(tx, y + 0.8 + th + 1.1, tz), [0.78, 0.8, 0.92], 5, 0.9)
-    }
-  }
+  // ilhas, torres e o arranjo em três camadas (20/11, pela miniatura): backdrop-orbital.ts
+  orbitalField(lit, glow, n)
   // anéis de tráfego (aros acesos) e discos flutuantes
   for (let i = 0; i < Math.round(8 * n); i++) {
     glow.torus(10 + rnd(i, 50) * 8, 0.4, at(side(i, 22 + rnd(i, 51) * 20), 12 + rnd(i, 52) * 18, Z0 + 20 + i * 38, 0, Math.PI / 2, 0), [0.4, 0.9, 1], 24)

@@ -39,6 +39,7 @@ import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, i
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
 import { CrostaPlates, crostaGantry, crostaHammer } from "./crosta-view"
 import { ArosHoops, arosPillar, arosShroomCap, arosShroomStalk, arosSlide, arosWall } from "./aros-view"
+import { orbitalGem, orbitalRim } from "./backdrop-orbital"
 import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumHoled, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
@@ -285,7 +286,8 @@ export class CourseView {
           glow.box(0.08, h - 1.4, 0.08, at(q.x + Math.cos(a) * q.r * 0.98, q.y0 + h / 2, q.z + Math.sin(a) * q.r * 0.98), [1, 0.3, 0.8])
         }
         st.cylinder(q.r * 2.2, 0.3, at(q.x, q.y1 + 0.15, q.z), darker(STEEL, 0.8), 6)
-        glow.cylinder(q.r * 1.3, 0.5, at(q.x, q.y1 + 0.5, q.z), [1, 0.35, 0.82], 6, q.r * 0.6)
+        // 20/11 (miniatura): a gema facetada no topo
+        orbitalGem(st, glow, q.x, q.y1 + 0.3, q.z, q.r)
       } else if (q.r > 0.7) {
         // pilar do carrossel: bala listrada com topo redondo
         st.cylinder(q.r * 2, h, at(q.x, q.y0 + h / 2, q.z), stripesY(YELLOW, ORANGE, 0.45), 24)
@@ -484,6 +486,8 @@ export class CourseView {
         const high = (theme.deco === "orbital" || city) && s.y - floorY > 1
         bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city && !high ? stripesY(ORANGE, WHITE, 0.55, 0) : high ? stripesY([1, 0.25, 0.75], [1, 0.9, 1], 0.55, 0.5) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
         bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
+        // Orbital (20/11, miniatura): colares escuros ao longo do tubo
+        if (theme.deco === "orbital") for (let zc = -len / 2 + 1; zc < len / 2 - 0.5; zc += 1.8) if (Math.abs(off + zc) > 1.4) bg.torus((s.r + 0.08) * 2, 0.09, at(0, 0, off + zc, 0, Math.PI / 2), [0.14, 0.1, 0.22], 14)
       }
       if (!city && theme.deco !== "forest") {
         // v2: o eixo é uma máquina (tambor com faixa de perigo e tampa) e cada ponta da barra tem um batente
@@ -1745,8 +1749,10 @@ export class CourseView {
         }
       }
       // boia de borda: gomos de duas cores (inflável de programa de TV) e a faixa de neon logo abaixo
+      // (Orbital, 20/11 pela miniatura: aro de aço com filete dourado e lâmpadas)
       const segs = Math.max(12, Math.round(p.r * 3) * 2)
-      g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), (x, _y, z) => (Math.floor(((Math.atan2(z, x) / (Math.PI * 2)) + 1) * segs) % 2 ? rim : mix(rim, C[7], 0.55)), 48)
+      if (d0 === "orbital" && p.r >= 5) orbitalRim(g, glow, p.x, p.y, p.z, p.r)
+      else g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), (x, _y, z) => (Math.floor(((Math.atan2(z, x) / (Math.PI * 2)) + 1) * segs) % 2 ? rim : mix(rim, C[7], 0.55)), 48)
       glow.torus(p.r * 2 + 0.66, 0.18, at(p.x, p.y - 0.16, p.z), this.neon, 24)
       g.cylinder(p.r * 1.84, p.d - 0.4, at(p.x, p.y - 0.4 - (p.d - 0.4) / 2, p.z), this.skirt(body), 32, p.r * 1.9)
       if (!dyn) {
