@@ -19,7 +19,7 @@
 
 import type { SoftGeo, RGB } from "./shapes"
 import { at, mix } from "./shapes"
-import { Z0, Z1, rnd, side } from "./backdrop-base"
+import { Z0, Z1, deckY, rnd, side } from "./backdrop-base"
 
 const DEEP: RGB = [0.1, 0.28, 0.56]
 const CYAN: RGB = [0.48, 0.8, 0.98]
@@ -119,12 +119,14 @@ export function iceSea(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
   // 2. penhascos dos dois lados: uma fila perto (x ≈ 46–60, 14–30 m) e uma ao longe mais alta (x ≈ 110–150,
   // 30–60 m), com vãos de mar entre os blocos; frente virada para a prova
   for (const s of [-1, 1]) {
-    for (const [x0, xv, h0, hv, step, k0] of [[46, 14, 14, 16, 46, 0], [110, 40, 30, 30, 70, 100]] as [number, number, number, number, number, number][]) {
+    // aros (descida que larga a ~39 m): a fila de perto chega a x ≈ 26 e os penhascos sobem com o chão (deckY)
+    const aros = phase === "aros"
+    for (const [x0, xv, h0, hv, step, k0] of [[aros ? 26 : 46, 14, 14, 16, 46, 0], [110, 40, 30, 30, 70, 100]] as [number, number, number, number, number, number][]) {
       if (k0 && n < 1 && s > 0) continue
       for (let z = Z0 - 30 + (s > 0 ? step / 2 : 0), i = 0; z < Z1 + 60; z += step * (0.8 + rnd(i, k0 + s + 7) * 0.5), i++) {
         const k = i * 2 + (s > 0 ? 1 : 0) + k0
-        const w = step * (0.45 + rnd(k, 1) * 0.35)
-        glacierCliff(lit, glow, s * (x0 + rnd(k, 2) * xv), z, w, h0 + rnd(k, 3) * hv, 10 + rnd(k, 4) * 10, s > 0 ? Math.PI / 2 : -Math.PI / 2, k)
+        const w = step * (0.45 + rnd(k, 1) * 0.35) * (aros ? 1.5 : 1)
+        glacierCliff(lit, glow, s * (x0 + rnd(k, 2) * xv), z, w, h0 + rnd(k, 3) * hv + (aros ? deckY(z) : 0), 10 + rnd(k, 4) * 10, s > 0 ? Math.PI / 2 : -Math.PI / 2, k)
       }
     }
   }

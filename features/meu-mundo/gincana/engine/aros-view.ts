@@ -52,20 +52,22 @@ function crystalHoop(g: SoftGeo, gl: SoftGeo, R: number, star: boolean) {
   const T = star ? 0.36 : 0.3
   // o anel: facetado (poucos lados), fundo embaixo → claro em cima, quina clara por fora
   const F = star ? 20 : 16
-  g.torus(R * 2, T, at(0, 0, 0, 0, Math.PI / 2), (x, y, z) => {
+  // (miniatura 20/11: o anel é cristal aceso — vai na malha que brilha, em degradê azul fundo → ciano)
+  gl.torus(R * 2, T, at(0, 0, 0, 0, Math.PI / 2), (x, y, z) => {
     const up = -z / R
     const out = Math.hypot(x, z) > R
     // facetas: um gomo sim, outro não, mais claro; a face de cima do tubo pega luz
     const band = Math.floor(((Math.atan2(z, x) + Math.PI) / (Math.PI * 2)) * F) % 2
-    const base = mix(CRYS, ICE, 0.35 + up * 0.3 + band * 0.18)
-    return mix(base, ICE_L, (out ? 0.3 : 0) + (y > T * 0.25 ? 0.3 : 0))
+    const base = mix([0.1, 0.32, 0.7], [0.45, 0.82, 1], 0.35 + up * 0.3 + band * 0.25)
+    return mix(base, [0.85, 0.97, 1], (out ? 0.15 : 0) + (y > T * 0.25 ? 0.25 : 0))
   }, F)
   // um segundo anel mais fino por fora, deslocado: o cristal tem "camadas"
-  g.torus(R * 2 + T * 0.9, T * 0.32, at(0, 0, 0.05, 0, Math.PI / 2), (_x, _y, z) => mix(ICE, ICE_L, 0.5 - z / R * 0.3), F)
+  // (miniatura 20/11: o anel de fora é luz — cristal aceso, não gelo à sombra)
+  gl.torus(R * 2 + T * 0.9, T * 0.32, at(0, 0, 0.05, 0, Math.PI / 2), (_x, _y, z) => mix([0.3, 0.72, 1], [0.8, 0.97, 1], 0.5 - (z / R) * 0.4), F)
   // quina clara nas duas faces (pega a luz)
   for (const fz of [-1, 1]) g.torus(R * 2 + T * 0.35, 0.05, at(0, 0, fz * T * 0.42, 0, Math.PI / 2), ICE_L, F)
   // o filete aceso por dentro: é o "passe por aqui"
-  gl.torus(R * 2 - T * 1.15, 0.07, at(0, 0, 0, 0, Math.PI / 2), COLD, 28)
+  gl.torus(R * 2 - T * 1.15, 0.13, at(0, 0, 0, 0, Math.PI / 2), COLD, 28)
   // geada: lascas claras presas no anel
   for (let k = 0; k < (star ? 14 : 9); k++) {
     const a = n01(k, R, 1) * Math.PI * 2
@@ -81,7 +83,8 @@ function crystalHoop(g: SoftGeo, gl: SoftGeo, R: number, star: boolean) {
     const L = down ? 0.32 : k % 2 ? 0.48 : 0.95
     const r0 = R + T * 0.35
     const w = k % 2 ? 0.2 : 0.3
-    g.cylinder(w, L, at(Math.cos(a) * (r0 + L / 2), Math.sin(a) * (r0 + L / 2), 0, 0, 0, a - Math.PI / 2), (_x, y) => (y > L * 0.2 ? ICE_L : mix(ICE, ICE_L, 0.25)), 5, 0)
+    // os longos são cristal aceso (azul no pé → branco na ponta); os curtos, gelo
+    ;(k % 2 || down ? g : gl).cylinder(w, L, at(Math.cos(a) * (r0 + L / 2), Math.sin(a) * (r0 + L / 2), 0, 0, 0, a - Math.PI / 2), (_x, y) => (k % 2 || down ? (y > L * 0.2 ? ICE_L : mix(ICE, ICE_L, 0.25)) : mix([0.25, 0.62, 1], [0.9, 0.98, 1], y / L + 0.5)), 5, 0)
     // a ponta dos longos acende (luz fria; a do topo é aurora)
     if (!(k % 2) && !down) gl.sphere(0.14, at(Math.cos(a) * (r0 + L + 0.02), Math.sin(a) * (r0 + L + 0.02), 0), k === 0 ? AURORA : COLD, 6)
   }
