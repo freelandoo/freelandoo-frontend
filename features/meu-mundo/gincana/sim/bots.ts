@@ -973,8 +973,10 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     }
     if (near && botRand(br.seed, br.slot * 97 + i, Math.floor(t / 2.86)) < br.skill + 0.05) go = 0
   }
-  // luva prestes a socar na faixa por onde vai passar: espera
-  for (let i = 0; i < C.gloves.length; i++) {
+  // luva prestes a socar na faixa por onde vai passar: espera (em cima de esteira de lado não dá para esperar: ela leva
+  // para fora — Feira, 20/11)
+  const onSideBelt = b.ground && b.pad >= 0 && C.pads[b.pad].bx !== 0
+  for (let i = 0; i < C.gloves.length && !onSideBelt; i++) {
     const g = C.gloves[i]
     const ahead = g.z - b.z
     if (ahead < 1.3 || ahead > 3.4) continue

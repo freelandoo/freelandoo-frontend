@@ -2097,6 +2097,17 @@ export const FEIRA = {
   punches: [[9.2, 145, 0], [-9.2, 148.5, 1.4]] as [number, number, number][],
   punchReach: 7.4,
   punchPeriod: 2.8,
+  /**
+   * 20/11 (pedido do Alex, no corredor de esteiras de lado: "mais luvas de boxe, na frente de cada esteira, e cada
+   * esteira tem que ser mais forte ainda, e essa plataforma vira uma gangorra sensível… tem que equilibrar").
+   * `beltF` = força das esteiras de lado (× GINCANA.belt, antes 1); luva por esteira: alcance e período.
+   */
+  beltF: 1.2,
+  beltPunch: { reach: 6.8, period: 3.0 },
+  /** o patamar antes do corredor: balança que tomba de lado (mola fraca = sensível) */
+  tilt: { max: 0.3, k: 0.28, slip: 9 },
+  /** "bolas caindo e quicando" no chão dos martelos */
+  flat: { every: 1.25, v: 6, hop: 1.5, hopT: 0.6, bounce: 2.4 },
 } as const
 
 function courseFeira(): Course {
@@ -2115,8 +2126,10 @@ function courseFeira(): Course {
   k.pads[back].bz = -GINCANA.belt
   FEIRA.press.forEach(([z, w], i) => k.pusher(0, z, 1.6, 0.9, 2.2, FEIRA.pressAx, 0, w, i * 1.3, Y))
   k.box(0, 82, 7, 4, 6, 7, 2, 0, 1.4, Y)
-  // ── 3. martelos ──
-  k.box(0, 99, 6, 13, 6, 7, 3, 0, 1.4, Y)
+  // ── 3. martelos ── (20/11: com bolas caindo do alto e quicando — balls.flat)
+  const hamFloor = k.box(0, 99, 6, 13, 6, 7, 3, 0, 1.4, Y)
+  k.pads[hamFloor].bb = 1
+  if (k.balls) k.balls.flat = { ...FEIRA.flat }
   const ham = (x: number, z: number, ph: number) => k.swing(x, z, Y + 9, 7.4, FEIRA.ham.R, FEIRA.ham.amp, 2.2, ph)
   ham(-3, 92, 0)
   ham(3, 92, 2.4)
@@ -2126,11 +2139,18 @@ function courseFeira(): Course {
   ham(3, 106, 0.6)
   // 20/11: um martelo no meio da fileira do meio (em todas, ninguém passava: 129 pancadas)
   for (const [z, ph] of FEIRA.hamMid) ham(0, z, ph)
-  k.box(0, 115, 7, 3, 6, 7, 3, 0, 1.4, Y)
-  // ── 4. corredor de esteiras de lado ──
+  // 20/11: o patamar é uma balança que tomba de lado com o peso — equilibre
+  k.saw(0, 115, Y, 7, 3, 1, FEIRA.tilt.max, 0, FEIRA.tilt.k)
+  k.saws[k.saws.length - 1].slip = FEIRA.tilt.slip
+  // ── 4. corredor de esteiras de lado ── (20/11: mais fortes, e uma luva na frente de cada uma, do lado de onde
+  // a esteira vem: o soco joga para o lado em que ela leva)
   for (let i = 0; i < 6; i++) {
     const p = k.box(0, 120 + i * 4, 6, 2, i % 2 ? 4 : 5, 0, 4, 0, 1.4, Y)
-    k.pads[p].bx = (i % 2 ? -1 : 1) * GINCANA.belt
+    const dir = i % 2 ? -1 : 1
+    k.pads[p].bx = dir * GINCANA.belt * FEIRA.beltF
+    const x0 = -dir * 7.4
+    k.post(x0, 120 + i * 4, 0.45, -1, Y + 1.9, 2)
+    k.glove(x0, 120 + i * 4, Y + 1, dir, FEIRA.beltPunch.reach, 1.0, FEIRA.beltPunch.period, i * 0.9)
   }
   k.box(0, 146, 7, 4, 6, 7, 4, 0, 1.4, Y)
   // 20/11: socos de lado no patamar depois do corredor

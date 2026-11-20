@@ -139,6 +139,8 @@ export interface Pad {
   gph: number
   /** Graxa: multiplica a velocidade da corrida de quem pisa (1 = normal). */
   sl: number
+  /** Chão com bolas quicando (Course.balls.flat). */
+  bb?: 1
 }
 
 /** Coluna (pilar, frade, poste da luva, cogumelo): empurra de lado e dá para subir; `b` > 0 = lança para cima (m/s) quem pousa. */
@@ -362,6 +364,11 @@ export interface Balls {
   bounce?: number
   /** nas esteiras sem canhão a bola sai a cada `every × allEvery` s */
   allEvery?: number
+  /**
+   * Feira, 20/11 (pedido do Alex: "aqui tem que ter bolas caindo também e quicando"): chão marcado com `Pad.bb`
+   * também tem bola — caindo do alto, quicando e mudando de rumo — com estes números próprios.
+   */
+  flat?: { every: number; v: number; hop: number; hopT: number; bounce: number }
 }
 
 /** Andar da Fábrica: centro e altura do chão, raio do miolo, engrenagens para subir e o pulo. */
@@ -386,6 +393,8 @@ export interface BallBelt {
   hx: number
   /** onde a bola some */
   end: number
+  /** chão com bola (Pad.bb): usa `balls.flat` */
+  flat?: boolean
 }
 const BELTS = new WeakMap<Course, BallBelt[]>()
 export function ballBelts(c: Course): BallBelt[] {
@@ -404,6 +413,7 @@ export function ballBelts(c: Course): BallBelt[] {
         L.push({ x: p.x, z0, z1: p.z + p.hz, y0: p.y, y1: p.y2, hx: p.hx, end: z0 })
       }
     }
+    if (B.flat) for (const p of c.pads) if (p.bb) L.push({ x: p.x, z0: p.z - p.hz, z1: p.z + p.hz, y0: p.y, y1: p.y2, hx: p.hx, end: p.z - p.hz, flat: true })
   }
   BELTS.set(c, L)
   return L
@@ -1205,8 +1215,12 @@ export function ballsAt(c: Course, seed: number, t: number, out: number[]) {
     const R = belts[j]
     // cada esteira com o seu sorteio (a 1ª com o da semente, como antes)
     const sd = j ? (seed ^ Math.imul(j, 0x51ed27)) | 0 : seed
-    const every = j ? B.every * (B.allEvery ?? 1) : B.every
-    const span = (R.z1 - R.end) / B.v
+    const FL = R.flat ? B.flat! : null
+    const every = FL ? FL.every : j ? B.every * (B.allEvery ?? 1) : B.every
+    const bv = FL ? FL.v : B.v
+    const hop = FL ? FL.hop : B.hop
+    const bounce = FL ? FL.bounce : B.bounce
+    const span = (R.z1 - R.end) / bv
     const i1 = Math.floor(t / every)
     const i0 = Math.max(0, Math.floor((t - span) / every))
     const L = R.hx - B.R - 0.15
@@ -1214,24 +1228,24 @@ export function ballsAt(c: Course, seed: number, t: number, out: number[]) {
       const lane = ballLane(c, sd, i)
       if (lane < 0) continue
       const age = t - i * every
-      const z = R.z1 - B.v * age
+      const z = R.z1 - bv * age
       if (z < R.end || z > R.z1) continue
       // depois do pé da rampa a bola cai na água
       const u0 = Math.max(0, Math.min(1, (z - R.z0) / (R.z1 - R.z0)))
-      let y = z >= R.z0 ? R.y0 + (R.y1 - R.y0) * u0 + B.R : R.y0 + B.R - ((R.z0 - z) / B.v) ** 2 * 12
+      let y = z >= R.z0 ? R.y0 + (R.y1 - R.y0) * u0 + B.R : R.y0 + B.R - ((R.z0 - z) / bv) ** 2 * 12
       let x = R.x + Math.max(-L, Math.min(L, B.lanes[lane]))
-      if (B.hop) {
+      if (hop) {
         // quique: arco de parábola, fase própria de cada bola
-        const hopT = B.hopT ?? 0.6
+        const hopT = (FL ? FL.hopT : B.hopT) ?? 0.6
         const s0 = (courseHash(sd, i + 7) % 100) / 100
         const s1 = s0 + age / hopT
         const u = s1 % 1
-        if (z >= R.z0) y += B.hop * 4 * u * (1 - u)
-        if (B.bounce) {
+        if (z >= R.z0) y += hop * 4 * u * (1 - u)
+        if (bounce) {
           // a cada quique um rumo novo de lado; bate na borda e volta (vaivém entre −L e L)
           let off = 0
           for (let q = Math.floor(s0); q <= Math.floor(s1); q++) {
-            const v = B.bounce * ((courseHash(sd ^ 0x3c6ef372, i * 61 + q) % 1001) / 500 - 1)
+            const v = bounce * ((courseHash(sd ^ 0x3c6ef372, i * 61 + q) % 1001) / 500 - 1)
             off += v * (Math.min(s1, q + 1) - Math.max(s0, q)) * hopT
           }
           const m = (((x - R.x + L + off) % (4 * L)) + 4 * L) % (4 * L)
