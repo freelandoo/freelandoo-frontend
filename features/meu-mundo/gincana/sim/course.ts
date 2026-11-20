@@ -724,6 +724,11 @@ export interface Course {
   memory: Memory | null
   /** Gincana 3 (Coroa da Torre): a linha fica acima do chão — só cruza quem pula (pegar a coroa). */
   crown: boolean
+  /**
+   * Portões de Gelo, 20/11 (pedido do Alex: "sempre só uma quebra da fila e não é tão fácil, tem que bater umas 3
+   * vezes"): quantas BATIDAS (chegar correndo, > 3 m/s) a porta de verdade aguenta antes de quebrar. 1 = abre ao encostar.
+   */
+  doorHits: number
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -907,6 +912,7 @@ export class CourseKit {
     walls?: Walls
     memory?: Memory
     crown?: boolean
+    doorHits?: number
   }): Course {
     if ((o.mode ?? "race") === "race") this.faster(GINCANA.tempo)
     return {
@@ -925,6 +931,7 @@ export class CourseKit {
       saws: this.saws,
       memory: o.memory ?? null,
       crown: o.crown ?? false,
+      doorHits: o.doorHits ?? 1,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,

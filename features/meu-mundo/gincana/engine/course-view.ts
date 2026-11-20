@@ -2213,7 +2213,7 @@ export class CourseView {
       this.pusherMeshes[i].position.x = P.x
       this.pusherMeshes[i].position.z = P.z
     }
-    this.portoes?.update(t, clock, world.doors)
+    this.portoes?.update(t, clock, world.doors, world.doorHp)
     for (let i = 0; i < this.doorMeshes.length; i++) {
       const m = this.doorMeshes[i]
       const s = world.doors[i]

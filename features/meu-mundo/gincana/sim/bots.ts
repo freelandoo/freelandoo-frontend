@@ -39,6 +39,8 @@ export interface BotBrain {
   /** Porta escolhida (−1 = nenhuma) e as falsas que já descobriu. */
   door: number
   bad: Set<number>
+  /** Porta que aguenta batidas: recuando para pegar embalo. */
+  ram?: boolean
   /** Ladrilho escolhido (−1 = nenhum). */
   tile: number
   /** Crosta: a placa do caminho escondido escolhida (−1 = nenhuma). */
@@ -790,6 +792,13 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
         if (dz - b.z < 0.9 && Math.abs(b.x - d.x) < d.hw && !w.open[br.door]) {
           br.bad.add(br.door)
           br.door = pickDoor(br, b, w, row)
+        } else if (C.doorHits > 1 && w.open[br.door] && w.doors[br.door] < 0) {
+          // a de verdade ainda inteira: encostou, recua uns 2 m e vem correndo de novo
+          if (dz - b.z < 0.8 && Math.abs(b.x - d.x) < d.hw) br.ram = true
+          if (br.ram) {
+            tz = d.z - 2.6
+            if (d.z - b.z > 2.1) br.ram = false
+          }
         }
       }
       break

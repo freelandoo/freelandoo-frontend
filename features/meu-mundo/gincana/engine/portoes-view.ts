@@ -381,7 +381,7 @@ export function portoesFrames(st: SoftGeo, glow: SoftGeo, course: Course) {
  */
 export class PortoesDoors {
   private readonly bases: Mesh[] = []
-  private readonly items: { d: Door; door: InstancedMesh; lit: InstancedMesh; sx: number; shake: number; broke: boolean }[] = []
+  private readonly items: { d: Door; door: InstancedMesh; lit: InstancedMesh; sx: number; shake: number; broke: boolean; hp: number }[] = []
   /** cacos (um só molde, instâncias reaproveitadas) */
   private readonly shards: { m: InstancedMesh; life: number; x: number; y: number; z: number; vx: number; vy: number; vz: number; rx: number; ry: number; s: number }[] = []
   private nextShard = 0
@@ -412,7 +412,7 @@ export class PortoesDoors {
         m.position.set(d.x, DECK, d.z)
         m.scaling.x = sx
       }
-      this.items.push({ d, door, lit, sx, shake: -9, broke: false })
+      this.items.push({ d, door, lit, sx, shake: -9, broke: false, hp: 0 })
     }
     // ── 3. o caco: lasca de 5 lados pontuda (clara na ponta), 120 no total
     const sg = new SoftGeo()
@@ -454,7 +454,7 @@ export class PortoesDoors {
   }
 
   /** `t` = relógio da corrida (o que `world.doors` guarda); `clock` = relógio da tela. */
-  update(t: number, clock: number, doors: ArrayLike<number>) {
+  update(t: number, clock: number, doors: ArrayLike<number>, hp?: ArrayLike<number>) {
     const dt = this.lastClock < 0 ? 0 : Math.min(0.05, Math.max(0, clock - this.lastClock))
     this.lastClock = clock
     for (let i = 0; i < this.items.length; i++) {
@@ -476,6 +476,13 @@ export class PortoesDoors {
           it.shake = clock
           this.burst(it.d, 4, false, i * 3.1 + clock)
         }
+        // a de verdade levou mais uma batida (aguenta algumas): treme e solta lascas
+        const h = hp ? hp[i] : 0
+        if (h > it.hp) {
+          it.shake = clock
+          this.burst(it.d, 3 + h * 2, false, i * 5.7 + clock)
+        }
+        it.hp = h
         const age = clock - it.shake
         const dx = age >= 0 && age < 0.35 ? Math.sin(age * 60) * 0.08 * (1 - age / 0.35) : 0
         it.door.position.x = it.d.x + dx

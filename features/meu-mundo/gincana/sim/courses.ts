@@ -1753,17 +1753,20 @@ function courseTanque(): Course {
 export const PORTOES = {
   /** [z, portas, abertas, meia largura do deck] por fileira */
   rows: [
-    [22, 8, 4, 12],
-    [34, 7, 3, 12],
-    [46, 6, 2, 12],
-    [60, 6, 2, 9],
-    [74, 5, 2, 9],
+    // 20/11: uma de verdade por fileira (antes 4, 3, 2, 2, 2) — e ela aguenta PORTOES.hits batidas
+    [22, 8, 1, 12],
+    [34, 7, 1, 12],
+    [46, 6, 1, 12],
+    [60, 6, 1, 9],
+    [74, 5, 1, 9],
     [95, 4, 1, 6.5],
     [105, 4, 1, 6.5],
     [118, 3, 1, 5],
     [131, 2, 1, 5],
   ] as [number, number, number, number][],
   doorH: 3.4,
+  /** batidas para quebrar a de verdade (20/11) */
+  hits: 3,
   /** 20/11 (dificuldade): mais escorregadio (antes 0,5) */
   ice: 0.4,
   /** blocos do lago: [z, giro, fase] (antes 2 blocos, 1,0 e 1,3) */
@@ -1797,6 +1800,7 @@ function coursePortoes(): Course {
   for (const [x, z] of [[0, 16.5], [-6, 28], [6, 40], [0, 56.5], [0, 91], [0, 112.5]] as [number, number][]) k.logo(x, z)
   return k.done({
     id: "portoes",
+    doorHits: PORTOES.hits,
     checkpoints: [
       { x: 0, z: -3.5, y: DECK, w: 7 },
       { x: 0, z: 57, y: DECK, w: 6 },

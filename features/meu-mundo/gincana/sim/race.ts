@@ -83,6 +83,8 @@ export class GincanaRace {
   /** Classificam os primeiros `quota`. */
   readonly quota: number
   private readonly bySlot = new Map<number, number>()
+  /** Portas que aguentam batidas: quando cada um de fora encostou em cada porta (vaga·4096 + porta). */
+  private readonly touch = new Map<number, number>()
 
   constructor(seed: number, seats: RaceSeatDef[], countdown: number = GINCANA.countdown, phase: string = "cidade") {
     this.seed = seed >>> 0
@@ -296,7 +298,18 @@ export class GincanaRace {
     }
     for (let k = 0; k < C.doors.length; k++) {
       const d = C.doors[k]
-      if (this.world.open[k] && this.world.doors[k] < 0 && Math.abs(b.z - d.z) < 0.8 && Math.abs(b.x - d.x) < d.hw) this.world.doors[k] = this.t
+      if (!this.world.open[k] || this.world.doors[k] >= 0 || Math.abs(b.z - d.z) >= 0.8 || Math.abs(b.x - d.x) >= d.hw) continue
+      if (C.doorHits <= 1) {
+        this.world.doors[k] = this.t
+        continue
+      }
+      // de fora só chega a pose: encostou de novo (afastou-se antes) = uma batida
+      const key = slot * 4096 + k
+      const last = this.touch.get(key) ?? -9
+      this.touch.set(key, this.t)
+      if (this.t - last < 0.3 || this.t - this.world.doorLast[k] <= 0.25) continue
+      this.world.doorLast[k] = this.t
+      if (++this.world.doorHp[k] >= C.doorHits) this.world.doors[k] = this.t
     }
   }
 

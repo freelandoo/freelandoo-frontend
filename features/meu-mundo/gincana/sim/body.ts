@@ -166,6 +166,9 @@ export interface RunWorld {
   real: Uint8Array
   /** Quando cada porta de verdade foi aberta (−1 = fechada). */
   doors: Float64Array
+  /** Batidas que cada porta de verdade já levou e a última (Course.doorHits). */
+  doorHp: Float64Array
+  doorLast: Float64Array
   /** Gincana 3: quando cada engrenagem foi pega (−1 = nunca). */
   gems: Float64Array
   /** Gangorras: [ângulo, giro] de cada uma (mudam com o peso de quem está em cima). */
@@ -194,7 +197,7 @@ export type RunEvent =
 export const IDLE_INTENT: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
 
 export function newWorld(course: Course, seed: number, t: number): RunWorld {
-  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), gems: new Float64Array(course.gems.length).fill(-1), saw: sawRest(course) }
+  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), doorHp: new Float64Array(course.doors.length), doorLast: new Float64Array(course.doors.length).fill(-9), gems: new Float64Array(course.gems.length).fill(-1), saw: sawRest(course) }
 }
 
 const sawArms = new Float64Array(64)
@@ -544,10 +547,25 @@ function pushWalls(b: Runner, w: RunWorld, out: RunEvent[] | null): Ledge | null
     const T = 0.3
     if (Math.abs(b.z - d.z) >= T + R || Math.abs(b.x - d.x) >= d.hw + R * 0.2 || b.y >= DECK + d.h || b.y + H <= DECK) continue
     if (w.open[i]) {
-      if (w.doors[i] < 0) {
+      if (w.doors[i] >= 0) continue
+      // porta que aguenta batidas: conta quem chega correndo contra ela; até quebrar é parede
+      let opens = true
+      if (C.doorHits > 1) {
+        opens = false
+        const vn = b.vz * Math.sign(d.z - b.z || 1)
+        if (vn > 3 && w.t - w.doorLast[i] > 0.25) {
+          w.doorLast[i] = w.t
+          w.doorHp[i]++
+          opens = w.doorHp[i] >= C.doorHits
+        }
+      }
+      if (opens) {
         w.doors[i] = w.t
         out?.push({ type: "door", i, open: true, slot: b.slot })
+        continue
       }
+      b.z = d.z + Math.sign(b.z - d.z || -1) * (T + R)
+      b.vz = 0
       continue
     }
     if (w.doors[i] === -1) {
