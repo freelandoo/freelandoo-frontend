@@ -69,6 +69,9 @@ const HAZE_OF: Partial<Record<GincanaTheme["deco"], readonly [RGB, RGB]>> = {
   // Mar de Gelo (metade C): névoa azul-noite — esconde a faixa marrom do horizonte e afasta os penhascos
   ice: [[0.16, 0.3, 0.56], [0.08, 0.16, 0.36]],
 }
+/** Lajota da pista na Cidade (miniaturas, 20/11): pedra cinza-azulada, não o creme das calçadas. */
+const PATH_PAVE: RGB = [0.66, 0.66, 0.7]
+const PATH_COBBLE: RGB = [0.5, 0.5, 0.55]
 /** Seta do chão (sem luz: lê de dia e de noite). */
 const ARROW: RGB = [1, 0.84, 0.12]
 /** Listra de perigo (amarelo e quase preto) do que machuca. */
@@ -1736,8 +1739,8 @@ export class CourseView {
       g.cylinder(p.r * 2, 0.5, at(p.x, p.y - 0.25, p.z), top, 48)
       if (city && !dyn) {
         // tampo no calçamento da cidade: pedra portuguesa na borda, lajes no miolo
-        cobble.cylinder(p.r * 2, 0.05, place(p.x, p.y - 0.02, p.z), CITY.cobble, 32)
-        if (p.r > 2.5) pavers.cylinder((p.r - 0.5) * 2, 0.05, place(p.x, p.y - 0.015, p.z), CITY.pave, 32)
+        cobble.cylinder(p.r * 2, 0.05, place(p.x, p.y - 0.02, p.z), PATH_COBBLE, 32)
+        if (p.r > 2.5) pavers.cylinder((p.r - 0.5) * 2, 0.05, place(p.x, p.y - 0.015, p.z), PATH_PAVE, 32)
         if (p.r >= 5) {
           for (let k = 0; k < 3; k++) {
             const a = (k / 3) * Math.PI * 2 + p.z
@@ -1804,7 +1807,7 @@ export class CourseView {
     const m = (dy: number) => at(p.x, yc + dy, p.z, p.rot, -pitch)
     g.roundBox(p.hx * 2, 0.5, L, r, m(-0.25), top, 12)
     if (city && !dyn) {
-      ;(p.hx >= 2 ? pavers : cobble).box(p.hx * 2, 0.05, L, m(-0.015), p.hx >= 2 ? CITY.pave : CITY.cobble)
+      ;(p.hx >= 2 ? pavers : cobble).box(p.hx * 2, 0.05, L, m(-0.015), p.hx >= 2 ? PATH_PAVE : PATH_COBBLE)
     } else if (ice) {
       // gelo: tampo brilhante com rachaduras
       g.roundBox(p.hx * 2 - 0.2, 0.04, L - 0.2, 0.02, m(0.005), mix(top, [1, 1, 1], 0.45), 2)
@@ -1946,6 +1949,24 @@ export class CourseView {
         g.box(1.3, 0.6, 1.3, at(x, p.y + 0.3, z, p.rot), [0.2, 0.16, 0.14])
         g.box(0.9, 9, 0.9, at(x, p.y + 4.5, z, p.rot), (_x, y) => (Math.abs(y - 1.8) < 0.18 || Math.abs(y + 2.2) < 0.18 ? [0.85, 0.62, 0.22] : [0.12, 0.1, 0.1]))
         g.box(1.2, 0.5, 1.2, at(x, p.y + 9.2, z, p.rot), [0.3, 0.24, 0.2])
+      }
+    }
+    // Cidade (20/11, miniatura): poste de ferro com lampião aceso em cada canto da laje, de fora dos frades
+    if (this.theme.deco === "city") {
+      for (const sx of [-1, 1]) {
+        for (const lz of [p.hz - 0.8, -p.hz + 0.8]) {
+          const lx = sx * (p.hx + 0.8)
+          const x = p.x + lx * c + lz * s
+          const z = p.z - lx * s + lz * c
+          const iron: RGB = [0.08, 0.08, 0.09]
+          g.cylinder(0.9, 0.5, at(x, p.y + 0.25, z), iron, 10, 0.7)
+          g.cylinder(0.26, 4.2, at(x, p.y + 2.5, z), (_x, y) => (Math.abs(y + 1.2) < 0.1 || Math.abs(y - 1.6) < 0.1 ? [0.8, 0.6, 0.22] : iron), 10, 0.2)
+          g.box(0.75, 0.12, 0.75, at(x, p.y + 4.65, z), iron)
+          glow.cylinder(0.56, 0.8, at(x, p.y + 5.12, z), [1, 0.82, 0.45], 6, 0.66)
+          for (let k = 0; k < 4; k++) g.box(0.06, 0.82, 0.06, at(x + Math.cos((k * Math.PI) / 2 + Math.PI / 4) * 0.33, p.y + 5.12, z + Math.sin((k * Math.PI) / 2 + Math.PI / 4) * 0.33), iron)
+          g.cylinder(0.85, 0.35, at(x, p.y + 5.68, z), iron, 6, 0.2)
+          g.sphere(0.16, at(x, p.y + 5.92, z), [0.8, 0.6, 0.22], 6)
+        }
       }
     }
     for (const sx of [-1, 1]) {
