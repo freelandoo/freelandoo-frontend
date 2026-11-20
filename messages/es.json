@@ -15263,7 +15263,13 @@
     "gincanaHowGt2": "Entre los tubos hay un hueco: salta — el siguiente puede estar más alto o más bajo.",
     "gincanaHowGt3": "Desde el 5.º tubo los agujeros dan la vuelta: salta cuando uno pase debajo.",
     "gincanaHowGt4": "Las estalactitas se balancean arriba y los pistones de hielo golpean de lado: espera el momento.",
-    "gincanaHowGt5": "¿Caíste al mar? Vuelves al último témpano (tras el 5.º, el 10.º y el 15.º tubo)."
+    "gincanaHowGt5": "¿Caíste al mar? Vuelves al último témpano (tras el 5.º, el 10.º y el 15.º tubo).",
+    "gincanaPhFabricaPitch4": "Recoge 10 engranajes y el centro se vuelve una cama elástica hacia el piso de arriba, con más obstáculos. En cada piso, los 2 últimos quedan fuera.",
+    "gincanaHowFgAndar": "Con 10 engranajes en el piso, sube al centro: se vuelve una cama elástica y te lanza al piso de arriba.",
+    "gincanaHowFg5b": "¿Caíste en el aceite? Vuelves a tu piso, solo perdiste tiempo. Los 2 últimos de cada piso quedan fuera.",
+    "gincanaFloorGears": "Piso {f} · {n}/{g} engranajes",
+    "gincanaFloorJump": "Piso {f}: ¡salta al centro!",
+    "gincanaFloorTop": "¡En la cima!"
   },
   "Sports": {
     "eyebrow": "Deportes",

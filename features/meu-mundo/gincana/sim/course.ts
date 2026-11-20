@@ -364,6 +364,18 @@ export interface Balls {
   allEvery?: number
 }
 
+/** Andar da Fábrica: centro e altura do chão, raio do miolo, engrenagens para subir e o pulo. */
+export interface Floor {
+  x: number
+  z: number
+  y: number
+  r: number
+  goal: number
+  pad: number
+  vy: number
+  vz: number
+}
+
 /** Esteira com bolas: a 1ª rampa (com o canhão) e, com `balls.all`, as outras rampas que puxam para trás. */
 export interface BallBelt {
   x: number
@@ -731,6 +743,12 @@ export interface Course {
    * vezes"): quantas BATIDAS (chegar correndo, > 3 m/s) a porta de verdade aguenta antes de quebrar. 1 = abre ao encostar.
    */
   doorHits: number
+  /**
+   * Fábrica em andares (20/11, pedido do Alex): cada andar pede `goal` engrenagens (somadas desde a largada); com
+   * elas o miolo (`pad`, disco de raio r no centro x,z) vira PULA-PULA e joga no andar de cima (vy, vz). Quando
+   * só sobram 2 no andar, os 2 ficam fora (até a vaga dos classificados). null = fase comum.
+   */
+  floors: Floor[] | null
   pads: Pad[]
   posts: Post[]
   sweepers: Sweeper[]
@@ -915,6 +933,7 @@ export class CourseKit {
     memory?: Memory
     crown?: boolean
     doorHits?: number
+    floors?: Floor[]
   }): Course {
     if ((o.mode ?? "race") === "race") this.faster(GINCANA.tempo)
     return {
@@ -934,6 +953,7 @@ export class CourseKit {
       memory: o.memory ?? null,
       crown: o.crown ?? false,
       doorHits: o.doorHits ?? 1,
+      floors: o.floors ?? null,
       pads: this.pads,
       posts: this.posts,
       sweepers: this.sweepers,

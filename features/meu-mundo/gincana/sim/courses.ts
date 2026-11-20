@@ -1415,47 +1415,81 @@ function courseAltoForno(): Course {
 // ═══ fabrica — Fábrica ═══════════════════════════════════════════════════════
 
 /**
- * Gincana 3 (2026-11-18): CAÇA ÀS ENGRENAGENS — coleta na Fábrica. Chão de
- * 24 m sobre o óleo com duas esteiras (em sentidos contrários), duas prensas
- * que deslizam de lado e a plataforma do meio (1 m acima: pule ou suba na
- * beira). Engrenagens aparecem espalhadas e voltam 7 s depois de pegas; a
- * DOURADA (no alto do meio) vale 3. Quem cai no óleo volta ao meio (só perde
- * tempo). Em 75 s, classificam os que pegaram mais (metade).
+ * 20/11 (pedido do Alex): "pegou 10 o centro vira um pula-pula e te manda pra uma fase parecida em cima com mais
+ * obstáculos, aí coleta 10 e vai subindo; 2 sempre ficam para trás, os dois últimos estão fora". Andares em escada
+ * (cada um `D` m à frente e `H` m acima), três de engrenagens e o topo; cada andar pede mais `goal`.
  */
+export const FABRICA = {
+  D: 30,
+  H: 8,
+  goal: 10,
+  gearFloors: 3,
+  /** pulo do pula-pula: sobe ~11 m e cai ~6 m dentro do andar de cima */
+  vy: 25.7,
+  vz: 17.5,
+  r: 2.6,
+} as const
+
 function courseFabrica(): Course {
+  const K = FABRICA
   const k = new CourseKit()
-  k.box(0, 0, 12, 12, 2, 1, 1, 0, 1.6)
-  // esteiras (um tico acima do chão para valerem): a da esquerda leva para a frente, a da direita para trás
-  const beltL = k.box(-8, 0, 1.6, 12, 0, 1, 1, 0, 1.6, DECK + 0.05)
-  k.pads[beltL].bz = GINCANA.belt
-  const beltR = k.box(8, 0, 1.6, 12, 0, 1, 1, 0, 1.6, DECK + 0.05)
-  k.pads[beltR].bz = -GINCANA.belt
-  // plataforma do meio (a dourada fica nela)
-  k.disc(0, 0, 2.6, 4, 1, 1, DECK + 1)
-  // prensas que deslizam de lado
-  k.pusher(0, 7, 1.3, 1.3, 1.8, 8.5, 0, 0.85, 0)
-  k.pusher(0, -7, 1.3, 1.3, 1.8, 8.5, 0, 0.85, Math.PI)
-  // engrenagens: anel no chão, as das esteiras e a dourada
+  const floors: { x: number; z: number; y: number; r: number; goal: number; pad: number; vy: number; vz: number }[] = []
   let n = 0
-  const add = (x: number, z: number, y: number, v: number, back: number) => k.gem(x, z, y + 0.9, v, 1 + (n++ % 6) * 0.6, back)
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2 + Math.PI / 8
-    add(Math.sin(a) * 5, Math.cos(a) * 5, DECK, 1, 7)
+  for (let f = 0; f <= K.gearFloors; f++) {
+    const z = f * K.D
+    const y = DECK + f * K.H
+    if (f === K.gearFloors) {
+      // o topo: o pódio de quem subiu tudo
+      const top = k.box(0, z, 8, 8, 2, 1, 1, 0, 1.6, y)
+      floors.push({ x: 0, z, y, r: 0, goal: 1e9, pad: top, vy: 0, vz: 0 })
+      break
+    }
+    k.box(0, z, 12, 12, 2, 1, 1, 0, 1.6, y)
+    // esteiras (um tico acima do chão para valerem): a da esquerda leva para a frente, a da direita para trás; mais
+    // fortes a cada andar
+    const bf = 1 + f * 0.2
+    const beltL = k.box(-8, z, 1.6, 12, 0, 1, 1, 0, 1.6, y + 0.05)
+    k.pads[beltL].bz = GINCANA.belt * bf
+    const beltR = k.box(8, z, 1.6, 12, 0, 1, 1, 0, 1.6, y + 0.05)
+    k.pads[beltR].bz = -GINCANA.belt * bf
+    // o miolo: plataforma do meio (a dourada fica nela) — o pula-pula de quem tem as engrenagens do andar
+    const pad = k.disc(0, z, K.r, 4, 1, 1, y + 1)
+    floors.push({ x: 0, z, y, r: K.r, goal: K.goal * (f + 1), pad, vy: K.vy, vz: K.vz })
+    // prensas que deslizam de lado (mais rápidas em cima)
+    const pw = 0.85 * (1 + f * 0.25)
+    k.pusher(0, z + 7, 1.3, 1.3, 1.8, 8.5, 0, pw, 0, y)
+    k.pusher(0, z - 7, 1.3, 1.3, 1.8, 8.5, 0, pw, Math.PI, y)
+    // 2º andar em diante: barra baixa girando em volta do miolo (pule) — no 3º, mais rápida e com martelos
+    if (f >= 1) k.sweep(0, z, y + 0.55, 7.2, 0.35, f === 1 ? 1.1 : -1.5, 0, true)
+    if (f >= 2) {
+      k.swing(-4.5, z + 4.5, y + 8, 6.6, 0.9, 0.9, 1.9, 0)
+      k.swing(4.5, z - 4.5, y + 8, 6.6, 0.9, 0.9, 1.9, 1.6)
+      k.glove(-12.6, z + 2.5, y + 1, 1, 5.5, 1.0, 2.4, 0)
+      k.glove(12.6, z - 2.5, y + 1, -1, 5.5, 1.0, 2.4, 1.2)
+    }
+    // engrenagens: anel no chão, as dos cantos, as das esteiras e a dourada no miolo
+    const add = (x: number, zz: number, yy: number, v: number, back: number) => k.gem(x, zz, yy + 0.9, v, 1 + (n++ % 6) * 0.6, back)
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + Math.PI / 8
+      add(Math.sin(a) * 5, z + Math.cos(a) * 5, y, 1, 7)
+    }
+    for (const [x, dz] of [[-4, 9.5], [4, -9.5], [-4, -9.5], [4, 9.5]] as [number, number][]) add(x, z + dz, y, 1, 7)
+    for (const dz of [-8, 0, 8]) {
+      add(-8, z + dz, y + 0.05, 1, 7)
+      add(8, z + dz, y + 0.05, 1, 7)
+    }
+    add(0, z, y + 1, 3, 12)
   }
-  for (const [x, z] of [[-4, 9.5], [4, -9.5], [-4, -9.5], [4, 9.5]] as [number, number][]) add(x, z, DECK, 1, 7)
-  for (const z of [-8, 0, 8]) {
-    add(-8, z, DECK + 0.05, 1, 7)
-    add(8, z, DECK + 0.05, 1, 7)
-  }
-  add(0, 0, DECK + 1, 3, 12)
   return k.done({
     id: "fabrica",
     mode: "collect",
-    qualify: 0.5,
-    limit: 75,
-    checkpoints: [{ x: 0, z: -3.6, y: DECK, w: 5 }],
-    finishZ: 40,
-    finishY: 90,
+    // 8 na largada: 6 sobem do 1º andar, 4 do 2º, 2 do 3º (classificam)
+    qualify: 0.25,
+    limit: 240,
+    floors,
+    checkpoints: floors.map((f, i) => ({ x: 0, z: i === 0 ? -3.6 : f.z - 8, y: f.y, w: 5 })),
+    finishZ: 1e6,
+    finishY: 1e6,
     sections: [],
     minFinish: 1e6,
     route: () => [{ x: 0, z: 0 }],

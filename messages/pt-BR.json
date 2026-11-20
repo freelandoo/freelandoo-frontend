@@ -14697,7 +14697,13 @@
     "gincanaHowGt2": "Entre os tubos há um vão: pule — o próximo pode estar mais alto ou mais baixo.",
     "gincanaHowGt3": "Do 5º tubo em diante os buracos dão a volta: pule quando um passar embaixo.",
     "gincanaHowGt4": "Estalactites balançam por cima e pistões de gelo socam de lado: espere a hora.",
-    "gincanaHowGt5": "Caiu no mar? Volta à última banquisa (depois do 5º, do 10º e do 15º tubo)."
+    "gincanaHowGt5": "Caiu no mar? Volta à última banquisa (depois do 5º, do 10º e do 15º tubo).",
+    "gincanaPhFabricaPitch4": "Pegue 10 engrenagens e o miolo vira um pula-pula para o andar de cima, com mais obstáculos. Em cada andar, os 2 últimos ficam fora.",
+    "gincanaHowFgAndar": "Com 10 engrenagens no andar, suba no miolo: ele vira pula-pula e te joga no andar de cima.",
+    "gincanaHowFg5b": "Caiu no óleo? Volta ao seu andar, só perdeu tempo. Os 2 últimos de cada andar ficam fora.",
+    "gincanaFloorGears": "Andar {f} · {n}/{g} engrenagens",
+    "gincanaFloorJump": "Andar {f}: pule no miolo!",
+    "gincanaFloorTop": "No topo!"
   },
   "Sports": {
     "eyebrow": "Esportes",

@@ -361,11 +361,30 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
     }
   }
   // Caça às Engrenagens: a engrenagem que vale mais pela distância (a dourada atrai); sobe na plataforma pulando
-  if (C.gems.length) {
+  // Fábrica em andares: com as engrenagens do andar, vai para o pula-pula; voando, mira o andar de cima
+  const FL = C.floors
+  const fl = FL ? FL[Math.min(b.cp, FL.length - 1)] : null
+  const flUp = !!FL && !!fl && b.cp < FL.length - 1 && b.pts >= fl.goal
+  if (FL && fl && (b.cp >= FL.length - 1 || flUp || b.fly > 0 || (!b.ground && b.y > fl.y + 3))) {
+    if (b.cp < FL.length - 1 && (b.fly > 0 || (!b.ground && b.y > fl.y + 3))) {
+      tx = FL[b.cp + 1].x
+      tz = FL[b.cp + 1].z - 5
+    } else {
+      tx = fl.x
+      tz = fl.z
+      const d = Math.hypot(fl.x - b.x, fl.z - b.z)
+      if (flUp && d < 3.8 && b.y < fl.y + 0.5 && b.ground && br.jumpCool <= 0) {
+        it.jump = true
+        br.jumpCool = 0.6
+      }
+    }
+  } else if (C.gems.length) {
     let best = -1
     let bestScore = -Infinity
     for (let k = 0; k < C.gems.length; k++) {
       const g = C.gems[k]
+      // andares: só as engrenagens do meu andar
+      if (fl && Math.abs(g.y - 0.9 - fl.y) > 1.6) continue
       // a que vai voltar logo também serve (chega quando ela aparece)
       const back = w.gems[k] < 0 ? g.t0 - t : w.gems[k] + g.back - t
       const d = Math.hypot(g.x - b.x, g.z - b.z)
@@ -388,8 +407,8 @@ function arenaIntent(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent): RunIn
         br.jumpCool = 0.6
       }
     } else {
-      tx = 0
-      tz = 0
+      tx = fl ? fl.x : 0
+      tz = fl ? fl.z : 0
     }
   }
   // Rei do Iceberg: vai para o topo (um lugar dentro dele que muda de tempo em tempo); pula na beira

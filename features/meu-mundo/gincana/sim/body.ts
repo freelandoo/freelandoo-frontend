@@ -131,6 +131,8 @@ export interface Runner {
   grabCool: number
   /** s que ainda está sendo segurado por alguém (anda devagar). */
   held: number
+  /** Fábrica: s de voo do pula-pula (sem controle no ar: o pulo leva ao andar de cima). */
+  fly: number
   /** Beira: de onde saiu e aonde vai (subindo). */
   cx0: number
   cy0: number
@@ -241,6 +243,7 @@ export function newRunner(course: Course, slot: number): Runner {
     fin: -1,
     out: -1,
     pts: 0,
+    fly: 0,
     launch: GINCANA.jumpV,
     jumpBuf: 0,
     boost: 0,
@@ -926,7 +929,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     if (b.ground && b.pad >= 0) run *= C.pads[b.pad].sl
     const tx = mx * run
     const tz = mz * run
-    const a = T.accel * (b.boost > 0 ? 1.3 : 1) * (b.ground ? b.fric : T.airControl) * dt
+    if (b.fly > 0) b.fly = b.ground ? 0 : b.fly - dt
+    const a = b.fly > 0 ? 0 : T.accel * (b.boost > 0 ? 1.3 : 1) * (b.ground ? b.fric : T.airControl) * dt
     const dvx = tx - b.vx
     const dvz = tz - b.vz
     const dl = Math.hypot(dvx, dvz)
@@ -1030,6 +1034,20 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
       b.air = T.coyote
       b.pad = -1
       if (b.mode === MODE.SLIDE) b.mode = MODE.RUN
+      out?.push({ type: "bounce", slot: b.slot })
+    }
+    // Fábrica: com as engrenagens do andar, o miolo vira pula-pula para o andar de cima
+    const F = C.floors
+    if (F && b.cp < F.length - 1 && g.pad === F[b.cp].pad && b.pts >= F[b.cp].goal && b.mode === MODE.RUN) {
+      const f = F[b.cp]
+      b.vy = f.vy
+      b.launch = f.vy
+      b.vz = f.vz
+      b.vx = (f.x - b.x) * 0.6
+      b.fly = 1.15
+      b.ground = false
+      b.air = T.coyote
+      b.pad = -1
       out?.push({ type: "bounce", slot: b.slot })
     }
   } else if (wasGround && b.vy <= 0 && g.y > -Infinity && b.y - g.y <= 0.3) {

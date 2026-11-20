@@ -15283,7 +15283,13 @@
     "gincanaHowGt2": "There is a gap between tubes: jump — the next one may be higher or lower.",
     "gincanaHowGt3": "From the 5th tube on, holes come around: jump when one passes under you.",
     "gincanaHowGt4": "Icicles swing overhead and ice pistons punch from the side: time your run.",
-    "gincanaHowGt5": "Fell into the sea? You go back to the last ice floe (after the 5th, 10th and 15th tube)."
+    "gincanaHowGt5": "Fell into the sea? You go back to the last ice floe (after the 5th, 10th and 15th tube).",
+    "gincanaPhFabricaPitch4": "Grab 10 gears and the center turns into a trampoline to the floor above, with more obstacles. On each floor, the last 2 are out.",
+    "gincanaHowFgAndar": "With 10 gears on the floor, step on the center: it turns into a trampoline and throws you to the floor above.",
+    "gincanaHowFg5b": "Fell in the oil? You go back to your floor, you only lost time. The last 2 on each floor are out.",
+    "gincanaFloorGears": "Floor {f} · {n}/{g} gears",
+    "gincanaFloorJump": "Floor {f}: jump on the center!",
+    "gincanaFloorTop": "At the top!"
   },
   "Sports": {
     "eyebrow": "Sports",

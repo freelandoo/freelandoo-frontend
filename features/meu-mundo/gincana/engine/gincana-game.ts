@@ -86,6 +86,8 @@ export interface GincanaHud {
   riseGap: number
   /** Relógio da Praça: rodada, fase (1 decore, 2 esconde, 3 chama, 4 cai, 5 volta), o símbolo chamado (−1 = ainda não) e quanto falta. */
   mem: { r: number; ph: number; sym: number; left: number } | null
+  /** Fábrica em andares: andar (1…), quantos de engrenagens, quantas já tenho neste andar e quantas faltam para o pula-pula. */
+  floor: { f: number; of: number; have: number; need: number } | null
 }
 
 export type GincanaNotice =
@@ -163,6 +165,15 @@ interface Seat extends GincanaSeat {
   /** Último y (fase do pulo de quem vem pela rede). */
   lastY: number
   vyEst: number
+}
+
+/** Andar da Fábrica para a tela: engrenagens contadas desde a entrada no andar. */
+function floorHud(F: readonly { goal: number }[], cp: number, pts: number) {
+  const k = Math.min(cp, F.length - 1)
+  const prev = k > 0 ? F[k - 1].goal : 0
+  const of = F.length - 1
+  const need = k < of ? F[k].goal - prev : 0
+  return { f: k + 1, of, have: Math.max(0, Math.min(need, pts - prev)), need }
 }
 
 export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
@@ -410,6 +421,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
       pts: Math.round(mine.pts * 10) / 10,
       riseGap: C.rise && mine.out < 0 && mine.fin < 0 ? mine.y - riseAt(C, Math.max(0, t)) : Infinity,
       mem: C.memory ? memHud(C.memory, Math.max(0, t)) : null,
+      floor: C.floors ? floorHud(C.floors, mine.cp, mine.pts) : null,
     }
   }
 

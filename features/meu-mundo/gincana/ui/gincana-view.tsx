@@ -475,7 +475,13 @@ function GincanaScreen({
             {!result && (hud.mode === "collect" || hud.mode === "zone") && (
               <div className="flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-black tabular-nums" style={{ background: glass, color: YELLOW }}>
                 <Trophy className="h-3 w-3" />
-                {(hud.mode === "zone" ? t("gincanaZonePts", "{n} s no topo") : t("gincanaPts", "{n} pontos")).replace("{n}", String(Math.floor(hud.pts)))}
+                {hud.floor
+                  ? hud.floor.f > hud.floor.of
+                    ? t("gincanaFloorTop", "No topo!")
+                    : hud.floor.have >= hud.floor.need
+                      ? t("gincanaFloorJump", "Andar {f}: pule no miolo!").replace("{f}", String(hud.floor.f))
+                      : t("gincanaFloorGears", "Andar {f} · {n}/{g} engrenagens").replace("{f}", String(hud.floor.f)).replace("{n}", String(Math.floor(hud.floor.have))).replace("{g}", String(hud.floor.need))
+                  : (hud.mode === "zone" ? t("gincanaZonePts", "{n} s no topo") : t("gincanaPts", "{n} pontos")).replace("{n}", String(Math.floor(hud.pts)))}
               </div>
             )}
             {/* quantos já classificaram (a vaga fecha a prova) */}

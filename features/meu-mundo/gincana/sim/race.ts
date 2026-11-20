@@ -186,6 +186,36 @@ export class GincanaRace {
       }
     }
     this.score(out, dt)
+    if (C.floors) this.floorCut(out)
+  }
+
+  /**
+   * Fábrica em andares: em cada andar, quando todos menos 2 já subiram (sem passar da vaga dos classificados),
+   * quem ainda está nele fica fora.
+   */
+  private floorCut(out: RunEvent[] | null) {
+    const F = this.course.floors!
+    let n0 = 0
+    for (let i = 0; i < this.runners.length; i++) if (!this.gone[i]) n0++
+    for (let k = 0; k < F.length - 1; k++) {
+      const allowed = Math.max(this.quota, n0 - 2 * (k + 1))
+      let above = 0
+      let here = 0
+      for (let i = 0; i < this.runners.length; i++) {
+        const b = this.runners[i]
+        if (this.gone[i] || b.out >= 0) continue
+        if (b.cp > k) above++
+        else here++
+      }
+      if (above < allowed || here === 0) continue
+      for (let i = 0; i < this.runners.length; i++) {
+        const b = this.runners[i]
+        if (this.gone[i] || b.out >= 0 || b.cp > k) continue
+        b.out = this.t
+        b.mode = MODE.DONE
+        out?.push({ type: "out", slot: b.slot })
+      }
+    }
   }
 
   /**
@@ -340,6 +370,12 @@ export class GincanaRace {
     const C = this.course
     const row = (b: Runner, q: boolean): StandingRow => ({ slot: b.slot, fin: b.fin, dist: b.fin >= 0 ? C.finishZ : this.distOf(b), q, pts: Math.round(b.pts * 10) / 10, out: b.out })
     const byOut = (a: Runner, b: Runner) => b.out - a.out || a.slot - b.slot
+    if (C.floors) {
+      // andares: quem está em pé, do andar mais alto (e mais engrenagens); depois quem ficou fora, do último ao primeiro
+      const up = this.runners.filter((b, i) => b.out < 0 && !this.gone[i]).sort((a, b) => b.cp - a.cp || b.pts - a.pts || a.slot - b.slot)
+      const down = this.runners.filter((b, i) => b.out >= 0 || this.gone[i]).sort(byOut)
+      return up.map((b, k) => row(b, k < this.quota)).concat(down.map((b) => row(b, false)))
+    }
     if (C.mode === "collect" || C.mode === "zone") {
       return [...this.runners].sort((a, b) => b.pts - a.pts || a.slot - b.slot).map((b, k) => row(b, k < this.quota && b.pts > 0))
     }
@@ -363,6 +399,7 @@ export class GincanaRace {
   over(): boolean {
     const C = this.course
     if (this.t >= C.limit || this.closed()) return true
+    if (C.floors) return this.alive() <= this.quota
     if (C.mode === "collect" || C.mode === "zone") return false
     if (C.mode === "survive" && this.alive() <= this.quota) return true
     let any = false
