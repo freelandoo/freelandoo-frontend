@@ -14,7 +14,7 @@ import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../en
 import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
-import { farTrunk, farWall, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
+import { farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
 import { forgeField, gridWindow } from "./backdrop-forja"
@@ -27,7 +27,7 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
   const n = (low ? 0.6 : 1) * spanK()
   switch (deco) {
     case "forest":
-      return forest(lit, glow, n)
+      return forest(lit, glow, n, phase)
     case "canyon":
       return canyon(lit, glow, n)
     case "orbital":
@@ -45,7 +45,14 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
 
 // ── Floresta da Lua ──────────────────────────────────────────────────────────
 
-function forest(lit: SoftGeo, glow: SoftGeo, n: number) {
+function forest(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
+  // Serraria (miniatura): pilhas de toras nas duas beiras do caminho de tábuas
+  if (phase === "serraria") {
+    for (let z = Z0 + 20, i = 0; z < Z1 - 40; z += 38, i++) {
+      const s = i % 2 ? 1 : -1
+      logPile(lit, s * (11.5 + rnd(i, 400) * 2), z + rnd(i, 401) * 10, 3 + (i % 2), 4 + rnd(i, 402) * 1.5, i, 0.15 * s)
+    }
+  }
   // miniaturas (20/11): muralha de troncos altos nos dois lados, 1ª fileira junto da prova
   for (let z = Z0, i = 0; z < Z1; z += 13, i++) {
     for (const s of [-1, 1]) {

@@ -259,3 +259,46 @@ export function farWall(lit: SoftGeo, z0: number, z1: number) {
   for (let x = -170; x <= 170; x += 9) tree(x + rnd(i, 6) * 5, z1 + 70 + rnd(i, 7) * 30, i++)
   for (let x = -170; x <= 170; x += 9) tree(x + rnd(i, 6) * 5, z0 - 90 - rnd(i, 7) * 30, i++)
 }
+
+/**
+ * Pilha de toras da serraria (miniatura): toras deitadas em pirâmide (3–2–1 ou 4–3–2–1), casca escura em sulcos
+ * com musgo por cima, topo claro com anéis, duas estacas segurando a pilha e uma corda.
+ */
+export function logPile(lit: SoftGeo, x: number, z: number, rows: number, len: number, i: number, rotY = 0) {
+  const r = 0.55 + rnd(i, 1) * 0.15
+  const ca = Math.cos(rotY)
+  const sa = Math.sin(rotY)
+  const P = (u: number, y: number, w: number) => new Vector3(x + u * ca + w * sa, y, z - u * sa + w * ca)
+  for (let row = 0; row < rows; row++) {
+    const n = rows - row
+    for (let k = 0; k < n; k++) {
+      const u = (k - (n - 1) / 2) * r * 2.02
+      const y = 0.15 + r + row * r * 1.75
+      const jut = (rnd(i * 31 + row * 7 + k, 2) - 0.5) * 0.6
+      const a = P(u, y, -len / 2 + jut)
+      const b = P(u, y, len / 2 + jut)
+      lit.tube(a, b, r * (0.92 + rnd(i * 31 + k, 3) * 0.12), barkGrooves(i + k, -99, 0), 10)
+      // musgo só por cima da fileira de cima
+      if (row === rows - 1) for (let m = 0; m < 3; m++) {
+        const q = P(u, y + r * 0.75, -len * 0.3 + m * len * 0.3 + jut)
+        lit.sphere(r * 1.5, at(q.x, q.y, q.z, rotY), [0.2, 0.46, 0.22], 5, 1, 0.4, 1.4)
+      }
+      for (const e of [a, b]) {
+        const end = e === a ? -1 : 1
+        // topo em discos concêntricos (a cor só varia onde há vértice): madeira clara, anel escuro, miolo
+        const rings: [number, RGB][] = [[0.88, [0.84, 0.64, 0.4]], [0.6, [0.6, 0.42, 0.25]], [0.5, [0.86, 0.67, 0.43]], [0.2, [0.55, 0.36, 0.2]]]
+        rings.forEach(([k, c], q) => lit.cylinder(r * 2 * k, 0.04, at(e.x + sa * end * (0.04 + q * 0.012), e.y, e.z + ca * end * (0.04 + q * 0.012), rotY, Math.PI / 2, 0), c, 10))
+      }
+    }
+  }
+  // estacas e corda
+  const h = rows * r * 1.75 + 0.6
+  for (const s of [-1, 1]) {
+    const u = s * (rows * r + 0.25)
+    const p = P(u, h / 2, 0)
+    lit.cylinder(0.22, h, at(p.x, p.y, p.z), [0.3, 0.2, 0.12], 6)
+  }
+  lit.tube(P(-rows * r - 0.25, h - 0.3, 0), P(rows * r + 0.25, h - 0.3, 0), 0.05, [0.7, 0.6, 0.4], 4)
+  // sombra de contato
+  lit.cylinder(rows * r * 2.2, 0.04, at(x, 0.02, z, rotY), [0.04, 0.08, 0.05], 10)
+}
