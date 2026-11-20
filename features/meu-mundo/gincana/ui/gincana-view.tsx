@@ -67,8 +67,9 @@ type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind:
 
 // Gincana 3 (G3-13): o programa abre com uma corrida, segue com duas provas de sobrevivência/coleta
 // (diferentes) e fecha na final, a Coroa da Torre (vaga 1). Não classificou = fim do programa.
-const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque", "estaleiro", "gangorras", "aros"]
-const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
+// 20/11: o Mar de Gelo virou corrida (Tubos de Gelo) e passou para as corridas do programa
+const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque", "estaleiro", "gangorras", "aros", "gelo"]
+const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "relogio"]
 const SHOW_FINAL = "coroa"
 function drawShow(): string[] {
   const mid = [...SHOW_MID]

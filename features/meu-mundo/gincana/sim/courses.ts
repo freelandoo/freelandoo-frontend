@@ -1923,42 +1923,94 @@ function courseEstaleiro(): Course {
 // ═══ gelo — Mar de Gelo ══════════════════════════════════════════════════════
 
 /**
- * Gincana 3 (2026-11-18, plano das 10 fases): ROLO DE GELO — sobrevivência no Mar de Gelo. Um cilindro de
- * gelo deitado (raio 7 m, 30 m de comprido) feito de 5 anéis; cada anel gira no seu sentido (e cada vez mais
- * rápido) e tem buracos que passam por baixo de quem está em cima. O chão anda de lado e escorrega para fora
- * na curva: corra contra o giro e troque de anel quando um buraco vier. Caiu no mar = FORA. Acaba quando
- * sobra a vaga (metade) ou em 100 s.
+ * 20/11 (pedido do Alex com a foto do rolo: "tem que andar sobre a fase, ir percorrendo o percurso nesses tubos e
+ * com armadilhas entre eles, pulando de tubo em tubo, pelo menos uns 20 tubos, e chegar ao fim"): o Mar de Gelo
+ * deixa de ser a arena do Rolo e vira CORRIDA sobre 20 TUBOS DE GELO deitados ao longo do caminho. Cada tubo gira
+ * no seu sentido (o chão anda de lado e a curva escorrega para fora), os da frente mais rápido, e a partir do 5º
+ * têm buracos que passam por baixo. Entre eles: vão para pular (o tubo seguinte mais alto ou mais baixo),
+ * estalactites em pêndulo por cima dos tubos e pistões de gelo que socam de lado. Banquisa com posto depois do
+ * 5º, 10º e 15º. Antes (18/11): arena de sobrevivência num rolo só (R 7, 6 anéis).
  */
-export const ROLL_R = 7
-export const ROLL_TOP = DECK + 4
+export const GELO = {
+  n: 20,
+  z0: 16.6,
+  R: 3.2,
+  len: 6.4,
+  gap: 2.0,
+  /** topo de cada tubo acima do DECK (sobe e desce; subida de no máximo 0,4 m — mais que isso o vão de 2 m não fecha) */
+  tops: [0.5, 0.9, 0.5, 0.9, 0.6, 0.8, 0.7, 1.1, 0.8, 1.2, 0.5, 0.9, 1.3, 0.9, 1.3, 0.8, 1.2, 0.9, 1.3, 1.0],
+  /** giro (rad/s): sobe do 1º ao último; sinal alternado */
+  w0: 0.42,
+  wStep: 0.022,
+  /** buraco: meia abertura (rad) e a partir de qual tubo. Cada tubo tem 2 metades (anéis) e o buraco fica numa
+   *  só (alternando): dá para fugir para a outra metade ou pular por cima (0,24 rad ≈ 1,5 m de vão). */
+  holeHalf: 0.24,
+  holeFrom: 4,
+  /** banquisas (descanso + posto) depois destes tubos */
+  rests: [5, 10, 15],
+  restHz: 2.4,
+  /** estalactites em pêndulo por cima destes tubos: [tubo, fase] */
+  icicles: [[2, 0], [6, 1.4], [8, 2.6], [12, 0.7], [16, 2], [19, 1.1]] as [number, number][],
+  /** pistões de gelo que socam de lado nestes tubos: [tubo, lado, fase] */
+  punches: [[9, 1, 0], [13, -1, 1.1], [17, 1, 0.5], [18, -1, 1.7]] as [number, number, number][],
+} as const
+
+/** Gelo: z de começo de cada tubo e o centro de cada banquisa; e onde acaba. */
+export function geloLayout() {
+  const K = GELO
+  const tubes: number[] = []
+  const rests: number[] = []
+  let z = K.z0
+  for (let i = 0; i < K.n; i++) {
+    if ((K.rests as readonly number[]).includes(i)) {
+      rests.push(z + K.restHz)
+      z += 2 * K.restHz + K.gap
+    }
+    tubes.push(z)
+    z += K.len + K.gap
+  }
+  return { tubes, rests, end: z - K.gap }
+}
+
 function courseGelo(): Course {
+  const K = GELO
   const k = new CourseKit()
-  // 20/11 (dificuldade): anéis 20% mais rápidos e buracos um pouco maiores (antes 0,3/−0,34/…, meia 0,17/0,2)
-  const W = [0.36, -0.41, 0.46, -0.38, 0.43, -0.35]
-  k.drum(
-    0,
-    0,
-    ROLL_TOP - ROLL_R,
-    ROLL_R,
-    W.map((w, i) => ({
-      len: 5,
-      w,
-      // os buracos começam embaixo (o primeiro chega ao topo depois de ~8 s); dois anéis têm 3
-      holes: (i % 3 === 1 ? [0, 2.1, 4.2] : [0, 3.1]).map((o) => ({ a: Math.PI + o + i * 0.7, half: 0.19 + (i % 2) * 0.03 })),
-    })),
-    0.6,
-  )
+  kitStart(k)
+  const L = geloLayout()
+  L.tubes.forEach((z, i) => {
+    const w = (i % 2 ? -1 : 1) * (K.w0 + K.wStep * i)
+    const holes = i < K.holeFrom ? [] : [{ a: Math.PI + i * 0.9, half: K.holeHalf }]
+    // acc 0: o tubo gira sempre igual (o Rolo acelerava na arena); duas metades, o buraco numa só (alterna)
+    const half = (h: boolean) => ({ len: K.len / 2, w, holes: h ? holes : [], acc: 0 })
+    k.drum(0, z, DECK + K.tops[i] - K.R, K.R, [half(i % 2 === 0), half(i % 2 === 1)], 0.6)
+  })
+  for (const z of L.rests) k.box(0, z, 4, K.restHz, 3, 1, 2 + Math.floor((z - K.z0) / 60), 0, 1.4, DECK + 0.6)
+  const mid = (i: number) => L.tubes[i] + K.len / 2
+  for (const [i, ph] of K.icicles) k.swing(0, mid(i), DECK + K.tops[i] + 8, 7, 1.05, 0.95, 2.0, ph)
+  for (const [i, side, ph] of K.punches) k.glove(side * (K.R + 1.6), mid(i), DECK + K.tops[i] + 0.9, -side, 2 * K.R + 0.6, 0.9, 2.6, ph)
+  const z0 = L.end + 1.4
+  k.box(0, z0 - 0.7, 6, 1.4, 0, 1, 5)
+  const finishZ = kitFinish(k, z0 + 0.7, 1.0, 7, 1.1)
+  for (const z of L.rests) k.logo(0, z, DECK + 0.6)
   return k.done({
     id: "gelo",
-    mode: "survive",
-    qualify: 0.5,
-    limit: 100,
-    checkpoints: [{ x: 0, z: 16.3, y: ROLL_TOP, w: 3.4 }],
-    finishZ: 40,
-    finishY: 90,
-    sections: [],
-    minFinish: 1e6,
-    route: () => [{ x: 0, z: 15 }],
+    mode: "race",
+    limit: 170,
+    checkpoints: [{ x: 0, z: -3.5, y: DECK, w: 7 }, ...L.rests.map((z) => ({ x: 0, z: z + 0.6, y: DECK + 0.6, w: 4 }))],
+    finishZ,
+    finishY: DECK + 6,
+    sections: [15.1, ...L.rests.map((z) => z - K.restHz), z0],
+    minFinish: 20,
+    route: (r) =>
+      routeOf((add) => {
+        add(0, 10)
+        L.tubes.forEach((z, i) => {
+          const x = (r(10 + i) - 0.5) * 1.6
+          add(x, z + 0.8)
+          add(x, z + K.len - 0.8)
+        })
+        routeFinish(add, z0 + 0.7, finishZ)
+      }),
   })
 }
 

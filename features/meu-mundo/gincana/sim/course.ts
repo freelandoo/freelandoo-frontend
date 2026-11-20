@@ -485,6 +485,8 @@ export interface DrumRing {
   len: number
   w: number
   holes: { a: number; half: number }[]
+  /** Aceleração do giro (por s); sem valor, 1/160 (o dobro aos 80 s, o Rolo). Tubos do Mar de Gelo: 0. */
+  acc?: number
 }
 
 /** Cilindro deitado feito de anéis em fila (de z0 para +z). Eixo na altura y, raio R. */
@@ -501,12 +503,12 @@ export interface Drum {
 
 /** Quanto o anel girou até t (acelera: o dobro da velocidade aos 80 s). */
 export function drumAngle(r: DrumRing, t: number) {
-  return r.w * (t + (t * t) / 160)
+  return r.w * (t + t * t * (r.acc ?? 1 / 160))
 }
 
 /** Velocidade do giro do anel em t (rad/s). */
 export function drumSpeed(r: DrumRing, t: number) {
-  return r.w * (1 + t / 80)
+  return r.w * (1 + 2 * t * (r.acc ?? 1 / 160))
 }
 
 export const DRUM_EDGE = 0.93

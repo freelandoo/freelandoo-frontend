@@ -15252,7 +15252,18 @@
     "gincanaHowAr5": "Después de la última muralla solo corre: el turbo del aro ayuda en la recta.",
     "gincanaHoop": "¡Por el aro! ¡Turbo!",
     "gincanaSecTqOleo": "Fuga",
-    "gincanaHowTqOleo": "De aquí para arriba el aceite se ha derramado: en el charco corres más lento, el pie resbala y el golpe te lanza lejos. Esquiva los charcos o pasa corriendo."
+    "gincanaHowTqOleo": "De aquí para arriba el aceite se ha derramado: en el charco corres más lento, el pie resbala y el golpe te lanza lejos. Esquiva los charcos o pasa corriendo.",
+    "gincanaEvGeloTubos": "Tubos de Hielo",
+    "gincanaPhGeloPitch5": "Veinte tubos de hielo tumbados sobre el mar, cada uno girando hacia un lado. Corre sobre ellos, salta de tubo en tubo y esquiva las estalactitas y los pistones hasta la meta.",
+    "gincanaSecGt1": "Primeros tubos",
+    "gincanaSecGt2": "Tubos agujereados",
+    "gincanaSecGt3": "Estalactitas",
+    "gincanaSecGt4": "Pistones de hielo",
+    "gincanaHowGt1": "Cada tubo gira hacia un lado y te arrastra: corre contra el giro y quédate arriba.",
+    "gincanaHowGt2": "Entre los tubos hay un hueco: salta — el siguiente puede estar más alto o más bajo.",
+    "gincanaHowGt3": "Desde el 5.º tubo los agujeros dan la vuelta: salta cuando uno pase debajo.",
+    "gincanaHowGt4": "Las estalactitas se balancean arriba y los pistones de hielo golpean de lado: espera el momento.",
+    "gincanaHowGt5": "¿Caíste al mar? Vuelves al último témpano (tras el 5.º, el 10.º y el 15.º tubo)."
   },
   "Sports": {
     "eyebrow": "Deportes",

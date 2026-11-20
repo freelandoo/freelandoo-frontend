@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, ballBelts, logRowAngle, rotorBladeAt, sawTop, drumAt, gloveAt, hoopX, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, ballBelts, logRowAngle, rotorBladeAt, sawTop, drumAt, drumSpeed, gloveAt, hoopX, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -1058,6 +1058,31 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     const off = b.x - S.x
     if (Math.abs(a) > 0.06 && Math.sign(off) === Math.sign(a) && Math.abs(off) > 0.5) it.mx -= Math.sign(a) * Math.min(1, br.skill + 0.3)
   }
+  // Tubos de Gelo (20/11): em cima do tubo, corre contra o giro (o chão leva de lado) puxando para o alto,
+  // e pula o buraco que chega no pé
+  if (b.drum >= 0 && C.id === "gelo") {
+    const d = C.drums[b.drum]
+    const g = drumAt(d, b.x, b.z, t)
+    if (g) {
+      const v = drumSpeed(d.rings[g.ring], t) * (g.top - d.y)
+      it.mx += (-v / GINCANA.run) * (0.8 + br.skill * 0.5) - (b.x - d.x) * 0.3
+      const m = Math.hypot(it.mx, it.mz)
+      if (m > 1) {
+        it.mx /= m
+        it.mz /= m
+      }
+    }
+    const end = d.z0 + d.rings.reduce((acc, r) => acc + r.len, 0)
+    // ponta do tubo: pula para o próximo (o vão é de 2 m)
+    if (b.ground && br.jumpCool <= 0 && b.z > end - 0.3 - (1 - br.skill) * 0.35 && it.mz > 0.3) {
+      it.jump = true
+      br.jumpCool = 0.6
+    } else if (b.ground && br.jumpCool <= 0 && b.z < end - 1.2 && !drumAt(d, b.x, b.z, t + 0.15) && botRand(br.seed, br.slot, Math.floor(t * 4)) < br.skill + 0.25) {
+      // buraco chegando no pé (no meio do tubo)
+      it.jump = true
+      br.jumpCool = 0.6
+    }
+  }
   // aro à frente (e a janela do paredão): pula para cruzar no alto do pulo
   hoopJump(br, b, w, it)
   // Serraria: tora atravessada logo à frente — pula para subir nela (a parede de baixo não deixa passar)
@@ -1086,7 +1111,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   const tileNear =
     (br.tile >= 0 && Math.hypot(C.tiles[br.tile].x - b.x, C.tiles[br.tile].z - b.z) < 2.6) ||
     (br.path >= 0 && Math.hypot(C.tiles[br.path].x - b.x, C.tiles[br.path].z - b.z) < 3.4)
-  if (b.ground && br.jumpCool <= 0 && sp > 0.3 && !tileNear) {
+  // (nos Tubos de Gelo quem decide o pulo da ponta é a regra do tubo, mais perto da beira)
+  if (b.ground && br.jumpCool <= 0 && sp > 0.3 && !tileNear && !(C.id === "gelo" && b.drum >= 0)) {
     const fx = it.mx / sp
     const fz = it.mz / sp
     const onFan = b.pad >= 0 && isFanPad(C, C.pads[b.pad])

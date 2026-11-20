@@ -15272,7 +15272,18 @@
     "gincanaHowAr5": "After the last wall just run: the hoop turbo helps on the straight.",
     "gincanaHoop": "Through the hoop! Turbo!",
     "gincanaSecTqOleo": "Leak",
-    "gincanaHowTqOleo": "From here up the oil has leaked: in a puddle you run slower, your feet slip and a hit throws you far. Dodge the puddles or rush through."
+    "gincanaHowTqOleo": "From here up the oil has leaked: in a puddle you run slower, your feet slip and a hit throws you far. Dodge the puddles or rush through.",
+    "gincanaEvGeloTubos": "Ice Tubes",
+    "gincanaPhGeloPitch5": "Twenty ice tubes lying over the sea, each spinning its own way. Run on top of them, jump from tube to tube and dodge the icicles and pistons all the way to the finish.",
+    "gincanaSecGt1": "First tubes",
+    "gincanaSecGt2": "Holed tubes",
+    "gincanaSecGt3": "Icicles",
+    "gincanaSecGt4": "Ice pistons",
+    "gincanaHowGt1": "Each tube spins its own way and drags you: run against the spin and stay on top.",
+    "gincanaHowGt2": "There is a gap between tubes: jump — the next one may be higher or lower.",
+    "gincanaHowGt3": "From the 5th tube on, holes come around: jump when one passes under you.",
+    "gincanaHowGt4": "Icicles swing overhead and ice pistons punch from the side: time your run.",
+    "gincanaHowGt5": "Fell into the sea? You go back to the last ice floe (after the 5th, 10th and 15th tube)."
   },
   "Sports": {
     "eyebrow": "Sports",

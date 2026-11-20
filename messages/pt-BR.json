@@ -14686,7 +14686,18 @@
     "gincanaHowAr5": "Depois do último paredão é só correr: o turbo do aro ajuda na reta.",
     "gincanaHoop": "Pelo aro! Turbo!",
     "gincanaSecTqOleo": "Vazamento",
-    "gincanaHowTqOleo": "Daqui para cima o óleo vazou: na poça a corrida fica lenta, o pé escorrega e a pancada joga longe. Desvie das poças ou passe correndo."
+    "gincanaHowTqOleo": "Daqui para cima o óleo vazou: na poça a corrida fica lenta, o pé escorrega e a pancada joga longe. Desvie das poças ou passe correndo.",
+    "gincanaEvGeloTubos": "Tubos de Gelo",
+    "gincanaPhGeloPitch5": "Vinte tubos de gelo deitados sobre o mar, cada um girando para um lado. Corra por cima deles, pule de tubo em tubo e desvie das estalactites e dos pistões até a chegada.",
+    "gincanaSecGt1": "Primeiros tubos",
+    "gincanaSecGt2": "Tubos furados",
+    "gincanaSecGt3": "Estalactites",
+    "gincanaSecGt4": "Pistões de gelo",
+    "gincanaHowGt1": "Cada tubo gira para um lado e arrasta você: corra contra o giro e fique no alto.",
+    "gincanaHowGt2": "Entre os tubos há um vão: pule — o próximo pode estar mais alto ou mais baixo.",
+    "gincanaHowGt3": "Do 5º tubo em diante os buracos dão a volta: pule quando um passar embaixo.",
+    "gincanaHowGt4": "Estalactites balançam por cima e pistões de gelo socam de lado: espere a hora.",
+    "gincanaHowGt5": "Caiu no mar? Volta à última banquisa (depois do 5º, do 10º e do 15º tubo)."
   },
   "Sports": {
     "eyebrow": "Esportes",

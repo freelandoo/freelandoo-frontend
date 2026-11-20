@@ -301,9 +301,10 @@ export class CourseView {
       // Clareira: o pórtico fica fora da vitória-régia que gira (r 9) e da rampa
       const span = theme.id === "clareira" ? 10.5 : theme.id === "tanque" ? 10.6 : 5.5
       // Aros (20/11): a viga atravessa a ladeira inteira (14 m) e os pilares ficam fora da pista
-      const x0 = theme.id === "aros" ? -8.2 : Math.min(...row.map((p) => p.x)) - span
-      const x1 = theme.id === "aros" ? 8.2 : Math.max(...row.map((p) => p.x)) + span
-      if (theme.id === "portoes" || theme.id === "aros") {
+      // Tubos de Gelo (20/11): o pórtico abraça o tubo (R 3,2) com os pilares fora dele
+      const x0 = theme.id === "aros" ? -8.2 : theme.id === "gelo" ? -6.4 : Math.min(...row.map((p) => p.x)) - span
+      const x1 = theme.id === "aros" ? 8.2 : theme.id === "gelo" ? 6.4 : Math.max(...row.map((p) => p.x)) + span
+      if (theme.id === "portoes" || theme.id === "aros" || theme.id === "gelo") {
         // Aros (20/11): as estalactites da 2ª descida usam o pórtico de gelo dos Portões (mesmo Domínio)
         portoesSwingGantry(st, glow, x0, x1, z, py)
         continue
@@ -512,7 +513,7 @@ export class CourseView {
         this.swings.push(m)
         continue
       }
-      if (theme.id === "portoes" || theme.id === "aros" || theme.id === "serraria" || theme.id === "tanque") {
+      if (theme.id === "portoes" || theme.id === "aros" || theme.id === "gelo" || theme.id === "serraria" || theme.id === "tanque") {
         if (theme.id === "serraria") serrariaAxe(pg, p.len, p.R)
         else if (theme.id === "tanque") tanqueHook(pg, p.len, p.R)
         else portoesIcicle(pg, p.len, p.R)
@@ -895,9 +896,11 @@ export class CourseView {
       const pg = new SoftGeo()
       const pl = new SoftGeo()
       const d0 = course.drums[0]
-      const len = d0.rings.reduce((a, r) => a + r.len, 0)
-      const top = d0.y + d0.R + 6
-      for (const gz of [d0.z0 - 2.2, d0.z0 + len + 2.2]) {
+      // Tubos de Gelo (20/11): pórtico na entrada do 1º tubo e na saída do último
+      const dl = course.drums[course.drums.length - 1]
+      const lenL = dl.rings.reduce((a, r) => a + r.len, 0)
+      const top = Math.max(...course.drums.map((d) => d.y + d.R)) + 6
+      for (const gz of [d0.z0 - 1, dl.z0 + lenL + 1]) {
         for (const sx of [-1, 1]) {
           const x = sx * (d0.R + 2.6)
           // coluna em três blocos de gelo (um pouco desencontrados), base mais escura
