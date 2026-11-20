@@ -1484,6 +1484,12 @@ export const COMPORTAS = {
   wallH: 3.2,
   /** Graxa: fração da corrida. */
   grease: 0.5,
+  /**
+   * 20/11 (o Alex: "têm que demorar mais pra abrir, não pode ficar abrindo e fechando rápido, senão não atrasa
+   * ninguém — no mínimo 5× mais lento"): o ciclo e o atraso de TODAS as comportas × `slow` (a onda da fileira
+   * continua a mesma, só mais lenta). Antes ×1: ciclos de 2,6–5 s.
+   */
+  slow: 5,
 } as const
 
 function courseComportas(): Course {
@@ -1491,7 +1497,7 @@ function courseComportas(): Course {
   const k = new CourseKit()
   kitStart(k)
   const row = (z: number, hz: number, xs: readonly number[], walls: readonly [number, number][], per: number, ph: (i: number) => number, s: number, h: (i: number) => number = () => K.gateH) => {
-    xs.forEach((x, i) => k.gate(x, z, K.gateHx, hz, h(i), per, ph(i), 6, 7, s))
+    xs.forEach((x, i) => k.gate(x, z, K.gateHx, hz, h(i), per * K.slow, ph(i) * K.slow, 6, 7, s))
     for (const [x, hx] of walls) k.box(x, z, hx, hz + 0.15, 4, 1, s, 0, K.wallH + 1.4, DECK + K.wallH)
   }
   // ── 1. comportas em onda ──
