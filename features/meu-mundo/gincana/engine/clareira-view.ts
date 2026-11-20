@@ -83,6 +83,20 @@ export function spinSlice(g: SoftGeo, _glow: SoftGeo, p: Pad) {
   const seed = Math.round(p.z * 3 + p.x)
   // corpo e a casca
   g.cylinder(r * 2 - 0.1, 1.15, at(0, y - 0.62, 0), barkPaint(seed), 44, r * 2 + 0.05)
+  // sobre o pântano (sem piso em volta): o tronco desce até a água, pé que alarga e raízes
+  if (p.d > 2) {
+    const yb = y - 1.15
+    g.cylinder(r * 2 - 0.35, yb + 0.3, at(0, (yb - 0.3) / 2, 0), barkPaint(seed + 2, 11), 22, r * 2 - 0.15)
+    g.cylinder(r * 2.35, 1.3, at(0, 0.35, 0), barkPaint(seed + 1, 13), 22, r * 2 - 0.3)
+    for (let k = 0; k < 5; k++) {
+      const a = (k / 5) * Math.PI * 2 + seed
+      g.tube(new Vector3(Math.cos(a) * r * 0.85, 1.0, Math.sin(a) * r * 0.85), new Vector3(Math.cos(a) * (r + 1.4), -0.3, Math.sin(a) * (r + 1.4)), 0.32, barkPaint(k, 5), 6)
+    }
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2 + seed * 0.5
+      g.sphere(0.9, at(Math.cos(a) * (r - 0.2), 1.1 + (k % 2) * 0.5, Math.sin(a) * (r - 0.2)), k % 2 ? MOSS : MOSS_L, 4, 0.5, 1.2, 1)
+    }
+  }
   g.torus(r * 2 - 0.12, 0.34, at(0, y - 0.1, 0), barkPaint(seed, 17), 26)
   sliceTop(g, 0, y, 0, r - 0.22, seed)
   // setas de seiva acesa: seis "›" no anel do meio, apontando para onde o tampo leva
