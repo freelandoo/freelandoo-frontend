@@ -88,6 +88,12 @@ export interface FightPlateProps {
   calm?: boolean
   /** Algo embaixo da placa (as vidas de cada lobo, o aviso do poder). */
   children?: ReactNode
+  /** Onde a barra grande pousa, em alturas de retrato (padrão 0,95; o HUD sobe para perto do rosto). */
+  chaoK?: number
+  /** O que vai no lugar do número grande (padrão: o valor da barra). O HUD mostra o NÍVEL. */
+  label?: ReactNode
+  /** Um segundo número grande, sem barra, embaixo das tiras (o PODER no HUD). */
+  extra?: { value: number; title?: string }
   style?: CSSProperties
 }
 
@@ -194,14 +200,14 @@ function Portrait({ pw, ph, src, mirrored }: { pw: number; ph: number; src?: str
   )
 }
 
-export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, hp, hpMax, stam, power, calm = false, children, style }: FightPlateProps) {
+export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, hp, hpMax, stam, power, calm = false, children, style, chaoK = SANGUE_CHAO, label, extra }: FightPlateProps) {
   const ph = pw * TALL
   const entra = pw * ENTRA
   const larg = pw * barK
   const total = entra + larg
   const altVida = ph * GROSSURA
   const altFolego = ph * GROSSURA_FOLEGO
-  const chao = ph * SANGUE_CHAO
+  const chao = ph * chaoK
   const recuo = altVida * 0.42
   const xBarra = mirrored ? 0 : entra
 
@@ -223,10 +229,20 @@ export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, h
   const low = !calm && v <= max * 0.34
   const folegoTop = chao + altFolego * 0.22
   const powerTop = folegoTop + altFolego * 1.55
-  const height = Math.max(ph, (power ? powerTop : folegoTop) + altFolego + 2)
   const fora = pw + altFolego
   const passa = altVida * 0.34
   const numSize = altVida * 1.25
+  const extraTop = (power ? powerTop : folegoTop) + altFolego + altVida * 0.08
+  const height = Math.max(ph, extra ? extraTop + numSize * 1.05 : (power ? powerTop : folegoTop) + altFolego + 2)
+  const numStyle: CSSProperties = {
+    fontFamily: anton.style.fontFamily,
+    fontSize: numSize,
+    color: "#f5f1ed",
+    transform: "skewX(-9deg)",
+    WebkitTextStroke: `${Math.max(3, altVida * 0.1)}px rgba(0,0,0,.92)`,
+    paintOrder: "stroke fill",
+    textShadow: `0 0 ${Math.max(6, altVida * 0.18)}px rgba(255,0,110,.6)`,
+  }
 
   return (
     <div className="pointer-events-none relative" style={{ width: total, ...style }}>
@@ -276,17 +292,21 @@ export function FightPlate({ pw, barK = 2.9, mirrored = false, portrait, name, h
             width: larg + passa,
             height: altVida * 2,
             justifyContent: mirrored ? "flex-start" : "flex-end",
-            fontFamily: anton.style.fontFamily,
-            fontSize: numSize,
-            color: "#f5f1ed",
-            transform: "skewX(-9deg)",
-            WebkitTextStroke: `${Math.max(3, altVida * 0.1)}px rgba(0,0,0,.92)`,
-            paintOrder: "stroke fill",
-            textShadow: `0 0 ${Math.max(6, altVida * 0.18)}px rgba(255,0,110,.6)`,
+            ...numStyle,
           }}
         >
-          {Math.round(v)}
+          {label ?? Math.round(v)}
         </div>
+        {/* um segundo número, sem barra, embaixo das tiras (o PODER no HUD) */}
+        {extra && (
+          <div
+            className={`${anton.className} absolute flex items-center tabular-nums leading-none`}
+            title={extra.title}
+            style={{ left: xBarra - (mirrored ? passa : 0), top: extraTop, width: larg + passa, height: numSize * 1.05, justifyContent: mirrored ? "flex-start" : "flex-end", ...numStyle }}
+          >
+            {Math.round(extra.value)}
+          </div>
+        )}
         {/* o retrato por cima de tudo: a barra parece SAIR dele */}
         <Portrait pw={pw} ph={ph} src={portrait} mirrored={mirrored} />
       </div>

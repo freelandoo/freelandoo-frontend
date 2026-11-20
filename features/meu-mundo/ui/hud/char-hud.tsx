@@ -6,10 +6,12 @@
 // de luta da Arena das Lâminas (FightPlate — retrato alto chanfrado, sangue em
 // paralelogramo com o número grande e o fantasma, tiras finas embaixo), numa
 // escala menor. O que cada peça mostra:
-//  • a barra grande = o PODER do personagem (B7, pedido do Alex: no lugar da
-//    saúde, mesmo estilo); enche por faixas de 1.000, como as barras do STATUS;
+//  • a barra grande = o XP do nível de aventura, e o número grande = o NÍVEL
+//    (19/11, pedido do Alex; antes era o PODER);
 //  • tira âmbar = ENERGIA;  • tira violeta = ESTRESSE (alto = mais estresse);
-//  • embaixo, o nível de aventura (do personagem) e o do TREINADOR (da conta, F2).
+//  • embaixo das tiras, o PODER: o mesmo número grande, sem barra;
+//  • as barras pousam perto do rosto (subiram em relação ao retrato) e, embaixo,
+//    fica só o nível do TREINADOR (da conta, F2).
 // Só apresentação — nenhum cálculo: saúde/energia/estresse são os valores que
 // o servidor manda (login e cada aviso "life" da sala, que leva `vitals`); o
 // nível vem de GET /adventure uma vez e do `to` de cada recibo celebrado.
@@ -23,7 +25,6 @@ import type { BodyId } from "../../types"
 import { PORTRAIT } from "../portraits"
 import { onCelebrate } from "../rewards/reward-bus"
 import { archivo } from "../status/evo-skin"
-import { statTop } from "../status/stat-bars"
 import { TYPE } from "../kit/type-scale"
 import { FightPlate, plateWidth } from "./fight-plate"
 import { useDrawerOpen } from "./hud-kit"
@@ -39,6 +40,8 @@ export interface HudVitals {
 }
 
 const BAR_K = 2.6
+/** As barras pousam perto do rosto (19/11, pedido do Alex; na luta é 0,95). */
+const HUD_CHAO = 0.56
 
 /** Retrato menor que o das lutas (lá: 52–112 px). */
 function hudPw() {
@@ -130,40 +133,30 @@ export function CharHud({ name, body, vitals, power, hidden: hiddenProp = false,
         barK={BAR_K}
         portrait={PORTRAIT[body] ?? PORTRAIT.sergio}
         name={name}
-        hp={pow}
-        hpMax={statTop(pow)}
+        // XP do nível de aventura na barra grande; o número grande é o NÍVEL
+        hp={adv ? (adv.need > 0 ? adv.into : 1) : 0}
+        hpMax={adv ? (adv.need > 0 ? adv.need : 1) : 1}
+        label={adv ? adv.level : "–"}
+        // o PODER fica embaixo das tiras, do mesmo tamanho, sem barra
+        extra={{ value: pow, title: t("stPower", "PODER") }}
+        chaoK={HUD_CHAO}
         calm
         stam={energy / 100}
         // estresse = a tira violeta (a mesma cor do poder na luta); acende no alto
         power={{ v: stress / 100, ready: stress >= 70 }}
       >
         <div className={c.foot} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 6, fontSize: Math.max(TYPE.label, Math.min(TYPE.body, pw * 0.2)) }}>
-          {adv && <span className={c.level}>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</span>}
           {trainer != null && (
             <span className={c.level} style={{ color: "#7FD8FF" }} title={t("hudTrainerHint", "Nível do treinador: é da sua conta e abre os capítulos da história")}>
               {t("hudTrainerShort", "Tr. {n}").replace("{n}", String(trainer))}
             </span>
           )}
-          {v && (
-            <span className={c.legend} aria-hidden>
-              <i style={{ background: "#ffaa4a" }} />
-              {Math.round(energy)}
-              <i style={{ background: "#b98aff" }} />
-              {Math.round(stress)}
-            </span>
-          )}
         </div>
-        {/* XP do nível de aventura: um fio dourado, sem texto (apresentação 12 — nada abaixo
-            de 11 px; o número está na Ficha e no rótulo do leitor de tela) */}
-        {adv && (
-          <div className={c.xp} title={adv.need > 0 ? `${adv.into} / ${adv.need} XP` : "MAX"} style={{ marginLeft: pw + 6, width: plateWidth(pw, BAR_K) - pw - 10, height: Math.max(6, Math.round(pw * 0.1)) }}>
-            <span className={c.xpFill} style={{ transform: `translateX(${(adv.need > 0 ? Math.min(1, adv.into / adv.need) : 1) * 100 - 100}%)` }} />
-          </div>
-        )}
       </FightPlate>
       {/* leitor de tela: os três valores por extenso */}
       {v && (
         <ul className="sr-only">
+          {adv && <li>{t("hudLevel", "Nv. {n}").replace("{n}", String(adv.level))}</li>}
           <li>{`${t("stPower", "PODER")}: ${pow}`}</li>
           <li>{label("vitalEnergy", "Energia", energy, 100)}</li>
           <li>{label("vitalStress", "Estresse", stress, 100)}</li>
