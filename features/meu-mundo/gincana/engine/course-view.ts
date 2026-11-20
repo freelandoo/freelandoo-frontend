@@ -473,7 +473,9 @@ export class CourseView {
       } else {
         // V-Orbital: a barra ALTA (mergulhe) em magenta e branco, a baixa (pule) em amarelo e preto — lê de longe
         // 20/11: na cidade também há barra alta (carrossel de duas barras) — a cor diz pular ou mergulhar
-        const high = (theme.deco === "orbital" || city) && s.y - DECK > 1
+        // a altura conta a partir do chão do disco (o pé do eixo), não do mar: na Coroa os portões ficam 5 m acima
+        const floorY = course.posts.find((q) => q.x === s.x && q.z === s.z)?.y0 ?? DECK
+        const high = (theme.deco === "orbital" || city) && s.y - floorY > 1
         bg.capsule(s.r + 0.05, len, at(0, 0, off, 0, Math.PI / 2), city && !high ? stripesY(ORANGE, WHITE, 0.55, 0) : high ? stripesY([1, 0.25, 0.75], [1, 0.9, 1], 0.55, 0.5) : stripesY(HAZ_Y, HAZ_K, 0.55, 0.5), 12)
         bg.sphere(1.2, at(0, 0, 0), YELLOW, 12)
       }
