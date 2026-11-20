@@ -73,8 +73,14 @@ function barJump(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
   const C = w.course
   const t = w.t
   if (!b.ground || br.jumpCool > 0) return
-  const vx = b.vx + (it.mx * GINCANA.run - b.vx) * 0.5
-  const vz = b.vz + (it.mz * GINCANA.run - b.vz) * 0.5
+  let vx = b.vx + (it.mx * GINCANA.run - b.vx) * 0.5
+  let vz = b.vz + (it.mz * GINCANA.run - b.vz) * 0.5
+  // 20/11: em cima de disco que gira, o chão também leva (mesma conta de carry em body.ts)
+  const own = b.pad >= 0 ? C.pads[b.pad] : null
+  if (own && own.spin !== 0) {
+    vx += own.spin * (b.z - own.z)
+    vz -= own.spin * (b.x - own.x)
+  }
   for (let i = 0; i < C.sweepers.length; i++) {
     const s = C.sweepers[i]
     if (Math.hypot(b.x - s.x, b.z - s.z) > s.len + 5) continue
@@ -985,7 +991,11 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   // disco que gira FORTE embaixo (borda > 4 m/s, a Clareira): não dá para segurar a beirada correndo.
   // Vai até perto da borda, deixa o giro levar e pula quando ele traz para o lado da próxima peça
   // (no ar o giro não carrega). Funciona em qualquer velocidade de giro.
-  if (spinRide(br, b, w, it)) return it
+  if (spinRide(br, b, w, it)) {
+    // 20/11: a raiz/barra que gira por cima do disco (Floresta) também se pula aqui
+    barJump(br, b, w, it)
+    return it
+  }
   // em cima de uma hélice: pá → cubo → espera uma pá apontar para a saída → corre por ela
   fanRide(br, b, w, it)
   // barra chegando: pula na hora (com o erro da habilidade)

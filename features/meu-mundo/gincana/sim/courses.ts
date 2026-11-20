@@ -168,6 +168,23 @@ function courseCidade(): Course {
  * vitórias-régias que andam (9→14) · rampa dos cocos-pêndulo (14→20) · ponte de
  * folhas que cai e a subida final (20→24).
  */
+/**
+ * 20/11 (pedido do Alex): o chão das duas clareiras das raízes é uma esteira redonda que gira rápido CONTRA a
+ * raiz. O que conta é o giro relativo (chão + raiz): a raiz tem que voltar depois dos 1,2 s de quem caiu
+ * levantar, senão ela acerta de novo até jogar no pântano. Por isso a raiz ficou mais lenta. Por clareira:
+ * [giro da raiz, giro do chão] (rad/s, antes do ×1,22 das corridas; na beira o chão anda ~7–8 m/s).
+ */
+export const FLORESTA_ROOTS = [
+  [0.45, 0.85],
+  [-0.9, 1.0],
+] as const
+/** Vitórias-régias que andam (antes 3). */
+export const FLORESTA_LILIES = 8
+/** Segundos a mais para o pântano chegar ao topo (e no tempo da prova) por causa do percurso maior. */
+export const FLORESTA_RISE_PLUS = 25
+/** Força da esteira antes das vitórias-régias (fração de GINCANA.belt, contra quem corre). */
+export const FLORESTA_BELT = 0.5
+
 function courseFloresta(): Course {
   const k = new CourseKit()
   kitStart(k)
@@ -181,19 +198,25 @@ function courseFloresta(): Course {
   k.box(0, 55, 7, 4, 5, 1, 1, 0, 1.4, Y1)
   // ── 2. raízes que giram (duas clareiras ligadas por pontes) ──
   k.box(0, 61.5, 1.8, 2.5, 4, 1, 2, 0, 1.2, Y1)
-  const roots = (z: number, w: number, a0: number, both: boolean) => {
-    k.disc(0, z, 6.5, 4, 1, 2, Y1)
+  const roots = (z: number, [w, spin]: readonly [number, number], a0: number, both: boolean) => {
+    const d = k.disc(0, z, 6.5, 4, 1, 2, Y1)
+    k.pads[d].spin = -Math.sign(w) * spin
     k.post(0, z, 0.8, Y1, Y1 + 2.4, 5)
     k.sweep(0, z, Y1 + 0.55, 6.8, 0.34, w, a0, both)
   }
-  roots(70.5, 1.1, 0, true)
+  roots(70.5, FLORESTA_ROOTS[0], 0, true)
   k.box(0, 79.5, 1.8, 2.5, 4, 1, 2, 0, 1.2, Y1)
-  roots(88.5, -1.6, 1.2, false)
+  roots(88.5, FLORESTA_ROOTS[1], 1.2, false)
   k.box(0, 99, 6, 4, 5, 1, 2, 0, 1.4, Y1)
   // ── 3. rampa curta e vitórias-régias que andam ──
   k.slope(0, 103, 121, Y1, Y2, 4, 5, 1, 3)
-  k.box(0, 123, 4, 2, 5, 1, 3, 0, 1.2, Y2)
-  const LILY = [129, 134.5, 140]
+  // 20/11 (pedido do Alex): o patamar antes das vitórias-régias é esteira contra quem corre (pule com embalo)
+  const pre = k.box(0, 123, 4, 2, 5, 1, 3, 0, 1.2, Y2)
+  // (a esteira cheia deixa 2 m/s de embalo e ninguém alcança a 1ª folha: metade da força)
+  k.pads[pre].bz = -GINCANA.belt * FLORESTA_BELT
+  // 20/11 (pedido do Alex: "tem 3, deixe 8 no mínimo"): oito vitórias-régias; o resto da fase anda LD
+  const LILY = Array.from({ length: FLORESTA_LILIES }, (_, i) => 129 + i * 5.5)
+  const LD = (FLORESTA_LILIES - 3) * 5.5
   const lilies: number[] = []
   LILY.forEach((z, i) => {
     const p = k.disc(0, z, 2.2, i % 2 ? 2 : 5, 1, 3, Y2)
@@ -202,41 +225,42 @@ function courseFloresta(): Course {
     k.pads[p].mph = i * 1.6
     lilies.push(p)
   })
-  k.box(0, 148, 6, 4, 5, 1, 3, 0, 1.4, Y2)
+  k.box(0, 148 + LD, 6, 4, 5, 1, 3, 0, 1.4, Y2)
   // ── 4. rampa dos cocos (pêndulos) ──
-  k.slope(0, 152, 176, Y2, Y3, 5, 5, 1, 4)
+  k.slope(0, 152 + LD, 176 + LD, Y2, Y3, 5, 5, 1, 4)
   let ph = 0
   for (const z of [158, 164, 170]) {
     const top = Y2 + ((z - 152) / 24) * (Y3 - Y2)
     for (const x of [-2.5, 2.5]) {
-      k.swing(x, z, top + 9, 7.4, 1.1, 0.95, 2.1, ph)
+      k.swing(x, z + LD, top + 9, 7.4, 1.1, 0.95, 2.1, ph)
       ph += 1.9
     }
   }
-  k.box(0, 180, 6, 4, 5, 1, 4, 0, 1.4, Y3)
+  k.box(0, 180 + LD, 6, 4, 5, 1, 4, 0, 1.4, Y3)
   // ── 5. ponte de folhas que cai e a subida final ──
-  for (let r = 0; r < 7; r++) for (let c = 0; c < 3; c++) k.tile((c - 1) * 2.9, 186.6 + r * 2.9, 1.3, (r + c) % 2 ? 5 : 1, 0, Y3)
-  k.box(0, 209, 6, 3.5, 5, 1, 5, 0, 1.4, Y3)
-  k.slope(0, 212.5, 230.5, Y3, Y4, 5, 5, 1, 5)
-  k.box(0, 238, 9, 7.5, 1, 0, 6, 0, 1.6, Y4)
-  for (const [x, z, y] of [[0, 55, Y1], [0, 99, Y1], [-3, 148, Y2], [3, 148, Y2], [0, 180, Y3], [0, 209, Y3]] as [number, number, number][]) k.logo(x, z, y)
-  const finishZ = 238
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 3; c++) k.tile((c - 1) * 2.9, 186.6 + LD + r * 2.9, 1.3, (r + c) % 2 ? 5 : 1, 0, Y3)
+  k.box(0, 209 + LD, 6, 3.5, 5, 1, 5, 0, 1.4, Y3)
+  k.slope(0, 212.5 + LD, 230.5 + LD, Y3, Y4, 5, 5, 1, 5)
+  k.box(0, 238 + LD, 9, 7.5, 1, 0, 6, 0, 1.6, Y4)
+  for (const [x, z, y] of [[0, 55, Y1], [0, 99, Y1], [-3, 148 + LD, Y2], [3, 148 + LD, Y2], [0, 180 + LD, Y3], [0, 209 + LD, Y3]] as [number, number, number][]) k.logo(x, z, y)
+  const finishZ = 238 + LD
   return k.done({
     id: "floresta",
     mode: "race",
-    limit: 90,
-    // 3 s de folga; depois 0,34 m/s (a largada afoga aos ~12 s, o topo aos ~74 s)
-    rise: { y0: 0, y1: 26, t0: 3, t1: 79.5 },
+    // 20/11: +LD de percurso (8 vitórias-régias) → o pântano sobe um pouco mais devagar e o tempo cresce junto
+    limit: 90 + FLORESTA_RISE_PLUS,
+    // 3 s de folga; depois sobe até o topo (antes 0,34 m/s: a largada afogava aos ~12 s, o topo aos ~74 s)
+    rise: { y0: 0, y1: 26, t0: 3, t1: 79.5 + FLORESTA_RISE_PLUS },
     checkpoints: [
       { x: 0, z: -3.5, y: DECK, w: 7 },
       { x: 0, z: 55, y: Y1, w: 6 },
       { x: 0, z: 99, y: Y1, w: 5 },
-      { x: 0, z: 148, y: Y2, w: 5 },
-      { x: 0, z: 180, y: Y3, w: 5 },
+      { x: 0, z: 148 + LD, y: Y2, w: 5 },
+      { x: 0, z: 180 + LD, y: Y3, w: 5 },
     ],
     finishZ,
     finishY: Y4,
-    sections: [15, 59, 103, 152, 184],
+    sections: [15, 59, 103, 152 + LD, 184 + LD],
     minFinish: 20,
     route: (r) =>
       routeOf((add) => {
@@ -253,14 +277,14 @@ function courseFloresta(): Course {
         add(0, 122)
         add(0, 124.5)
         LILY.forEach((z, i) => add(0, z, lilies[i]))
-        for (const z of [145, 149, 151]) add(0, z)
+        for (const z of [145, 149, 151]) add(0, z + LD)
         const L = [-1.2, 0, 1.2][Math.floor(r(2) * 3)]
-        for (let z = 153; z <= 175; z += 2.5) add(L, z)
-        for (const z of [178, 182, 184.5]) add(0, z)
-        for (let i = 0; i < 7; i++) add(0, 186.6 + i * 2.9)
-        for (const z of [206.5, 210, 212]) add(0, z)
-        for (let z = 214; z <= 230; z += 2) add(0, z)
-        for (const z of [233, 236, finishZ + 3]) add(0, z)
+        for (let z = 153; z <= 175; z += 2.5) add(L, z + LD)
+        for (const z of [178, 182, 184.5]) add(0, z + LD)
+        for (let i = 0; i < 7; i++) add(0, 186.6 + LD + i * 2.9)
+        for (const z of [206.5, 210, 212]) add(0, z + LD)
+        for (let z = 214; z <= 230; z += 2) add(0, z + LD)
+        for (const z of [233 + LD, 236 + LD, finishZ + 3]) add(0, z)
       }),
   })
 }
