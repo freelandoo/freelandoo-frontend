@@ -18,6 +18,7 @@ import { mesaTower } from "./backdrop-canion"
 import { farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
+import { iceSea } from "./backdrop-gelo"
 import { forgeField, gridWindow } from "./backdrop-forja"
 
 /** `castleZ`: onde fica o castelo da Forja (no meio da arena das Paredes de Brasa; o Alto-Forno o põe depois da chegada).
@@ -415,29 +416,10 @@ function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, phase: s
 // ── Mar de Gelo ──────────────────────────────────────────────────────────────
 
 function ice(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
-  void phase
+  // metade C (20/11): penhascos, icebergs e banquisas pela miniatura de cada fase (backdrop-gelo.ts)
+  iceSea(lit, glow, n / spanK(), phase)
   const white: RGB = [0.92, 0.96, 1]
   const blue: RGB = [0.6, 0.78, 0.94]
-  // montanhas nevadas ao longe
-  for (let i = 0; i < Math.round(10 * n); i++) {
-    const x = side(i, 110 + rnd(i) * 60)
-    const z = Z0 + i * 36
-    const d = 70 + rnd(i, 2) * 50
-    const h = 50 + rnd(i, 3) * 40
-    lit.cylinder(d, h, at(x, h / 2 - 4, z), (_x, y) => (y > h * 0.1 ? white : [0.4, 0.48, 0.58]), 9, 2)
-  }
-  // paredões de gelo com pingentes (referência do Mar de Gelo)
-  for (let i = 0; i < Math.round(10 * n); i++) {
-    const x = side(i, 34 + rnd(i, 150) * 18)
-    const z = Z0 + 15 + i * 33
-    const w = 16 + rnd(i, 151) * 10
-    const h = 10 + rnd(i, 152) * 14
-    lit.roundBox(8, h, w, 1.2, at(x, h / 2 - 1, z, rnd(i, 153) * 0.3), (_x, y) => (y > h / 2 - 1.6 ? white : mix(blue, [0.5, 0.8, 0.98], 0.4)), 4)
-    for (let k = 0; k < 9; k++) {
-      const ih = 1.5 + rnd(i, 160 + k) * 3.5
-      lit.cylinder(0.02, ih, at(x - Math.sign(x) * 4.2, h - 1.6 - ih / 2, z - w / 2 + 1 + (k * (w - 2)) / 8), [0.82, 0.94, 1], 5, 1.1)
-    }
-  }
   // V-Gelo (ref. v3): placas de gelo hexagonais boiando, tampa de neve com beira azulada, lado ciano
   // escurecendo para baixo e pingentes embaixo da beira (o que dá a cara de "gelo que pinga")
   for (let i = 0; i < Math.round(46 * n); i++) {

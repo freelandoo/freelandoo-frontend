@@ -49,6 +49,7 @@ import { EstaleiroView } from "./estaleiro-view"
 import { GangorrasView } from "./gangorras-view"
 import { FabricaLava } from "./fabrica-view"
 import { paintLavaGrate } from "./backdrop-fabrica"
+import { iceArch } from "./backdrop-gelo"
 import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
 import { CANION_SKIN, HELICES_SKIN, canionTileIdle, canionTileLit } from "./canion-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
@@ -65,6 +66,8 @@ const HAZE_OF: Partial<Record<GincanaTheme["deco"], readonly [RGB, RGB]>> = {
   // 20/11 (miniaturas): Orbital no roxo do espaço (o pêssego tingia as torres brancas); Forja no vermelho-brasa
   orbital: [[0.36, 0.3, 0.6], [0.1, 0.07, 0.22]],
   forge: [[0.72, 0.26, 0.1], [0.36, 0.08, 0.04]],
+  // Mar de Gelo (metade C): névoa azul-noite — esconde a faixa marrom do horizonte e afasta os penhascos
+  ice: [[0.16, 0.3, 0.56], [0.08, 0.16, 0.36]],
 }
 /** Seta do chão (sem luz: lê de dia e de noite). */
 const ARROW: RGB = [1, 0.84, 0.12]
@@ -1524,13 +1527,17 @@ export class CourseView {
       this.forestArch(st, glow, z, y)
       return
     }
+    if (d === "ice") {
+      iceArch(st, glow, z, y)
+      return
+    }
     const C = this.C
     for (const s of [-1, 1]) {
       st.cylinder(1.2, 7.6, at(s * 7.6, y + 3.8, z), stripesY(C[4], C[7], 0.8, 0), 12)
       glow.sphere(1.1, at(s * 7.6, y + 8, z), C[1], 8)
     }
     st.roundBox(16.4, 0.9, 1.2, 0.3, at(0, y + 7.4, z), C[4], 4)
-    glow.roundBox(15, 0.3, 1.3, 0.1, at(0, y + 7.1, z), d === "orbital" ? [0.4, 0.9, 1] : d === "ice" ? [0.7, 0.95, 1] : [1, 0.7, 0.3], 2)
+    glow.roundBox(15, 0.3, 1.3, 0.1, at(0, y + 7.1, z), d === "orbital" ? [0.4, 0.9, 1] : [1, 0.7, 0.3], 2)
   }
 
   /**
@@ -1664,7 +1671,7 @@ export class CourseView {
     const k = 0.14 - 0.08 * n + (this.lava ? 0.08 : 0)
     this.toy.emissiveColor.set(k, k * (this.lava ? 0.7 : 1), k * (this.lava ? 0.5 : 1))
     // V-Gelo: o gelo brilha sozinho na noite polar (o branco vira ciano-gelo, como na referência)
-    if (this.theme.deco === "ice") this.toy.emissiveColor.set(0.12 + 0.08 * n, 0.22 + 0.14 * n, 0.32 + 0.16 * n)
+    if (this.theme.deco === "ice") this.toy.emissiveColor.set(0.05 + 0.05 * n, 0.12 + 0.08 * n, 0.22 + 0.1 * n)
   }
 
   private unlit(name: string, k = 1) {
@@ -1688,7 +1695,7 @@ export class CourseView {
     const stage = !city0 && (p.s === 0 || p.s === 6) && p.c === 6
     const d0 = this.theme.deco
     // piso escuro onde o rejunte acende (Orbital = ardósia roxa, Forja = ferro), gelo puxado para o ciano
-    const tint = (c: RGB): RGB => (d0 === "forest" ? mix(c, [0.1, 0.34, 0.32], 0.3) : d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.55, 0.82, 0.96], 0.35) : d0 === "factory" ? mix(c, [0.19, 0.2, 0.22], 0.78) : c)
+    const tint = (c: RGB): RGB => (d0 === "forest" ? mix(c, [0.1, 0.34, 0.32], 0.3) : d0 === "orbital" ? mix(c, [0.13, 0.11, 0.24], 0.6) : d0 === "forge" ? mix(c, [0.15, 0.13, 0.13], 0.62) : d0 === "ice" ? mix(c, [0.1, 0.42, 0.8], 0.55) : d0 === "factory" ? mix(c, [0.19, 0.2, 0.22], 0.78) : c)
     // Floresta: todo o chão no verde-azulado da referência (a cor da peça só puxa um pouco)
     // Forja (20/11, miniatura): a largada e a chegada no mesmo ferro escuro do resto (o palco bege destoava)
     const top = d0 === "forest" ? mix(C[5], C[p.c], stage ? 0 : 0.18) : stage && d0 !== "forge" ? mix(this.neon, C[6], 0.62) : tint(C[p.c])
