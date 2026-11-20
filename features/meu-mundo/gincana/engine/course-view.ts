@@ -42,6 +42,7 @@ import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade }
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
 import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serraria-view"
+import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
@@ -98,6 +99,7 @@ export class CourseView {
   /** Gincana 3: anéis do Rolo de Gelo (um nó por anel, gira em z). */
   private readonly drumNodes: { node: TransformNode; d: number; r: number }[] = []
   private serraria: SerrariaView | null = null
+  private tanque: TanqueView | null = null
   /** Gincana 3: Relógio da Praça — ladrilhos, símbolos [símbolo][ladrilho], o símbolo no mostrador e o ponteiro. */
   private readonly memTiles: InstancedMesh[] = []
   private readonly memSyms: InstancedMesh[][] = []
@@ -279,7 +281,7 @@ export class CourseView {
       const row = course.pendulums.filter((p) => p.z === z)
       const py = row[0].py
       // Clareira: o pórtico fica fora da vitória-régia que gira (r 9) e da rampa
-      const span = theme.id === "clareira" ? 10.5 : 5.5
+      const span = theme.id === "clareira" ? 10.5 : theme.id === "tanque" ? 10.6 : 5.5
       const x0 = Math.min(...row.map((p) => p.x)) - span
       const x1 = Math.max(...row.map((p) => p.x)) + span
       if (theme.id === "portoes") {
@@ -487,8 +489,9 @@ export class CourseView {
         this.swings.push(m)
         continue
       }
-      if (theme.id === "portoes" || theme.id === "serraria") {
+      if (theme.id === "portoes" || theme.id === "serraria" || theme.id === "tanque") {
         if (theme.id === "serraria") serrariaAxe(pg, p.len, p.R)
+        else if (theme.id === "tanque") tanqueHook(pg, p.len, p.R)
         else portoesIcicle(pg, p.len, p.R)
         const m = pg.build("gincana-swing", scene, toy, false)
         m.position.set(p.x, p.py, p.z)
@@ -551,6 +554,8 @@ export class CourseView {
       if (theme.deco === "city") {
         gg.sphere(gv.R * 2, at(0, 0, 0), PINK, 16, 1.05, 0.92, 1)
         gg.sphere(gv.R * 0.75, at(-gv.dir * 0.2, gv.R * 0.35, gv.R * 0.72), PINK, 10, 1, 0.8, 1.2)
+      } else if (theme.id === "tanque") {
+        tanquePistonHead(gg, gv)
       } else {
         // pistão: cabeça chata do tema
         gg.cylinder(gv.R * 2, gv.R * 1.2, at(0, 0, 0, 0, 0, Math.PI / 2), stripesY(C[2], darker(C[2], 0.6), 0.3, 0), 18)
@@ -649,6 +654,8 @@ export class CourseView {
           this.fruitPools.push(pool)
         }
         bb.sphere(0.01, at(0, 0, 0), WHITE, 4)
+      } else if (theme.id === "tanque") {
+        tanqueBarrel(bb, R)
       } else if (theme.deco === "forest") {
         // Floresta (ref. v3): TRONCO rolando de lado (eixo em x, gira em x como a bola): casca em sulcos,
         // pontas de madeira clara com anéis e um aro listrado de perigo em cada ponta; nó e musgo na casca
@@ -761,14 +768,18 @@ export class CourseView {
         pg.box(1.4, 0.7, 1.2, at(0, q.h + rodH - 0.1, 0), TEAL)
         // o pórtico fixo por onde o carro corre (colunas FORA da arena: ninguém atravessa)
         const gg = new SoftGeo()
-        const span = (q.ax + q.hx) * 2 + 6
+        // Tanque: o pórtico se apoia FORA do piso que está embaixo (rampa estreita ou patamar)
+        const under = theme.id === "tanque" ? course.pads.find((p) => p.k !== 0 && Math.abs(q.x - p.x) <= p.hx && Math.abs(q.z - p.z) <= p.hz) : undefined
+        const gx = under ? under.x : q.x
+        const span = under ? (under.hx + 1.0) * 2 : (q.ax + q.hx) * 2 + 6
         const by = q.y + q.h + rodH + 0.35
-        gg.box(span, 0.7, 1.4, at(q.x, by, q.z), (_x, y) => (y > 0.2 ? mix(TEAL, WHITE, 0.25) : TEAL))
-        gg.box(span, 0.12, 0.3, at(q.x, by - 0.4, q.z - 0.35), BRASS)
-        gg.box(span, 0.12, 0.3, at(q.x, by - 0.4, q.z + 0.35), BRASS)
+        gg.box(span, 0.7, 1.4, at(gx, by, q.z), (_x, y) => (y > 0.2 ? mix(TEAL, WHITE, 0.25) : TEAL))
+        gg.box(span, 0.12, 0.3, at(gx, by - 0.4, q.z - 0.35), BRASS)
+        gg.box(span, 0.12, 0.3, at(gx, by - 0.4, q.z + 0.35), BRASS)
         for (const sx of [-1, 1]) {
-          const px = q.x + sx * (span / 2 - 0.4)
-          gg.box(1, by - q.y + 4, 1, at(px, q.y + (by - q.y) / 2 - 2, q.z), TEAL)
+          const px = gx + sx * (span / 2 - 0.4)
+          if (under) gg.box(1, by + 2, 1, at(px, (by - 2) / 2, q.z), TEAL)
+          else gg.box(1, by - q.y + 4, 1, at(px, q.y + (by - q.y) / 2 - 2, q.z), TEAL)
           for (let k = 0; k < 4; k++) gg.box(1.05, 0.5, 1.05, at(px, q.y + 0.25 + k * 1.2, q.z), k % 2 ? HAZ_K : HAZ_Y)
           gg.cylinder(1.4, 0.4, at(px, by + 0.5, q.z), BRASS, 10)
         }
@@ -1254,6 +1265,7 @@ export class CourseView {
     if (theme.id === "moinhos") this.mills = new MoinhosMills(scene, toy, this.glowMat, course)
     if (theme.id === "helices") this.yard = new HelicesYard(scene, toy, this.glowMat)
     if (course.logs.length || course.planks.length) this.serraria = new SerrariaView(scene, toy, this.glowMat, course)
+    if (theme.id === "tanque") this.tanque = new TanqueView(scene, toy, this.glowMat, course)
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
@@ -1599,6 +1611,7 @@ export class CourseView {
     }
     if (this.theme.id === "portoes") portoesFloor(g, glow, p)
     if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
+    if (this.theme.id === "tanque" && !dyn && tanqueFloor(g, glow, p)) return
     if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) return
     const millFloor = (this.theme.id === "moinhos" && !dyn && moinhosFloor(g, p)) || (this.theme.id === "serraria" && !dyn && serrariaFloor(g, p))
     if (this.theme.id === "helices" && dyn && isHelixBlade(p)) return helicesBlade(g, glow, p, this.bladeSeed++)
@@ -2217,6 +2230,7 @@ export class CourseView {
     this.yard?.dispose()
     this.serraria?.dispose()
     this.crosta?.dispose()
+    this.tanque?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {

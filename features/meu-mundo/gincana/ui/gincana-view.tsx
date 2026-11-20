@@ -67,7 +67,7 @@ type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind:
 
 // Gincana 3 (G3-13): o programa abre com uma corrida, segue com duas provas de sobrevivência/coleta
 // (diferentes) e fecha na final, a Coroa da Torre (vaga 1). Não classificou = fim do programa.
-const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta"]
+const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque"]
 const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
 const SHOW_FINAL = "coroa"
 function drawShow(): string[] {
@@ -295,14 +295,20 @@ function GincanaScreen({
             n.by === "bar"
               ? tt("gincanaHitBar", "Barrada!")
               : n.by === "swing"
-                ? tt("gincanaHitSwing", "Bolada do pêndulo!")
+                ? theme.id === "tanque"
+                  ? tt("gincanaHitHook", "Pancada do gancho!")
+                  : tt("gincanaHitSwing", "Bolada do pêndulo!")
                 : n.by === "glove"
-                  ? tt("gincanaHitGlove", "Luvada!")
+                  ? theme.id === "tanque"
+                    ? tt("gincanaHitPiston", "Socado pelo pistão!")
+                    : tt("gincanaHitGlove", "Luvada!")
                   : n.by === "push"
                     ? tt("gincanaHitPush", "Empurrado!")
                     : n.by === "tackle"
                       ? tt("gincanaHitTackle", "Derrubado por um mergulho!")
-                      : tt("gincanaHitBall", "Atropelado pela bola!"),
+                      : theme.id === "tanque"
+                        ? tt("gincanaHitBarrel", "Atropelado pelo barril!")
+                        : tt("gincanaHitBall", "Atropelado pela bola!"),
             "bad",
             1100,
           )
@@ -338,10 +344,10 @@ function GincanaScreen({
           say(tt("gincanaEliminated", "Eliminado: a vaga encheu!"), "bad", 2200)
           break
         case "out":
-          say(theme.id === "floresta" ? tt("gincanaOutSwamp", "O pântano te pegou! Fora da prova") : tt("gincanaOutFall", "Caiu! Fora da prova"), "bad", 2400)
+          say(theme.id === "floresta" ? tt("gincanaOutSwamp", "O pântano te pegou! Fora da prova") : theme.id === "tanque" ? tt("gincanaOutOil", "O óleo te pegou! Fora da prova") : tt("gincanaOutFall", "Caiu! Fora da prova"), "bad", 2400)
           break
         case "rise":
-          say(tt("gincanaRiseNear", "O pântano está chegando: suba!"), "hot", 1300)
+          say(theme.id === "tanque" ? tt("gincanaRiseNearOil", "O óleo está chegando: suba!") : tt("gincanaRiseNear", "O pântano está chegando: suba!"), "hot", 1300)
           break
         case "gem":
           say(tt("gincanaGem", "+{n} engrenagem").replace("{n}", String(n.v)), "gold", 800)
@@ -450,7 +456,7 @@ function GincanaScreen({
             {/* Gincana 3: o perigo que sobe (a quantos metros do pé) */}
             {!result && hud.riseGap < 5 && (
               <div className="rounded-full px-2.5 py-0.5 text-[11px] font-black italic tabular-nums" style={{ background: hud.riseGap < 2.5 ? "rgba(110,16,34,0.9)" : "rgba(40,90,40,0.85)", color: "#fff" }}>
-                {t("gincanaRiseGap", "Pântano a {m} m").replace("{m}", Math.max(0, hud.riseGap).toFixed(1))}
+                {(theme.id === "tanque" ? t("gincanaRiseGapOil", "Óleo a {m} m") : t("gincanaRiseGap", "Pântano a {m} m")).replace("{m}", Math.max(0, hud.riseGap).toFixed(1))}
               </div>
             )}
             {/* sobrevivência: quantos ainda em pé; coleta/zona: meus pontos */}
