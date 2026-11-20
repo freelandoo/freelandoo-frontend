@@ -16,6 +16,7 @@ import {
   DECK,
   GINCANA,
   doorsOpen,
+  hoopPass,
   pathReal,
   stepTile,
   DRUM_EDGE,
@@ -179,6 +180,7 @@ export type RunEvent =
   | { type: "finish"; slot: number; t: number }
   | { type: "tile"; i: number }
   | { type: "logo"; slot: number; i: number }
+  | { type: "hoop"; slot: number; i: number }
   | { type: "bounce"; slot: number }
   | { type: "climb"; slot: number }
   | { type: "door"; i: number; open: boolean; slot: number }
@@ -1043,6 +1045,13 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     b.took[i] = w.t
     b.boost = T.boostT
     out?.push({ type: "logo", slot: b.slot, i })
+  }
+  // Descida dos Aros: passou pelo meio do aro = turbo e um empurrão para a frente
+  for (let i = 0; i < C.hoops.length; i++) {
+    if (!hoopPass(C.hoops[i], w.t, b.pz, b.x, b.y, b.z)) continue
+    b.boost = T.boostT
+    b.vz = Math.max(b.vz, T.run * 1.45)
+    out?.push({ type: "hoop", slot: b.slot, i })
   }
   const next = C.checkpoints[b.cp + 1]
   if (next && b.ground && b.z >= next.z - 1.5) {

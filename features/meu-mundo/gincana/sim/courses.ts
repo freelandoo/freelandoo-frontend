@@ -981,6 +981,126 @@ function courseGangorras(): Course {
   })
 }
 
+// ═══ aros — Descida dos Aros (Mar de Gelo) ════════════════════════════════════
+
+/**
+ * Gincana (2026-11-20, vídeo 7): DESCIDA DOS AROS — a 4ª fase do Mar de Gelo.
+ * Larga no alto e desce duas ladeiras de gelo liso (escorrega e a ladeira
+ * empurra para baixo). Aros de cristal no ar: quem PULA pelo meio ganha turbo e
+ * embalo (`hoopPass`); um vai e volta de lado; um cogumelo de neve lança até o
+ * aro alto. Um bloco de gelo desliza no patamar. No fim, três paredões de janelas:
+ * só passa quem pula pela janela (parapeito de 1 m, verga a 3,6 m), e cada janela tem um aro.
+ */
+export const AROS = {
+  y0: DECK + 12,
+  /** [x, z, altura acima do gelo, mx, w, fase] */
+  hoops: [
+    [-2.5, 24, 2.2, 0, 0, 0],
+    [2.2, 33, 2.2, 0, 0, 0],
+    [-1.2, 42, 2.2, 0, 0, 0],
+    [2.6, 51, 2.2, 0, 0, 0],
+    [0, 77, 2.2, 0, 0, 0],
+    [-3, 91, 4.6, 0, 0, 0],
+    [0, 99, 2.2, 3, 1.2, 0],
+    [2.2, 107, 2.2, 0, 0, 0],
+  ] as [number, number, number, number, number, number][],
+  /** paredões: [z, janelas (x)] — parapeito 1 m, janela de 2,4 m */
+  walls: [
+    [124, [-4.8, 0, 4.8]],
+    [130.5, [-2.4, 2.4]],
+    [137, [-4.8, 0, 4.8]],
+  ] as [number, number[]][],
+} as const
+
+function courseAros(): Course {
+  const k = new CourseKit()
+  const Y0 = AROS.y0
+  const Y1 = DECK + 5
+  // largada no alto
+  k.box(0, 0, 10, 8, 6, 7, 0, 0, 3, Y0)
+  k.box(0, 11.5, 7, 3.6, 0, 1, 0, 0, 2, Y0)
+  for (const x of [-4, 0, 4]) k.logo(x, 12.5, Y0)
+  // ladeira de gelo: escorrega (f) e empurra para baixo (bz)
+  const ice = (z0: number, z1: number, y0: number, y1: number, s: number) => {
+    const p = k.slope(0, z0, z1, y0, y1, 6.5, 3, 1, s)
+    Object.assign(k.pads[p], { f: 0.55, bz: 2.2 })
+  }
+  const surf = (z: number) => (z < 60 ? Y0 + ((Y1 - Y0) * (z - 15.1)) / (60 - 15.1) : Y1 + ((DECK - Y1) * (z - 68)) / (112 - 68))
+  // ── 1. a primeira descida, com os aros ──
+  ice(15.1, 60, Y0, Y1, 1)
+  for (const [x, z] of [[2.6, 28.5], [-2.8, 46.5]] as [number, number][]) k.post(x, z, 0.75, surf(z) - 0.5, surf(z) + 1.9, 3)
+  // ── 2. patamar com o bloco de gelo que desliza ──
+  k.box(0, 64, 7, 4, 2, 1, 2, 0, 2.2, Y1)
+  k.pusher(0, 64.5, 1.4, 1.4, 2.0, 4.8, 0, 1.1, 0, Y1)
+  // ── 3. a segunda descida: aro, cogumelo de neve até o aro alto, aro que vai e volta ──
+  ice(68, 112, Y1, DECK, 3)
+  k.post(-3, 86.5, 1.1, surf(86.5) - 0.6, surf(86.5) + 0.15, 2, 12.5)
+  k.post(3.2, 83, 0.75, surf(83) - 0.5, surf(83) + 1.9, 3)
+  for (const [x, z, dy, mx, w, ph] of AROS.hoops) k.hoop(x, z, surf(z) + dy, 1.45, mx, w, ph)
+  // ── 4. o paredão de janelas: parede com janelas de parapeito baixo, um aro em cada janela ──
+  k.box(0, 116.5, 7.5, 4.5, 2, 1, 4, 0, 1.6)
+  k.box(0, 136.5, 8, 15.5, 2, 1, 4, 0, 1.6)
+  for (const [z, wins] of AROS.walls) {
+    const W = 1.2
+    const xs = [-8, ...wins.flatMap((x) => [x - W, x + W]), 8]
+    for (let i = 0; i < xs.length; i += 2) {
+      const a = xs[i]
+      const b = xs[i + 1]
+      if (b - a > 0.05) k.box((a + b) / 2, z, (b - a) / 2, 0.45, 5, 1, 4, 0, 4.5, DECK + 4.5)
+    }
+    for (const x of wins) {
+      k.box(x, z, W, 0.45, 5, 1, 4, 0, 1, DECK + 1)
+      // a verga: a janela é janela (de 1 a 3,6 m), não um entalhe até o topo
+      k.box(x, z, W, 0.45, 5, 1, 4, 0, 0.9, DECK + 4.5)
+      k.hoop(x, z, DECK + 2.25, 1.15)
+    }
+  }
+  // a subida das pedras (a rampa das bolas é a dela, não a das descidas)
+  k.ramp = null
+  const z0 = 152
+  const finishZ = kitFinish(k, z0, 1.05, 6.8, 1.1)
+  for (const [x, z, y] of [[0, 64, Y1], [0, 116.5, DECK]] as [number, number, number][]) k.logo(x, z, y)
+  return k.done({
+    id: "aros",
+    checkpoints: [
+      { x: 0, z: -3.5, y: Y0, w: 7 },
+      { x: 0, z: 64, y: Y1, w: 5 },
+      { x: 0, z: 116.5, y: DECK, w: 5 },
+      { x: 0, z: 134, y: DECK, w: 5 },
+    ],
+    finishZ,
+    finishY: DECK + 6,
+    sections: [15.1, 60, 68, 121, z0],
+    minFinish: 20,
+    route: (r) =>
+      routeOf((add) => {
+        add(0, 10)
+        add(0, 14)
+        // pelos aros (a semente decide se o robô vai buscar o aro alto do cogumelo)
+        const high = r(2) < 0.6
+        for (const [x, z] of AROS.hoops) {
+          if (z === 91 && !high) {
+            add(0, 84)
+            add(0, 92)
+            continue
+          }
+          if (z === 91) add(-3, 84.5)
+          add(x, z - 3.5)
+          add(x, z + 1)
+        }
+        add(0, 114)
+        // uma janela de cada paredão (pela semente)
+        for (const [z, wins] of AROS.walls) {
+          const x = wins[Math.floor(r(3 + z) * wins.length)]
+          add(x, z - 3)
+          add(x, z + 1.2)
+        }
+        add(0, 142)
+        routeFinish(add, z0, finishZ)
+      }),
+  })
+}
+
 // ═══ orbital — Cidade Orbital ════════════════════════════════════════════════
 
 /**
@@ -1791,6 +1911,7 @@ export const COURSES: Record<GincanaPhase, Course> = {
   forja: courseForja(),
   altoforno: courseAltoForno(),
   crosta: courseCrosta(),
+  aros: courseAros(),
   fabrica: courseFabrica(),
   comportas: courseComportas(),
   gelo: courseGelo(),

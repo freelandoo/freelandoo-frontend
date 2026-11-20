@@ -94,6 +94,7 @@ export type GincanaNotice =
   | { kind: "splash" }
   | { kind: "cp"; cp: number }
   | { kind: "logo" }
+  | { kind: "hoop" }
   | { kind: "finish"; place: number; time: number }
   | { kind: "timeout" }
   | { kind: "door"; open: boolean }
@@ -414,6 +415,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     for (const e of events) {
       if (e.type === "tile") continue
       if (e.type === "splash") splashAt(e.x, e.z)
+      if (e.type === "hoop") course.hoopFlash(e.i, race.t)
       if (e.type === "door") {
         if (e.slot === me) {
           if (e.open) audio.logo()
@@ -452,6 +454,10 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
         case "logo":
           audio.logo()
           opts.onNotice?.({ kind: "logo" })
+          break
+        case "hoop":
+          audio.logo()
+          opts.onNotice?.({ kind: "hoop" })
           break
         case "out":
           opts.onNotice?.({ kind: "out" })

@@ -14670,7 +14670,21 @@
     "gincanaHowGa2": "Tem gente na frente? A sua ponta fica no alto: pule para subir nela.",
     "gincanaHowGa3": "Os pratos tombam de lado: fique perto do meio ou escorrega para o vazio.",
     "gincanaHowGa4": "A balança grande só desce quando a turma passa do meio.",
-    "gincanaHowGa5": "Na subida as pedras descem rolando: troque de faixa cedo."
+    "gincanaHowGa5": "Na subida as pedras descem rolando: troque de faixa cedo.",
+    "gincanaPhAros": "Descida dos Aros",
+    "gincanaEvAros": "Descida dos Aros",
+    "gincanaPhArosPitch": "A quarta corrida do Mar de Gelo: duas descidas de gelo liso cheias de aros de cristal. Pule por dentro de um aro e ganhe turbo. No fim, três paredões: só se passa pelas janelas.",
+    "gincanaSecAr1": "Primeira descida",
+    "gincanaSecAr2": "Patamar",
+    "gincanaSecAr3": "Segunda descida",
+    "gincanaSecAr4": "Paredões",
+    "gincanaSecAr5": "Reta final",
+    "gincanaHowAr1": "Pule por DENTRO do aro de cristal: turbo na hora. O gelo escorrega e puxa para baixo: mire antes.",
+    "gincanaHowAr2": "No patamar um bloco de gelo desliza de lado: passe atrás dele.",
+    "gincanaHowAr3": "O cogumelo de neve joga você até o aro alto; um aro vai e volta: espere ele chegar.",
+    "gincanaHowAr4": "Os paredões só têm janelas, cada uma com um aro: pule por elas.",
+    "gincanaHowAr5": "Depois do último paredão é só correr: o turbo do aro ajuda na reta.",
+    "gincanaHoop": "Pelo aro! Turbo!"
   },
   "Sports": {
     "eyebrow": "Esportes",

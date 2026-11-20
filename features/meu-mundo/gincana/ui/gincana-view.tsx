@@ -67,7 +67,7 @@ type Stage = { kind: "menu" } | { kind: "lobby"; ac: AbortController } | { kind:
 
 // Gincana 3 (G3-13): o programa abre com uma corrida, segue com duas provas de sobrevivência/coleta
 // (diferentes) e fecha na final, a Coroa da Torre (vaga 1). Não classificou = fim do programa.
-const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque", "estaleiro", "gangorras"]
+const SHOW_RACE = ["cidade", "feira", "floresta", "clareira", "comportas", "portoes", "altoforno", "moinhos", "helices", "serraria", "crosta", "tanque", "estaleiro", "gangorras", "aros"]
 const SHOW_MID = ["canion", "orbital", "forja", "fabrica", "gelo", "relogio"]
 const SHOW_FINAL = "coroa"
 function drawShow(): string[] {
@@ -320,6 +320,9 @@ function GincanaScreen({
           break
         case "logo":
           say(tt("gincanaLogo", "TURBO DA FREELANDOO!"), "gold", 1100)
+          break
+        case "hoop":
+          say(tt("gincanaHoop", "Pelo aro! Turbo!"), "gold", 1000)
           break
         case "cp":
           say(tt("gincanaCheckpoint", "Posto {n} garantido").replace("{n}", String(n.cp)), "ok", 1200)

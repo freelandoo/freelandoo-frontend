@@ -15256,7 +15256,21 @@
     "gincanaHowGa2": "People ahead of you? Your end is up high: jump to get on it.",
     "gincanaHowGa3": "The plates tip sideways: stay near the middle or you slide into the void.",
     "gincanaHowGa4": "The big scale only tips once the crowd gets past the middle.",
-    "gincanaHowGa5": "On the climb the stones roll down: switch lanes early."
+    "gincanaHowGa5": "On the climb the stones roll down: switch lanes early.",
+    "gincanaPhAros": "Hoop Descent",
+    "gincanaEvAros": "Hoop Descent",
+    "gincanaPhArosPitch": "The fourth race of the Sea of Ice: two slick ice slopes full of crystal hoops. Jump through a hoop for a turbo boost. At the end, three walls: the only way through is the windows.",
+    "gincanaSecAr1": "First slope",
+    "gincanaSecAr2": "Landing",
+    "gincanaSecAr3": "Second slope",
+    "gincanaSecAr4": "Walls",
+    "gincanaSecAr5": "Home stretch",
+    "gincanaHowAr1": "Jump THROUGH the crystal hoop: instant turbo. The ice is slippery and pulls you down: line up early.",
+    "gincanaHowAr2": "On the landing an ice block slides sideways: pass behind it.",
+    "gincanaHowAr3": "The snow mushroom launches you to the high hoop; one hoop moves back and forth: wait for it.",
+    "gincanaHowAr4": "The walls only have windows, each with a hoop: jump through them.",
+    "gincanaHowAr5": "After the last wall just run: the hoop turbo helps on the straight.",
+    "gincanaHoop": "Through the hoop! Turbo!"
   },
   "Sports": {
     "eyebrow": "Sports",

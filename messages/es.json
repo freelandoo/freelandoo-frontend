@@ -15236,7 +15236,21 @@
     "gincanaHowGa2": "¿Hay gente delante? Tu punta queda en alto: salta para subir.",
     "gincanaHowGa3": "Los platillos se inclinan de lado: quédate cerca del centro o resbalas al vacío.",
     "gincanaHowGa4": "La balanza grande solo baja cuando el grupo pasa del centro.",
-    "gincanaHowGa5": "En la subida las piedras bajan rodando: cambia de carril pronto."
+    "gincanaHowGa5": "En la subida las piedras bajan rodando: cambia de carril pronto.",
+    "gincanaPhAros": "Descenso de los Aros",
+    "gincanaEvAros": "Descenso de los Aros",
+    "gincanaPhArosPitch": "La cuarta carrera del Mar de Hielo: dos bajadas de hielo liso llenas de aros de cristal. Salta por dentro de un aro y gana turbo. Al final, tres murallas: solo se pasa por las ventanas.",
+    "gincanaSecAr1": "Primera bajada",
+    "gincanaSecAr2": "Rellano",
+    "gincanaSecAr3": "Segunda bajada",
+    "gincanaSecAr4": "Murallas",
+    "gincanaSecAr5": "Recta final",
+    "gincanaHowAr1": "Salta por DENTRO del aro de cristal: turbo al instante. El hielo resbala y tira hacia abajo: apunta antes.",
+    "gincanaHowAr2": "En el rellano un bloque de hielo se desliza de lado: pasa detrás de él.",
+    "gincanaHowAr3": "El hongo de nieve te lanza hasta el aro alto; un aro va y viene: espera a que llegue.",
+    "gincanaHowAr4": "Las murallas solo tienen ventanas, cada una con un aro: salta por ellas.",
+    "gincanaHowAr5": "Después de la última muralla solo corre: el turbo del aro ayuda en la recta.",
+    "gincanaHoop": "¡Por el aro! ¡Turbo!"
   },
   "Sports": {
     "eyebrow": "Deportes",

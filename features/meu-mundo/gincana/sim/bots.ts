@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, logRowAngle, rotorBladeAt, sawTop, drumAt, gloveAt, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, logRowAngle, rotorBladeAt, sawTop, drumAt, gloveAt, hoopX, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -570,6 +570,31 @@ function pathAim(br: BotBrain, b: Runner, w: RunWorld): { x: number; z: number }
   return Math.abs(q.x - b.x) > 0.4 ? { x: q.x, z: b.z } : { x: q.x, z: q.z + 0.3 }
 }
 
+/**
+ * Descida dos Aros: o aro (ou a janela) logo à frente e alinhado — pula para chegar ao plano dele perto do alto
+ * do pulo (0,32 s depois de sair do chão). O erro de tempo vem da habilidade. Aro alto demais (o do cogumelo)
+ * não se pula do chão.
+ */
+function hoopJump(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
+  const C = w.course
+  if (!C.hoops.length || !b.ground || br.jumpCool > 0) return
+  const v = Math.max(4, b.vz)
+  for (let i = 0; i < C.hoops.length; i++) {
+    const h = C.hoops[i]
+    const dz = h.z - b.z
+    if (dz <= 0 || dz > 5) continue
+    if (h.y - b.y > 3.3) continue
+    const tArr = dz / v
+    if (Math.abs(hoopX(h, w.t + tArr) - b.x) > h.R * 0.75) continue
+    const err = (botRand(br.seed, br.slot * 11 + i, Math.floor(w.t)) - 0.5) * (1 - br.skill) * 0.35
+    if (tArr < 0.33 + err) {
+      it.jump = true
+      br.jumpCool = 0.5
+      return
+    }
+  }
+}
+
 /** Escolhe a porta da fileira à frente: aberta (alguém passou) > desconhecida mais perto > a sorteada. */
 function pickDoor(br: BotBrain, b: Runner, w: RunWorld, row: number) {
   const C = w.course
@@ -985,6 +1010,8 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     const off = b.x - S.x
     if (Math.abs(a) > 0.06 && Math.sign(off) === Math.sign(a) && Math.abs(off) > 0.5) it.mx -= Math.sign(a) * Math.min(1, br.skill + 0.3)
   }
+  // aro à frente (e a janela do paredão): pula para cruzar no alto do pulo
+  hoopJump(br, b, w, it)
   // Serraria: tora atravessada logo à frente — pula para subir nela (a parede de baixo não deixa passar)
   if (b.ground && br.jumpCool <= 0) {
     for (const L of C.logs) {

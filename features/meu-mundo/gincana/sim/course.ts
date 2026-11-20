@@ -89,8 +89,8 @@ export const GINCANA_COLORS = ["#FF6A13", "#FFD21F", "#FF5FA8", "#19C6D1", "#8A4
 export type GincanaMode = "race" | "survive" | "collect" | "zone"
 
 /** As fases: a de sempre e uma por Domínio. */
-export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "gangorras" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "tanque" | "gelo" | "portoes" | "estaleiro" | "relogio" | "feira" | "coroa"
-export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "gangorras", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "tanque", "gelo", "portoes", "estaleiro", "relogio", "feira", "coroa"]
+export type GincanaPhase = "cidade" | "floresta" | "clareira" | "serraria" | "canion" | "moinhos" | "gangorras" | "orbital" | "helices" | "forja" | "altoforno" | "crosta" | "fabrica" | "comportas" | "tanque" | "gelo" | "portoes" | "estaleiro" | "aros" | "relogio" | "feira" | "coroa"
+export const GINCANA_PHASES: readonly GincanaPhase[] = ["cidade", "floresta", "clareira", "serraria", "canion", "moinhos", "gangorras", "orbital", "helices", "forja", "altoforno", "crosta", "fabrica", "comportas", "tanque", "gelo", "portoes", "estaleiro", "aros", "relogio", "feira", "coroa"]
 
 /**
  * Plataforma: 0 = disco (r), 1 = caixa girada (hx, hz, rot), 2 = rampa
@@ -355,6 +355,28 @@ export interface Rise {
   y1: number
   t0: number
   t1: number
+}
+
+/** Aro no ar (Descida dos Aros). */
+export interface Hoop {
+  x: number
+  z: number
+  y: number
+  R: number
+  mx: number
+  w: number
+  ph: number
+}
+
+/** Centro x do aro agora (os que vão e voltam de lado). */
+export function hoopX(h: Hoop, t: number) {
+  return h.mx > 0 ? h.x + Math.sin(h.w * t + h.ph) * h.mx : h.x
+}
+
+/** Atravessou o aro pelo meio neste passo (cruzou o plano z do aro com o meio do corpo dentro do furo)? */
+export function hoopPass(h: Hoop, t: number, pz: number, x: number, y: number, z: number) {
+  if (!(pz < h.z && z >= h.z)) return false
+  return Math.hypot(x - hoopX(h, t), y + 0.85 - h.y) < h.R - 0.45
 }
 
 /** Ponto onde aparece uma engrenagem (coleta): some quando alguém pega e volta depois de `back` s. */
@@ -660,6 +682,8 @@ export interface Course {
   balls: Balls | null
   checkpoints: Checkpoint[]
   logos: { x: number; z: number; y: number }[]
+  /** Descida dos Aros (2026-11-20): aro no ar, de frente para a corrida; atravessar pelo meio dá turbo e embalo. */
+  hoops: Hoop[]
   finishZ: number
   finishY: number
   /** z onde começa cada trecho (1…n); antes do primeiro = largada; depois da chegada = n + 1. */
@@ -684,6 +708,7 @@ export class CourseKit {
   readonly doorOpen: number[] = []
   readonly pushers: Pusher[] = []
   readonly logos: { x: number; z: number; y: number }[] = []
+  readonly hoops: Hoop[] = []
   ramp: Ramp | null = null
   balls: Balls | null = null
   readonly gems: Gem[] = []
@@ -773,6 +798,10 @@ export class CourseKit {
   pusher(x: number, z: number, hx: number, hz: number, h: number, ax: number, az: number, w: number, ph: number, y = DECK) {
     this.pushers.push({ x, z, hx, hz, y, h, ax, az, w, ph })
   }
+  /** Aro no ar: centro (x, y, z), raio R; se `mx` > 0, vai e volta de lado (±mx m, w rad/s, fase ph). */
+  hoop(x: number, z: number, y: number, R: number, mx = 0, w = 0, ph = 0) {
+    this.hoops.push({ x, z, y, R, mx, w, ph })
+  }
   logo(x: number, z: number, y = DECK) {
     this.logos.push({ x, z, y: y + 1.1 })
   }
@@ -825,6 +854,7 @@ export class CourseKit {
       balls: this.balls,
       checkpoints: o.checkpoints,
       logos: this.logos,
+      hoops: this.hoops,
       finishZ: o.finishZ,
       finishY: o.finishY,
       sections: o.sections,

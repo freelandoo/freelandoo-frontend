@@ -38,6 +38,7 @@ import { buildAurora, buildBackdrop, buildTargets } from "./backdrops"
 import { cannonGate, clareiraPost, clearingFloor, fallenLog, fruit, hollowLog, isClareiraCannon, isClareiraFloor, isClareiraLily, isClareiraLog, giantLily, isClareiraSlice, isClareiraStone, isClareiraStump, mossStone, spinSlice, spinStump } from "./clareira-view"
 import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./comportas-view"
 import { CrostaPlates, crostaGantry, crostaHammer } from "./crosta-view"
+import { ArosHoops, arosPillar, arosShroomCap, arosShroomStalk, arosSlide, arosWall } from "./aros-view"
 import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
 import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
@@ -83,6 +84,7 @@ export class CourseView {
   private readonly mills: MoinhosMills | null = null
   private readonly yard: HelicesYard | null = null
   private readonly crosta: CrostaPlates | null = null
+  private readonly aros: ArosHoops | null = null
   private bladeSeed = 0
   private readonly afBalls: AltoFornoBalls | null = null
   private readonly pusherMeshes: Mesh[] = []
@@ -219,17 +221,26 @@ export class CourseView {
       const h = q.y1 - q.y0
       if (q.b > 0) {
         // cogumelo que lança: talo claro, chapéu aceso com pintas (o chapéu pulsa: malha à parte)
-        st.cylinder(q.r * 0.9, h, at(q.x, q.y0 + h / 2, q.z), [0.86, 0.84, 0.74], 12, q.r * 0.7)
         const cap = new SoftGeo()
-        cap.sphere(q.r * 2.25, at(0, 0, 0), col, 14, 1, 0.42, 1)
-        for (let k = 0; k < 6; k++) {
-          const a = (k / 6) * Math.PI * 2
-          cap.sphere(q.r * 0.38, at(Math.cos(a) * q.r * 0.6, q.r * 0.36, Math.sin(a) * q.r * 0.6), mix(col, [1, 1, 1], 0.7), 6, 1, 0.5, 1)
+        if (theme.id === "aros") {
+          // Descida dos Aros: cogumelo de neve
+          arosShroomStalk(st, q)
+          arosShroomCap(cap, q.r)
+        } else {
+          st.cylinder(q.r * 0.9, h, at(q.x, q.y0 + h / 2, q.z), [0.86, 0.84, 0.74], 12, q.r * 0.7)
+          cap.sphere(q.r * 2.25, at(0, 0, 0), col, 14, 1, 0.42, 1)
+          for (let k = 0; k < 6; k++) {
+            const a = (k / 6) * Math.PI * 2
+            cap.sphere(q.r * 0.38, at(Math.cos(a) * q.r * 0.6, q.r * 0.36, Math.sin(a) * q.r * 0.6), mix(col, [1, 1, 1], 0.7), 6, 1, 0.5, 1)
+          }
         }
         const m = cap.build("gincana-shroom", scene, this.glowMat, false)
         m.position.set(q.x, q.y1 - 0.12, q.z)
         this.bounceCaps.push({ mesh: m, x: q.x, z: q.z })
         this.meshes.push(m)
+      } else if (theme.id === "aros") {
+        // Descida dos Aros: pilar de cristal
+        arosPillar(st, glow, q)
       } else if (theme.id === "clareira") {
         // Clareira da Lua: cogumelo do miolo das fatias, árvore gigante dos tocos
         clareiraPost(st, glow, q)
@@ -743,7 +754,7 @@ export class CourseView {
     for (const q of course.pushers) {
       const pg = new SoftGeo()
       // o que empurra é perigo: listra diagonal amarela e preta (na cidade, as faixas de antes)
-      if (theme.id === "portoes") {
+      if (theme.id === "portoes" || theme.id === "aros") {
         portoesBlock(pg, q.hx, q.hz, q.h)
       } else if (theme.id === "moinhos") {
         moinhosBlock(pg, q.hx, q.hz, q.h, this.pusherMeshes.length)
@@ -1268,6 +1279,7 @@ export class CourseView {
     if (theme.id === "altoforno") this.altoforno = new AltoFornoBelt(scene, toy, this.glowMat, course)
     if (theme.id === "moinhos") this.mills = new MoinhosMills(scene, toy, this.glowMat, course)
     if (theme.id === "helices") this.yard = new HelicesYard(scene, toy, this.glowMat)
+    if (course.hoops.length) this.aros = new ArosHoops(scene, toy, this.glowMat, course)
     if (course.logs.length || course.planks.length) this.serraria = new SerrariaView(scene, toy, this.glowMat, course)
     if (theme.id === "tanque") this.tanque = new TanqueView(scene, toy, this.glowMat, course)
     if (course.rotors.length) this.estaleiro = new EstaleiroView(scene, toy, this.glowMat, course)
@@ -1275,6 +1287,8 @@ export class CourseView {
     for (const p of course.pads) {
       if (p.bx === 0 && p.bz === 0) continue
       if (theme.id === "altoforno" && isBeltRamp(p)) continue
+      // Descida dos Aros: o gelo que empurra para baixo é a calha (desenhada com o tampo), sem setas
+      if (theme.id === "aros") continue
       const tex = new DynamicTexture("gincana-belt", { width: 64, height: 64 }, scene, true)
       const g = tex.getContext() as CanvasRenderingContext2D
       g.fillStyle = "#1a1c22"
@@ -1616,6 +1630,10 @@ export class CourseView {
       comportasFloor(g, glow, p)
     }
     if (this.theme.id === "portoes") portoesFloor(g, glow, p)
+    if (this.theme.id === "aros") {
+      if (!dyn && arosWall(g, glow, p)) return
+      arosSlide(g, glow, p, this.course.hoops)
+    }
     if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
     if (this.theme.id === "tanque" && !dyn && tanqueFloor(g, glow, p)) return
     if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) return
@@ -1979,6 +1997,11 @@ export class CourseView {
   }
 
   /** Um quadro: tudo o que se mexe no tempo da prova `t`. */
+  /** Descida dos Aros: alguém passou pelo aro `i` — ele pulsa. */
+  hoopFlash(i: number, t: number) {
+    this.aros?.flash(i, t)
+  }
+
   update(t: number, clock: number, world: RunWorld) {
     const C = this.course
     const tt = Math.max(0, t)
@@ -2004,6 +2027,7 @@ export class CourseView {
     }
     const TT = C.tileTime
     this.crosta?.update(world.tiles, t, clock)
+    this.aros?.update(tt)
     for (let i = 0; i < this.tiles.length; i++) {
       const s = world.tiles[i]
       const inst = this.tiles[i]
@@ -2241,6 +2265,7 @@ export class CourseView {
     this.tanque?.dispose()
     this.estaleiro?.dispose()
     this.gangorras?.dispose()
+    this.aros?.dispose()
     this.afBalls?.dispose()
     this.doorBase?.dispose()
     for (const b of this.belts) {
