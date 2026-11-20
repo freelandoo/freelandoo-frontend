@@ -288,6 +288,11 @@ export interface Tile {
    * (estado −2 no mundo); o falso cai na hora e não volta.
    */
   pg: number
+  /**
+   * Cânion (20/11, "o cânion desmorona pela borda"): a pedra cai sozinha neste tempo da prova (como se alguém a
+   * pisasse: treme `warn` s e cai). Sem o campo, só cai pisada.
+   */
+  cr?: number
   pr: number
   pc: number
 }

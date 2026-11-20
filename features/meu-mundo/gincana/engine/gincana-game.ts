@@ -285,7 +285,9 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
   let diveQ = false
   let grabHeld = false
   let yaw = 0
-  let pitch = 0.36
+  // Cânion (20/11, pedido do Alex): câmera mais alta — o perigo é o chão (pedra que acende e cai)
+  const highCam = C.id === "canion"
+  let pitch = highCam ? 0.6 : 0.36
   let dragAt = -99
   const onKey = (e: KeyboardEvent, down: boolean) => {
     const k = e.key.toLowerCase()
@@ -649,7 +651,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
     const now = performance.now() / 1000
     if (now - dragAt > 2 && !drag) yaw = lerpAngle(yaw, 0, Math.min(1, dt * 0.8))
     const me3 = seats.get(me)!
-    const dist = touch ? 7.4 : 6.6
+    const dist = (touch ? 7.4 : 6.6) + (highCam ? 1.6 : 0)
     // suavização que não depende da taxa de quadros (exponencial)
     const kXZ = 1 - Math.exp(-dt * 14)
     const kY = 1 - Math.exp(-dt * 5)

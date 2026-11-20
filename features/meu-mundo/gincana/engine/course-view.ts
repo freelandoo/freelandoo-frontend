@@ -46,6 +46,7 @@ import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serr
 import { EstaleiroView } from "./estaleiro-view"
 import { GangorrasView } from "./gangorras-view"
 import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
+import { canionTileIdle, canionTileLit } from "./canion-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
@@ -69,6 +70,8 @@ export class CourseView {
   private readonly gloveMeshes: { glove: Mesh; rod: Mesh }[] = []
   private readonly tiles: InstancedMesh[] = []
   private readonly tileBases: Mesh[] = []
+  /** Cânion (20/11): a pedra acesa de cada ladrilho (corpo + luzes), mostrada do pisão até sumir. */
+  private readonly canionLit: { body: InstancedMesh; glow: InstancedMesh }[] = []
   private readonly ballPool: InstancedMesh[] = []
   private readonly ballBase: Mesh | null = null
   /** Clareira da Lua: uma fruta por faixa (base e conjunto de instâncias por espécie). */
@@ -593,6 +596,7 @@ export class CourseView {
 
     // ── ladrilhos: uma base por (cor, forma) e uma instância por ladrilho ──
     const baseKey = new Map<string, Mesh>()
+    const canionLitKey = new Map<string, { body: Mesh; glow: Mesh }>()
     if (theme.id === "crosta") this.crosta = new CrostaPlates(scene, toy, this.glowMat, course)
     for (const t of theme.id === "crosta" ? [] : course.tiles) {
       const key = `${t.c}-${t.k}-${t.h}`
@@ -613,6 +617,19 @@ export class CourseView {
           return vein ? mix(c, [0.85, 1, 0.6], 0.35) : c
         }, 16, 1, 0.16, 1.18)
         tg.cylinder(0.14, 0.9, at(0, -0.1, -W * 0.62, 0, Math.PI / 2, 0), [0.3, 0.42, 0.16], 5)
+      } else if (t.k === 1 && theme.id === "canion") {
+        // Cânion (20/11, pedido do Alex): pedra apagada na cor clara do andar; a acesa sai em `canionLitKey`
+        canionTileIdle(tg, t.h, t.c)
+        const lb = new SoftGeo()
+        const lg = new SoftGeo()
+        canionTileLit(lb, lg, t.h, t.c)
+        const body = lb.build(`gincana-tile-lit-${key}`, scene, toy, false)
+        const glow = lg.build(`gincana-tile-glow-${key}`, scene, this.glowMat, false)
+        for (const m of [body, glow]) {
+          m.isVisible = false
+          this.tileBases.push(m)
+        }
+        canionLitKey.set(key, { body, glow })
       } else if (t.k === 1 && theme.deco === "canyon") {
         // V-Cânion (ref. v3): pedra do caminho — laje de pedra cinza-areia em três lajotas (tons
         // diferentes, rejunte escuro entre elas), corpo de arenito terracota escurecendo embaixo
@@ -649,6 +666,16 @@ export class CourseView {
       inst.position.set(t.x, t.y, t.z)
       inst.isPickable = false
       this.tiles.push(inst)
+      const lit = canionLitKey.get(`${t.c}-${t.k}-${t.h}`)
+      if (lit) {
+        const body = lit.body.createInstance(`gincana-tile-lit-${i}`)
+        const glow = lit.glow.createInstance(`gincana-tile-glow-${i}`)
+        for (const m of [body, glow]) {
+          m.isPickable = false
+          m.setEnabled(false)
+        }
+        this.canionLit[i] = { body, glow }
+      }
     }
 
     // ── bolas da subida (do tema) ──
@@ -2037,13 +2064,37 @@ export class CourseView {
       const s = world.tiles[i]
       const inst = this.tiles[i]
       const base = C.tiles[i]
+      const lit = this.canionLit[i]
       if (s < 0 || t < s) {
         inst.setEnabled(true)
         inst.position.set(base.x, base.y, base.z)
         inst.scaling.setAll(1)
+        if (lit) {
+          lit.body.setEnabled(false)
+          lit.glow.setEnabled(false)
+        }
         continue
       }
       const age = t - s
+      if (lit) {
+        // Cânion: pisou = a pedra ACENDE (tampo forte + lâmpadas e borda), treme; perto de cair as luzes piscam
+        if (age < TT.warn + 0.8) {
+          const k = Math.max(0, age - TT.warn)
+          const j = age < TT.warn ? 0.05 * (age / TT.warn) : 0
+          const y = age < TT.warn ? base.y - age * 0.08 : base.y - 0.06 - 9 * k * k
+          inst.setEnabled(false)
+          lit.body.setEnabled(true)
+          lit.body.position.set(base.x + Math.sin(clock * 61 + i) * j, y, base.z + Math.cos(clock * 53 + i) * j)
+          lit.glow.position.copyFrom(lit.body.position)
+          const blink = age > TT.warn * 0.55 && age < TT.warn && Math.sin(age * 40) < -0.2
+          lit.glow.setEnabled(!blink)
+        } else {
+          inst.setEnabled(false)
+          lit.body.setEnabled(false)
+          lit.glow.setEnabled(false)
+        }
+        continue
+      }
       if (age < TT.warn) {
         // treme e afunda um pouquinho: vai cair
         const j = 0.05 * (age / TT.warn)
@@ -2239,6 +2290,10 @@ export class CourseView {
       g.rod.dispose()
     }
     for (const t of this.tiles) t.dispose()
+    for (const l of this.canionLit) {
+      l?.body.dispose()
+      l?.glow.dispose()
+    }
     for (const b of this.tileBases) b.dispose()
     for (const b of this.ballPool) b.dispose()
     this.ballBase?.dispose()

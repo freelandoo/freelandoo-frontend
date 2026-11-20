@@ -131,6 +131,11 @@ export class GincanaRace {
     stepSaws(w, this.runners, (j) => !this.gone[j], dt)
     // ladrilhos que já voltaram
     for (let i = 0; i < w.tiles.length; i++) if (w.tiles[i] >= 0 && this.t - w.tiles[i] >= C.tileTime.warn + C.tileTime.gone) w.tiles[i] = -1
+    // pedras que desmoronam sozinhas na hora delas (Cânion, 20/11)
+    for (let i = 0; i < w.tiles.length; i++) {
+      const cr = C.tiles[i].cr
+      if (cr !== undefined && w.tiles[i] === -1 && this.t >= cr) w.tiles[i] = cr
+    }
     for (const b of this.runners) {
       b.px = b.x
       b.py = b.y
