@@ -10,7 +10,7 @@
 // faixa sem bola na subida. Tudo determinístico pela semente e pelo tempo — a
 // sala e o treino no aparelho decidem igual.
 
-import { GINCANA, logRowAngle, rotorBladeAt, sawTop, drumAt, gloveAt, hoopX, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
+import { GINCANA, ballBelts, logRowAngle, rotorBladeAt, sawTop, drumAt, gloveAt, hoopX, memCall, memState, memSymbols, memTarget, memTile, onTile, padRot, padShift, padTop, pendulumAt, pusherAt, sweeperAngle, tileUp, wallsAt, type Course, type RoutePoint, type WallWave } from "./course"
 import { MODE, groundUnder, type RunIntent, type RunWorld, type Runner } from "./body"
 
 export interface BotBrain {
@@ -23,6 +23,8 @@ export interface BotBrain {
   laneX: number
   /** s até poder pular de novo. */
   jumpCool: number
+  /** 20/11: s esperando a pá grossa passar (Moinhos): não corrige de lado nesse tempo. */
+  vaneWait?: number
   stuck: number
   /** recuo (s) depois de travar contra outro na frente de uma porta */
   back: number
@@ -85,18 +87,40 @@ function barJump(br: BotBrain, b: Runner, w: RunWorld, it: RunIntent) {
     const s = C.sweepers[i]
     if (Math.hypot(b.x - s.x, b.z - s.z) > s.len + 5) continue
     const high = s.y - s.r - b.y > 0.9
-    let tc = -1
-    for (let k = 1; k <= 30 && tc < 0; k++) {
-      const h = k * 0.02
-      const px = b.x + vx * h - s.x
-      const pz = b.z + vz * h - s.z
-      const a = sweeperAngle(s, t + h)
-      const dx = Math.sin(a)
-      const dz = Math.cos(a)
-      const along = Math.max(s.both ? -s.len : 0, Math.min(s.len, px * dx + pz * dz))
-      if (Math.abs(along) < 0.9) continue
-      if (Math.hypot(px - dx * along, pz - dz * along) < s.r + GINCANA.bodyR + 0.08) tc = h
+    // 20/11: pá GROSSA (Moinhos): de 0,3 m a mais de 1,6 m do pé — não se pula nem se mergulha
+    const wall = s.y - s.r - b.y < GINCANA.lowH && s.y + s.r - b.y > 1.6
+    const hitIn = (mvx: number, mvz: number, steps: number) => {
+      for (let k = 1; k <= steps; k++) {
+        const h = k * 0.02
+        const px = b.x + mvx * h - s.x
+        const pz = b.z + mvz * h - s.z
+        const a = sweeperAngle(s, t + h)
+        const dx = Math.sin(a)
+        const dz = Math.cos(a)
+        const along = Math.max(s.both ? -s.len : 0, Math.min(s.len, px * dx + pz * dz))
+        if (Math.abs(along) < 0.9) continue
+        if (Math.hypot(px - dx * along, pz - dz * along) < s.r + GINCANA.bodyR + 0.08) return h
+      }
+      return -1
     }
+    if (wall) {
+      // espera a pá passar fora do alcance dela; se ela vem mesmo parado, recua (os menos hábeis demoram)
+      if (hitIn(vx, vz, 25) < 0) continue
+      br.vaneWait = 0.15
+      const ex = b.x - s.x
+      const ez = b.z - s.z
+      const d = Math.hypot(ex, ez) || 1
+      // espera FORA do alcance (o chão que tomba leva de lado): dentro dele, recua
+      if (d < s.len + s.r + GINCANA.bodyR + 0.35 || hitIn(0, 0, 30) >= 0) {
+        it.mx = (ex / d) * br.pace
+        it.mz = (ez / d) * br.pace
+      } else {
+        it.mx = 0
+        it.mz = 0
+      }
+      continue
+    }
+    const tc = hitIn(vx, vz, 30)
     if (tc < 0) continue
     const span = s.both ? Math.PI : Math.PI * 2
     const pass = Math.floor(sweeperAngle(s, t) / span)
@@ -719,6 +743,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   const C = w.course
   const it: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
   br.jumpCool = Math.max(0, br.jumpCool - dt)
+  br.vaneWait = Math.max(0, (br.vaneWait ?? 0) - dt)
   if (b.mode !== MODE.RUN || w.t < 0) return it
   // Gincana 3: arena (sobrevivência, coleta, zona) — sem rota
   if (C.mode !== "race") return arenaIntent(br, b, w, it)
@@ -848,8 +873,10 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   }
 
   // subida: a faixa mais livre das bolas que vêm
-  if (C.ramp && C.balls && b.z > C.ramp.z0 - 2 && b.z < C.ramp.z1 + 0.5) {
-    const gaps = [-5.4, -2.9, 0, 2.9, 5.4]
+  const belt = C.ramp && C.balls ? ballBelts(C).find((R) => b.z > R.z0 - 2 && b.z < R.z1 + 0.5) : undefined
+  if (belt && C.balls) {
+    const gl = belt.hx - 1.6
+    const gaps = [-gl, (-gl * 29) / 54, 0, (gl * 29) / 54, gl]
     let best = br.laneX
     let bestScore = -Infinity
     for (const gx of gaps) {
@@ -868,7 +895,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
     }
     // os menos hábeis demoram a perceber
     if (botRand(br.seed, br.slot, Math.floor(t * 4)) < br.skill) br.laneX = best
-    tx = C.ramp.x + br.laneX
+    tx = belt.x + br.laneX
   }
 
   // esteira: corre contra ela (mira um pouco além)
@@ -1015,7 +1042,7 @@ export function botIntent(br: BotBrain, b: Runner, w: RunWorld, dt = GINCANA.ste
   // em cima da gangorra de lado inclinada: corre contra o escorregão, para o lado que sobe
   for (let i = 0; i < C.saws.length; i++) {
     const S = C.saws[i]
-    if (S.ax !== 1 || !b.ground || Math.abs(b.x - S.x) > S.hx || Math.abs(b.z - S.z) > S.hz) continue
+    if (S.ax !== 1 || !b.ground || (br.vaneWait ?? 0) > 0 || Math.abs(b.x - S.x) > S.hx || Math.abs(b.z - S.z) > S.hz) continue
     const a = w.saw[i * 2]
     const off = b.x - S.x
     if (Math.abs(a) > 0.06 && Math.sign(off) === Math.sign(a) && Math.abs(off) > 0.5) it.mx -= Math.sign(a) * Math.min(1, br.skill + 0.3)

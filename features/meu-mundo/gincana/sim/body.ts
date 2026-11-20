@@ -721,7 +721,7 @@ function hazards(b: Runner, w: RunWorld, out: RunEvent[] | null) {
       break
     }
   }
-  if (C.balls && w.balls.length && C.ramp && b.z > C.ramp.z0 - 5) {
+  if (C.balls && w.balls.length && C.ramp && (C.balls.all || b.z > C.ramp.z0 - 5)) {
     const bl = w.balls
     const BR = C.balls.R
     for (let k = 0; k < bl.length; k += 5) {

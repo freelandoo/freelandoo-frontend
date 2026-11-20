@@ -374,17 +374,30 @@ export function moinhosMast(st: SoftGeo, q: Post) {
 }
 
 function vaneArms(g: SoftGeo, s: Sweeper) {
-  const L = s.len
-  const d = s.r * 2
-  // vara curta + a pá: tábua larga de pé (lê "pá de roda") com a borda ocre
-  g.box(d * 0.6, d * 0.6, L * 2, at(0, 0, 0), WOOD)
+  // 20/11 (pedido do Alex: "paredes grandes, impuláveis"): cada pá é uma PAREDE de tábuas do chão até ~2,2 m —
+  // a regra é uma cápsula de raio r em volta da vara (len para cada lado): a parede cobre o alcance todo
+  const L = s.len + s.r * 0.75
+  const H = s.r * 2
+  const T = s.r * 0.95
   for (const e of [-1, 1]) {
-    g.box(0.12, d * 1.4, L - 0.55, at(0, 0.05, e * (L / 2 + 0.25)), (_x, y) => (y > d * 0.45 ? OCHRE : y > 0 ? CLOTH : mix(CLOTH, SAND_D, 0.3)))
-    g.box(0.16, d * 1.5, 0.12, at(0, 0.05, e * (L - 0.06)), IRON)
+    const zc = e * (L / 2 + 0.3)
+    const ln = L - 0.6
+    // miolo de tábuas de pé (alterna o tom), base escura de contato e a quina de cima ocre
+    const nb = Math.max(3, Math.round(ln / 0.42))
+    for (let k = 0; k < nb; k++) {
+      const z = zc - ln / 2 + (k + 0.5) * (ln / nb)
+      g.box(T, H, ln / nb - 0.04, at(0, 0, z), (_x, y) => (y < -H / 2 + 0.2 ? mix(WOOD, IRON, 0.45) : k % 2 ? WOOD : WOOD_L))
+    }
+    g.box(T + 0.08, 0.14, ln + 0.05, at(0, H / 2 + 0.02, zc), OCHRE)
+    // cintas de ferro deitadas e cravos, e a ponta de ferro (o que bate primeiro)
+    for (const yy of [-H * 0.28, H * 0.22]) g.box(T + 0.06, 0.14, ln, at(0, yy, zc), IRON)
+    for (let k = 0; k < 4; k++) for (const sx of [-1, 1]) g.box(0.06, 0.1, 0.1, at(sx * (T / 2 + 0.03), H * 0.22, zc - ln / 2 + 0.3 + (k * (ln - 0.6)) / 3), IRON_L)
+    g.box(T + 0.12, H + 0.1, 0.3, at(0, 0, e * (L + 0.15)), (_x, y) => (y > H / 2 - 0.2 ? OCHRE : IRON))
   }
   // a cabeça que gira no mastro e a biruta: seta de ferro na frente, cauda de lona atrás
   const top = 2.6 - (s.y - 3) - 0.1
-  g.cylinder(0.5, 0.35, at(0, 0, 0), IRON, 10)
+  g.cylinder(1.0, H + 0.2, at(0, 0, 0), (_x, y) => (y > 0 ? WOOD_L : WOOD), 12)
+  g.torus(1.04, 0.08, at(0, H / 2, 0), IRON, 12)
   g.cylinder(0.24, 0.25, at(0, top, 0), IRON_L, 8)
   g.box(0.06, 0.06, 1.7, at(0, top + 0.12, 0), IRON)
   g.cylinder(0.24, 0.4, at(0, top + 0.12, 0.95, 0, Math.PI / 2, 0), IRON, 4, 0)
@@ -392,6 +405,68 @@ function vaneArms(g: SoftGeo, s: Sweeper) {
   g.sphere(0.16, at(0, top + 0.12, 0), BRASS2, 6)
 }
 const BRASS2: RGB = [0.78, 0.58, 0.26]
+
+// ── 1b. moenda grande sem chão (20/11, pedido do Alex: "bem grande, sem chão, e com buracos"): casca de
+// tábuas de pedra em volta de um eixo fino, com os FUROS abertos (beira de terracota para ler de longe), raios de
+// ferro nas pontas e o V de giro nas placas ──
+export function moinhosDrumHoled(g: SoftGeo, R: number, len: number, w: number, seed: number, holes: readonly { a: number; half: number }[]) {
+  const ALONG = Math.PI / 2
+  const TAU = Math.PI * 2
+  const inHole = (m: number) =>
+    holes.some((h) => {
+      let da = (m - h.a) % TAU
+      if (da > Math.PI) da -= TAU
+      if (da < -Math.PI) da += TAU
+      return Math.abs(da) < h.half
+    })
+  const RED: RGB = [0.66, 0.16, 0.08]
+  // eixo fino de madeira com cintas
+  g.cylinder(0.9, len + 0.8, at(0, 0, 0, 0, ALONG, 0), (x, _y, z) => mix(WOOD, WOOD_L, 0.3 * n01(Math.round(Math.atan2(z, x) * 3), 2)), 10)
+  for (let k = 0; k <= 4; k++) g.torus(0.98, 0.07, at(0, 0, -len / 2 + (k * len) / 4, 0, ALONG, 0), IRON, 10)
+  const N = 44
+  const seg = (TAU / N) * R
+  for (let k = 0; k < N; k++) {
+    const m = ((k + 0.5) / N) * TAU
+    if (inHole(m)) continue
+    const tone = n01(seed, k)
+    const base = mix(mix(SAND, SAND_L, 0.35), k % 5 === 2 ? TERRA : SAND_D, 0.08 + tone * 0.3)
+    const px = Math.sin(m) * (R - 0.22)
+    const py = Math.cos(m) * (R - 0.22)
+    g.box(seg + 0.03, 0.44, len - 0.2, at(px, py, 0, 0, 0, -m), (_x, y) => (y > 0.1 ? base : mix(base, SAND_D, 0.6)))
+    // juntas de pedra ao longo (a cada ~2 m) e picotado
+    for (let j = 1; j < Math.round(len / 2); j++) g.box(seg + 0.04, 0.03, 0.08, at(Math.sin(m) * R, Math.cos(m) * R, -len / 2 + (j * len) / Math.round(len / 2), 0, 0, -m), mix(SAND_D, IRON, 0.4))
+    if (n01(k, seed, 5) < 0.4) g.box(0.14, 0.03, 0.3, at(Math.sin(m) * (R + 0.01), Math.cos(m) * (R + 0.01), (n01(k, 9) - 0.5) * (len - 1), 0, 0, -m), SAND_L)
+    // beira do furo: faixa de terracota levantada (lê "buraco" de longe)
+    const edgeA = inHole(m + TAU / N)
+    const edgeB = inHole(m - TAU / N)
+    if (edgeA || edgeB) {
+      const me = m + (edgeA ? 1 : -1) * (TAU / N) * 0.42
+      g.box(0.16, 0.12, len - 0.25, at(Math.sin(me) * (R + 0.04), Math.cos(me) * (R + 0.04), 0, 0, 0, -me), RED)
+    }
+  }
+  // pontas: aro de ferro (só fora dos furos) e 6 raios até o eixo
+  for (const s of [-1, 1]) {
+    const ez = s * (len / 2 - 0.05)
+    for (let k = 0; k < N; k++) {
+      const m = ((k + 0.5) / N) * TAU
+      if (inHole(m)) continue
+      g.box(seg + 0.03, 0.2, 0.22, at(Math.sin(m) * (R + 0.02), Math.cos(m) * (R + 0.02), ez, 0, 0, -m), IRON)
+    }
+    for (let k = 0; k < 6; k++) {
+      const m = (k / 6) * TAU + seed
+      if (inHole(m)) continue
+      g.box(0.18, R - 0.6, 0.18, at(Math.sin(m) * (R / 2 + 0.2), Math.cos(m) * (R / 2 + 0.2), ez, 0, 0, -m), IRON_L)
+    }
+    g.cylinder(1.3, 0.3, at(0, 0, ez + s * 0.15, 0, ALONG, 0), WOOD_L, 10)
+  }
+  // V de giro: duas lascas por placa, a cada 4 placas (fora dos furos)
+  const sgn = Math.sign(w)
+  for (let k = 0; k < N; k += 4) {
+    const m = ((k + 0.5) / N) * TAU
+    if (inHole(m)) continue
+    for (const side of [-1, 1]) g.box(0.14, 0.03, 1.1, at(Math.sin(m) * (R + 0.012), Math.cos(m) * (R + 0.012), side * 0.45, sgn * side * 0.5, 0, -m), RED)
+  }
+}
 
 // ── 6. chão de lajes de arenito: fiadas desencontradas (largura sorteada), cada laje com a quina de cima
 // clara, tons em manchas largas, rejunte escuro, uma laje rachada de vez em quando; meio-fio de blocos nas

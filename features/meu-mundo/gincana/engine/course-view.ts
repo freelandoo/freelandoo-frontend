@@ -40,7 +40,7 @@ import { ComportasGates, comportasFloor, comportasPad, comportasPost } from "./c
 import { CrostaPlates, crostaGantry, crostaHammer } from "./crosta-view"
 import { ArosHoops, arosPillar, arosShroomCap, arosShroomStalk, arosSlide, arosWall } from "./aros-view"
 import { HelicesYard, helicesBlade, helicesHubPost, helicesSweep, isHelixBlade } from "./helices-view"
-import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
+import { MoinhosMills, moinhosBlock, moinhosDisc, moinhosDrum, moinhosDrumHoled, moinhosDrumShadows, moinhosFloor, moinhosFrames, moinhosMast, moinhosSweep, moinhosTracks } from "./moinhos-view"
 import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoFornoFrame, altoFornoGrate, altoFornoMouth, isBeltRamp } from "./altoforno-view"
 import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serraria-view"
 import { EstaleiroView } from "./estaleiro-view"
@@ -937,12 +937,16 @@ export class CourseView {
         const g = new SoftGeo()
         const gl = new SoftGeo()
         if (theme.id === "moinhos") {
-          moinhosDrum(g, gl, d.R, ring.len, ring.w, di)
+          if (ring.holes.length) moinhosDrumHoled(g, d.R, ring.len, ring.w, di * 7 + ri, ring.holes)
+          else moinhosDrum(g, gl, d.R, ring.len, ring.w, di)
           const mesh = g.build(`gincana-drum-m-${di}-${ri}`, scene, this.toy, false)
-          const gm = gl.build(`gincana-drum-g-${di}-${ri}`, scene, this.glowMat, false)
           mesh.parent = node
-          gm.parent = node
-          this.meshes.push(mesh, gm)
+          this.meshes.push(mesh)
+          if (gl.vertexCount) {
+            const gm = gl.build(`gincana-drum-g-${di}-${ri}`, scene, this.glowMat, false)
+            gm.parent = node
+            this.meshes.push(gm)
+          }
           this.drumNodes.push({ node, d: di, r: ri })
           z0 += ring.len
           return

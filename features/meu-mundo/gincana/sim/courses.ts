@@ -678,32 +678,55 @@ function courseCanion(): Course {
  * de cata-ventos (pás pequenas em grade, cada uma no seu giro) e a subida com as pedras rolando.
  */
 export const MOINHOS = {
-  R: 1.05,
-  /** [x, z0, comprimento, giro rad/s] */
-  rollers: [
-    [-4.4, 19, 14, 1.4],
-    [0, 19, 14, -1.6],
-    [4.4, 19, 14, 1.4],
-    [-6.6, 37, 14, -1.5],
-    [-2.2, 37, 14, 1.7],
-    [2.2, 37, 14, -1.7],
-    [6.6, 37, 14, 1.5],
-  ] as [number, number, number, number][],
-  /** cata-ventos: [x, z, giro] */
+  /**
+   * 20/11 (pedido do Alex: "se ficar bem grande, sem chão e com buracos, aí faz sentido"): três moendas GRANDES
+   * lado a lado sobre o vazio (o topo no nível do deck), cada uma em 5 anéis que giram cada um para um lado,
+   * com buracos que passam por baixo de quem está em cima. Caiu = volta ao posto.
+   */
+  R: 2.8,
+  /** x de cada moenda */
+  millX: [-5.8, 0, 5.8],
+  z0: 15.2, // um tico depois do começo do trecho 1: o reprise copia o que começa depois da emenda (15,15)
+  ringLen: 7.94,
+  /** giro de cada anel (rad/s; a moenda do meio ao contrário das de fora) */
+  ringW: [0.5, -0.58, 0.54, -0.5, 0.6],
+  /** buracos por anel: meia largura (rad) e quantos */
+  holeHalf: 0.3,
+  /** cata-ventos: [x, z, giro] — 20/11: pás GROSSAS (parede: não se pula nem se mergulha) */
+  // duas fileiras de 4 a cada 4,5 m: os alcances se cruzam, então todo vão (e a beira) fecha de tempos em tempos
   vanes: [
-    [-6, 130, 1.8], [-1, 130, -2.1], [4, 130, 1.9],
-    [-3.5, 138, -2.0], [1.5, 138, 2.2], [6.5, 138, -1.7],
-    [-6, 146, 2.1], [-1, 146, -1.9], [4, 146, 2.0],
+    [-6.75, 135, 1.1], [-2.25, 135, -1.2], [2.25, 135, 1.15], [6.75, 135, -1.1],
+    [-6.75, 147, -1.15], [-2.25, 147, 1.1], [2.25, 147, -1.2], [6.75, 147, 1.15],
   ] as [number, number, number][],
+  /** vãos por onde se passa (x) */
+  vaneGaps: [-4.5, 0, 4.5],
+  vaneLen: 1.2,
+  vaneR: 0.9,
+  vaneSpeed: 0.5,
+  /** chão do campo de cata-ventos: gangorra de lado que tomba com o peso (escorrega) */
+  tilt: { z0: 129, z1: 155.9, max: 0.1, k: 0.45 },
 } as const
 
 function courseMoinhos(): Course {
   const K = MOINHOS
   const k = new CourseKit()
   kitStart(k)
-  // ── 1. as moendas ──
-  k.box(0, 35, 9, 19.9, 0, 1, 1)
-  for (const [x, z0, len, w] of K.rollers) k.drum(x, z0, DECK + 0.25, K.R, [{ len, w, holes: [] }], 0.8, true)
+  // ── 1. as moendas grandes sobre o vazio, com buracos ──
+  K.millX.forEach((x, m) =>
+    k.drum(
+      x,
+      K.z0,
+      DECK - K.R,
+      K.R,
+      K.ringW.map((w, i) => ({
+        len: K.ringLen,
+        w: (m === 1 ? -1 : 1) * w,
+        holes: [0, Math.PI].map((o) => ({ a: o + i * 1.3 + m * 2.1, half: K.holeHalf })),
+      })),
+      0.8,
+      false,
+    ),
+  )
   // ── 2. os blocos de arenito ──
   k.box(0, 72, 9, 17.1, 5, 1, 2)
   // 20/11 (dificuldade): cinco blocos (antes três), mais rápidos e indo até a beira (jogam no vazio)
@@ -720,9 +743,13 @@ function courseMoinhos(): Course {
   k.disc(0, 117, 7, 2, 1, 3)
   k.sweep(0, 117, DECK + 0.55, 6.7, 0.32, -1.4, Math.PI / 2, true)
   // ── 4. o campo de cata-ventos ──
-  k.box(0, 140, 9, 15.9, 5, 1, 4)
+  // 20/11 (pedido do Alex): o posto fica num pedaço firme; o resto do campo é uma gangorra de lado que tomba com o
+  // peso da turma (escorrega para o lado baixo e joga no vazio) e as pás são paredes grossas que giram
+  const T = K.tilt
+  k.box(0, (124.1 + T.z0) / 2, 9, (T.z0 - 124.1) / 2, 5, 1, 4)
+  k.saw(0, (T.z0 + T.z1) / 2, DECK, 9, (T.z1 - T.z0) / 2, 1, T.max, 0, T.k)
   for (const [x, z, w] of K.vanes) {
-    k.sweep(x, z, DECK + 0.5, 2.25, 0.26, w * 1.25, x * 0.7, true)
+    k.sweep(x, z, DECK + 1.3, K.vaneLen, K.vaneR, w * K.vaneSpeed, x * 0.7, true)
     k.post(x, z, 0.2, DECK, DECK + 2.6, 4)
   }
   // ── 5. a subida com as pedras ──
@@ -745,13 +772,12 @@ function courseMoinhos(): Course {
       routeOf((add) => {
         const a = r(1) < 0.5 ? -1 : 1
         const b = r(2) < 0.5 ? -1 : 1
-        add(a * 1.2, 10)
-        add(a * 2.2, 16.5)
-        for (let z = 19; z <= 33; z += 2.5) add(a * 2.2, z)
-        add(b * 2.2, 35)
-        add(b * 4.4, 36)
-        for (let z = 38; z <= 51; z += 2.5) add(b * 4.4, z)
-        add(0, 54)
+        // em cima de uma das moendas (a semente escolhe), pelo topo
+        const mx = K.millX[1 + (b > 0 ? a : 0)]
+        add(mx * 0.5, 10)
+        add(mx, 14)
+        for (let z = 17; z <= 53; z += 2) add(mx, z)
+        add(0, 56)
         for (let z = 57; z <= 88; z += 2.5) add(0, z)
         // nos discos, longe do eixo (perto dele a barra passa rápido demais para ler)
         const c = r(3) < 0.5 ? -1 : 1
@@ -766,13 +792,20 @@ function courseMoinhos(): Course {
         add(-c * 3, 117)
         add(-c * 2.6, 121)
         add(0, 124)
-        add(1.5, 128)
-        add(1.5, 131)
-        add(-1, 134.5)
-        add(-1, 139)
-        add(1.5, 142.5)
-        add(1.5, 147)
-        add(0, 152)
+        // pelos vãos das pás (a semente escolhe um em cada fileira)
+        const g1 = K.vaneGaps[Math.floor(r(4) * 3)]
+        const g2 = K.vaneGaps[Math.floor(r(5) * 3)]
+        add(g1 * 0.5, 128)
+        add(g1, 131)
+        add(g1, 135)
+        add(g1, 138.5)
+        add((g1 + g2) / 2, 141)
+        add(g2, 143.5)
+        add(g2, 147)
+        add(g2, 150.5)
+        // a 2ª volta começa nas moendas logo aqui: alinha com a escolhida antes de chegar
+        add(mx, 153.5)
+        add(mx, 155.5)
         routeFinish(add, z0, finishZ)
       }),
   })
@@ -1306,6 +1339,9 @@ function courseForja(): Course {
  * de lado (no alto do quique dá para passar por baixo). Bigornas nas bordas, o patamar com a barra de fogo
  * que gira e a esteira curta até a chegada.
  */
+/** m/s de lado que a bola pode pegar a cada quique (20/11) */
+export const ALTOFORNO_BOUNCE = 2.6
+
 export const ALTOFORNO = {
   z0: 40,
   z1: 120,
@@ -1333,7 +1369,8 @@ function courseAltoForno(): Course {
       k.post(s * (K.hx - 0.7), zz, 0.6, y, y + 1.3, 3)
     }
   }
-  k.balls = { lanes: K.lanes, every: 0.95, v: 9, R: 1.25, zEnd: K.z0 - 2.2, hop: 1.7, hopT: 0.62, drift: 0.9 }
+  // 20/11: bola em toda esteira (as das voltas repetidas e a curta do fim, caindo do alto) e rumo novo a cada quique
+  k.balls = { lanes: K.lanes, every: 0.95, v: 9, R: 1.25, zEnd: K.z0 - 2.2, hop: 1.7, hopT: 0.62, all: true, bounce: ALTOFORNO_BOUNCE, allEvery: 1.8 }
   // ── 4. o patamar do alto-forno: a barra de fogo que gira ──
   const top = DECK + K.rise
   k.box(0, 127.5, 8, 7.5, 6, 7, 4, 0, 1.4, top)

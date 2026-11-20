@@ -249,7 +249,7 @@ export class AltoFornoBalls {
     ca.isVisible = false
     cb.isVisible = false
     this.bases.push(ca, cb)
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 56; i++) {
       const p: [InstancedMesh, InstancedMesh] = [ca.createInstance(`altoforno-ball-${i}`), cb.createInstance(`altoforno-ball-lit-${i}`)]
       for (const m of p) {
         m.isPickable = false
