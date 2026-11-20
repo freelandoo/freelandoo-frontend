@@ -46,6 +46,7 @@ import {
   pusherAt,
   padTop,
   riseAt,
+  FLOOR_LAVA,
   spawnAt,
   sweeperAngle,
   sweeperW,
@@ -175,6 +176,9 @@ export interface RunWorld {
   gems: Float64Array
   /** Gangorras: [ângulo, giro] de cada uma (mudam com o peso de quem está em cima). */
   saw: Float64Array
+  /** Fábrica em andares: quando a lava de cada andar começou a engolir (−1 = ainda não) e o nível dela (0–1). */
+  floorT: Float64Array
+  floorLv: Float64Array
 }
 
 /** Acontecimentos de um passo (para som, aviso e animação). */
@@ -199,7 +203,7 @@ export type RunEvent =
 export const IDLE_INTENT: RunIntent = { mx: 0, mz: 0, jump: false, dive: false, grab: false }
 
 export function newWorld(course: Course, seed: number, t: number): RunWorld {
-  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), doorHp: new Float64Array(course.doors.length), doorLast: new Float64Array(course.doors.length).fill(-9), gems: new Float64Array(course.gems.length).fill(-1), saw: sawRest(course) }
+  return { t, seed, course, tiles: new Float64Array(course.tiles.length).fill(-1), balls: [], open: doorsOpen(course, seed), real: pathReal(course, seed), doors: new Float64Array(course.doors.length).fill(-1), doorHp: new Float64Array(course.doors.length), doorLast: new Float64Array(course.doors.length).fill(-9), gems: new Float64Array(course.gems.length).fill(-1), saw: sawRest(course), floorT: new Float64Array(course.floors?.length ?? 0).fill(-1), floorLv: new Float64Array(course.floors?.length ?? 0) }
 }
 
 const sawArms = new Float64Array(64)
@@ -1038,7 +1042,8 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
     }
     // Fábrica: com as engrenagens do andar, o miolo vira pula-pula para o andar de cima
     const F = C.floors
-    if (F && b.cp < F.length - 1 && g.pad === F[b.cp].pad && b.pts >= F[b.cp].goal && b.mode === MODE.RUN) {
+    // (a lava já engolindo o andar desliga o pula-pula dele: os 2 últimos não fogem)
+    if (F && b.cp < F.length - 1 && g.pad === F[b.cp].pad && b.pts >= F[b.cp].goal && b.mode === MODE.RUN && !(w.floorT[b.cp] >= 0)) {
       const f = F[b.cp]
       b.vy = f.vy
       b.launch = f.vy
@@ -1079,7 +1084,9 @@ export function stepRunner(b: Runner, it: RunIntent, w: RunWorld, out: RunEvent[
   }
 
   // a água (ou o perigo que sobe: o pântano pega quem ficou com o pé embaixo)
-  if ((b.y < T.waterY || b.y < riseAt(C, w.t) - 0.15) && b.mode !== MODE.DONE) {
+  // Fábrica em andares: cada andar tem a sua bacia de lava (a lava parada fica FLOOR_LAVA m abaixo do andar)
+  const lavaY = C.floors ? C.floors[Math.max(0, Math.min(C.floors.length - 1, b.cp))].y - FLOOR_LAVA : -1e9
+  if ((b.y < T.waterY || b.y < riseAt(C, w.t) - 0.15 || b.y < lavaY) && b.mode !== MODE.DONE) {
     b.mode = MODE.WATER
     b.timer = T.respawnT
     b.vy = Math.min(b.vy, -2)

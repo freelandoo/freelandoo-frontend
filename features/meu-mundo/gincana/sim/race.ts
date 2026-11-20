@@ -22,7 +22,7 @@
 // que contam (os de fora e o local; computador não segura a prova) chegaram ou
 // saíram, ou o tempo acabou.
 
-import { GINCANA, ballsAt, onTile, stepTile, type Course } from "./course"
+import { FLOOR_SINK, GINCANA, ballsAt, onTile, stepTile, type Course } from "./course"
 import { courseOf } from "./courses"
 import { ANIM, IDLE_INTENT, MODE, fallOut, knock, newRunner, newWorld, stepSaws, runnerAnim, separate, stepRunner, type RunEvent, type RunIntent, type RunWorld, type Runner } from "./body"
 import { botIntent, newBrain, type BotBrain } from "./bots"
@@ -204,13 +204,27 @@ export class GincanaRace {
       for (let i = 0; i < this.runners.length; i++) {
         const b = this.runners[i]
         if (this.gone[i] || b.out >= 0) continue
-        if (b.cp > k) above++
+        // (quem está no voo do pula-pula já subiu)
+        if (b.cp > k || (b.cp === k && b.fly > 0)) above++
         else here++
       }
-      if (above < allowed || here === 0) continue
+      // o rio de fogo sobe conforme o andar esvazia; com os 2 últimos, cobre o andar em FLOOR_SINK s e os engole
+      const W = this.world
+      if (W.floorT[k] >= 0) W.floorLv[k] = 0.55 + 0.45 * Math.min(1, (this.t - W.floorT[k]) / FLOOR_SINK)
+      if (above < allowed || here === 0) {
+        // (só sobe: quem pulou do miolo e caiu de volta não baixa o rio)
+        if (W.floorT[k] < 0) W.floorLv[k] = Math.max(W.floorLv[k], 0.55 * Math.min(1, above / Math.max(1, allowed)))
+        continue
+      }
+      if (W.floorT[k] < 0) {
+        W.floorT[k] = this.t
+        // o corte deste andar leva também quem ficou nos de baixo: a lava deles sobe junto
+        for (let j = 0; j < k; j++) if (W.floorT[j] < 0 && this.runners.some((b, i) => !this.gone[i] && b.out < 0 && b.cp === j && !(b.fly > 0))) W.floorT[j] = this.t
+      }
+      if (this.t - W.floorT[k] < FLOOR_SINK) continue
       for (let i = 0; i < this.runners.length; i++) {
         const b = this.runners[i]
-        if (this.gone[i] || b.out >= 0 || b.cp > k) continue
+        if (this.gone[i] || b.out >= 0 || b.cp > k || (b.cp === k && b.fly > 0)) continue
         b.out = this.t
         b.mode = MODE.DONE
         out?.push({ type: "out", slot: b.slot })

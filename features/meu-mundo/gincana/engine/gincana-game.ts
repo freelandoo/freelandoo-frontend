@@ -725,6 +725,7 @@ export function createGincanaGame(opts: GincanaGameOptions): GincanaGameHandle {
 
   // conferência (harness)
   const w = window as unknown as Record<string, unknown>
+  w.__gincanaWorld = () => race.world
   w.__gincana = () => ({ t: race.t, x: mine.x, y: mine.y, z: mine.z, mode: mine.mode, cp: mine.cp, fin: mine.fin, ground: mine.ground, yaw, pitch, place: hud().place, fps: engine.getFps() })
   w.__gincanaRace = race
   w.__gincanaTp = (x: number, y: number, z: number, cp?: number) => {

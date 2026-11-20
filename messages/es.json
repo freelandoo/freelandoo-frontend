@@ -15276,7 +15276,10 @@
     "gincanaHowCp4b": "La grasa reduce tu carrera a la mitad: la compuerta abierta puede quedar demasiado lejos. Elige pronto.",
     "gincanaHowCp5b": "¿Te quedaste dentro cuando se cerró? Te escupe afuera: espera a que se abra la siguiente.",
     "gincanaHowHe2b": "En el pasillo de las barras las placas se encienden al pisarlas y caen poco después: salta las barras sin parar.",
-    "gincanaHowHe3b": "El cubo gira rápido al revés de las aspas: no te quedes quieto en él, corre hacia el aspa que apunta a la salida."
+    "gincanaHowHe3b": "El cubo gira rápido al revés de las aspas: no te quedes quieto en él, corre hacia el aspa que apunta a la salida.",
+    "gincanaPhFabricaPitch5": "Recoge 10 engranajes y el centro se vuelve una cama elástica hacia el piso de arriba, con más obstáculos. La lava sube a medida que el piso se vacía y se traga a los 2 últimos.",
+    "gincanaHowFg5c": "¿Caíste en la lava? Vuelves a tu piso, solo perdiste tiempo. El río de fuego sube a medida que el piso se vacía y se traga a los 2 últimos.",
+    "gincanaSecFg5b": "Lava"
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -45,6 +45,7 @@ import { AltoFornoBalls, AltoFornoBelt, altoFornoAnvil, altoFornoSweep, altoForn
 import { SerrariaView, serrariaAxe, serrariaFloor, serrariaGantry } from "./serraria-view"
 import { EstaleiroView } from "./estaleiro-view"
 import { GangorrasView } from "./gangorras-view"
+import { FabricaLava } from "./fabrica-view"
 import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } from "./tanque-view"
 import { CANION_SKIN, HELICES_SKIN, canionTileIdle, canionTileLit } from "./canion-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
@@ -107,6 +108,7 @@ export class CourseView {
   private readonly drumNodes: { node: TransformNode; d: number; r: number }[] = []
   private serraria: SerrariaView | null = null
   private tanque: TanqueView | null = null
+  private fabrica: FabricaLava | null = null
   private estaleiro: EstaleiroView | null = null
   private gangorras: GangorrasView | null = null
   /** Gincana 3: Relógio da Praça — ladrilhos, símbolos [símbolo][ladrilho], o símbolo no mostrador e o ponteiro. */
@@ -1323,6 +1325,7 @@ export class CourseView {
     if (course.hoops.length) this.aros = new ArosHoops(scene, toy, this.glowMat, course)
     if (course.logs.length || course.planks.length) this.serraria = new SerrariaView(scene, toy, this.glowMat, course)
     if (theme.id === "tanque") this.tanque = new TanqueView(scene, toy, this.glowMat, course)
+    if (course.floors) this.fabrica = new FabricaLava(scene, toy, this.glowMat, course)
     if (course.rotors.length) this.estaleiro = new EstaleiroView(scene, toy, this.glowMat, course)
     // (a Serraria desenha as gangorras dela com a tábua da serraria)
     if (course.saws.length && theme.id !== "serraria") this.gangorras = new GangorrasView(scene, toy, this.glowMat, course)
@@ -2228,6 +2231,7 @@ export class CourseView {
       this.pusherMeshes[i].position.z = P.z
     }
     this.portoes?.update(t, clock, world.doors, world.doorHp)
+    this.fabrica?.update(clock, world.floorLv)
     for (let i = 0; i < this.doorMeshes.length; i++) {
       const m = this.doorMeshes[i]
       const s = world.doors[i]
@@ -2343,6 +2347,7 @@ export class CourseView {
     this.serraria?.dispose()
     this.crosta?.dispose()
     this.tanque?.dispose()
+    this.fabrica?.dispose()
     this.estaleiro?.dispose()
     this.gangorras?.dispose()
     this.aros?.dispose()
