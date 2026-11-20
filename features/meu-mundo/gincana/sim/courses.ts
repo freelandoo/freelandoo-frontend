@@ -613,7 +613,9 @@ function courseSerraria(): Course {
  * DESMORONA PELA BORDA — a partir de `CANION.crumble.start` s o anel de fora de cada andar cai sozinho, um anel a
  * cada `every` s, até o miolo (os andares de baixo começam depois). A arena encolhe e quem fica na beira cai.
  */
-const STONE_FLOORS = [DECK + 20, DECK + 16, DECK + 12, DECK + 8, DECK + 4, DECK] as const
+/** 20/11 (pedido do Alex: "o espaço entre um piso e outro tem que ser no mínimo 3× maior"): 12 m entre os andares (antes 4) */
+export const STONE_STEP = 12
+const STONE_FLOORS = [DECK + 5 * STONE_STEP, DECK + 4 * STONE_STEP, DECK + 3 * STONE_STEP, DECK + 2 * STONE_STEP, DECK + STONE_STEP, DECK] as const
 const STONE_R = 18
 const STONE_GAP = 2.4
 
