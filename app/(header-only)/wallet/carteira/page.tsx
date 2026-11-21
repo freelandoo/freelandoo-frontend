@@ -48,6 +48,7 @@ import { Underline } from "@/components/home/landing/primitives"
 import { cn } from "@/lib/utils"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { VidaFinanceira } from "../_components/vida-financeira"
+import { BancosConectados } from "../_components/bancos-conectados"
 import { MeiCard } from "../_components/mei-card"
 import { FinanceShell } from "../_components/finance-shell"
 import { WalletHeadcard, useVaquinhaEnabled } from "../_components/wallet-headcard"
@@ -171,6 +172,13 @@ export default function WalletMoneyPage() {
     void loadManualIn()
   }, [loadManualIn])
 
+  /** Banco sincronizou / extrato importado: a Vida Financeira e o KPI recarregam. */
+  const [financeKey, setFinanceKey] = useState(0)
+  const onBankEntries = useCallback(() => {
+    setFinanceKey((k) => k + 1)
+    void loadManualIn()
+  }, [loadManualIn])
+
   const totals = agg?.totals || {}
 
   return (
@@ -189,6 +197,7 @@ export default function WalletMoneyPage() {
           isso só aparecia depois de duas telas de rolagem. */}
       <section className="mx-auto mt-3 w-full max-w-6xl px-0 md:px-8">
         <VidaFinanceira
+          refreshKey={financeKey}
           onEntriesChanged={loadManualIn}
           action={
             vaquinhaOn ? (
@@ -209,6 +218,13 @@ export default function WalletMoneyPage() {
             ) : null
           }
         />
+      </section>
+
+      {/* SEUS BANCOS (mig 462) — o extrato entra na Vida Financeira acima:
+          importado (OFX/CSV, grátis) ou pelo Open Finance (assinatura). Logo
+          abaixo dela porque é a mesma conversa: de onde vêm os lançamentos. */}
+      <section className="mx-auto mt-3 w-full max-w-6xl px-0 md:px-8">
+        <BancosConectados onEntriesChanged={onBankEntries} />
       </section>
 
       {/* GANHOS NA PLATAFORMA — escopo, KPIs, MEI, gráfico e extrato. Vem

@@ -164,6 +164,9 @@ async function ensureSocket(): Promise<Socket | null> {
     // Fila de treinos (mig 305): o "Avisar professores" do Coliseu reabre o
     // modal do professor na hora. Fora desta lista, só na próxima entrada.
     "training-queue:remind",
+    // Bancos conectados (mig 462): a sincronização com a Malvo terminou — a
+    // Carteira recarrega saldos e a Vida Financeira sem a pessoa dar F5.
+    "wallet:bank_synced",
     // Meu Mundo, lore v2 N3: a corrida das estátuas (alguém entregou néctar no
     // domingo). Fora desta lista o placar Raposas × Vampiros só mudaria no F5.
     "mm:statue",

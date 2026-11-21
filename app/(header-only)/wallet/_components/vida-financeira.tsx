@@ -29,6 +29,9 @@ type Entry = {
   amount_cents: number; entry_date: string | null; due_day: number | null; active: boolean
   // mig 261: o lançamento declarou ser de um negócio → entra no lucro dos Indicadores dele.
   id_business_profile?: string | null
+  // mig 462: de onde veio. "bank" (Open Finance) não se apaga nem muda de
+  // valor — some só ao desconectar o banco; "ofx" é o extrato importado.
+  source?: "manual" | "bank" | "ofx"
 }
 type MonthData = {
   ym: number
@@ -73,7 +76,8 @@ function fmtDay(e: Entry, t: TFn) {
 export function VidaFinanceira({
   onEntriesChanged,
   action,
-}: { onEntriesChanged?: () => void; action?: ReactNode } = {}) {
+  refreshKey = 0,
+}: { onEntriesChanged?: () => void; action?: ReactNode; refreshKey?: number } = {}) {
   const tr = useTranslations("Wallet")
   const locale = useLocale()
   const [ym, setYm] = useState(currentYm())
@@ -98,9 +102,11 @@ export function VidaFinanceira({
     }
   }, [ym])
 
+  // `refreshKey` muda quando algo FORA daqui mexeu nos lançamentos (extrato
+  // importado, banco sincronizado ou desconectado).
   useEffect(() => {
     void load()
-  }, [load])
+  }, [load, refreshKey])
 
   const del = async (id: number) => {
     const t = token()
@@ -482,18 +488,32 @@ function Group({ title, entries, accent, onDelete, tr, locale }: { title: string
                     {tr("bizTag", "Negócio")}
                   </span>
                 )}
+                {e.source === "bank" && (
+                  <span className="shrink-0 border border-[#0B0B0D] bg-[#16B79A] px-1 text-[9px] font-extrabold uppercase tracking-wide">
+                    {tr("bankTag", "Banco")}
+                  </span>
+                )}
+                {e.source === "ofx" && (
+                  <span className="shrink-0 border border-[#0B0B0D] bg-white px-1 text-[9px] font-extrabold uppercase tracking-wide">
+                    {tr("ofxTag", "Extrato")}
+                  </span>
+                )}
               </p>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#6B6457]">{fmtDay(e, tr)}</p>
             </div>
             <span className="shrink-0 text-xs font-black tabular-nums text-[#0B0B0D]">{brl(e.amount_cents, locale)}</span>
-            <button
-              type="button"
-              aria-label={tr("delete", "Excluir")}
-              onClick={() => onDelete(e.id)}
-              className="shrink-0 text-[#6B6457] opacity-60 transition hover:text-[#C0392B] hover:opacity-100"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {e.source !== "bank" ? (
+              <button
+                type="button"
+                aria-label={tr("delete", "Excluir")}
+                onClick={() => onDelete(e.id)}
+                className="shrink-0 text-[#6B6457] opacity-60 transition hover:text-[#C0392B] hover:opacity-100"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <span className="w-3.5 shrink-0" aria-hidden />
+            )}
           </div>
         ))}
       </div>
