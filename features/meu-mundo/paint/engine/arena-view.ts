@@ -622,6 +622,44 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       else if (tag === "root" || tag === "roots") floorOf(isl, barks, [v, v, v], [0.7, 0.62, 0.55], false)
       else floorOf(isl, tops, [v, v, v], [0.72, 0.8, 0.66], false)
       underOf(isl)
+      // (Alex, 2026-11-21, com fotos de referência) tufos de capim e flores na
+      // beira e, nas ilhas grandes, um caminho de pedras cor de tijolo — só desenho
+      if (tag !== "root" && tag !== "roots" && isl.kind !== "boss") {
+        const kd = (lowEnd ? 0.5 : 1) * (isl.fill ? 0.35 : 1)
+        const nt = Math.round(isl.r * 2.2 * kd)
+        for (let k = 0; k < nt; k++) {
+          const a = krnd(isl.id * 61 + k * 3) * Math.PI * 2
+          const p = edgePoint(isl, a, 0.25 + krnd(isl.id * 67 + k) * 0.5)
+          const h = 0.22 + krnd(isl.id * 71 + k) * 0.25
+          const gc: RGB = k % 3 ? [0.26, 0.5, 0.17] : [0.36, 0.6, 0.2]
+          for (let q = 0; q < 3; q++) {
+            const tilt = (q - 1) * 0.35
+            const m = Matrix.RotationZ(tilt).multiply(Matrix.RotationY(a + q * 2.1)).multiply(Matrix.Translation(p.x + (q - 1) * 0.07, isl.y + h / 2, p.z))
+            deco.cone(0, 0.09, h, m, gc, 3)
+          }
+          if (k % 3 === 0) {
+            const FLOWERS: RGB[] = [[1, 0.5, 0.72], [1, 0.88, 0.4], [1, 1, 1], [0.75, 0.55, 1]]
+            const fc = FLOWERS[(isl.id + k) % 4]
+            deco.blob(0.16, 1, 0.6, 1, p.x + 0.12, isl.y + 0.08, p.z + 0.1, fc, 4)
+          }
+        }
+        if (!isl.fill && isl.r >= 4.5) {
+          // caminho: pedras chatas de 6–7 lados cruzando a ilha em leve curva
+          const a0 = krnd(isl.id * 83) * Math.PI
+          const ux = Math.sin(a0)
+          const uz = Math.cos(a0)
+          const L = isl.r * 0.85
+          const bend = (krnd(isl.id * 89) - 0.5) * isl.r * 0.5
+          for (let t = -L, k = 0; t <= L; t += 0.95, k++) {
+            const side = bend * (1 - (t / L) * (t / L)) + (krnd(isl.id * 97 + k) - 0.5) * 0.35
+            const x = isl.x + ux * t + uz * side
+            const z = isl.z + uz * t - ux * side
+            const c: RGB = mul([0.58, 0.32, 0.2], 0.85 + krnd(isl.id * 101 + k) * 0.25)
+            const d = 0.75 + krnd(isl.id * 103 + k) * 0.35
+            deco.cylinder(d, 0.05, place(x, isl.y + 0.02, z, krnd(k + isl.id) * 3), c, 6 + (k % 2))
+          }
+        }
+      }
       if (rockIsland(isl) && isl.r > 2.2) {
         // cacho de cristal pendurado na encosta (a ref tem cristal ciano nas paredes)
         const nC = isl.kind === "base" || isl.kind === "boss" ? 3 : krnd(isl.id * 19) < 0.6 ? 1 : 0
@@ -874,6 +912,25 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       if (tag === "trunk") {
         // o tronco da árvore: afina para cima, raízes no pé, galhos e cristais
         deco.cone(d * 0.82, d * 1.05, p.h, place(p.x, p.y + p.h / 2, p.z), [0.4, 0.29, 0.22], 14)
+        // casca (2026-11-21): sulcos verticais em dois tons acompanhando o afinar e musgo no pé
+        {
+          const tilt = Math.atan2((1.05 - 0.82) * p.s, p.h)
+          const nr = 28
+          for (let k = 0; k < nr; k++) {
+            const a = (k / nr) * Math.PI * 2 + rnd(k * 7 + 1) * 0.08
+            const rr = p.s * 0.935 + 0.05
+            const c: RGB = k % 3 === 0 ? [0.29, 0.2, 0.15] : k % 3 === 1 ? [0.47, 0.35, 0.26] : [0.36, 0.26, 0.2]
+            const h = p.h * (0.75 + rnd(k * 11) * 0.25)
+            const m = Matrix.RotationX(-tilt).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(p.x + Math.sin(a) * rr, p.y + h / 2, p.z + Math.cos(a) * rr))
+            deco.box(0.42 + rnd(k * 13) * 0.3, h, 0.22, m, c)
+          }
+          for (let k = 0; k < 18; k++) {
+            const a = (k / 18) * Math.PI * 2 + rnd(k * 5) * 0.2
+            const rr = p.s * 1.04 + 0.08
+            const h = 0.35 + rnd(k * 3 + 2) * 0.8
+            deco.blob(0.7, 1, h / 0.7, 0.45, p.x + Math.sin(a) * rr, p.y + h * 0.3, p.z + Math.cos(a) * rr, k % 2 ? [0.22, 0.38, 0.17] : [0.28, 0.44, 0.19], 5)
+          }
+        }
         for (let k = 0; k < 8; k++) {
           const a = (k / 8) * Math.PI * 2 + 0.3
           deco.box(1.3, 1.6, 4.5, Matrix.RotationX(0.5).multiply(Matrix.RotationY(a)).multiply(Matrix.Translation(p.x + Math.sin(a) * (p.s + 1.2), p.y + 0.5, p.z + Math.cos(a) * (p.s + 1.2))), [0.36, 0.26, 0.2])
