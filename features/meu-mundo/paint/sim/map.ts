@@ -211,6 +211,8 @@ export interface PaintBase {
   island: number
   /** Lugares de nascer (um por vaga do time) e para onde olham. */
   spawns: { x: number; y: number; z: number; facing: number }[]
+  /** 2026-11-21: a 2ª ilha grande de nascimento do time (a vaga 1 nasce nela). */
+  extra?: number
 }
 export interface PaintMap {
   /** mm3d-76: qual mapa do catálogo (sim/maps.ts) e a versão da regra dele (a sala confere). */

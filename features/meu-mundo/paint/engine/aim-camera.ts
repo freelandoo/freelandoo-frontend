@@ -39,7 +39,7 @@ export class AimCamera {
   constructor(scene: Scene) {
     this.camera = new TargetCamera("paint-camera", new Vector3(0, 4, -6), scene)
     this.camera.minZ = 0.15
-    this.camera.maxZ = 420
+    this.camera.maxZ = 900 // 2026-11-21: fases 2× mais largas (o longe foi junto)
     this.camera.fov = 0.95
   }
 

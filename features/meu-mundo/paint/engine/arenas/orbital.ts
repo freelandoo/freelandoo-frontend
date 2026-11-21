@@ -34,7 +34,7 @@ import { orbIsland, orbTower, orbitalGem } from "../../../gincana/engine/backdro
 import type { RGB } from "../../../engine/geometry"
 import type { Island, PaintProp } from "../../sim/map"
 import type { ArenaCtx, ArenaDress } from "./types"
-import { around, jit, meshes, mixc, rnd, tagOf, tileTex, v3, type Poly } from "./kit"
+import { around, bgGrow, bgGrowMesh, bgMark, jit, meshes, mixc, rnd, tagOf, tileTex, v3, type Poly } from "./kit"
 
 const STEEL: RGB = [0.17, 0.16, 0.3]
 const STEEL_HI: RGB = [0.34, 0.32, 0.5]
@@ -252,6 +252,7 @@ export const ORBITAL_DRESS: ArenaDress = {
       }
     }
     // 8. fundo — ilhas orbitais em três anéis, torres, planeta com anel
+    const bg = bgMark([lit, glow])
     const skipN = (a: number) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.22
     const n = Math.min(1, ctx.n)
     let id = 0
@@ -271,6 +272,8 @@ export const ORBITAL_DRESS: ArenaDress = {
     planet.rotation.z = 0.3
     planet.applyFog = false
     ctx.add(planet)
+    bgGrowMesh(planet)
+    bgGrow([lit, glow], bg)
     done()
     return {
       tick(_dt, clock) {

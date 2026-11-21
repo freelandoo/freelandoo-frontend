@@ -40,7 +40,7 @@ import type { RGB } from "../../../engine/geometry"
 import type { Island, PaintProp } from "../../sim/map"
 import { edgesOf } from "../arena-kit"
 import type { ArenaCtx, ArenaDress } from "./types"
-import { around, jit, meshes, mixc, mulc, placed, rings, rnd, tagOf, tileTex, v3, type Poly } from "./kit"
+import { around, bgGrow, bgGrowMesh, bgMark, jit, meshes, mixc, mulc, placed, rings, rnd, tagOf, tileTex, v3, type Poly } from "./kit"
 
 const BARK: RGB = [0.29, 0.18, 0.12]
 const BARK_HI: RGB = [0.52, 0.33, 0.21]
@@ -310,6 +310,7 @@ export const LUA_DRESS: ArenaDress = {
       rings(poly, O, top.x, top.z, top.y, [0.9, 0.92, 1], [0.66, 0.7, 0.8], top.id)
     }
     // 8. fundo: troncos altos em anel (sem o norte), troncos azulados longe, cogumelos-luminária, a lua
+    const bg = bgMark([lit, glow])
     const skipN = (a: number) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.2
     const n = Math.min(1, ctx.n)
     const G = [lit, glow]
@@ -348,6 +349,8 @@ export const LUA_DRESS: ArenaDress = {
     }
     const flies = fg.build("paint-lua-flies", ctx.scene, ctx.glowMat, false)
     ctx.add(flies)
+    for (const m of [moon, halo, flies]) bgGrowMesh(m)
+    bgGrow([lit, glow], bg)
     done()
     return {
       tick(_dt, clock) {

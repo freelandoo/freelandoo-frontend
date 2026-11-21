@@ -48,6 +48,10 @@ import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steamp
 import { AirshipFleet, SP, SteamStage, fleetRing, rivetRing, tierOf, xf } from "../../engine/steampunk/scenery"
 import type { Island, PaintMap, Solid } from "../sim/map"
 import { TUNING } from "../sim/tuning"
+import { PAINT_SPAN } from "../sim/maps"
+import { ArenaGeo } from "./arena-kit"
+import { outlineOf } from "./arena-view"
+import { drawGincana, flatFloor, isGincana } from "./arenas/gincana"
 
 /** Pseudo-aleatório fixo (mesma cara a cada partida). */
 function rnd(n: number) {
@@ -184,8 +188,11 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   const disposers: (() => void)[] = []
 
   // ── ilhas ──
+  // 2026-11-21: a Cidade 2× mais larga (fases 4× maiores); as provas da Gincana têm desenho próprio
+  const K = PAINT_SPAN
+  const islands = map.islands.filter((i) => !isGincana(i))
   const rock: RockBuf = { p: [], c: [], i: [] }
-  for (const isl of map.islands) islandGeometry(isl, rock)
+  for (const isl of islands) islandGeometry(isl, rock)
 
   const rockMat = new StandardMaterial("paint-rock", scene)
   rockMat.diffuseColor = new Color3(1, 1, 1)
@@ -211,7 +218,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
 
   // ── mm3d-62: cipós caindo da borda ──
   const vg = new GeoBuilder()
-  for (const isl of map.islands) {
+  for (const isl of islands) {
     const nv = Math.round(isl.r * (lowEnd ? 0.8 : 1.6))
     for (let n = 0; n < nv; n++) {
       const a = rnd(isl.id * 41 + n * 3) * Math.PI * 2
@@ -233,20 +240,20 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   for (let i = 0; i < puffs; i++) {
     const a = rnd(i * 3 + 101) * Math.PI * 2
     const far = i % 3 === 0
-    const d = far ? 120 + rnd(i * 5 + 7) * 90 : rnd(i * 5 + 7) * 95
+    const d = (far ? 120 + rnd(i * 5 + 7) * 90 : rnd(i * 5 + 7) * 95) * K
     const x = Math.sin(a) * d
     const z = Math.cos(a) * d * 0.7
     const y = far ? -12 + rnd(i + 3) * 18 : -22 + rnd(i + 3) * 10
-    const s = (far ? 26 : 14) * (0.6 + rnd(i * 7 + 2) * 0.8)
+    const s = (far ? 26 : 14) * (0.6 + rnd(i * 7 + 2) * 0.8) * 1.5
     for (let k = 0; k < 4; k++) {
       const ox = (rnd(i * 31 + k) - 0.5) * s * 0.9
       const oz = (rnd(i * 37 + k) - 0.5) * s * 0.5
       const ks = s * (0.55 + rnd(i * 41 + k) * 0.4)
-      cg.sphere(ks, [1, 0.42, 0.8], place(x + ox, y + rnd(i * 43 + k) * s * 0.12, z + oz), [1, 1, 1], 8)
+      cg.sphere(ks, [1, 0.42, 0.8], place(x + ox, y + rnd(i * 43 + k) * s * 0.12, z + oz), [1, 1, 1], 6)
     }
   }
   // um "chão" de nuvem para nunca mostrar vazio embaixo
-  cg.cylinder(520, 0.5, place(0, -26, 0), [0.97, 0.98, 1], 32)
+  cg.cylinder(520 * K, 0.5, place(0, -26, 0), [0.97, 0.98, 1], 32)
   // o mesmo em volta da ilha do chefão
   const bi = map.islands[map.boss.island]
   for (let i = 0; i < 24; i++) {
@@ -336,7 +343,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   // ── steampunk: aros, cintas, lanternas, motores, dentes dos portais, dirigíveis ──
   const stage = new SteamStage(scene, tierOf(lowEnd))
   const { ctx } = stage
-  for (const isl of map.islands) {
+  for (const isl of islands) {
     // chão da cidade (mm3d-62e): pedra portuguesa na borda, lajes no miolo —
     // por cima da colisão só alguns milímetros (o pé não afunda)
     const sides = Math.max(18, Math.min(56, Math.round(isl.r * 5)))
@@ -345,13 +352,13 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     ctx.pavers.cylinder(inner * 2, 0.06, place(isl.x, isl.y - 0.02, isl.z), CITY.pave, sides)
     rivetRing(ctx.props, isl.x, isl.y + 0.03, isl.z, isl.r * 0.995, 0.16, 0, SP.brass)
     // postes de luz da cidade na borda de cima (sem colisão: é desenho)
-    const nl = isl.r >= 7 ? 4 : isl.r >= 4.5 ? 2 : isl.r >= 2.4 ? 1 : 0
+    const nl = isl.r >= 7 * K ? 4 : isl.r >= 4.5 * K ? 2 : isl.r >= 2.4 * K ? 1 : 0
     for (let k = 0; k < nl; k++) {
       const a = (k / nl) * Math.PI * 2 + isl.id * 0.7 + Math.PI / 4
       const rr = isl.r - 0.55
       steamLamp(ctx, isl.x + Math.sin(a) * rr, isl.z + Math.cos(a) * rr, { y: isl.y, collide: false, gearSeed: isl.id * 7 + k })
     }
-    if (isl.r < 5) continue
+    if (isl.r < 5 * K) continue
     // motor embaixo: eixo de ferro, a engrenagem girando e o vapor saindo do bico
     const by = isl.y - isl.depth * 0.9
     ctx.props.cylinder(isl.r * 0.2, isl.depth * 0.35, place(isl.x, by + isl.depth * 0.1, isl.z), SP.iron, 8)
@@ -408,14 +415,14 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     const navy: RGB = [0.14, 0.2, 0.46]
     const warm: RGB = [1, 0.78, 0.42]
     const baseIds = new Set(map.bases.map((b) => b.island))
-    for (const isl of map.islands) {
-      const big = baseIds.has(isl.id) || isl.r >= 6
+    for (const isl of islands) {
+      const big = baseIds.has(isl.id) || isl.r >= 6 * K
       if (!big) continue
-      // arco de corrimão virado para fora do mapa (±70°), postes de latão a cada ~1,8 m
+      // arco de corrimão virado para fora do mapa (±70°), postes de latão a cada ~3 m
       const out = Math.atan2(isl.x - mx, isl.z - mz)
       const rr = isl.r - 0.3
       const span = 1.22
-      const n = Math.max(3, Math.round((rr * span * 2) / 1.8))
+      const n = Math.max(3, Math.round((rr * span * 2) / 3))
       for (let k = 0; k <= n; k++) {
         const a = out - span + (k / n) * span * 2
         const x = isl.x + Math.sin(a) * rr
@@ -449,8 +456,8 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
         ctx.glow.box(0.36, 0.36, 0.04, place(x + Math.sin(face) * 0.04, isl.y + 2.6, z + Math.cos(face) * 0.04, face + Math.PI / 2 + Math.PI / 4), [1, 0.76, 0.3])
       }
       // torre do relógio ao longe, do outro lado (quem nasce aqui vê a do outro time)
-      const tx = isl.x + Math.sin(out) * 150
-      const tz = isl.z + Math.cos(out) * 150
+      const tx = isl.x + Math.sin(out) * 150 * K
+      const tz = isl.z + Math.cos(out) * 150 * K
       const ty = isl.y - 30
       ctx.props.cylinder(40, 14, place(tx, ty, tz), SP.masonryDark, 12)
       ctx.props.box(16, 62, 16, place(tx, ty + 38, tz), SP.masonry)
@@ -472,6 +479,30 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
       }
     }
   }
+  // ── 2026-11-21: as provas da Gincana da Cidade (barril, barraca da feira, aro, tanque) ──
+  {
+    const gd = new ArenaGeo()
+    const gg = new ArenaGeo()
+    const th = { top: CITY.pave, rim: SP.brass, trim: SP.brass, accent: [0.82, 0.22, 0.2] as RGB, glow: [1, 0.78, 0.42] as RGB, glow2: [0.5, 0.85, 1] as RGB, tile: "plate" as const }
+    const api = { deco: gd, glow: gg, th, low: lowEnd, outlineOf, floor: (isl: Island, _metal: boolean, top: RGB, rim: RGB) => flatFloor(gd, outlineOf(isl, 1.2), isl.x, isl.z, isl.y, top, rim) }
+    for (const isl of map.islands) if (isGincana(isl)) drawGincana(api, isl)
+    if (gd.vertexCount) {
+      const m = gd.build("paint-gincana", scene, rockMat)
+      disposers.push(() => m.dispose())
+    }
+    if (gg.vertexCount) {
+      const gm = new StandardMaterial("paint-gincana-glow", scene)
+      gm.disableLighting = true
+      gm.emissiveColor = new Color3(1, 1, 1)
+      gm.diffuseColor = new Color3(0, 0, 0)
+      gm.specularColor = new Color3(0, 0, 0)
+      const m = gg.build("paint-gincana-glow", scene, gm)
+      disposers.push(() => {
+        m.dispose()
+        gm.dispose()
+      })
+    }
+  }
   stage.build("paint-steam")
   let cx = 0
   let cz = 0
@@ -481,7 +512,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   }
   cx /= Math.max(1, map.islands.length)
   cz /= Math.max(1, map.islands.length)
-  const fleet = lowEnd ? null : new AirshipFleet(scene, stage.mats, fleetRing(5, 95, 150, 22, 48, 22, 35), cx, cz)
+  const fleet = lowEnd ? null : new AirshipFleet(scene, stage.mats, fleetRing(5, 95 * K, 150 * K, 22, 48, 22, 35), cx, cz)
   disposers.push(() => {
     fleet?.dispose()
     stage.dispose()

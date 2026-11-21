@@ -26,6 +26,7 @@ import type { Material } from "@babylonjs/core/Materials/material"
 import { SoftGeo } from "../../../gincana/engine/shapes"
 import type { RGB } from "../../../engine/geometry"
 import type { Island } from "../../sim/map"
+import { PAINT_SPAN } from "../../sim/maps"
 import { krnd } from "../arena-kit"
 import type { ArenaCtx } from "./types"
 
@@ -391,3 +392,22 @@ export function placed(geos: SoftGeo[], m: Matrix, fn: () => void) {
 
 /** Vetor (para `SoftGeo.tube`). */
 export const v3 = (x: number, y: number, z: number) => new Vector3(x, y, z)
+
+/**
+ * 2026-11-21 (fases 4× maiores): o FUNDO cresce junto com a fase (`PAINT_SPAN`), em volta da altura `y0`
+ * (o mar/a represa). `bgMark` antes de desenhar o fundo; `bgGrow` depois, com as mesmas malhas.
+ */
+export const bgMark = (geos: SoftGeo[]) => geos.map((g) => g.vertexCount)
+/** Um pouco mais que a fase: o anel de dentro do fundo passa da 2ª ilha de nascimento (atrás da base). */
+const BG_K = PAINT_SPAN * 1.15
+export function bgGrow(geos: SoftGeo[], starts: number[], y0 = 0) {
+  const K = BG_K
+  const m = Matrix.Translation(0, -y0, 0).multiply(Matrix.Scaling(K, K, K)).multiply(Matrix.Translation(0, y0, 0))
+  geos.forEach((g, i) => g.transformSince(starts[i], m))
+}
+/** O mesmo para uma malha própria do fundo (lua, planeta, aurora, raios). */
+export function bgGrowMesh(mesh: { scaling: Vector3; position: Vector3 }, y0 = 0) {
+  const K = BG_K
+  mesh.scaling.scaleInPlace(K)
+  mesh.position.set(mesh.position.x * K, y0 + (mesh.position.y - y0) * K, mesh.position.z * K)
+}

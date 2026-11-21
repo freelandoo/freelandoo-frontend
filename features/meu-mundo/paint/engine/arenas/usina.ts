@@ -38,7 +38,7 @@ import type { RGB } from "../../../engine/geometry"
 import type { Island, PaintProp } from "../../sim/map"
 import { deadEdge, edgesOf } from "../arena-kit"
 import type { ArenaCtx, ArenaDress } from "./types"
-import { around, jit, meshes, mixc, placed, rnd, seaFloor, tagOf, tileTex, v3, type Poly } from "./kit"
+import { around, bgGrow, bgMark, jit, meshes, mixc, placed, rnd, seaFloor, tagOf, tileTex, v3, type Poly } from "./kit"
 
 const CONC: RGB = [0.66, 0.64, 0.6]
 const CONC_HI: RGB = [0.8, 0.78, 0.74]
@@ -351,6 +351,7 @@ export const USINA_DRESS: ArenaDress = {
       else if (t === "turbinecrown") crown(ctx, poly, lit, isl, spin)
     }
     // 8. fundo: paredão curvo da barragem grande ao sul, morros, torres de força, galpões
+    const bg = bgMark([lit, glow])
     const skipN = (a: number) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.22
     const n = Math.min(1, ctx.n)
     {
@@ -384,6 +385,7 @@ export const USINA_DRESS: ArenaDress = {
       // o galpão nasce no nível 0: desce para cima do cais
       placed([lit, glow], Matrix.Translation(0, WATER_Y + 3, 0), () => warehouse(lit, glow, s.x, s.z, 14 + rnd(s.i) * 6, 7 + rnd(s.i * 3) * 4, 8, s.a + Math.PI, s.i))
     }
+    bgGrow([lit, glow], bg, WATER_Y)
     done()
     return {
       tick(dt, clock) {

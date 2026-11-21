@@ -35,7 +35,7 @@ import type { RGB } from "../../../engine/geometry"
 import type { Island, PaintProp } from "../../sim/map"
 import { deadEdge, edgesOf } from "../arena-kit"
 import type { ArenaCtx, ArenaDress } from "./types"
-import { around, jit, meshes, mixc, mulc, rnd, tagOf, tileTex, v3, type Poly } from "./kit"
+import { around, bgGrow, bgGrowMesh, bgMark, jit, meshes, mixc, mulc, rnd, tagOf, tileTex, v3, type Poly } from "./kit"
 
 const SAND: RGB[] = [
   [0.88, 0.52, 0.34],
@@ -370,6 +370,7 @@ export const CANION_DRESS: ArenaDress = {
       }
     }
     // 8. fundo: mesas-coluna em três anéis (perto/meio/longe), sem tapar o caminho do Guardião (norte)
+    const bg = bgMark([lit, glow])
     const skipN = (a: number) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.22
     const n = ctx.n
     for (const s of around(Math.round(14 * Math.min(1, n)), 86, 120, 1, skipN)) mesaTower(lit, glow, s.x, -2 + rnd(s.i * 3) * 14, s.z, 12 + rnd(s.i * 5) * 8, 4 + Math.floor(rnd(s.i * 7) * 3), s.i, s.i % 3 === 0)
@@ -404,6 +405,8 @@ export const CANION_DRESS: ArenaDress = {
     const bolts = storm.build("paint-canion-bolts", ctx.scene, ctx.glowMat)
     ctx.add(bolts)
     bolts.isVisible = false
+    bgGrowMesh(bolts)
+    bgGrow([lit, glow], bg)
     done()
     let next = 3
     let on = 0

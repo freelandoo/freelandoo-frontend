@@ -34,6 +34,7 @@ import type { BossAct, MatchEvent, MatchResult, MorkhanWhy, PaintPose } from "..
 import { polySolid, type Solid } from "../sim/map"
 import { buildPaintWorld } from "./world-view"
 import { buildArenaWorld } from "./arena-view"
+import { PAINT_SPAN } from "../sim/maps"
 import { paintMapArt } from "./paint-map-art"
 import { PaintView } from "./paint-view"
 import { PickupsView } from "./pickups-view"
@@ -177,8 +178,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
   scene.ambientColor = new Color3(0.3, 0.3, 0.3)
   scene.fogMode = Scene.FOGMODE_LINEAR
   scene.fogColor = new Color3(sky.r, sky.g, sky.b)
-  scene.fogStart = lowEnd ? 55 : 75
-  scene.fogEnd = lowEnd ? 170 : 230
+  // 2026-11-21: fases 2× mais largas — a neblina da Cidade vai junto
+  scene.fogStart = (lowEnd ? 55 : 75) * PAINT_SPAN
+  scene.fogEnd = (lowEnd ? 170 : 230) * PAINT_SPAN
   scene.skipPointerMovePicking = true
   scene.skipPointerDownPicking = true
   scene.skipPointerUpPicking = true

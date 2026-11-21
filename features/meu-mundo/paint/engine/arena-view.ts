@@ -49,6 +49,8 @@ import type { PaintTheme } from "./paint-map-art"
 import type { PaintWorldView } from "./world-view"
 import { ARENA_DRESS } from "./arenas"
 import type { ArenaCtx, UnderKind } from "./arenas/types"
+import { drawGincana, isGincana } from "./arenas/gincana"
+import { PAINT_SPAN } from "../sim/maps"
 
 /** Pseudo-aleatório fixo (mesma cara a cada partida). */
 function rnd(n: number) {
@@ -70,7 +72,7 @@ const METAL = new Set(["dock", "plate", "conveyor", "chain", "gear", "ring", "gr
 const LEAF = new Set(["leaf", "leafbase"])
 
 /** Contorno da ilha no chão (cantos do polígono com os lados divididos; círculo para a ilha do chefão). */
-function outlineOf(isl: Island, maxSeg = 2.2): [number, number][] {
+export function outlineOf(isl: Island, maxSeg = 2.2): [number, number][] {
   if (!isl.poly) {
     const n = Math.max(24, Math.min(64, Math.round(isl.r * 2.6)))
     return Array.from({ length: n }, (_, i) => [isl.x + Math.sin((i / n) * Math.PI * 2) * isl.r, isl.z + Math.cos((i / n) * Math.PI * 2) * isl.r])
@@ -86,7 +88,13 @@ function outlineOf(isl: Island, maxSeg = 2.2): [number, number][] {
     const k = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / maxSeg))
     for (let j = 0; j < k; j++) out.push([ax + ((bx - ax) * j) / k, az + ((bz - az) * j) / k])
   }
-  return out
+  // 2026-11-21 (Alex: "ilhas sem chão / sem a parte de baixo"): o retângulo
+  // (w × d) nasce no sentido contrário do círculo e do polígono, e a rocha/chapa
+  // de baixo dele saía com as faces para dentro (sumia vista de baixo e de lado).
+  // Todo contorno sai no sentido do círculo (área negativa em x, z).
+  let area = 0
+  for (let i = 0; i < out.length; i++) area += out[i][0] * out[(i + 1) % out.length][1] - out[(i + 1) % out.length][0] * out[i][1]
+  return area > 0 ? out.reverse() : out
 }
 
 /** Textura do chão (canvas 256², repete pelo mundo). */
@@ -229,8 +237,10 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // ── céu, neblina e luzes do tema (sem dia e noite: cada mapa tem a sua hora) ──
   scene.clearColor = new Color4(th.skyLow[0], th.skyLow[1], th.skyLow[2], 1)
   scene.fogColor = c3(th.fog)
-  scene.fogStart = lowEnd ? th.fogStart * 0.75 : th.fogStart
-  scene.fogEnd = lowEnd ? th.fogEnd * 0.8 : th.fogEnd
+  // 2026-11-21: as fases ficaram 2× mais largas — a neblina e o longe vão junto
+  const K = PAINT_SPAN
+  scene.fogStart = (lowEnd ? th.fogStart * 0.75 : th.fogStart) * K
+  scene.fogEnd = (lowEnd ? th.fogEnd * 0.8 : th.fogEnd) * K
   const hemi = scene.getLightByName("mm-hemi") as HemisphericLight | null
   const sun = scene.getLightByName("mm-sun") as DirectionalLight | null
   if (hemi) {
@@ -324,6 +334,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   /** O que vai embaixo da ilha (o mapa com gancho escolhe; o Guardião é sempre rocha). */
   const underKind = (isl: Island): UnderKind => {
     const tag = isl.tag ?? ""
+    if (isGincana(isl)) return "none"
     const own = isl.kind !== "boss" ? dress?.under?.(isl) : undefined
     return own ?? (METAL.has(tag) ? "metal" : LEAF.has(tag) ? "leaf" : tag === "stair" ? "stair" : "rock")
   }
@@ -333,10 +344,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     // 2026-11-21: o retângulo (w × d) nasce no sentido contrário do círculo e do
     // polígono; o leque do chão sumia visto de cima no lado do time 0. Sempre no
     // sentido do círculo (área negativa em x, z).
-    let O = outlineOf(isl, 1.2)
-    let area = 0
-    for (let i = 0; i < O.length; i++) area += O[i][0] * O[(i + 1) % O.length][1] - O[(i + 1) % O.length][0] * O[i][1]
-    if (area > 0) O = [...O].reverse()
+    const O = outlineOf(isl, 1.2)
     const cx = isl.x
     const cz = isl.z
     const y = isl.y + 0.004
@@ -564,8 +572,21 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     const tag = isl.tag ?? ""
     return !LEAF.has(tag) && tag !== "stair" && !METAL.has(tag)
   }
+  // 2026-11-21: as provas da Gincana (fases 4× maiores) desenham o chão e o corpo delas
+  const gk = {
+    deco,
+    glow,
+    th,
+    low: lowEnd,
+    outlineOf,
+    floor: (isl: Island, isMetal: boolean, top: RGB, rim: RGB, stripes = false) => floorOf(isl, isMetal ? metal : deco, top, rim, stripes),
+  }
   for (const isl of map.islands) {
     const tag = isl.tag ?? ""
+    if (isGincana(isl)) {
+      drawGincana(gk, isl)
+      continue
+    }
     if (dress) {
       const c = dress.colors?.(isl)
       floorOf(isl, underKind(isl) === "metal" ? metal : tops, c?.top ?? th.top, c?.rim ?? th.rim, !!c?.stripes)
@@ -965,7 +986,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     // pináculos de basalto saindo da lava, ao longe
     for (let i = 0; i < (lowEnd ? 18 : 34); i++) {
       const a = rnd(i * 5 + 1) * Math.PI * 2
-      const d = 85 + rnd(i * 7) * 120
+      const d = (85 + rnd(i * 7) * 120) * K
       const h = 20 + rnd(i * 11) * 50
       deco.cone(0.4, 6 + rnd(i * 13) * 10, h, place(Math.sin(a) * d, -22 + h / 2, Math.cos(a) * d * 0.8), th.strata[i % 3], 6)
     }
@@ -976,11 +997,11 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     for (let i = 0; i < puffs; i++) {
       const a = rnd(i * 3 + 101) * Math.PI * 2
       const far = i % 3 === 0
-      const d = far ? 120 + rnd(i * 5 + 7) * 90 : rnd(i * 5 + 7) * 95
+      const d = (far ? 120 + rnd(i * 5 + 7) * 90 : rnd(i * 5 + 7) * 95) * K
       const x = Math.sin(a) * d
       const z = Math.cos(a) * d * 0.75
       const y = far ? -12 + rnd(i + 3) * 18 : -24 + rnd(i + 3) * 10
-      const s = (far ? 26 : 14) * (0.6 + rnd(i * 7 + 2) * 0.8)
+      const s = (far ? 26 : 14) * (0.6 + rnd(i * 7 + 2) * 0.8) * 1.5
       for (let k = 0; k < 3; k++) cg.blob(s * (0.55 + rnd(i * 41 + k) * 0.4), 1, 0.42, 0.8, x + (rnd(i * 31 + k) - 0.5) * s * 0.9, y, z + (rnd(i * 37 + k) - 0.5) * s * 0.5, col, 4)
     }
     for (let i = 0; i < 20; i++) {
@@ -988,7 +1009,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       const d = 30 + rnd(i + 900) * 40
       cg.blob(18 + rnd(i + 950) * 14, 1, 0.42, 0.8, bi.x + Math.sin(a) * d, bi.y - 18 - rnd(i + 990) * 8, bi.z + Math.cos(a) * d, col, 4)
     }
-    cg.cylinder(520, 0.5, place(0, -28, 0), col, 32)
+    cg.cylinder(520 * K, 0.5, place(0, -28, 0), col, 32)
     cg.cylinder(260, 0.5, place(bi.x, bi.y - 28, bi.z), col, 32)
     const cloudMat = own(new StandardMaterial("paint-arena-cloud", scene))
     cloudMat.diffuseColor = new Color3(0.4, 0.4, 0.42)
@@ -1002,8 +1023,10 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   for (let i = 0; i < (dress ? 0 : lowEnd ? 8 : 16); i++) {
     const a = (i / (lowEnd ? 8 : 16)) * Math.PI * 2 + rnd(i) * 0.3
     const d = 120 + rnd(i * 3) * 60
-    const x = Math.sin(a) * d
-    const z = Math.cos(a) * d * 0.8
+    // ruínas (deco) andam K; o resto vai na malha do longe, que cresce K inteira
+    const kd = th.tile === "garden" || th.tile === "rune" ? K : 1
+    const x = Math.sin(a) * d * kd
+    const z = Math.cos(a) * d * 0.8 * kd
     const y = -6 + rnd(i * 5) * 26
     if (th.tile === "garden" || th.tile === "rune") {
       // ruínas soltas: rocha, colunas (e obeliscos no templo)
@@ -1461,7 +1484,11 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     fm.specularColor = new Color3(0, 0, 0)
     fm.emissiveColor = c3(mul(th.fog, 0.22))
     fm.fogEnabled = false
-    built.push(far.build("paint-arena-far", scene, fm))
+    const fmesh = far.build("paint-arena-far", scene, fm)
+    fmesh.scaling.setAll(K)
+    fmesh.computeWorldMatrix(true)
+    fmesh.freezeWorldMatrix()
+    built.push(fmesh)
   }
   if (farGlow.vertexCount) {
     const fg = own(new StandardMaterial("paint-arena-farglow", scene))
@@ -1470,7 +1497,11 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     fg.diffuseColor = new Color3(0, 0, 0)
     fg.specularColor = new Color3(0, 0, 0)
     fg.fogEnabled = false
-    built.push(farGlow.build("paint-arena-farglow", scene, fg))
+    const gmesh = farGlow.build("paint-arena-farglow", scene, fg)
+    gmesh.scaling.setAll(K)
+    gmesh.computeWorldMatrix(true)
+    gmesh.freezeWorldMatrix()
+    built.push(gmesh)
   }
   {
     const rm = new Mesh("paint-arena-rock", scene)

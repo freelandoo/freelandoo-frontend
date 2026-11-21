@@ -38,7 +38,7 @@ import type { RGB } from "../../../engine/geometry"
 import type { Island, PaintProp } from "../../sim/map"
 import { edgesOf } from "../arena-kit"
 import type { ArenaCtx, ArenaDress } from "./types"
-import { around, jit, meshes, mixc, mulc, placed, rnd, seaFloor, tagOf, tileTex, v3, type Poly } from "./kit"
+import { around, bgGrow, bgGrowMesh, bgMark, jit, meshes, mixc, mulc, placed, rnd, seaFloor, tagOf, tileTex, v3, type Poly } from "./kit"
 
 const DEEP: RGB = [0.1, 0.28, 0.56]
 const CYAN: RGB = [0.48, 0.8, 0.98]
@@ -359,6 +359,7 @@ export const GELO_DRESS: ArenaDress = {
       if (isl.kind === "base") basePostcard(ctx, lit, glow, isl)
     }
     // 8. fundo — penhascos de gelo em anel (sem o norte, o caminho do Guardião), castelo, navios presos, aurora
+    const bg = bgMark([lit, glow])
     const skipN = (a: number) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.25
     const n = Math.min(1, ctx.n)
     const G = [lit, glow]
@@ -398,6 +399,8 @@ export const GELO_DRESS: ArenaDress = {
     amat.backFaceCulling = false
     amat.fogEnabled = false
     ctx.add(am)
+    bgGrowMesh(am, SEA_Y)
+    bgGrow([lit, glow], bg, SEA_Y)
     done()
     return {
       tick(dt, clock) {
