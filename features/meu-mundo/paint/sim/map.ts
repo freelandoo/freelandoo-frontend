@@ -174,6 +174,8 @@ export interface Island {
   poly?: number[]
   /** Desenho (mm3d-76): o que a ilha é no tema (templo, engrenagem, folha...). Não muda a regra. */
   tag?: string
+  /** 2026-11-21: ilha do enchimento 4× (desenho mais leve; a regra é a mesma). */
+  fill?: true
 }
 export interface PaintProp {
   kind: "pillar" | "crate"

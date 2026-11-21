@@ -73,8 +73,10 @@ const LEAF = new Set(["leaf", "leafbase"])
 
 /** Contorno da ilha no chão (cantos do polígono com os lados divididos; círculo para a ilha do chefão). */
 export function outlineOf(isl: Island, maxSeg = 2.2): [number, number][] {
+  // ilha do enchimento 4× (2026-11-21): contorno mais grosso (menos triângulos em tudo que segue a borda)
+  if (isl.fill) maxSeg = Math.max(maxSeg * 2.5, 2.4)
   if (!isl.poly) {
-    const n = Math.max(24, Math.min(64, Math.round(isl.r * 2.6)))
+    const n = isl.fill ? Math.max(14, Math.min(28, Math.round(isl.r * 1.6))) : Math.max(24, Math.min(64, Math.round(isl.r * 2.6)))
     return Array.from({ length: n }, (_, i) => [isl.x + Math.sin((i / n) * Math.PI * 2) * isl.r, isl.z + Math.cos((i / n) * Math.PI * 2) * isl.r])
   }
   const p = isl.poly
@@ -581,10 +583,12 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     outlineOf,
     floor: (isl: Island, isMetal: boolean, top: RGB, rim: RGB, stripes = false) => floorOf(isl, isMetal ? metal : deco, top, rim, stripes),
   }
+  // a prova que veio no enchimento 4× sai no desenho leve (o mesmo do celular fraco)
+  const gkLow = { ...gk, low: true }
   for (const isl of map.islands) {
     const tag = isl.tag ?? ""
     if (isGincana(isl)) {
-      drawGincana(gk, isl)
+      drawGincana(isl.fill ? gkLow : gk, isl)
       continue
     }
     if (dress) {
@@ -641,10 +645,12 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
 
   // ── detalhes por tipo de ilha ──
 
-  const dens = lowEnd ? 0.5 : 1
+  const dens0 = lowEnd ? 0.5 : 1
 
   for (const isl of map.islands) {
     const tag = isl.tag ?? ""
+    // ilha do enchimento 4× (2026-11-21): um terço dos enfeites, senão o celular não aguenta
+    const dens = isl.fill ? dens0 * 0.3 : dens0
     const R = rnd
     const id = isl.id
     if (tag === "garden" || tag === "terrace" || tag === "ruins" || tag === "temple" || (isl.kind === "boss" && th.tile === "garden")) {
@@ -688,7 +694,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
           }
         }
       }
-      if ((tag === "terrace" || tag === "garden") && R(id * 3) < 0.55 && isl.kind !== "boss") {
+      if ((tag === "terrace" || tag === "garden") && R(id * 3) < 0.55 && isl.kind !== "boss" && !isl.fill) {
         const p = edgePoint(isl, R(id * 5) * Math.PI * 2, -0.1)
         fallList.push({ x: p.x, z: p.z, y: isl.y - 0.3, len: 28 + R(id) * 14, w: 1.4 + R(id * 9) * 1.2, a: Math.atan2(p.x - isl.x, p.z - isl.z) })
       }

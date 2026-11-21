@@ -103,8 +103,8 @@ export type RockBuf = { p: number[]; c: number[]; i: number[] }
  * Tudo na altura da colisão (o pé não afunda). Embaixo, pedra em camadas que
  * afina até a ponta, recortada, com estalactites.
  */
-export function islandGeometry(isl: Pick<Island, "id" | "x" | "y" | "z" | "r" | "depth">, rock: RockBuf) {
-  const seg = Math.max(18, Math.min(60, Math.round(isl.r * 5)))
+export function islandGeometry(isl: Pick<Island, "id" | "x" | "y" | "z" | "r" | "depth" | "fill">, rock: RockBuf) {
+  const seg = Math.max(isl.fill ? 14 : 18, Math.min(isl.fill ? 26 : 60, Math.round(isl.r * (isl.fill ? 3 : 5))))
   const wob = (k: number) => 1 + (rnd(isl.id * 977 + k) - 0.5) * 0.05
   const ring: [number, number][] = []
   for (let k = 0; k < seg; k++) {
@@ -219,7 +219,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   // ── mm3d-62: cipós caindo da borda ──
   const vg = new GeoBuilder()
   for (const isl of islands) {
-    const nv = Math.round(isl.r * (lowEnd ? 0.8 : 1.6))
+    const nv = Math.round(isl.r * (lowEnd ? 0.8 : 1.6) * (isl.fill ? 0.3 : 1))
     for (let n = 0; n < nv; n++) {
       const a = rnd(isl.id * 41 + n * 3) * Math.PI * 2
       const len = 0.6 + rnd(isl.id * 43 + n) * Math.min(3, isl.depth * 0.3)
@@ -346,10 +346,12 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
   for (const isl of islands) {
     // chão da cidade (mm3d-62e): pedra portuguesa na borda, lajes no miolo —
     // por cima da colisão só alguns milímetros (o pé não afunda)
-    const sides = Math.max(18, Math.min(56, Math.round(isl.r * 5)))
+    const sides = isl.fill ? 20 : Math.max(18, Math.min(56, Math.round(isl.r * 5)))
     ctx.cobble.cylinder(isl.r * 2, 0.06, place(isl.x, isl.y - 0.025, isl.z), CITY.cobble, sides)
     const inner = Math.max(isl.r * 0.55, isl.r - Math.min(0.9, Math.max(0.45, isl.r * 0.14)))
     ctx.pavers.cylinder(inner * 2, 0.06, place(isl.x, isl.y - 0.02, isl.z), CITY.pave, sides)
+    // ilha do enchimento 4×: só o chão (sem rebite, poste e motor — senão o celular não aguenta)
+    if (isl.fill) continue
     rivetRing(ctx.props, isl.x, isl.y + 0.03, isl.z, isl.r * 0.995, 0.16, 0, SP.brass)
     // postes de luz da cidade na borda de cima (sem colisão: é desenho)
     const nl = isl.r >= 7 * K ? 4 : isl.r >= 4.5 * K ? 2 : isl.r >= 2.4 * K ? 1 : 0
@@ -416,7 +418,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     const warm: RGB = [1, 0.78, 0.42]
     const baseIds = new Set(map.bases.map((b) => b.island))
     for (const isl of islands) {
-      const big = baseIds.has(isl.id) || isl.r >= 6 * K
+      const big = baseIds.has(isl.id) || (isl.r >= 6 * K && !isl.fill)
       if (!big) continue
       // arco de corrimão virado para fora do mapa (±70°), postes de latão a cada ~3 m
       const out = Math.atan2(isl.x - mx, isl.z - mz)

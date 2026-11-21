@@ -82,7 +82,8 @@ function stump(ctx: ArenaCtx, poly: Poly, lit: SoftGeo, isl: Island, silver = fa
   rings(poly, O, isl.x, isl.z, y, silver ? [0.9, 0.92, 1] : CUT, silver ? SILVER : CUT_DK, isl.id)
   // raízes que saem do pé e pendem na névoa
   // (raízes grossas que abrem e voltam para dentro, em 3 lances; finas e retas pareciam pernas de aranha)
-  const n = Math.max(3, Math.round(isl.r * 0.7))
+  // (ilha do enchimento 4×: só duas raízes)
+  const n = isl.fill ? 2 : Math.max(3, Math.round(isl.r * 0.7))
   for (let k = 0; k < n; k++) {
     const a = (k / n) * Math.PI * 2 + rnd(isl.id * 7 + k) * 0.5
     const r0 = isl.r * 1.0
@@ -166,8 +167,9 @@ function shroom(ctx: ArenaCtx, poly: Poly, lit: SoftGeo, glow: SoftGeo, isl: Isl
     { y: y - 1.1, k: 0.35, c: mulc(GILL, 0.7) },
   ], isl.id)
   // pintas claras acesas na beira do chapéu (fora do pé de quem pisa)
-  for (let k = 0; k < 7; k++) {
-    const a = (k / 7) * Math.PI * 2 + rnd(isl.id + k)
+  const np = isl.fill ? 4 : 7
+  for (let k = 0; k < np; k++) {
+    const a = (k / np) * Math.PI * 2 + rnd(isl.id + k)
     glow.sphere(0.36, at(isl.x + Math.sin(a) * isl.r * 1.08, y - 0.4, isl.z + Math.cos(a) * isl.r * 1.08), [1, 0.92, 1], 5, 1, 0.5, 1)
   }
   // o cabo: do meio do chapéu para baixo e, perto do tronco, curva até ele
