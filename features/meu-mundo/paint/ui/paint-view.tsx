@@ -590,7 +590,7 @@ function Hud({ hud, touch, hurt, body, onLeave }: { hud: PaintHud; touch: boolea
           <span className="inline-block rounded-full px-4 py-2 text-[13px] font-semibold max-[759px]:text-[12px]" style={{ background: MM.surface, color: MM.text }}>
             {touch
               ? t("paintHelpTouch", "Arraste o dedo para mirar · toque e segure para atirar · as cores embaixo trocam a tinta")
-              : t("paintHelpPc", "O mouse mira · botão esquerdo atira · E troca a cor · botão direito gira a câmera · Espaço pula · F soco")}
+              : t("paintHelpPc", "Clique no jogo para travar o mouse · o mouse gira a câmera e a mira fica no meio · botão esquerdo atira · E troca a cor · Espaço pula · F soco · Esc solta o mouse")}
           </span>
         </div>
       )}

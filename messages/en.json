@@ -8643,7 +8643,7 @@
     "paintReconnecting": "Reconnecting…",
     "paintReplaced": "Opened in another window",
     "paintOffline": "No connection to the room",
-    "paintHelpPc": "The mouse aims · left button shoots · E changes color · right button turns the camera · Space jumps · F punches",
+    "paintHelpPc": "Click the game to lock the mouse · the mouse turns the camera and the crosshair stays centered · left button shoots · E changes color · Space jumps · F punches · Esc releases the mouse",
     "paintHelpTouch": "Drag your finger to aim · tap and hold to shoot · the colors below switch the paint",
     "paintToastStealGain": "Knocked out! +{n} kittens for you",
     "paintToastStealLoss": "You got knocked out: lost {n} kittens",

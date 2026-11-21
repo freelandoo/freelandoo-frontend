@@ -747,10 +747,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     const dt = Math.min(engine.getDeltaTime() / 1000, 0.1)
     clock += dt
     if (!input.blocked && (input.lookDX || input.lookDY)) {
-      cam.look(input.lookDX, input.lookDY, opts.touch ? 0.0042 : 0.0034)
+      // PC (2026-11-21): o mouse travado gira a câmera e a mira fica no meio
+      cam.look(input.lookDX, input.lookDY, opts.touch ? 0.0042 : 0.0026)
     }
-    // cursor na borda da tela: a câmera gira para aquele lado (PC)
-    if (!input.blocked && input.edge) cam.look(input.edge * 1100 * dt, 0, 0.0024)
     input.lookDX = 0
     input.lookDY = 0
 
@@ -814,9 +813,9 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
       body.facing = aimYaw
     }
 
-    // PC (mm3d-35c): a mira segue o cursor o tempo todo, atirando ou não — o
-    // corpo vira para onde ele aponta e o marcador mostra onde o tiro bate.
-    if (input.mouseAim && canMove && input.aimX !== null) {
+    // PC (2026-11-21): a mira é o meio da tela o tempo todo, atirando ou não —
+    // o corpo vira para onde a câmera aponta e o marcador mostra onde o tiro bate.
+    if (input.mouseAim && canMove) {
       const at = cam.aimPointAt(input.aimX, input.aimY, solids, bodiesRay)
       if (Math.hypot(at.x - body.x, at.z - body.z) > 0.4) {
         aimYaw = Math.atan2(at.x - body.x, at.z - body.z)
@@ -998,6 +997,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     setBlocked(blocked) {
       input.blocked = blocked
       clearPaintInput(input)
+      // fim da partida: solta o mouse (o pointer lock) para clicar nos botões
+      if (blocked && document.pointerLockElement === canvas) document.exitPointerLock()
     },
     dispose() {
       if (disposed) return
