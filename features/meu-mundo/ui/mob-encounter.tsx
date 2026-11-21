@@ -30,6 +30,10 @@ type MobKind = LaminasEncounter["kind"]
 /** N4: "há luta na tela" para quem só pergunta isso (a luta do deus não tem monstro da sala). */
 const GOD_COVER: LaminasEncounter = { mobId: -1, kind: "cavaleiro" }
 const KINDS = new Set<string>(["cavaleiro", "wolf", "ciborgue", "garras", "brute", "stone"])
+/** 21/11: espera pelo "mcatch" da sala depois que o perseguidor entra no alcance do "Lutar". */
+const CATCH_GRACE_MS = 500
+/** Perseguição avisada há mais que isto (sem notícia) não abre luta sozinha. */
+const CHASE_TTL_MS = 60_000
 
 export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }: { /** A sala (ui/offstage.ts): a rua pode nem estar montada. */ gameRef: RefObject<Pick<GameHandle, "reportMob" | "engageMob" | "reportGod" | "mobBusy">>; busy: boolean; body: BodyId; look?: string; /** mm3d-60l: o cenário da luta (elementos do bairro ou do centro). */ place?: "bairro" | "centro" }) {
   const t = useTranslations("MeuMundo")
@@ -42,6 +46,13 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const knownGods = useRef(new Set<string>())
   const godOpening = useRef(false)
   const live = useRef({ busy, encounter, god: false })
+  // 21/11 (Alex: "a Dama das Garras correu até mim e a luta não abriu"): o monstro que te
+  // viu ("mchase") e chegou até você abre a luta mesmo se o "mcatch" da sala não vier
+  // (preso num canto com o corpo largo, pacote perdido) — ver `near` abaixo.
+  const chasing = useRef<{ id: number; at: number } | null>(null)
+  const nearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastNear = useRef<Interactable | null>(null)
+  const nearRef = useRef<(it: Interactable | null) => void>(() => {})
 
   const mobName = useCallback(
     (k: string) =>
@@ -132,6 +143,7 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
 
   const start = useCallback((mobId: number, kind: MobKind) => {
     reported.current = false
+    chasing.current = null
     live.current = { ...live.current, encounter: { mobId, kind } }
     setEncounter({ mobId, kind })
   }, [])
@@ -156,6 +168,7 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
       } else if (type === "mobs") {
         const rows = ((p as { l?: unknown[] } | null)?.l ?? []) as unknown[][]
         const ids = new Set(rows.map((r) => Number(r[0])))
+        if (chasing.current && !ids.has(chasing.current.id)) chasing.current = null
         const fresh = [...ids].some((id) => !known.current.has(id))
         known.current = ids
         if (fresh) setNews({ text: L.alertText, id: Date.now() })
@@ -164,12 +177,18 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
         setNews({ text: L.winTpl.replace("{name}", w.name || "Alguém").replace("{mob}", L.mobName(w.kind || "")), id: Date.now() })
       } else if (type === "mchase") {
         // 21/11: o monstro te viu e vem correndo (alcançou = "mcatch" e a luta abre sozinha)
-        const c = p as { kind?: string }
+        const c = p as { id?: number; kind?: string }
         if (live.current.busy || live.current.encounter || live.current.god || !KINDS.has(c?.kind ?? "")) return
+        if (Number.isFinite(c.id)) {
+          chasing.current = { id: c.id!, at: Date.now() }
+          // já estava ao alcance quando ele te viu: confere agora (a tela só chama na troca)
+          nearRef.current(lastNear.current)
+        }
         setNews({ text: L.chaseTpl.replace("{mob}", L.mobName(c.kind!)), id: Date.now() })
       } else if (type === "mcatch") {
         const c = p as { id?: number; kind?: string; psycho?: boolean }
         if (!Number.isFinite(c?.id) || !KINDS.has(c?.kind ?? "")) return
+        chasing.current = null
         if (live.current.busy || live.current.encounter || live.current.god) return gameRef.current?.reportMob(c.id!, false, true)
         if (!c.psycho && cowardRefuses(currentSoul())) {
           // o covarde foge: a sala deixa ele em paz um tempo (como "ocupado")
@@ -197,6 +216,43 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
       start(it.mobId, it.mobKind)
     },
     [gameRef, start],
+  )
+
+  /**
+   * 21/11: o que está ao alcance do "Lutar" (a tela chama a cada troca). O monstro que te
+   * persegue chegou até você e a sala não mandou "mcatch" em CATCH_GRACE_MS: a luta abre
+   * sozinha pelo mesmo caminho do "Lutar" (a sala o segura parado). Monstro que não te
+   * persegue (andando, ou em paz depois de uma derrota) continua só no botão.
+   */
+  const near = useCallback(
+    (it: Interactable | null) => {
+      lastNear.current = it
+      if (nearTimer.current) clearTimeout(nearTimer.current)
+      nearTimer.current = null
+      const c = chasing.current
+      if (!it || it.kind !== "monster" || !c || it.mobId !== c.id) return
+      if (Date.now() - c.at > CHASE_TTL_MS) {
+        chasing.current = null
+        return
+      }
+      nearTimer.current = setTimeout(() => {
+        nearTimer.current = null
+        const L = live.current
+        if (L.busy || L.encounter || L.god || chasing.current?.id !== it.mobId) return
+        chasing.current = null
+        fight(it)
+      }, CATCH_GRACE_MS)
+    },
+    [fight],
+  )
+  useEffect(() => {
+    nearRef.current = near
+  }, [near])
+  useEffect(
+    () => () => {
+      if (nearTimer.current) clearTimeout(nearTimer.current)
+    },
+    [],
   )
 
   const label = useCallback((it: Interactable) => (it.kind === "monster" ? `${t("mobFight", "Lutar")} · ${mobName(it.mobKind)}` : ""), [t, mobName])
@@ -243,5 +299,5 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
       </div>
     ) : null
 
-  return { /* N4: a luta do deus também cobre a rua (o resto só olha se há luta) */ encounter: encounter ?? (godFight ? GOD_COVER : null), onServerMessage, fight, label, view, toast }
+  return { /* N4: a luta do deus também cobre a rua (o resto só olha se há luta) */ encounter: encounter ?? (godFight ? GOD_COVER : null), onServerMessage, fight, near, label, view, toast }
 }

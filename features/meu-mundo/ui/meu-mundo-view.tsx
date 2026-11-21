@@ -172,6 +172,9 @@ export default function MeuMundoView({
   const link = useRoomLink(gameRef)
   const mob = useMobEncounter({ gameRef: link.room, busy: !!suspended || !!blocked || levelOpen, body, look })
   const mobRef = useRef(mob)
+  // 21/11: o monstro que te persegue chegou até você = a luta abre sozinha (mob-encounter `near`)
+  const mobNear = mob.near
+  useEffect(() => mobNear(nearby), [mobNear, nearby])
   useEffect(() => {
     mobRef.current = mob
   })

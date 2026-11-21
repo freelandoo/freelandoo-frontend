@@ -223,6 +223,9 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     }
   }, [])
   const mobRef = useRef(mob)
+  // 21/11: o monstro que te persegue chegou até você = a luta abre sozinha (mob-encounter `near`)
+  const mobNear = mob.near
+  useEffect(() => mobNear(nearby), [mobNear, nearby])
   useEffect(() => {
     mobRef.current = mob
   })
