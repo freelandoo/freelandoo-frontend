@@ -36,7 +36,7 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
     case "orbital":
       return orbital(lit, glow, n, phase === "orbital")
     case "forge":
-      return forge(lit, glow, ctx, n, castleZ)
+      return forge(lit, glow, ctx, n, castleZ, phase === "forja")
     case "factory":
       return factory(lit, glow, ctx, n, phase)
     case "ice":
@@ -341,7 +341,7 @@ function forgeCastle(lit: SoftGeo, glow: SoftGeo, cx: number, cz: number) {
   for (const sx of [-1, 1]) for (const k of [0.3, 0.7]) lit.box(2, 14, 4, at(cx + sx * W * (k - 0.5) * 2 * 0.5 + sx * 6, 6, cz - 6), stone(14))
 }
 
-function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: number) {
+function forge(lit: SoftGeo, glow: SoftGeo, _ctx: SteamCtx, n: number, castleZ: number, arena = false) {
   const rock: RGB = [0.16, 0.12, 0.11]
   const count = Math.round(8 * n)
   for (let i = 0; i < count; i++) {
@@ -358,23 +358,7 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: n
       glow.capsule(0.9, len, at(x + Math.sin(a) * d * 0.25, h * 0.5, z + Math.cos(a) * d * 0.25, a, 0.85, 0), [1, 0.4, 0.05], 6)
     }
   }
-  // muralhas de ferro com janelas acesas dos dois lados (a fortaleza da forja, como na referência)
-  for (let i = 0; i < Math.round(9 * n); i++) {
-    const x = side(i, 32 + rnd(i, 140) * 16)
-    const z = Z0 + 20 + i * 36
-    const w = 14 + rnd(i, 141) * 10
-    const h = 12 + rnd(i, 142) * 14
-    lit.roundBox(6, h, w, 0.4, at(x, h / 2 - 1, z), stripesY([0.2, 0.17, 0.17], [0.26, 0.2, 0.18], 3, 0), 3)
-    for (let k = 0; k < 3; k++) lit.roundBox(7, 2.4, 2.2, 0.2, at(x, h + 0.6, z - w / 2 + 1.5 + k * ((w - 3) / 2)), [0.24, 0.2, 0.19], 2)
-    for (let r2 = 0; r2 < 2; r2++) {
-      for (let k = 0; k < 3; k++) {
-        glow.roundBox(6.2, 2.2, 1.1, 0.3, at(x, h * (0.35 + r2 * 0.32), z - w / 3 + (k * w) / 3), [1, 0.5, 0.1], 2)
-      }
-    }
-    glow.roundBox(2, h + 4, 1.4, 0.6, at(x - Math.sign(x) * 3.4, h / 2 - 2, z + w * 0.3), [1, 0.45, 0.06], 2)
-  }
-  // chaminés da forja, rochas e braseiros perto do caminho
-  for (let i = 0; i < Math.round(10 * n); i++) smokestack(ctx, side(i, 26 + rnd(i, 10) * 18), Z0 + 20 + i * 32, 18 + rnd(i, 11) * 14, 1.4 + rnd(i, 12), 0)
+  // (21/11) as muralhas soltas e as chaminés do kit deram lugar à muralha contínua (backdrop-forja.ts: ironWall)
   for (let i = 0; i < Math.round(24 * n); i++) {
     const x = side(i + 1, 15 + rnd(i, 20) * 12)
     const z = Z0 + rnd(i, 21) * (Z1 - Z0)
@@ -384,7 +368,7 @@ function forge(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, castleZ: n
   }
   forgeCastle(lit, glow, 0, castleZ)
   // 20/11 (miniatura): torres de tambores e casarões de janelas acesas enchendo os lados
-  forgeField(lit, glow, n)
+  forgeField(lit, glow, n, arena)
   // brasas no ar
   for (let i = 0; i < Math.round(60 * n); i++) glow.sphere(0.22, at(side(i, 4 + rnd(i, 30) * 30), 2 + rnd(i, 31) * 22, Z0 + rnd(i, 32) * (Z1 - Z0)), [1, 0.62, 0.2], 3)
 }

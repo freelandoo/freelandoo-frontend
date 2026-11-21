@@ -19,6 +19,7 @@
 
 import { SoftGeo, at, mix, type RGB } from "./shapes"
 import { Z0, Z1, deckY, rnd, side } from "./backdrop-base"
+import { wallRing, wallRun, wallH, type WallSpot } from "./backdrop-orbital"
 
 /** 1. Crosta de lava em células (Voronoi que emenda nas bordas do ladrilho): miolo escuro → borda quente → rachadura acesa. */
 export function lavaCrust(g: CanvasRenderingContext2D) {
@@ -125,15 +126,78 @@ export function forgeHall(lit: SoftGeo, glow: SoftGeo, x: number, y0: number, z:
 }
 
 /** Fundo da Forja pela miniatura: torres de tambores e casarões em manchas dos dois lados, perto e no meio. */
-export function forgeField(lit: SoftGeo, glow: SoftGeo, nk: number) {
+export function forgeField(lit: SoftGeo, glow: SoftGeo, nk: number, arena = false) {
   const n = Math.min(1, nk)
+  // 21/11: a muralha de ferro contínua — duas fileiras (a de trás mais alta) dos dois lados; na arena, em anel
+  // com o vão do castelo na frente
+  if (arena) {
+    wallRing(34, 6, 3, (sp) => ironWall(lit, glow, sp, 6.2, wallH(sp.i, 9)), (a) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.42)
+    wallRing(46, 8, 3, (sp) => ironWall(lit, glow, sp, 8.2, wallH(sp.i + 5, 18), 0.2, true), (a) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < 0.55)
+    return
+  }
+  wallRun(30, Z0 - 60, Z1 + 60, 6, deckY, (sp) => ironWall(lit, glow, sp, 6, wallH(sp.i, 10)))
+  wallRun(44, Z0 - 60, Z1 + 60, 8, deckY, (sp) => ironWall(lit, glow, sp, 8, wallH(sp.i + 5, 20), 0.2, true))
   for (let z = Z0 - 30, k = 0; z < Z1 + 30; z += 18 + rnd(k, 1) * 12, k++) {
     if (rnd(k, 2) > 0.8 * n + 0.15) continue
     const y = deckY(z) - 6
-    if (k % 3 === 2) forgeHall(lit, glow, side(k, 30 + rnd(k, 3) * 14), y, z, 12 + rnd(k, 4) * 8, 14 + rnd(k, 5) * 10, 8, k)
-    else {
-      drumTower(lit, glow, side(k, 19 + rnd(k, 6) * 10), y, z, 1.6 + rnd(k, 7) * 1.2, 4 + Math.floor(rnd(k, 8) * 4), k)
-      if (k % 2 === 0) drumTower(lit, glow, side(k, 23 + rnd(k, 9) * 8), y, z + 5, 1.2 + rnd(k, 10), 3 + Math.floor(rnd(k, 11) * 3), k + 50)
+    drumTower(lit, glow, side(k, 18 + rnd(k, 6) * 5), y, z, 1.6 + rnd(k, 7) * 1.2, 4 + Math.floor(rnd(k, 8) * 4), k)
+    if (k % 2 === 0) drumTower(lit, glow, side(k, 22 + rnd(k, 9) * 3), y, z + 5, 1.2 + rnd(k, 10), 3 + Math.floor(rnd(k, 11) * 3), k + 50)
+  }
+}
+
+// ── muralha de ferro contínua (21/11, pedido do Alex: "muros nas forjas também de ferro (...) tudo completo
+// sem espaços") ──
+//
+// PARTES do módulo (6 m, frente = +z local, olha para a prova)
+// 1. corpo de ferro que desce até a lava, com a lava acesa lambendo o pé · 2. chapas rebitadas em grade
+// 3. contraforte na emenda com cintas de latão · 4. boca de forno acesa (um em cada três) com grelha
+// 5. ameias e chaminé (uma em cada cinco) · 6. a 2ª fileira: blocos altos com seteiras acesas
+
+/** O módulo da muralha da Forja. `H` acima do chão da prova; `lava` = y do mar de lava (mundo). */
+export function ironWall(lit: SoftGeo, glow: SoftGeo, s: WallSpot, w: number, H: number, lava = 0.2, back = false) {
+  const i = s.i
+  const deep = s.y - lava + 1
+  const tot = H + deep
+  const L = (x: number, y: number, z: number) => at(x, y, z).multiply(s.m)
+  // 1. corpo
+  // o pé pega o reflexo da lava (vermelho quente nos 3 m de baixo)
+  lit.box(w + 0.05, tot, 4, L(0, H - tot / 2, 0), (_x, yy) => (yy > tot / 2 - 1 ? IRON_HI : yy < -tot / 2 + 3 ? mix([0.5, 0.16, 0.05], IRON, (yy + tot / 2) / 3) : IRON))
+  glow.box(w + 0.1, 0.7, 0.3, L(0, -deep + 0.3, 2.05), (_x, yy) => mix([1, 0.8, 0.3], [1, 0.3, 0.05], yy + 0.5))
+  if (!back) {
+    // 2. chapas rebitadas: 2 colunas × 3 fiadas, tons alternados, sombra no pé de cada chapa
+    const ph = (H - 1.6) / 3
+    for (let r = 0; r < 3; r++) {
+      for (const c of [-1, 1]) {
+        const cx = (c * w) / 4
+        const cy = 0.4 + ph * (r + 0.5)
+        const tone: RGB = (r + (c > 0 ? 1 : 0) + i) % 2 ? mix(IRON, IRON_HI, 0.62) : mix(IRON, IRON_HI, 0.4)
+        if ((i % 3 === 1) && r === 0) continue // a boca de forno ocupa a fiada de baixo
+        lit.box(w / 2 - 0.35, ph - 0.3, 0.2, L(cx, cy, 2.1), (_x, yy) => (yy > ph / 2 - 0.45 ? mix(tone, IRON_HI, 0.5) : yy < -ph / 2 + 0.35 ? SOOT : tone))
+        for (const rx of [-1, 1]) for (const ry of [-1, 1]) lit.box(0.16, 0.16, 0.12, L(cx + rx * (w / 4 - 0.45), cy + ry * (ph / 2 - 0.4), 2.26), BRASS)
+      }
     }
+  } else {
+    // 6. 2ª fileira: seteiras acesas em duas fiadas
+    for (const fy of [0.45, 0.72]) for (let k = 0; k < 3; k++) glow.box(0.5, 1.6, 0.1, L(-w / 3 + (k * w) / 3, H * fy, 2.05), (_x, yy) => mix([1, 0.85, 0.4], [1, 0.4, 0.08], yy + 0.5))
+  }
+  // 3. contraforte na emenda
+  lit.box(1.4, tot + 1.2, 5.2, L(-w / 2, H + 0.6 - (tot + 1.2) / 2, 0.4), (_x, yy) => (yy > (tot + 1.2) / 2 - 0.5 ? IRON_HI : IRON))
+  for (const by of [H * 0.3, H * 0.75]) lit.box(1.6, 0.35, 5.4, L(-w / 2, by, 0.4), BRASS)
+  // 4. boca de forno
+  if (!back && i % 3 === 1) {
+    const bh = H * 0.36
+    glow.box(w - 2.2, bh, 0.2, L(0.3, bh / 2 + 0.2, 1.95), (_x, yy) => mix([1, 0.92, 0.5], [1, 0.32, 0.05], yy / bh + 0.5))
+    for (let b = 0; b < 5; b++) lit.box(0.14, bh, 0.25, L(0.3 - (w - 2.2) / 2 + (b + 0.5) * ((w - 2.2) / 5), bh / 2 + 0.2, 2.15), SOOT)
+    lit.box(w - 1.6, 0.6, 0.6, L(0.3, bh + 0.5, 2.1), IRON_HI)
+    lit.box(w - 1.6, 0.3, 0.8, L(0.3, 0.15, 2.2), IRON_HI)
+  }
+  // 5. ameias e chaminé
+  lit.box(w + 0.3, 0.5, 4.4, L(0, H + 0.25, 0), IRON_HI)
+  for (let k = 0; k < 2; k++) lit.box(1.5, 1.4, 4.2, L(-w / 4 + (k * w) / 2 + 0.4, H + 1.2, 0), (_x, yy) => (yy > 0.5 ? IRON_HI : IRON))
+  if (i % 5 === 3) {
+    const ch = H + 12 + (i % 10 === 3 ? 6 : 0)
+    lit.cylinder(2.6, ch, at(0, ch / 2, -1).multiply(s.m), (_x, yy) => (yy > ch / 2 - 1 ? IRON_HI : IRON), 10, 2.2)
+    for (const by of [ch * 0.55, ch * 0.8]) lit.cylinder(2.8, 0.4, at(0, by, -1).multiply(s.m), BRASS, 10)
+    glow.cylinder(2.1, 0.5, at(0, ch + 0.1, -1).multiply(s.m), EMB, 10)
   }
 }
