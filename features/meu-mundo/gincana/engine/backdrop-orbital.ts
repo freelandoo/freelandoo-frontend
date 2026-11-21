@@ -22,6 +22,7 @@
 // 2. torre de pé (orbTower): bloco com faixas, janelas em fiada, coroa e antena
 // 3. o arranjo: três camadas de distância, em manchas, cobrindo também atrás da largada (arena da Orbital)
 
+import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { SoftGeo, at, mix, type RGB } from "./shapes"
 import { Z1 as SPAN_END, deckY, rnd } from "./backdrop-base"
 
@@ -142,32 +143,40 @@ export function orbTower(lit: SoftGeo, glow: SoftGeo, x: number, y0: number, z: 
 }
 
 /** 3. O arranjo: três camadas (perto, meio, longe) em manchas dos dois lados, de trás da largada ao fim. */
-export function orbitalField(lit: SoftGeo, glow: SoftGeo, nk: number) {
+export function orbitalField(lit: SoftGeo, glow: SoftGeo, nk: number, arena = false) {
   // vai até o fim da prova (percurso dobrado) e sobe junto com o chão; a densidade é por metro (`n` só baixa no celular)
   const n = Math.min(1, nk)
   const Z0 = -170
   const Z1 = SPAN_END + 40
   let id = 0
+  // 21/11: o muro tecnológico contínuo — duas fileiras (a de trás mais alta), dos dois lados; na arena, em anel
+  if (arena) {
+    wallRing(36, 8, 0, (sp) => techWall(lit, glow, sp, 8.4, wallH(sp.i, 14)))
+    wallRing(50, 10, 0, (sp) => techWall(lit, glow, sp, 10.6, wallH(sp.i + 5, 26), 40, true))
+  } else {
+    wallRun(34, -60, SPAN_END + 60, 8, deckY, (sp) => techWall(lit, glow, sp, 8, wallH(sp.i)))
+    wallRun(48, -60, SPAN_END + 60, 10, deckY, (sp) => techWall(lit, glow, sp, 10, wallH(sp.i + 5, 28), 40, true))
+  }
   // perto: ilhas pequenas abaixo e na altura da pista
   for (let z = Z0, k = 0; z < Z1; z += 20 + rnd(k, 1) * 10, k++) {
     if (rnd(k, 2) > 0.85 * n + 0.1) continue
     const s = k % 2 ? 1 : -1
-    orbIsland(lit, glow, s * (24 + rnd(k, 3) * 16), deckY(z) - 8 + rnd(k, 4) * 16, z, 4 + rnd(k, 5) * 3, id++, 0)
+    orbIsland(lit, glow, s * (22 + rnd(k, 3) * 4), deckY(z) - 10 + rnd(k, 4) * 12, z, 4 + rnd(k, 5) * 3, id++, 0)
   }
   // meio
   for (let z = Z0, k = 0; z < Z1; z += 26 + rnd(k, 11) * 14, k++) {
     if (rnd(k, 12) > 0.85 * n + 0.1) continue
-    for (const s of [-1, 1]) orbIsland(lit, glow, s * (50 + rnd(k + s, 13) * 40), deckY(z) - 22 + rnd(k + s, 14) * 46, z + s * 8, 7 + rnd(k + s, 15) * 5, id++, 1)
+    for (const s of [-1, 1]) orbIsland(lit, glow, s * (62 + rnd(k + s, 13) * 40), deckY(z) + 12 + rnd(k + s, 14) * 34, z + s * 8, 7 + rnd(k + s, 15) * 5, id++, 1)
   }
   // longe: grandes, mais altas e mais baixas (enchem o vazio embaixo do horizonte)
   for (let z = Z0 - 60, k = 0; z < Z1 + 80; z += 45 + rnd(k, 21) * 20, k++) {
     if (rnd(k, 22) > 0.85 * n + 0.1) continue
-    for (const s of [-1, 1]) orbIsland(lit, glow, s * (110 + rnd(k + s, 23) * 80), -45 + rnd(k + s, 24) * 95, z - s * 12, 12 + rnd(k + s, 25) * 8, id++, 2)
+    for (const s of [-1, 1]) orbIsland(lit, glow, s * (110 + rnd(k + s, 23) * 80), 15 + rnd(k + s, 24) * 60, z - s * 12, 12 + rnd(k + s, 25) * 8, id++, 2)
   }
   // torres de pé, em grupos de 2–3
   for (let z = Z0, k = 0; z < Z1; z += 34 + rnd(k, 31) * 16, k++) {
     const s = k % 2 ? 1 : -1
-    const cx = s * (36 + rnd(k, 32) * 60)
+    const cx = s * (60 + rnd(k, 32) * 50)
     const m = 1 + Math.round(rnd(k, 33) * 2 * n)
     for (let j = 0; j < m; j++) {
       const w = 4 + rnd(k, 40 + j) * 6
@@ -197,4 +206,91 @@ export function orbitalGem(g: SoftGeo, glow: SoftGeo, x: number, y: number, z: n
   g.cylinder(r * 0.7, r * 0.45, at(x, y + r * 0.22, z), [0.95, 0.25, 0.75], 6, r * 1.4)
   g.cylinder(r * 1.4, r * 0.4, at(x, y + r * 0.65, z), (_x, yy) => (yy > 0.05 ? [1, 0.6, 0.92] : [1, 0.32, 0.82]), 6, r * 0.85)
   glow.cylinder(r * 0.75, 0.05, at(x, y + r * 0.86, z), [1, 0.75, 0.95], 6)
+}
+
+// ── muro lateral contínuo (21/11, pedido do Alex: "mais sólido no background, dos lados, sem espaços vazios",
+// como os sobrados colados do cais da Cidade) ──
+//
+// PARTES do muro tecnológico (módulo de 8 m, frente = +z local, olha para a prova)
+// 1. corpo: laje de aço que desce até o vazio, faixa clara no alto, sombra no pé · painéis em relevo
+// 2. pilastra na emenda: mais clara, salta da face, filete de neon vertical
+// 3. faixas de neon e janelas em fiada · 4. coroa: cornija, caixas e antenas alternadas
+// 5. torre a cada 4 módulos · 6. a 2ª fileira, mais alta, atrás (sem céu entre as peças)
+
+/** Base de um módulo: posição na borda e o giro que vira a frente (+z local) para a prova. */
+export type WallSpot = { m: Matrix; i: number; y: number }
+
+/** Módulos em fila dos dois lados (x = ±X), de z0 a z1, com o chão em `yOf(z)`. */
+export function wallRun(X: number, z0: number, z1: number, w: number, yOf: (z: number) => number, put: (s: WallSpot) => void) {
+  let i = 0
+  for (const sx of [-1, 1]) {
+    for (let z = z0; z < z1; z += w, i++) {
+      put({ m: at(sx * X, yOf(z), z, sx > 0 ? -Math.PI / 2 : Math.PI / 2), i, y: yOf(z) })
+    }
+  }
+}
+
+/** Módulos em anel de raio R em volta de (0, 0); `skip(a)` deixa um vão (a = 0 aponta para +z). */
+export function wallRing(R: number, w: number, y: number, put: (s: WallSpot) => void, skip?: (a: number) => boolean) {
+  const n = Math.ceil((Math.PI * 2 * R) / w)
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2
+    if (skip?.(a)) continue
+    put({ m: at(Math.sin(a) * R, y, Math.cos(a) * R, a + Math.PI), i, y })
+  }
+}
+
+/** Altura do muro por módulo: em grupos de 3 (a coroa sobe e desce, nunca em escadinha regular). */
+export const wallH = (i: number, base = 16) => base + [0, 0, 3, 3, 3, 1, 1, 5, 5, 0, 2, 2][i % 12]
+
+const L = (s: WallSpot, x: number, y: number, z: number, ry = 0) => at(x, y, z, ry).multiply(s.m)
+
+/** O módulo do muro tecnológico: `w` de largura, `H` de altura acima do chão da prova, `deep` até onde desce. */
+export function techWall(lit: SoftGeo, glow: SoftGeo, s: WallSpot, w: number, H: number, deep = 40, back = false) {
+  const i = s.i
+  const neon = i % 3 === 0 ? MAG : CYAN
+  const tot = H + deep
+  // 1. corpo
+  lit.box(w + 0.05, tot, 3, L(s, 0, H - tot / 2, 0), (_x, yy) => (yy > tot / 2 - 1.2 ? STEEL_HI : yy < tot / 2 - H - 2 ? mix(STEEL, [0.03, 0.03, 0.08], 0.6) : STEEL))
+  if (!back) {
+    // painéis em relevo (dois por módulo, um claro um médio) com a emenda escura
+    for (const [px, c] of [[-w / 4, mix(STEEL, STEEL_HI, 0.45)], [w / 4, mix(STEEL, STEEL_HI, 0.25)]] as [number, RGB][]) {
+      lit.box(w / 2 - 0.9, H - 4.5, 0.3, L(s, px, (H - 4.5) / 2 + 0.8, 1.6), (_x, yy) => (yy > (H - 4.5) / 2 - 0.2 ? mix(c, WHITE, 0.25) : c))
+      // emendas do painel e a luz de status no alto
+      for (const f of [0.38, 0.68]) lit.box(w / 2 - 0.9, 0.1, 0.36, L(s, px, 0.8 + (H - 4.5) * f, 1.62), [0.05, 0.05, 0.1])
+      glow.box(0.28, 0.28, 0.1, L(s, px + w / 4 - 0.9, H - 4.6, 1.8), (i + (px > 0 ? 1 : 0)) % 3 === 0 ? MAG : CYAN)
+      // grade de respiro embaixo do painel
+      for (let k = 0; k < 4; k++) lit.box(w / 2 - 1.6, 0.12, 0.2, L(s, px, 1.3 + k * 0.35, 1.8), [0.04, 0.04, 0.08])
+    }
+  }
+  // 2. pilastra na emenda
+  lit.box(1.1, tot + 1, 3.8, L(s, -w / 2, H + 0.5 - (tot + 1) / 2, 0.2), (_x, yy) => (yy > (tot + 1) / 2 - 0.6 ? WHITE : mix(STEEL_HI, STEEL, 0.3)))
+  glow.box(0.16, H - 1, 0.1, L(s, -w / 2, (H - 1) / 2, 2.12), neon)
+  // 3. faixa de neon e janelas
+  glow.box(w, 0.32, 0.1, L(s, 0, H - 2, 1.56), neon)
+  if (!back) {
+    for (let k = 0; k < 5; k++) glow.box(0.7, 0.45, 0.1, L(s, -w / 2 + 1.4 + k * ((w - 2.2) / 4), H - 3.2, 1.82), k % 2 ? AMBER : WHITE)
+  } else {
+    for (let r = 0; r < 3; r++) glow.box(w - 1.4, 0.3, 0.1, L(s, 0, H * (0.35 + r * 0.2), 1.56), r === 1 ? AMBER : neon)
+  }
+  // 5. torre a cada 4 módulos (só na 1ª fileira): bloco branco que sobe do muro com faixas, janelas e coroa
+  if (!back && i % 4 === 2) {
+    const th = H + 12 + (i % 8 === 2 ? 8 : 0)
+    lit.box(5, th + deep, 5, L(s, 0.6, th - (th + deep) / 2, -0.6), (_x, yy) => (yy > (th + deep) / 2 - 0.5 ? [1, 1, 1] : yy < (th + deep) / 2 - th ? STEEL : WHITE))
+    for (let k = 1; k <= 3; k++) glow.box(5.2, 0.35, 5.2, L(s, 0.6, H + (k * (th - H)) / 4, -0.6), neon)
+    for (let yy = H + 1.6; yy < th - 1; yy += 2.2) glow.box(3.6, 0.3, 5.06, L(s, 0.6, yy, -0.6), AMBER)
+    lit.box(3.4, 2.4, 3.4, L(s, 0.6, th + 1.2, -0.6), WHITE)
+    glow.box(3.5, 0.25, 3.5, L(s, 0.6, th + 2.2, -0.6), neon)
+    lit.box(0.2, 5, 0.2, L(s, 0.6, th + 4.9, -0.6), STEEL_HI)
+    glow.box(0.7, 0.7, 0.7, L(s, 0.6, th + 7.5, -0.6), MAG)
+  }
+  // 4. coroa
+  lit.box(w + 0.3, 0.6, 3.6, L(s, 0, H + 0.3, 0), STEEL_HI)
+  if (i % 2 === 0) {
+    lit.box(w * 0.4, 1.6, 2.2, L(s, w * 0.15, H + 1.4, -0.2), mix(STEEL, STEEL_HI, 0.4))
+    glow.box(w * 0.4 + 0.05, 0.2, 2.25, L(s, w * 0.15, H + 1.9, -0.2), neon)
+  } else {
+    lit.box(0.2, 4, 0.2, L(s, -w * 0.2, H + 2.6, 0), STEEL_HI)
+    glow.box(0.5, 0.5, 0.5, L(s, -w * 0.2, H + 4.8, 0), i % 4 === 1 ? MAG : AMBER)
+  }
 }

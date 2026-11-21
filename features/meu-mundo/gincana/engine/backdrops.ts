@@ -34,7 +34,7 @@ export function buildBackdrop(deco: GincanaDeco, lit: SoftGeo, glow: SoftGeo, ct
     case "canyon":
       return canyon(lit, glow, n, phase === "moinhos")
     case "orbital":
-      return orbital(lit, glow, n)
+      return orbital(lit, glow, n, phase === "orbital")
     case "forge":
       return forge(lit, glow, ctx, n, castleZ)
     case "factory":
@@ -264,16 +264,16 @@ function canyon(lit: SoftGeo, glow: SoftGeo, n: number, wet = false) {
 
 // ── Cidade Orbital ───────────────────────────────────────────────────────────
 
-function orbital(lit: SoftGeo, glow: SoftGeo, n: number) {
+function orbital(lit: SoftGeo, glow: SoftGeo, n: number, arena = false) {
   // planeta com faixas e o anel
   lit.sphere(170, at(170, 40, 420), stripesY([0.42, 0.3, 0.7], [0.66, 0.42, 0.78], 18, 0.1), 20)
   glow.torus(300, 4, at(170, 40, 420, 0.3, 0.35, 0.2), [0.5, 0.8, 1], 48)
   glow.sphere(30, at(-160, 90, 260), [1, 0.86, 0.6], 12)
   // ilhas, torres e o arranjo em três camadas (20/11, pela miniatura): backdrop-orbital.ts
-  orbitalField(lit, glow, n)
+  orbitalField(lit, glow, n, arena)
   // anéis de tráfego (aros acesos) e discos flutuantes
   for (let i = 0; i < Math.round(8 * n); i++) {
-    glow.torus(10 + rnd(i, 50) * 8, 0.4, at(side(i, 22 + rnd(i, 51) * 20), 12 + rnd(i, 52) * 18, Z0 + 20 + i * 38, 0, Math.PI / 2, 0), [0.4, 0.9, 1], 24)
+    glow.torus(10 + rnd(i, 50) * 8, 0.4, at(side(i, 22 + rnd(i, 51) * 4), 12 + rnd(i, 52) * 18, Z0 + 20 + i * 38, 0, Math.PI / 2, 0), [0.4, 0.9, 1], 24)
   }
   // estrelas
   // estrelas numa esfera fixa: não crescem com o comprimento da prova
