@@ -14,9 +14,10 @@ import { SP, factorySkyline, smokestack, pipeRun, type SteamCtx } from "../../en
 import type { GincanaDeco } from "./phase-themes"
 import type { Pad } from "../sim/course"
 import { Z0, Z1, deckY, rnd, side, setSpan, spanK } from "./backdrop-base"
-import { mesaTower } from "./backdrop-canion"
+import { canyonWall, mesaTower } from "./backdrop-canion"
+import { factoryRow, glacierWall } from "./backdrop-muros"
 import { fallSplash, foamRing, glowRipple, lightPath } from "./backdrop-agua"
-import { farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
+import { bankWall, farTrunk, farWall, logPile, mossDrum, shroomLamp, tallTrunk } from "./backdrop-floresta"
 import { orbitalField } from "./backdrop-orbital"
 import { comportasShore, fabricaHall } from "./backdrop-fabrica"
 import { iceSea } from "./backdrop-gelo"
@@ -69,6 +70,8 @@ function forest(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
     }
   }
   farWall(lit, Z0, Z1)
+  // barrancos contínuos dos dois lados (21/11): fecha a faixa de baixo entre os troncos
+  for (const s of [-1, 1]) bankWall(lit, glow, s, Z0 - 20, Z1 + 40, (z) => deckY(z) * 0.8)
   // água (miniatura): o reflexo da lua (prata-lilás) do horizonte até a largada e anéis acesos soltos no pântano
   lightPath(glow, { xFar: -40, xNear: -6, z0: Z0 + 20, z1: Z1 + 40, srcZ: Z1 + 140, core: [0.9, 0.96, 1], edge: [0.6, 0.62, 0.95], hwNear: 5, hwFar: 22, step: 1.6, fill: 4, w: 0.12 }, 300)
   for (let i = 0; i < Math.round(30 * n); i++) glowRipple(glow, side(i, 9 + rnd(i, 500) * 22), Z0 + rnd(i, 501) * (Z1 - Z0), 0.8 + rnd(i, 502) * 1.6, [0.4, 1, 0.6])
@@ -88,7 +91,7 @@ function forest(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
   const shrooms = Math.round(26 * n)
   for (let i = 0; i < shrooms; i++) {
     // miniaturas: luminárias na beira (|x| 13–15) e entre os troncos (|x| 28–34)
-    const x = side(i + 1, i % 3 === 2 ? 28 + rnd(i, 11) * 6 : 13 + rnd(i, 11) * 2)
+    const x = side(i + 1, i % 3 === 2 ? 22 + rnd(i, 11) * 4 : 13 + rnd(i, 11) * 2)
     const z = Z0 + 10 + (i / shrooms) * (Z1 - Z0 - 20) + rnd(i, 13) * 5
     shroomLamp(lit, glow, x, z, 1.4 + rnd(i, 12) * 2.4, i)
   }
@@ -217,9 +220,10 @@ function canyon(lit: SoftGeo, glow: SoftGeo, n: number, wet = false) {
   const bands: [number, number, number, number, number][] = [
     // |x| de, |x| até, passo em z, largura, fiadas
     [30, 26, 34, 12, 4],
-    [62, 50, 30, 18, 6],
-    [125, 80, 36, 28, 8],
+    [62, 38, 30, 18, 6],
   ]
+  // paredão contínuo atrás das mesas (21/11) — no lugar da 3ª faixa de mesas distantes (o céu entre elas era o vão)
+  for (const s of [-1, 1]) canyonWall(lit, glow, s, Z0 - 40, Z1 + 80, (z) => deckY(z), wet ? -2 : -8)
   bands.forEach(([x0, dx, step, w0, c0], bi) => {
     for (let z = Z0 - 20, i = 0; z < Z1 + 40; z += step, i++) {
       for (const s of [-1, 1]) {
@@ -377,7 +381,11 @@ function forge(lit: SoftGeo, glow: SoftGeo, _ctx: SteamCtx, n: number, castleZ: 
 
 function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, phase: string) {
   if (phase === "fabrica") return fabricaHall(lit, glow, ctx, n / spanK())
-  if (phase === "comportas") comportasShore(lit, glow, n / spanK())
+  if (phase === "comportas") {
+    comportasShore(lit, glow, n / spanK())
+    // fileira contínua de galpões dos dois lados (21/11): fecha o vão entre as fábricas do kit
+    for (const s of [-1, 1]) factoryRow(lit, glow, s, Z0 - 30, Z1 + 60, 62)
+  }
   // a silhueta de fábricas do kit steampunk dos dois lados
   factorySkyline(ctx, -95, 130, 50, Math.round(12 * n), -2, 21, 1.4)
   factorySkyline(ctx, 95, 130, 50, Math.round(12 * n), -2, 37, 1.4)
@@ -418,6 +426,8 @@ function factory(lit: SoftGeo, glow: SoftGeo, ctx: SteamCtx, n: number, phase: s
 function ice(lit: SoftGeo, glow: SoftGeo, n: number, phase: string) {
   // metade C (20/11): penhascos, icebergs e banquisas pela miniatura de cada fase (backdrop-gelo.ts)
   iceSea(lit, glow, n / spanK(), phase)
+  // paredão de geleira contínuo dos dois lados (21/11): o mar não aparece mais entre as colunas de gelo
+  for (const s of [-1, 1]) glacierWall(lit, glow, s, Z0 - 40, Z1 + 80, 92, (z) => deckY(z))
   const white: RGB = [0.92, 0.96, 1]
   const blue: RGB = [0.6, 0.78, 0.94]
   // V-Gelo (ref. v3): placas de gelo hexagonais boiando, tampa de neve com beira azulada, lado ciano

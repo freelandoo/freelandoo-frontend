@@ -116,3 +116,62 @@ export function mesaTower(lit: SoftGeo, glow: SoftGeo, x: number, yTop: number, 
   return { bottom: y - deep, fallX }
 }
 
+
+/**
+ * Paredão do cânion (pedido do Alex, 21/11: "algo mais sólido dos lados, sem espaços"): muralha CONTÍNUA de
+ * arenito dos dois lados (face em |x| ~116), em trechos de 12–16 m de alturas diferentes (o topo é a silhueta),
+ * feita das mesmas fiadas de blocos com junta das mesas. Tampa de grama com franja, acácia de vez em quando,
+ * cachoeira acesa descendo a face a cada 3–4 trechos. Fica atrás das mesas: o céu entre elas vira pedra.
+ */
+export function canyonWall(lit: SoftGeo, glow: SoftGeo, s: number, z0: number, z1: number, topAt: (z: number) => number, y0: number) {
+  for (let z = z0, i = 0; z < z1; i++) {
+    const L = 12 + rnd(i, 1 + s) * 4
+    const cz = z + L / 2
+    const seed = 5000 + i * 2 + (s > 0 ? 1 : 0)
+    const face = 112 + rnd(seed, 2) * 8
+    const D = 26
+    const top = topAt(cz) + 34 + rnd(seed, 3) * 22
+    // miolo escuro (aparece nas juntas)
+    lit.box(D, top - y0, L + 0.6, at(s * (face + D / 2 + 0.7), (top + y0) / 2, cz), [0.3, 0.13, 0.09])
+    // fiadas de blocos na face que olha a prova (3 por fiada; desalinhadas de fiada para fiada)
+    // rocha erodida, não alvenaria: fiada de altura variável (2,5–7 m), 2–4 blocos de tamanhos diferentes, a fiada
+    // inteira recua ou avança até 1,4 m (a face não é um plano) e os blocos saltam até 2 m
+    let k = 0
+    for (let y = top; y > y0; k++) {
+      const bh = 2.5 + rnd(seed, 200 + k) * 4.5
+      const nb = 2 + Math.floor(rnd(seed, 210 + k) * 3)
+      const shift = (rnd(seed, 220 + k) - 0.5) * 2.8
+      // cortes em tamanhos desiguais ao longo do trecho
+      const cuts = [0]
+      for (let b = 1; b < nb; b++) cuts.push((b + (rnd(seed, 230 + k * 5 + b) - 0.5) * 0.7) / nb)
+      cuts.push(1)
+      for (let b = 0; b < nb; b++) {
+        const za = cz - L / 2 + cuts[b] * L
+        const zb = cz - L / 2 + cuts[b + 1] * L
+        const pop = rnd(seed, 30 + k * 5 + b) > 0.75 ? 1 + rnd(seed, 40 + k * 5 + b) : rnd(seed, 30 + k * 5 + b) * 0.5
+        const hb = bh - 0.3 - rnd(seed, 50 + k * 5 + b) * 0.5
+        const bd = 2 + pop
+        lit.box(bd, hb, zb - za - 0.35, at(s * (face + shift + 1 - bd / 2), y - bh / 2 - (bh - 0.3 - hb) / 2, (za + zb) / 2), brick(SAND[(seed + k + b) % SAND.length], hb, seed + k * 7 + b))
+      }
+      y -= bh
+    }
+    // tampa de grama com franja que cai pela face
+    lit.box(D + 1, 0.9, L + 0.8, at(s * (face + D / 2), top + 0.35, cz), (_x, yy): RGB => (yy > 0.2 ? [0.52, 0.7, 0.26] : [0.32, 0.46, 0.17]))
+    for (let f = 0; f < 4; f++) lit.sphere(3 + rnd(seed, 60 + f) * 1.6, at(s * (face - 0.2), top - 0.4 - rnd(seed, 64 + f) * 0.8, cz - L / 2 + (f + 0.5) * (L / 4)), (_x, yy): RGB => (yy > 0 ? [0.44, 0.62, 0.22] : [0.26, 0.4, 0.14]), 4, 0.6, 0.8, 1.2)
+    // acácia em 1 de 3 trechos
+    if (seed % 3 === 0) {
+      const tx = s * (face + 5 + rnd(seed, 70) * 8)
+      const th = 5 + rnd(seed, 71) * 3
+      lit.tube(new Vector3(tx, top + 0.7, cz), new Vector3(tx + s * 0.8, top + 0.7 + th, cz + 0.6), 0.5, [0.32, 0.2, 0.13], 6)
+      lit.sphere(9, at(tx + s * 0.8, top + 0.7 + th, cz + 0.6), [0.2, 0.36, 0.13], 7, 1, 0.22, 0.9)
+      lit.sphere(7, at(tx + s * 1.2, top + 1.5 + th, cz + 0.3), [0.44, 0.64, 0.22], 7, 1, 0.2, 0.9)
+    }
+    // cachoeira descendo a face
+    if (i % 4 === 1) {
+      const fh = top - y0
+      glow.box(0.8, fh, 4, at(s * (face - 0.6), top - fh / 2, cz), (_x, yy, zz): RGB => mix([0.5, 0.82, 0.95], [1, 1, 1], Math.abs(Math.sin(yy * 0.6 + zz * 2.2)) > 0.6 ? 0.75 : 0.15))
+      glow.box(1.6, 0.3, 4.4, at(s * (face - 0.4), top + 0.5, cz), [0.6, 0.9, 1])
+    }
+    z += L - 0.2
+  }
+}

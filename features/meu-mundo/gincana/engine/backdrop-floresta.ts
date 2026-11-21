@@ -302,3 +302,88 @@ export function logPile(lit: SoftGeo, x: number, z: number, rows: number, len: n
   // sombra de contato
   lit.cylinder(rows * r * 2.2, 0.04, at(x, 0.02, z, rotY), [0.04, 0.08, 0.05], 10)
 }
+
+/** Terra do barranco: escura embaixo, estratos claros finos, seixos; a pintura recebe o y LOCAL da camada. */
+function earth(seed: number, lh: number, k: number) {
+  return (x: number, yl: number, z: number): RGB => {
+    const t = (yl + lh / 2) / lh
+    let c = mix([0.14, 0.09, 0.1], k % 2 ? [0.42, 0.28, 0.24] : [0.36, 0.25, 0.27], Math.min(1, t * 1.3))
+    if (t > 0.86) c = mix(c, [0.56, 0.42, 0.36], 0.45)
+    if (Math.abs(Math.sin(yl * 4.2 + seed + z * 0.3)) < 0.06) c = mix(c, [0.08, 0.05, 0.05], 0.6)
+    if (Math.sin(x * 3.1 + z * 2.3 + seed) * Math.cos(yl * 5 - z) > 0.86) c = mix(c, [0.44, 0.4, 0.46], 0.55)
+    return c
+  }
+}
+
+/**
+ * Barranco da beira do pântano (pedido do Alex, 21/11: "algo mais sólido dos lados, tipo barrancos na floresta,
+ * sem espaços"): faixa CONTÍNUA de terra dos dois lados (face em |x| 29–32), em trechos de 7–10 m que se tocam.
+ * Cada trecho: 4 camadas que recuam em degrau (terraço), tampa de musgo com franja que cai, raízes que descem
+ * pela face, pedras no pé dentro da água, fungos acesos nas camadas e samambaias em cima. Os troncos da 2ª
+ * fileira saem de trás/de cima dele; a copa e a névoa fazem o resto.
+ */
+export function bankWall(lit: SoftGeo, glow: SoftGeo, s: number, z0: number, z1: number, topAt: (z: number) => number) {
+  for (let z = z0, i = 0; z < z1; i++) {
+    const L = 7 + rnd(i, 1 + s) * 3
+    const cz = z + L / 2
+    const seed = i * 2 + (s > 0 ? 1 : 0)
+    const face = 29 + rnd(seed, 2) * 3
+    const D = 16
+    const h = topAt(cz) + 9 + rnd(seed, 3) * 6
+    const y0 = -2
+    const lh = (h - y0) / 4
+    const yaw = (rnd(seed, 4) - 0.5) * 0.12
+    for (let k = 0; k < 4; k++) {
+      const back = k * (0.7 + rnd(seed, 10 + k) * 0.6)
+      const cy = y0 + lh * (k + 0.5)
+      lit.box(D, lh + 0.05, L + 0.5, at(s * (face + back + D / 2), cy, cz + (rnd(seed, 20 + k) - 0.5) * 0.8, yaw), earth(seed + k, lh, k))
+      // pedras cravadas na face (quebram a chapa lisa de terra de perto)
+      // (blocos girados, não esferas: o barranco é longo e a esfera custava 12× mais)
+      for (let p = 0; p < 2; p++) {
+        const pd = 0.7 + rnd(seed, 80 + k * 4 + p) * 1.3
+        lit.box(pd * 0.8, pd * 0.7, pd, at(s * (face + back + 0.05), y0 + lh * (k + 0.2 + rnd(seed, 90 + k * 4 + p) * 0.6), cz + (rnd(seed, 100 + k * 4 + p) - 0.5) * L * 0.9, rnd(seed, 110 + p) * 3, 0.3, 0.4), (_x, yy): RGB => mix([0.2, 0.17, 0.22], [0.5, 0.46, 0.54], Math.min(1, Math.max(0, yy / pd + 0.5))))
+      }
+      // beiço de pedra na quina do degrau (pega luz)
+      if (k > 0 && rnd(seed, 30 + k) > 0.4) lit.box(1.2, 0.5, L * (0.4 + rnd(seed, 31 + k) * 0.4), at(s * (face + back + 0.3), y0 + lh * k + 0.15, cz + (rnd(seed, 32 + k) - 0.5) * 2, yaw), [0.36, 0.3, 0.36])
+    }
+    const topX = face + 3 * 1.2
+    // tampa de musgo e a franja que cai pela borda
+    lit.box(D + 1.4, 0.8, L + 0.8, at(s * (topX + D / 2 - 0.4), h + 0.3, cz, yaw), (_x, yy): RGB => (yy > 0.1 ? [0.2, 0.44, 0.2] : [0.1, 0.26, 0.12]))
+    for (let k = 0; k < 3; k++) {
+      const fz = cz - L / 2 + (k + 0.5) * (L / 3) + (rnd(seed, 40 + k) - 0.5)
+      const fl = 1.4 + rnd(seed, 44 + k) * 2.6
+      lit.sphere(2.2, at(s * (topX - 0.5), h - fl * 0.4, fz), (_x, yy): RGB => mix([0.08, 0.2, 0.1], [0.22, 0.48, 0.22], Math.min(1, Math.max(0, yy / 2 + 0.5))), 3, 0.45, fl / 2.2, 0.9)
+    }
+    // raízes que descem pela face (2 gomos, a ponta entra na terra); 1 em 3 com a ponta acesa
+    for (let k = 0; k < 2 + (seed % 2); k++) {
+      const rz = cz + (rnd(seed, 50 + k) - 0.5) * L * 0.8
+      const a = new Vector3(s * (topX - 0.2), h - 0.2, rz)
+      const b = new Vector3(s * (face + 0.1 + rnd(seed, 52 + k) * 1.4), h - 2.5 - rnd(seed, 53 + k) * 2, rz + (rnd(seed, 54 + k) - 0.5) * 2)
+      const c = new Vector3(s * (face - 0.4), b.y - 1.5 - rnd(seed, 55 + k) * 3, b.z + (rnd(seed, 56 + k) - 0.5) * 1.5)
+      lit.tube(a, b, 0.32, [0.2, 0.12, 0.08], 5)
+      lit.tube(b, c, 0.2, [0.16, 0.1, 0.07], 5)
+      if ((seed + k) % 3 === 0) glow.sphere(0.35, at(c.x, c.y, c.z), [0.55, 1, 0.65], 4)
+    }
+    // pedras no pé (dentro da água)
+    for (let k = 0; k < 2; k++) {
+      const pd = 1.6 + rnd(seed, 60 + k) * 2.2
+      lit.box(pd, pd * 0.55, pd * 0.8, at(s * (face - pd * 0.25), 0.1, cz + (k - 0.5) * L * 0.5, rnd(seed, 61 + k) * 3, 0.2, 0.25), (_x, yy): RGB => mix([0.16, 0.13, 0.18], [0.38, 0.34, 0.42], Math.min(1, Math.max(0, yy / pd + 0.6))))
+    }
+    // fungos-prateleira acesos numa camada (rosa ou ciano)
+    if (seed % 2 === 0) {
+      const fy = y0 + lh * (1 + (seed % 3)) + 0.4
+      const col: RGB = seed % 4 === 0 ? [0.4, 0.95, 1] : [1, 0.45, 0.85]
+      for (let k = 0; k < 3; k++) glow.cylinder(0.8 + k * 0.25, 0.14, at(s * (face + (seed % 3) * 0.9 - 0.15), fy + k * 0.45, cz + (k - 1) * 0.7), col, 6)
+    }
+    // samambaias em cima (leque de folhas achatadas)
+    for (let k = 0; k < 2; k++) {
+      const px = s * (topX + 1 + rnd(seed, 70 + k) * 4)
+      const pz = cz + (rnd(seed, 72 + k) - 0.5) * L * 0.7
+      for (let f = 0; f < 3; f++) {
+        const fa = (f / 3) * Math.PI * 2 + seed
+        lit.box(2.2, 0.12, 0.7, at(px + Math.cos(fa) * 0.9, h + 1.1, pz + Math.sin(fa) * 0.9, -fa, 0, 0.45), [0.14, 0.36, 0.16])
+      }
+    }
+    z += L - 0.3
+  }
+}
