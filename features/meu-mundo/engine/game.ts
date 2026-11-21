@@ -187,6 +187,8 @@ export interface GameHandle {
   reportMob: (mobId: number, win: boolean, busy?: boolean) => void
   /** "Lutar" apertado perto do monstro: a sala o segura parado durante a luta. */
   engageMob: (mobId: number) => void
+  /** 21/11: o aparelho ficou ocupado (menu, minijogo, tela por cima) ou livre: ocupado o monstro não persegue. */
+  mobBusy: (on: boolean) => void
   /** Lore v2 N4: o deus solto alcançou e a luta não aconteceu/acabou sem vitória (`busy` = ocupado). A vitória é do servidor. */
   reportGod: (god: string, busy?: boolean) => void
   /** Lore v2 N3: estado da corrida das estátuas (a tela busca; a sala manda "statue"). */
@@ -1138,6 +1140,9 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     engageMob(mobId) {
       if (!disposed) net.send("mfight", { id: mobId, s: 1 })
+    },
+    mobBusy(on) {
+      if (!disposed) net.send("mfight", { q: on ? 1 : 0 })
     },
     reportGod(god, busy = false) {
       if (!disposed) net.send("gfight", busy ? { g: god, r: 0, b: 1 } : { g: god, r: 0 })

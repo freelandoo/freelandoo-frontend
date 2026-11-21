@@ -31,7 +31,7 @@ type MobKind = LaminasEncounter["kind"]
 const GOD_COVER: LaminasEncounter = { mobId: -1, kind: "cavaleiro" }
 const KINDS = new Set<string>(["cavaleiro", "wolf", "ciborgue", "garras", "brute", "stone"])
 
-export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }: { /** A sala (ui/offstage.ts): a rua pode nem estar montada. */ gameRef: RefObject<Pick<GameHandle, "reportMob" | "engageMob" | "reportGod">>; busy: boolean; body: BodyId; look?: string; /** mm3d-60l: o cenário da luta (elementos do bairro ou do centro). */ place?: "bairro" | "centro" }) {
+export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }: { /** A sala (ui/offstage.ts): a rua pode nem estar montada. */ gameRef: RefObject<Pick<GameHandle, "reportMob" | "engageMob" | "reportGod" | "mobBusy">>; busy: boolean; body: BodyId; look?: string; /** mm3d-60l: o cenário da luta (elementos do bairro ou do centro). */ place?: "bairro" | "centro" }) {
   const t = useTranslations("MeuMundo")
   const [encounter, setEncounter] = useState<LaminasEncounter | null>(null)
   const [news, setNews] = useState<{ text: string; id: number } | null>(null)
@@ -58,6 +58,7 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const alertText = t("mobAlertNight", "Monstros à solta! Se um deles te encarar, ele vem atrás.")
   const winTpl = t("mobWin", "{name} derrotou: {mob}!")
   const caughtTpl = t("mobCaught", "{mob} te alcançou!")
+  const chaseTpl = t("mobChase", "{mob} te viu e está vindo!")
   // mm3d-72: o psicopata puxa briga sozinho; o covarde às vezes recusa
   const psychoText = t("mobPsycho", "Ah, vamos dar uma porrada naquele trouxa!")
   const refuseText = t("mobCowardRefuse", "Não vou lutar! Tô com medo! Vamos embora daqui!")
@@ -66,11 +67,22 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
   const godCaughtTpl = t("godCaught", "{god} te alcançou! Ele tem o dobro da sua força.")
   const godDownTpl = t("godDown", "{name} derrotou {god}! O deus voltou para a estátua.")
   const godFailTpl = t("godFightFail", "A luta com o deus não abriu: {e}")
-  const labels = useRef({ mobName, alertText, winTpl, caughtTpl, psychoText, refuseText, godHere, godCaughtTpl, godDownTpl, godFailTpl })
+  const labels = useRef({ mobName, alertText, winTpl, caughtTpl, chaseTpl, psychoText, refuseText, godHere, godCaughtTpl, godDownTpl, godFailTpl })
   useEffect(() => {
     live.current = { busy, encounter, god: !!godFight }
-    labels.current = { mobName, alertText, winTpl, caughtTpl, psychoText, refuseText, godHere, godCaughtTpl, godDownTpl, godFailTpl }
+    labels.current = { mobName, alertText, winTpl, caughtTpl, chaseTpl, psychoText, refuseText, godHere, godCaughtTpl, godDownTpl, godFailTpl }
   })
+
+  // 21/11: a sala sabe quando você está ocupado (menu, minijogo, tela por cima, luta do
+  // deus): o monstro da rua não persegue quem não pode lutar agora. A cada 20 s de novo
+  // enquanto ocupado (a sala pode ter reconectado e esquecido).
+  const roomBusy = busy || !!godFight
+  useEffect(() => {
+    gameRef.current?.mobBusy(roomBusy)
+    if (!roomBusy) return
+    const id = setInterval(() => gameRef.current?.mobBusy(true), 20_000)
+    return () => clearInterval(id)
+  }, [roomBusy, gameRef])
 
   // N4: a queda do deus chega a todo mundo (socket mm:god)
   useEffect(
@@ -150,6 +162,11 @@ export function useMobEncounter({ gameRef, busy, body, look, place = "bairro" }:
       } else if (type === "mobwin") {
         const w = p as { kind?: string; name?: string }
         setNews({ text: L.winTpl.replace("{name}", w.name || "Alguém").replace("{mob}", L.mobName(w.kind || "")), id: Date.now() })
+      } else if (type === "mchase") {
+        // 21/11: o monstro te viu e vem correndo (alcançou = "mcatch" e a luta abre sozinha)
+        const c = p as { kind?: string }
+        if (live.current.busy || live.current.encounter || live.current.god || !KINDS.has(c?.kind ?? "")) return
+        setNews({ text: L.chaseTpl.replace("{mob}", L.mobName(c.kind!)), id: Date.now() })
       } else if (type === "mcatch") {
         const c = p as { id?: number; kind?: string; psycho?: boolean }
         if (!Number.isFinite(c?.id) || !KINDS.has(c?.kind ?? "")) return

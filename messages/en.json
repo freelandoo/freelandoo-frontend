@@ -9155,7 +9155,7 @@
     "ringMobBrute": "The Champion",
     "ringSubWolf": "Three at once, fast",
     "ringPitch": "Lace up the gloves and face the fighters. When the floor glows red, the hit lands there: dodge and strike the opening.",
-    "mobAlertNight": "Monsters on the loose! If one stares you down, it comes after you.",
+    "mobAlertNight": "Monsters on the loose! If one spots you, it comes after you.",
     "mobCaught": "{mob} caught you!",
     "ntAdult": "I grew up! I'm 20% stronger, faster and smarter, and my health is back to 100.",
     "evAdult": "Grew up: +20% intelligence, accuracy and speed; health 100.",
@@ -15299,7 +15299,8 @@
     "gincanaHowHe3b": "The hub spins fast against the blades: don't stand still on it, run to the blade pointing at the exit.",
     "gincanaPhFabricaPitch5": "Grab 10 gears and the center turns into a trampoline to the floor above, with more obstacles. The lava rises as the floor empties and swallows the last 2.",
     "gincanaHowFg5c": "Fell in the lava? You go back to your floor, you only lost time. The river of fire rises as the floor empties and swallows the last 2.",
-    "gincanaSecFg5b": "Lava"
+    "gincanaSecFg5b": "Lava",
+    "mobChase": "{mob} spotted you and is coming!"
   },
   "Sports": {
     "eyebrow": "Sports",

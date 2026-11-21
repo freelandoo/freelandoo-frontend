@@ -9135,7 +9135,7 @@
     "ringMobBrute": "El Campeón",
     "ringSubWolf": "Tres a la vez, rápidos",
     "ringPitch": "Ponte los guantes y enfrenta a los luchadores. Cuando el suelo se ilumine en rojo, el golpe cae ahí: esquiva y golpea en el hueco.",
-    "mobAlertNight": "¡Monstruos sueltos! Si uno te mira de frente, va tras de ti.",
+    "mobAlertNight": "¡Monstruos sueltos! Si uno te ve, va tras de ti.",
     "mobCaught": "¡{mob} te alcanzó!",
     "ntAdult": "¡Me hice adulto! Soy un 20% más fuerte, rápido y listo, y la salud volvió a 100.",
     "evAdult": "Se hizo adulto: +20% en inteligencia, precisión y velocidad; salud 100.",
@@ -15279,7 +15279,8 @@
     "gincanaHowHe3b": "El cubo gira rápido al revés de las aspas: no te quedes quieto en él, corre hacia el aspa que apunta a la salida.",
     "gincanaPhFabricaPitch5": "Recoge 10 engranajes y el centro se vuelve una cama elástica hacia el piso de arriba, con más obstáculos. La lava sube a medida que el piso se vacía y se traga a los 2 últimos.",
     "gincanaHowFg5c": "¿Caíste en la lava? Vuelves a tu piso, solo perdiste tiempo. El río de fuego sube a medida que el piso se vacía y se traga a los 2 últimos.",
-    "gincanaSecFg5b": "Lava"
+    "gincanaSecFg5b": "Lava",
+    "mobChase": "¡{mob} te vio y viene por ti!"
   },
   "Sports": {
     "eyebrow": "Deportes",
