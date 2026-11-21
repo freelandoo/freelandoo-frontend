@@ -47,6 +47,8 @@ import { TUNING } from "../sim/tuning"
 import { paintTexture, type PaintTexKind } from "./paint-tex"
 import type { PaintTheme } from "./paint-map-art"
 import type { PaintWorldView } from "./world-view"
+import { ARENA_DRESS } from "./arenas"
+import type { ArenaCtx, UnderKind } from "./arenas/types"
 
 /** Pseudo-aleatório fixo (mesma cara a cada partida). */
 function rnd(n: number) {
@@ -214,6 +216,8 @@ function fallTexture(scene: Scene, lava: boolean): DynamicTexture {
 export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, th: PaintTheme): PaintWorldView {
   const lowEnd = tier === "low"
   const high = tier === "high"
+  /** 2026-11-21: os mapas dos Domínios desenham o que é deles em `arenas/<id>.ts`. */
+  const dress = ARENA_DRESS[map.id]
   const disposers: (() => void)[] = []
   /** Sólidos só da câmera (peças altas de enfeite: não colidem com ninguém). */
   const camBlockers: Solid[] = []
@@ -272,7 +276,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // do código (paint-tex.ts), não mais dos .webp assados no Blender.
   const fileTex = (name: PaintTexKind) => own(paintTexture(scene, name))
   const forest = th.tile === "moss"
-  const topTex = forest ? fileTex("lajes-musgo") : th.tile === "garden" || th.tile === "rune" ? fileTex("lajes") : own(tileTexture(scene, th.tile, th))
+  const topTex = dress?.topTex ? own(dress.topTex(scene, th)) : forest ? fileTex("lajes-musgo") : th.tile === "garden" || th.tile === "rune" ? fileTex("lajes") : own(tileTexture(scene, th.tile, th))
   const metalTex = fileTex("chapa")
   const topMat = own(new StandardMaterial("paint-arena-top", scene))
   topMat.diffuseTexture = topTex
@@ -311,10 +315,28 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   const glow = new ArenaGeo()
   const falls = new ArenaGeo()
   const rock = { p: [] as number[], c: [] as number[], i: [] as number[] }
+  // Projeto B 3e/3g: malhas do longe SEM neblina, com a cor já misturada no ar
+  const far = new ArenaGeo()
+  const farGlow = new ArenaGeo()
+  const air = (c: RGB, k = 0.38): RGB => mix(c, th.fog, k)
+  const clear = new Clearance(map)
+  const fallList: { x: number; z: number; y: number; len: number; w: number; a: number }[] = []
+  /** O que vai embaixo da ilha (o mapa com gancho escolhe; o Guardião é sempre rocha). */
+  const underKind = (isl: Island): UnderKind => {
+    const tag = isl.tag ?? ""
+    const own = isl.kind !== "boss" ? dress?.under?.(isl) : undefined
+    return own ?? (METAL.has(tag) ? "metal" : LEAF.has(tag) ? "leaf" : tag === "stair" ? "stair" : "rock")
+  }
 
   /** Chão da ilha: miolo + borda, na altura exata da colisão, UV pelo mundo. */
   const floorOf = (isl: Island, g: ArenaGeo, topC: RGB, rimC: RGB, stripes: boolean) => {
-    const O = outlineOf(isl, 1.2)
+    // 2026-11-21: o retângulo (w × d) nasce no sentido contrário do círculo e do
+    // polígono; o leque do chão sumia visto de cima no lado do time 0. Sempre no
+    // sentido do círculo (área negativa em x, z).
+    let O = outlineOf(isl, 1.2)
+    let area = 0
+    for (let i = 0; i < O.length; i++) area += O[i][0] * O[(i + 1) % O.length][1] - O[(i + 1) % O.length][0] * O[i][1]
+    if (area > 0) O = [...O].reverse()
     const cx = isl.x
     const cz = isl.z
     const y = isl.y + 0.004
@@ -362,11 +384,12 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   /** Rocha/chapa embaixo da ilha, em anéis até a ponta (sombreado facetado). */
   const underOf = (isl: Island) => {
     const O = outlineOf(isl, 2.2)
-    const tag = isl.tag ?? ""
     const D = isl.depth
     const strata = th.strata
+    const uk = underKind(isl)
+    if (uk === "none") return
     let rings: { f: number; dy: number; c: RGB; jit: number }[]
-    if (METAL.has(tag)) {
+    if (uk === "metal") {
       rings = [
         { f: 1, dy: 0, c: th.trim, jit: 0 },
         { f: 1, dy: 0.32, c: th.trim, jit: 0 },
@@ -375,14 +398,14 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
         { f: 0.62, dy: 1.5, c: strata[0], jit: 0.05 },
         { f: 0.32, dy: Math.max(2.6, D * 0.5), c: strata[2], jit: 0.08 },
       ]
-    } else if (LEAF.has(tag)) {
+    } else if (uk === "leaf") {
       rings = [
         { f: 1, dy: 0, c: mul(th.rim, 0.9), jit: 0 },
         { f: 0.96, dy: 0.32, c: mul(th.rim, 0.7), jit: 0 },
         { f: 0.4, dy: 0.9, c: strata[0], jit: 0.05 },
         { f: 0.14, dy: 3.2, c: strata[1], jit: 0.1 },
       ]
-    } else if (tag === "stair") {
+    } else if (uk === "stair") {
       rings = [
         { f: 1, dy: 0, c: th.trim, jit: 0 },
         { f: 1, dy: 0.14, c: strata[0], jit: 0 },
@@ -395,7 +418,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       // faz BARRIGA e depois recua em anéis tortos até uma ponta fora do eixo.
       // Três formas sorteadas por ilha, para nenhuma ilha repetir a outra.
       const cap = Math.min(0.62, Math.max(0.34, D * 0.09))
-      const pick = isl.kind === "boss" ? 0.9 : krnd(isl.id * 17 + 5)
+      const pick = isl.kind === "boss" ? 0.9 : (dress?.rockPick?.(isl) ?? krnd(isl.id * 17 + 5))
       const head = [
         { f: 1, dy: 0, c: th.rim, jit: 0 },
         { f: 1.04, dy: cap, c: mul(th.rim, 0.82), jit: 0 },
@@ -437,7 +460,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     }
     // 3b: anel torto = contorno ondulado de baixa frequência (não serrilhado),
     // fase que gira com a profundidade e centro que deriva para um lado.
-    const sculpt = !METAL.has(tag) && !LEAF.has(tag) && tag !== "stair"
+    const sculpt = uk === "rock"
     const ph = [krnd(isl.id * 7 + 1), krnd(isl.id * 7 + 2), krnd(isl.id * 7 + 3)].map((v) => v * Math.PI * 2)
     const da = krnd(isl.id * 7 + 4) * Math.PI * 2
     const drift = sculpt ? isl.r * (0.12 + krnd(isl.id * 7 + 5) * 0.14) : 0
@@ -475,7 +498,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     }
     const last = rings[rings.length - 1]
     const tip = rock.p.length / 3
-    rock.p.push(isl.x + Math.sin(da) * drift * 1.15, isl.y - last.dy - (LEAF.has(tag) ? 0.6 : Math.max(1, D * 0.18)), isl.z + Math.cos(da) * drift * 1.15)
+    rock.p.push(isl.x + Math.sin(da) * drift * 1.15, isl.y - last.dy - (uk === "leaf" ? 0.6 : Math.max(1, D * 0.18)), isl.z + Math.cos(da) * drift * 1.15)
     rock.c.push(...mul(strata[5], forest ? 0.53 : 0.85), 1)
     const lb = base + (rings.length - 1) * seg
     for (let k = 0; k < seg; k++) rock.i.push(lb + k, lb + ((k + 1) % seg), tip)
@@ -543,6 +566,12 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   }
   for (const isl of map.islands) {
     const tag = isl.tag ?? ""
+    if (dress) {
+      const c = dress.colors?.(isl)
+      floorOf(isl, underKind(isl) === "metal" ? metal : tops, c?.top ?? th.top, c?.rim ?? th.rim, !!c?.stripes)
+      underOf(isl)
+      continue
+    }
     const metalTop = METAL.has(tag)
     let topC: RGB = th.top
     let rimC: RGB = th.rim
@@ -592,7 +621,6 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // ── detalhes por tipo de ilha ──
 
   const dens = lowEnd ? 0.5 : 1
-  const fallList: { x: number; z: number; y: number; len: number; w: number; a: number }[] = []
 
   for (const isl of map.islands) {
     const tag = isl.tag ?? ""
@@ -876,7 +904,17 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     deco.box(w, p.h, dd, place(p.x, p.y + p.h / 2, p.z, p.rot), [0.55, 0.4, 0.26])
     for (const sy of [0.06, p.h - 0.06]) deco.box(w + 0.04, 0.1, dd + 0.04, place(p.x, p.y + sy, p.z, p.rot), th.trim)
   }
-  for (const p of map.props) drawProp(p)
+  if (!dress) for (const p of map.props) drawProp(p)
+
+  // ── 2026-11-21: o desenho do mapa com gancho (arenas/<id>.ts) ──
+  const ctx: ArenaCtx = {
+    scene, map, th, lowEnd, high, deco, glow, tops, metal, far, farGlow, air, falls: fallList, camBlockers, clear, edgePoint, outlineOf,
+    solidMat, glowMat, hemi, sun, own,
+    add: (m) => disposers.push(() => m.dispose()),
+    n: lowEnd ? 0.5 : high ? 1.3 : 1,
+  }
+  if (dress) for (const p of map.props) if (!dress.prop?.(p, ctx)) drawProp(p)
+  const dressed = dress ? dress.build(ctx) || undefined : undefined
 
   // ── cachoeiras (água ou lava): planos que rolam ──
   for (const f of fallList.slice(0, lowEnd ? 4 : 10)) {
@@ -931,7 +969,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       const h = 20 + rnd(i * 11) * 50
       deco.cone(0.4, 6 + rnd(i * 13) * 10, h, place(Math.sin(a) * d, -22 + h / 2, Math.cos(a) * d * 0.8), th.strata[i % 3], 6)
     }
-  } else {
+  } else if (th.floor === "clouds" || th.floor === "mist") {
     const cg = new ArenaGeo()
     const puffs = lowEnd ? 40 : high ? 100 : 70
     const col: RGB = th.floorColor
@@ -960,13 +998,8 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     own(cg.build("paint-arena-clouds", scene, cloudMat))
   }
 
-  // Projeto B 3e/3g: malhas do longe SEM neblina, com a cor já misturada no ar
-  const far = new ArenaGeo()
-  const farGlow = new ArenaGeo()
-  const air = (c: RGB, k = 0.38): RGB => mix(c, th.fog, k)
-
-  // ── paisagem ao longe (escala) ──
-  for (let i = 0; i < (lowEnd ? 8 : 16); i++) {
+  // ── paisagem ao longe (escala) — os mapas com gancho fazem a deles ──
+  for (let i = 0; i < (dress ? 0 : lowEnd ? 8 : 16); i++) {
     const a = (i / (lowEnd ? 8 : 16)) * Math.PI * 2 + rnd(i) * 0.3
     const d = 120 + rnd(i * 3) * 60
     const x = Math.sin(a) * d
@@ -1019,7 +1052,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // ── Projeto B 3e: o MARCO da referência, atrás de cada base (quem olha para
   // o meio vê o do outro lado). Malha própria SEM neblina com a cor já
   // misturada no ar (a 170 m a neblina linear apagava tudo).
-  {
+  if (!dress) {
     const sides = [...new Set(map.bases.map((b) => Math.sign(map.islands[b.island].x) || 1))]
     for (const s of sides.length ? sides : [1, -1]) {
       const X = s * 175
@@ -1115,15 +1148,13 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
 
   // ── mm3d-77: kit modular — moldura de borda em toda ilha ──
   const seed = map.id.length * 131 + map.islands.length
-  const clear = new Clearance(map)
-  const frameStyle = {
+  const frameStyle = dress?.frame ?? {
     band: th.tile === "moss" ? ([0.36, 0.27, 0.2] as RGB) : th.tile === "basalt" ? mul(th.strata[0], 1.2) : th.tile === "plate" ? mul(th.top, 0.7) : mix(th.top, th.strata[1], 0.35),
     corbel: th.tile === "moss" ? ([0.3, 0.22, 0.17] as RGB) : th.strata[2],
     line: th.tile === "basalt" || th.tile === "rune" ? th.trim : undefined,
   }
   for (const isl of map.islands) {
-    const tag = isl.tag ?? ""
-    if (METAL.has(tag) || LEAF.has(tag) || tag === "stair") continue
+    if (underKind(isl) !== "rock") continue
     edgeFrame(deco, glow, isl, frameStyle, seed)
   }
 
@@ -1133,7 +1164,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // LAJE que esconde o portal do outro time — sem ela quem chegava via um aro
   // dentro do outro. Só desenho (a câmera não atravessa: `camBlockers`).
   {
-    const gateStone: RGB = th.tile === "moss" ? [0.5, 0.47, 0.42] : th.tile === "basalt" ? mul(th.strata[0], 1.6) : mix(th.top, th.strata[1], 0.4)
+    const gateStone: RGB = dress?.gate ? dress.gate.stone : th.tile === "moss" ? [0.5, 0.47, 0.42] : th.tile === "basalt" ? mul(th.strata[0], 1.6) : mix(th.top, th.strata[1], 0.4)
     const R = TUNING.portalR
     for (const pt of map.portals) {
       const sx = Math.sign(pt.x) || 1
@@ -1154,7 +1185,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       // aduelas com a chave no alto; metal: anel de tecnologia com faixas
       // acesas entre as placas (a ref da Fábrica). Joias nos 4 pontos.
       {
-        const tech = th.tile === "plate" || th.tile === "basalt"
+        const tech = dress?.gate ? dress.gate.tech : th.tile === "plate" || th.tile === "basalt"
         const cy = pt.y + R + 0.15
         const N = 14
         const rr = R + 0.42
@@ -1202,7 +1233,9 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   }
 
   // ── mm3d-77: a FLORESTA DE CRISTAL (vertical slice) ──
-  if (th.tile === "moss") dressForest()
+  if (dress) {
+    // o mapa com gancho já desenhou os dele (`dress.build`)
+  } else if (th.tile === "moss") dressForest()
   else dressTheme()
   /**
    * Projeto B 3c: o kit da referência nos outros 4 mapas (antes só a Floresta
@@ -1645,6 +1678,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     camBlockers,
     tick(dt) {
       clock += dt
+      dressed?.tick?.(dt, clock)
       if (pollen) {
         const cam = scene.activeCamera
         if (cam) (pollen.emitter as Vector3).copyFrom(cam.position)
