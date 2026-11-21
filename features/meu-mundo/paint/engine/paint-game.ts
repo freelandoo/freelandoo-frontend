@@ -815,6 +815,13 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
 
     // PC (2026-11-21): a mira é o meio da tela o tempo todo, atirando ou não —
     // o corpo vira para onde a câmera aponta e o marcador mostra onde o tiro bate.
+    if (input.mouseAim) {
+      // a mira fica na linha da arma (ponto fixo da câmera), não no meio da tela
+      const rp = cam.reticleAt(canvas.clientWidth, canvas.clientHeight)
+      input.aimX = rp.x
+      input.aimY = rp.y
+      reticle?.place(rp.x, rp.y)
+    }
     if (input.mouseAim && canMove) {
       const at = cam.aimPointAt(input.aimX, input.aimY, solids, bodiesRay)
       if (Math.hypot(at.x - body.x, at.z - body.z) > 0.4) {

@@ -1,7 +1,7 @@
 // features/meu-mundo/paint/engine/paint-input.ts — PAINT (mm3d-35d): os controles.
 //
 // PC (Alex, 2026-11-21, vídeo: "a mira vira mas a tela não acompanha"): a MIRA
-// FICA FIXA no meio da tela, um pouco acima da arma, e o MOUSE GIRA A CÂMERA —
+// FICA FIXA na tela, na linha da arma e um pouco acima dela, e o MOUSE GIRA A CÂMERA —
 // como apontar uma arma de verdade. O 1º clique no jogo trava o mouse
 // (pointer lock; Esc solta, outro clique trava de novo). Solto, o botão
 // direito arrastando ainda gira. Botão esquerdo atira, E
@@ -27,7 +27,7 @@ export interface PaintInput {
   /** Ponto da mira na tela (px do canvas); null = o meio da tela. */
   aimX: number | null
   aimY: number | null
-  /** Jogando com mouse (PC): a mira é o meio da tela e o corpo segue a câmera o tempo todo. */
+  /** Jogando com mouse (PC): a mira é o ponto fixo na linha da arma (`AimCamera.reticleAt`) e o corpo segue a câmera. */
   mouseAim: boolean
   /** Cor escolhida e se está atirando agora. */
   color: PaintColor
@@ -111,8 +111,8 @@ function isEditable(t: EventTarget | null) {
 }
 
 /**
- * A mira do PC: um anel com ponto, desenhado por cima do jogo, FIXO no meio
- * da tela (é para onde a câmera olha). `setColor` pinta na cor da tinta.
+ * A mira do PC: um anel com ponto, desenhado por cima do jogo, FIXO na tela
+ * na linha da arma (`place` a cada quadro). `setColor` pinta na cor da tinta.
  */
 export function createReticle(host: HTMLElement) {
   const el = document.createElement("div")
@@ -127,6 +127,10 @@ export function createReticle(host: HTMLElement) {
   return {
     show() {
       el.style.display = "block"
+    },
+    place(x: number, y: number) {
+      el.style.left = `${x}px`
+      el.style.top = `${y}px`
     },
     hide() {
       el.style.display = "none"
@@ -195,8 +199,6 @@ export function attachPaintInput(canvas: HTMLCanvasElement, s: PaintInput, retic
     }
   }
   const mouseOn = () => {
-    s.aimX = null
-    s.aimY = null
     s.mouseAim = true
     reticle?.show()
     canvas.style.cursor = locked() ? "none" : ""

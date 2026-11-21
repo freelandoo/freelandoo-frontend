@@ -23,6 +23,13 @@ const PIVOT_H = 1.62
 const MIN_PITCH = -0.75 // olhando para cima
 const MAX_PITCH = 1.38 // quase o pé
 const AIM_FAR = 70
+// A mira do PC (Alex, 2026-11-21: "a mira tem que ficar na linha da arma"): um
+// ponto FIXO no espaço da câmera — à esquerda do eixo (a arma fica do lado
+// esquerdo do corpo e a câmera no ombro direito), na altura do ombro, ~2 m à
+// frente do personagem. Fica parado na tela; o tiro vai para onde ele aponta.
+const RET_X = -1.75
+const RET_Y = 0.12
+const RET_AHEAD = 2
 
 export class AimCamera {
   readonly camera: TargetCamera
@@ -52,6 +59,15 @@ export class AimCamera {
     this.yaw = facing
     this.pitch = 0.22
     this.ready = false
+  }
+
+  /** Onde fica a mira do PC na tela (px CSS do canvas `w` × `h`). */
+  reticleAt(w: number, h: number) {
+    const z = Math.max(3, this.actual + RET_AHEAD)
+    const tv = Math.tan(this.camera.fov / 2)
+    const nx = RET_X / (z * tv * (w / Math.max(1, h)))
+    const ny = RET_Y / (z * tv)
+    return { x: (w / 2) * (1 + nx), y: (h / 2) * (1 - ny) }
   }
 
   /** Para onde a câmera olha (unitário). */
