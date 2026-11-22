@@ -7,6 +7,8 @@
 // MEU MUNDO 3D/pipeline/armas/build_espadas_loja.py.
 // Espelho dos ids `espada_*` com `shop: "weapons"` em src/utils/meuMundoGear.js.
 
+import { TRIPO_WEAPONS, type TripoFamily } from "./shop-weapons-tripo"
+
 const DIR = "/meu-mundo/armas/v2"
 /**
  * Pasta das miniaturas das abas da loja (e das armas de linha). `thumb2` (17/11): arte 2:3 (512×768)
@@ -16,6 +18,17 @@ const DIR = "/meu-mundo/armas/v2"
  * o quadro cai no desenho da categoria.
  */
 const THUMB = `${DIR}/thumb2`
+
+/** Armas novas do Tripo (22/11/2026, shop-weapons-tripo.ts): modelo -m72k e thumb próprios; vencem a tabela antiga. */
+function tripo(id: string | null | undefined, fam: TripoFamily): ShopSword | null {
+  const w = id ? TRIPO_WEAPONS[id] : undefined
+  return w && w[0] === fam ? { file: `${DIR}/${w[1]}`, thumb: `${THUMB}/${w[2]}`, main: w[3], edge: w[4] } : null
+}
+
+/** Cajado da aba Cajados (Raposa) por id do item, e o modelo próprio do Cajado dos Moldes; null = cajado da classe. */
+export function shopStaff(id: string | null | undefined): ShopSword | null {
+  return tripo(id, "cajado")
+}
 
 /** Cor do rastro do golpe: [principal, borda]. */
 const COLORS: Record<string, [string, string]> = {
@@ -91,7 +104,8 @@ const bowOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
 
 /**
  * Trilha E8: as 9 armas de linha (fabricadas por fragmento) usam o modelo mais próximo da família
- * até o Alex mandar os próprios (§10 do plano). Espada → espada da loja; pesada, arco e arma de
+ * até o Alex mandar os próprios (§10 do plano). Desde 22/11/2026 Primeira Chama, Lâmina das Correntes,
+ * Sabre do Vendaval e Cajado dos Moldes têm modelo próprio (TRIPO_WEAPONS vence estas tabelas). Espada → espada da loja; pesada, arco e arma de
  * fogo → a arma do próprio deus; cajado → o solar da classe (engine/weapon-appearance.ts).
  */
 const LINE_SWORD: Record<string, string> = { linha_primeira_chama: "espada_alvorada", linha_lamina_correntes: "espada_morkhan", linha_sabre_vendaval: "espada_celeste" }
@@ -101,6 +115,8 @@ const LINE_GUN: Record<string, string> = { linha_garras_lunares: "noctis" }
 
 /** O arco da loja por id do item; null = não é da aba Arcos. */
 export function shopBow(id: string | null | undefined): ShopSword | null {
+  const t = tripo(id, "arco")
+  if (t) return t
   if (id && LINE_BOW[id]) return godBow(LINE_BOW[id])
   const k = id?.startsWith("arco_") ? id.slice(5) : ""
   return bowOf(k, BOW_COLORS[k])
@@ -145,6 +161,8 @@ const gunOf = (k: string, c: [string, string] | undefined): ShopSword | null =>
 
 /** A arma de fogo da loja por id do item; null = não é da aba Guns. */
 export function shopGun(id: string | null | undefined): ShopSword | null {
+  const t = tripo(id, "fogo")
+  if (t) return t
   if (id && LINE_GUN[id]) return godGun(LINE_GUN[id])
   const k = id?.startsWith("fogo_") ? id.slice(5) : ""
   return gunOf(k, GUN_COLORS[k])
@@ -159,6 +177,8 @@ const SHIELDS = new Set(["ferro", "rebites", "azul", "cravos", "sol", "prata", "
 
 /** O escudo da loja por id do item; null = sem escudo. */
 export function shopShield(id: string | null | undefined): { file: string; thumb: string } | null {
+  const t = tripo(id, "escudo")
+  if (t) return t
   const k = id?.startsWith("escudo_") ? id.slice(7) : ""
   return SHIELDS.has(k) ? { file: `${DIR}/escudo-${k}-m68k.glb`, thumb: `${THUMB}/escudo-${k}.webp` } : null
 }
@@ -172,6 +192,8 @@ export interface ShopSword {
 
 /** A arma pesada da loja por id do item; null = não é da aba Hammers. */
 export function shopHeavy(id: string | null | undefined): ShopSword | null {
+  const t = tripo(id, "pesada")
+  if (t) return t
   const line = id ? LINE_HEAVY[id] : undefined
   if (line) { const god = godHeavy(line[0]); return god && { ...god, thumb: `${THUMB}/${line[1]}.webp` } }
   const k = id?.startsWith("pesada_") ? id.slice(7) : ""
@@ -194,6 +216,8 @@ const key = (id: string | null | undefined) => (id?.startsWith("espada_") ? id.s
 
 /** A espada da loja por id do item; null = não é da loja (arma antiga da classe). */
 export function shopSword(id: string | null | undefined): ShopSword | null {
+  const t = tripo(id, "espada")
+  if (t) return t
   const k = key((id && LINE_SWORD[id]) || id)
   const c = COLORS[k]
   return c ? { file: `${DIR}/espada-${k}-m66k.glb`, thumb: `${THUMB}/${k}.webp`, main: c[0], edge: c[1] } : null

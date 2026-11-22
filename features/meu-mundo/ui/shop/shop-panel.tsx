@@ -44,7 +44,7 @@ function buySound<R extends { ok: boolean }>(r: R): R {
 }
 
 export type ShopTab = "gear" | "monsters" | "characters" | "food" | "exchange"
-export type GearShelf = "armory" | "weapons" | "hammers" | "bows" | "guns" | "shields"
+export type GearShelf = "armory" | "weapons" | "staffs" | "hammers" | "bows" | "guns" | "shields"
 type FoodGroup = "healthy" | "junk" | "supplement" | "medicine" | "stimulant" | "anabolic"
 
 const MOB_PORTRAIT: Record<TrophyKind, string> = {
@@ -163,6 +163,8 @@ export default function ShopPanel({
       if (!catalog || !bag) return []
       return catalog.items
         .filter((item) => item.price != null && (shelf === "armory" ? !item.shop : item.shop === shelf))
+        // armas novas do Tripo (22/11/2026) entram no fim do catálogo: a prateleira ordena pelo preço (estável)
+        .sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
         .map((item: GearItem) => {
           const lock = gearLock(item, bag, t)
           const owned = !item.stack && !!bag.owned[item.id]
@@ -367,6 +369,7 @@ export default function ShopPanel({
           tabs={[
             { id: "armory", label: t("gearTabArmory", "Armeiro") },
             { id: "weapons", label: t("shopSwords", "Espadas") },
+            { id: "staffs", label: t("shopStaffs", "Cajados") },
             { id: "hammers", label: t("shopHammers", "Hammers") },
             { id: "bows", label: t("shopBows", "Arcos") },
             { id: "guns", label: t("shopGuns", "Guns") },

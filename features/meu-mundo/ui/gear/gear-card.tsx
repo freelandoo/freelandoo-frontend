@@ -7,7 +7,7 @@ import { ArtCard } from "../kit/art-card"
 import { AE, rankOf } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
 import { teko } from "../status/evo-skin"
-import { shopBow, shopGun, shopHeavy, shopShield, shopSword } from "../../engine/shop-swords"
+import { shopBow, shopGun, shopHeavy, shopShield, shopStaff, shopSword } from "../../engine/shop-swords"
 import { itemArt } from "../../engine/item-art"
 
 export type GearTr = (key: string, fallback: string) => string
@@ -72,7 +72,8 @@ export function ClassStats({ stats, t }: { stats?: GearClassStats | null; t: Gea
 }
 
 export function gearThumb(item: GearItem): string | null {
-  return (item.shop === "weapons" ? shopSword(item.id) : item.shop === "hammers" ? shopHeavy(item.id) : item.shop === "shields" ? shopShield(item.id) : item.shop === "bows" ? shopBow(item.id) : item.shop === "guns" ? shopGun(item.id) : null)?.thumb ?? itemArt(item.id)
+  // cajados (aba Cajados e o Cajado dos Moldes, 22/11/2026): a thumb sai da tabela das armas novas
+  return (item.shop === "weapons" ? shopSword(item.id) : item.shop === "hammers" ? shopHeavy(item.id) : item.shop === "shields" ? shopShield(item.id) : item.shop === "bows" ? shopBow(item.id) : item.shop === "guns" ? shopGun(item.id) : shopStaff(item.id))?.thumb ?? itemArt(item.id)
 }
 
 /** Por que não dá para usar/comprar (nível, quem usa a arma, classe); null = pode. Peça única da Mochila e da Loja (B5). */

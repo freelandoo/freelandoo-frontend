@@ -14,7 +14,7 @@ import type { Material } from "@babylonjs/core/Materials/material"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import type { Clan } from "../classes"
 import type { VfxColor } from "./vfx"
-import { shopSword } from "./shop-swords"
+import { shopStaff, shopSword } from "./shop-swords"
 
 export interface WeaponAppearance {
   weaponId: string | null
@@ -58,7 +58,7 @@ const TIERS: Record<string, Tier> = {
   espada_latao: "brass", cajado_latao: "brass",
   espada_eter: "ether", cajado_eter: "ether",
   espada_solar: "solar", cajado_solar: "solar",
-  // trilha E8: o Cajado dos Moldes (arma de linha de Bastor) usa o cajado solar até ter modelo próprio
+  // trilha E8: o Cajado dos Moldes (arma de linha de Bastor); desde 22/11/2026 tem modelo próprio (shopStaff)
   linha_cajado_moldes: "solar",
 }
 const PALETTES: Record<Tier, { metal: string; main: string; edge: string }> = {
@@ -72,13 +72,14 @@ const PALETTES: Record<Tier, { metal: string; main: string; edge: string }> = {
 export function weaponAppearanceProfile(clan: Clan, appearance: WeaponAppearance) {
   const prefix = clan === "raposa" ? "cajado_" : "espada_"
   const id = appearance.weaponId ?? ""
-  const tier = id.startsWith(prefix) || (clan === "raposa" && id === "linha_cajado_moldes") ? TIERS[id] ?? "apprentice" : "apprentice"
+  // Espada da loja (guerreiro) e cajado da aba Cajados (Raposa, 22/11/2026): modelo e cor próprios,
+  // sem as guarnições da arma da classe.
+  const model = clan === "vampiro" ? shopSword(id) : clan === "raposa" ? shopStaff(id) : null
+  const tier = model ? "apprentice" : id.startsWith(prefix) || (clan === "raposa" && id === "linha_cajado_moldes") ? TIERS[id] ?? "apprentice" : "apprentice"
   const level = Number.isFinite(appearance.level) ? Math.max(0, Math.min(10, Math.floor(appearance.level))) : 0
   const paint = appearance.cosmetic === "pintura_arma_eter"
   const trail = appearance.cosmetic === "rastro_eter"
   const palette = PALETTES[tier]
-  // Espada da loja: modelo e cor próprios, sem as guarnições da arma da classe.
-  const model = clan === "vampiro" ? shopSword(id) : null
   const color: VfxColor = {
     main: Color3.FromHexString(paint || trail ? "#47E2DA" : model?.main ?? palette.main),
     edge: Color3.FromHexString(paint || trail ? "#B177FF" : model?.edge ?? palette.edge),

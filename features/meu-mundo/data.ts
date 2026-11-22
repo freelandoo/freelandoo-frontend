@@ -369,7 +369,7 @@ export interface GearItem {
   /** E7: conjunto da peça. */
   set?: string
   /** Aba do balcão de armas do Arsenal: espadas (mm3d-66) ou Hammers (mm3d-67). */
-  shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | null
+  shop?: "shields" | "weapons" | "hammers" | "bows" | "guns" | "staffs" | null
   name: string
   /** Raridade interna (orçamento, sorteio, engastes); a tela mostra `rank`. */
   rarity: GearRarity
