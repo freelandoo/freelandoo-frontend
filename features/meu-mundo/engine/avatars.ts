@@ -259,6 +259,54 @@ function openArms(hips: TransformNode, segs: TransformNode[], hands: readonly (T
     a.rotationQuaternion = Quaternion.RotationAxis(ax.scaleInPlace(1 / len), Math.atan2(len, Vector3.Dot(dp, dtp)) * w).multiply(a.rotationQuaternion)
   }
 }
+/** Matriz de mundo de `n` e de todos acima dele, recalculadas (o quadro acabou de mudar os ossos). */
+function freshWorld(n: TransformNode) {
+  const chain: TransformNode[] = []
+  for (let p: Node | null = n; p; p = p.parent) chain.unshift(p as TransformNode)
+  for (const p of chain) p.computeWorldMatrix?.(true)
+}
+
+/** Gira o osso `a` (no espaço do pai) para que a direção `from` (mundo) vire `to`. */
+function aimBone(a: TransformNode, from: Vector3, to: Vector3) {
+  if (!a.parent || !a.rotationQuaternion) return
+  const inv = (a.parent as TransformNode).getWorldMatrix().clone().invert()
+  const dp = Vector3.TransformNormal(from, inv).normalize()
+  const dt = Vector3.TransformNormal(to, inv).normalize()
+  const ax = Vector3.Cross(dp, dt)
+  const len = ax.length()
+  if (len < 1e-6) return
+  a.rotationQuaternion = Quaternion.RotationAxis(ax.scaleInPlace(1 / len), Math.atan2(len, Vector3.Dot(dp, dt))).multiply(a.rotationQuaternion)
+}
+
+/**
+ * IK de dois ossos (braço → antebraço → mão): o cotovelo dobra no plano em
+ * que já está (a pose do clipe decide para onde ele aponta) até a distância
+ * ombro–alvo, e o braço gira para a mão chegar ao alvo. `w` mistura com a pose.
+ */
+function reachBone(a: TransformNode, b: TransformNode, c: TransformNode, target: Vector3, w: number) {
+  freshWorld(c)
+  const A = a.getAbsolutePosition().clone()
+  const B = b.getAbsolutePosition().clone()
+  const C = c.getAbsolutePosition().clone()
+  const T = C.add(target.subtract(C).scaleInPlace(w))
+  const l1 = Vector3.Distance(A, B)
+  const l2 = Vector3.Distance(B, C)
+  if (l1 < 1e-4 || l2 < 1e-4) return
+  const d = Math.max(Math.abs(l1 - l2) + 1e-3, Math.min(l1 + l2 - 1e-3, Vector3.Distance(A, T)))
+  const ba = A.subtract(B)
+  const bc = C.subtract(B)
+  const n = Vector3.Cross(bc, ba)
+  if (n.length() > 1e-6) {
+    const cur = Math.acos(Math.max(-1, Math.min(1, Vector3.Dot(ba, bc) / (l1 * l2))))
+    const want = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + l2 * l2 - d * d) / (2 * l1 * l2))))
+    const bent = bc.rotateByQuaternionToRef(Quaternion.RotationAxis(n.normalize(), cur - want), new Vector3())
+    aimBone(b, bc, bent)
+    b.computeWorldMatrix(true)
+    c.computeWorldMatrix(true)
+  }
+  aimBone(a, c.getAbsolutePosition().subtract(A), T.subtract(A))
+}
+
 /** Altura do tornozelo acima da sola em pé, por conjunto (pipeline/ride_report.json). */
 export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { sergio: 0.203, ekaterina: 0.207 }
 type AnimSet = keyof typeof ASSETS.anims
@@ -369,6 +417,14 @@ const STRIDE_NATURAL_SPEED = 5
  */
 const PUMPS = 3
 const COAST_DROP = 0.6
+/**
+ * Bike (2026-11-21, pedido do Alex no Rolê Noturno): 5 pedaladas e depois
+ * ~20 s embalada com os pedais nivelados; então pedala de novo. Na pista de
+ * velocidade constante a queda de COAST_DROP nunca chegava e ela só pedalava
+ * na largada.
+ */
+const BIKE_PUMPS = 5
+const BIKE_COAST_TIME = 20
 /** Fase do BikePedal com os pedais nivelados (o pé direito embaixo fica em 0,6). */
 const PEDAL_LEVEL = 0.85
 
@@ -902,6 +958,16 @@ export class AvatarRig {
   private pumps = 0
   private coastRef = 0
   private lastPhase = 0
+  /** Segundos embalado desde a última série de pedaladas (bike). */
+  private coastFor = 0
+  // ── mãos no guidão (bike, 2026-11-21) ──
+  private gripFn: (() => [Vector3, Vector3] | null) | null = null
+  private gripObs: Observer<Scene> | null = null
+  /**
+   * Escala do esqueleto (pai do quadril): as classes e os deuses crescem por
+   * ela (build_deuses.py); 1 nos corpos do bairro. A bike vai nessa escala.
+   */
+  readonly skeletonScale: number
 
   constructor(
     private readonly lib: AvatarLibrary,
@@ -923,6 +989,8 @@ export class AvatarRig {
       g.start(true, 1)
       if (this.weights[clip] === 0) g.pause()
     }
+    const k = Math.abs((this.node("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
+    this.skeletonScale = k > 0.5 && k < 5 ? k : 1
     const fix = BULKY_LOCO[body]
     if (fix) {
       const bones = ["LeftArm", "RightArm", "LeftForeArm", "RightForeArm"].map((n) => this.node(`mixamorig:${n}`))
@@ -952,6 +1020,30 @@ export class AvatarRig {
   }
 
   private armObs: Observer<Scene> | null = null
+
+  /**
+   * Punhos do guidão no mundo, pedidos a cada quadro (null = sem bike). Depois
+   * das animações, as mãos vão até eles por IK, na medida do peso da pedalada:
+   * a pose foi feita no corpo de 1,8 m e os braços das classes têm outra
+   * proporção — sem isso as mãos ficavam no ar (pedido do Alex, 2026-11-21).
+   */
+  setGrips(fn: (() => [Vector3, Vector3] | null) | null) {
+    this.gripFn = fn
+    if (!fn || this.gripObs) return
+    const sides = (["Left", "Right"] as const).map((s) => [this.node(`mixamorig:${s}Arm`), this.node(`mixamorig:${s}ForeArm`), this.node(`mixamorig:${s}Hand`)])
+    if (!sides.every((c) => c.every((n) => n?.rotationQuaternion))) return
+    this.gripObs = this.root.getScene().onAfterAnimationsObservable.add(() => {
+      if (this.frozen || this.disposed || !this.gripFn) return
+      const w = Math.min(1, (this.peek("BikePedal")?.weight ?? 0) + (this.peek("BikeA")?.weight ?? 0) + (this.peek("BikeB")?.weight ?? 0))
+      if (w < 0.01) return
+      const g = this.gripFn()
+      if (!g) return
+      for (let i = 0; i < 2; i++) {
+        const [a, b, c] = sides[i] as TransformNode[]
+        reachBone(a, b, c, g[i], w)
+      }
+    })
+  }
 
   setParent(parent: TransformNode) {
     this.root.parent = parent
@@ -1035,7 +1127,7 @@ export class AvatarRig {
    * impulsionar e seguir embalado. Devolve true quando acabou de voltar a
    * impulsionar (o clipe recomeça do início).
    */
-  private effort(moving: boolean, speed: number, phase: number) {
+  private effort(moving: boolean, speed: number, phase: number, dt = 0, pumps = PUMPS, coastMax = Infinity) {
     let restart = false
     if (!moving) {
       if (!this.pumping) restart = true
@@ -1044,13 +1136,15 @@ export class AvatarRig {
       this.coastRef = 0
     } else if (this.pumping) {
       if (phase < this.lastPhase - 0.5) this.pumps++
-      if (this.pumps >= PUMPS) {
+      if (this.pumps >= pumps) {
         this.pumping = false
         this.coastRef = speed
+        this.coastFor = 0
       }
     } else {
       this.coastRef = Math.max(this.coastRef, speed)
-      if (speed < this.coastRef * COAST_DROP) {
+      this.coastFor += dt
+      if (speed < this.coastRef * COAST_DROP || this.coastFor >= coastMax) {
         this.pumping = true
         this.pumps = 0
         restart = true
@@ -1086,16 +1180,16 @@ export class AvatarRig {
     } else if (!moving && this.rideStart <= 0) this.rideStopped = true
     this.rideStart = Math.max(0, this.rideStart - dt)
     if (move === 6 && have.BikePedal) {
-      // Pedalada em ciclo no ritmo da bike (3 vezes, depois embala com os
-      // pedais nivelados); a pedivela segue a fase do ciclo.
+      // Pedalada em ciclo no ritmo da bike (5 vezes, depois ~20 s embalada
+      // com os pedais nivelados, e de novo); a pedivela segue a fase do ciclo.
       const g = have.BikePedal
       const frameOf = () => g.animatables[0]?.masterFrame ?? g.from
       let phase = g.to > g.from ? (frameOf() - g.from) / (g.to - g.from) : 0
-      this.effort(moving, Math.abs(speed), phase)
+      this.effort(moving, Math.abs(speed), phase, dt, BIKE_PUMPS, BIKE_COAST_TIME)
       if (!moving) g.speedRatio = 0
       else if (this.pumping) g.speedRatio = Math.max(0.35, Math.min(2.5, Math.abs(speed) / PEDAL_NATURAL_SPEED))
       else if (g.speedRatio !== 0 && phase >= PEDAL_LEVEL) {
-        // terminou a 3ª pedalada: para com os pedais nivelados
+        // terminou a última pedalada: para com os pedais nivelados
         g.goToFrame(g.from + PEDAL_LEVEL * (g.to - g.from))
         g.speedRatio = 0
         phase = PEDAL_LEVEL
@@ -1518,6 +1612,8 @@ export class AvatarRig {
     this.disposed = true
     this.armObs?.remove()
     this.armObs = null
+    this.gripObs?.remove()
+    this.gripObs = null
     for (const clip of this.clips) this.groups[clip]!.dispose()
     this.entries.dispose()
     this.lib.release()

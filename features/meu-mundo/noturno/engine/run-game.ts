@@ -638,6 +638,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
         r.fall = Math.min(1, r.fall + dt * 2.6)
         r.char.place(s.x, z0 + r.fall * 1.1, 0, s.y + Math.sin(r.fall * Math.PI) * 0.7)
         r.char.holder.rotation.x = r.fall * 1.45
+        r.char.setGrips(null) // as mãos largam o guidão (a bike fica)
         r.char.animate(dt, RIDE_KINDS[r.ride].move as MoveState, 0)
       }
     }
@@ -744,6 +745,7 @@ export function createRunGame(opts: RunGameOptions): RunGameHandle {
       char.holder.position.z = zl + fall * 1.1
       fleet.sync(rides, dt, 1, { ...pose, sp: 0, flip: 0 }, remotePoses)
       attachRides()
+      char.setGrips(null) // as mãos largam o guidão (a bike fica)
       char.animate(dt, RIDE_KINDS[opts.ride].move as MoveState, 0)
       if (!ended && fall >= 1) {
         ended = true

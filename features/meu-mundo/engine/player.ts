@@ -156,6 +156,7 @@ export class Character {
     next.gincana = this.gincanaPose
     next.update(0, this.move, this.speed, this.tired, this.unwell)
     if (this.parked) next.setFrozen(true)
+    if (this.gripFn) next.setGrips(this.gripFn)
     const prev = this.rig
     this.rig = next
     prev?.dispose()
@@ -378,6 +379,23 @@ export class Character {
 
   get hasAvatar() {
     return !!this.rig
+  }
+
+  /**
+   * Tamanho em que o veículo vai (2026-11-21): a escala do esqueleto (classes
+   * e deuses) vezes a altura de agora. A pose de pedalar é do corpo de 1,8 m.
+   */
+  get rideScale() {
+    return (this.rig?.skeletonScale ?? 1) * this.sizer.scaling.y
+  }
+
+  private gripFn: (() => [Vector3, Vector3] | null) | null = null
+
+  /** Mãos no guidão: punhos no mundo a cada quadro (null = solta). */
+  setGrips(fn: (() => [Vector3, Vector3] | null) | null) {
+    if (fn === this.gripFn) return
+    this.gripFn = fn
+    this.rig?.setGrips(fn)
   }
 
   /** Ângulo da pedivela de quem pedala (mm3d-14); 0 sem avatar. */

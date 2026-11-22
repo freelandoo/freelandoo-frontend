@@ -37,8 +37,13 @@ export function placeRider(
   const pc = Math.cos(pitch ?? 0)
   const ps = Math.sin(pitch ?? 0)
   char.animate(dt, RIDE_KINDS[kind].move as MoveState, sp)
-  if (kind === "bike") fleet.setCrank(key, char.crank)
-  else if (kind === "skates") {
+  if (kind === "bike") {
+    fleet.setCrank(key, char.crank)
+    // A bike na escala de quem pedala e as mãos nos punhos (2026-11-21).
+    fleet.setScale(key, char.rideScale)
+    char.setGrips(gripsFor(fleet, key))
+  } else char.setGrips(null)
+  if (kind === "skates") {
     // Tornozelo → chão sob o meio do tênis (um pouco à frente do tornozelo).
     // A pose vem no referencial do personagem e vai para a posição e o rumo
     // de AGORA (mm3d-23: com a posição de mundo do quadro anterior, a bota
@@ -55,6 +60,16 @@ export function placeRider(
       }),
     )
   }
+}
+
+/** Uma função por bike (a mesma a cada quadro: o personagem só troca quando muda de bike). */
+const gripFns = new WeakMap<CarFleet, Map<string, () => [Vector3, Vector3] | null>>()
+function gripsFor(fleet: CarFleet, key: string) {
+  let m = gripFns.get(fleet)
+  if (!m) gripFns.set(fleet, (m = new Map()))
+  let f = m.get(key)
+  if (!f) m.set(key, (f = () => fleet.gripsOf(key)))
+  return f
 }
 
 /** Chão sob o meio do tênis, na posição e no rumo de agora (locais a `frame`, se houver). */

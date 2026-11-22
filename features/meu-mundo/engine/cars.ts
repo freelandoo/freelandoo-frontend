@@ -31,7 +31,8 @@
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"
+import type { Node } from "@babylonjs/core/node"
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { AssetContainer, InstantiatedEntries } from "@babylonjs/core/assetContainer"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
@@ -56,6 +57,10 @@ export const CAR_ASSET_VERSION = "v4"
  * steampunk (mm3d-52): mesmos nós, pivôs e raios; a lataria do carro segue nos
  * vermelhos de origem, então `repaint` continua valendo.
  */
+/** Punhos da bike (pulso no meio do punho), no referencial do modelo — BIKE_GRIP de pipeline/build_ride_mocap.py. */
+const BIKE_GRIP_L = new Vector3(0.25, 0.955, 0.13)
+const BIKE_GRIP_R = new Vector3(-0.25, 0.955, 0.13)
+
 const MODELS: Record<RideKind, { url: string; wheelR: number }> = {
   car: { url: "/meu-mundo/veiculos/v4/supercar.glb", wheelR: VEHICLE.WHEEL_RADIUS },
   bike: { url: "/meu-mundo/veiculos/v4/bike.glb", wheelR: 0.31 },
@@ -173,6 +178,14 @@ interface CarView {
   /** patins: as duas botas e onde ficam paradas. */
   boots: { node: TransformNode; rest: Vector3 }[]
   crankAngle: number
+  /**
+   * Tamanho do veículo (bike: o do ciclista, 2026-11-21). A pose de pedalar foi
+   * feita no corpo de 1,8 m; quem tem o esqueleto escalado (classes, deuses)
+   * leva a bike na mesma escala — quadril no selim, pés nos pedais.
+   */
+  scale: number
+  /** bike: punhos do guidão no referencial do garfo (calculados no 1º uso). */
+  grips: [Vector3, Vector3] | null
   x: number
   y: number
   z: number
@@ -293,6 +306,8 @@ export class CarFleet {
       trucks: [],
       boots: [],
       crankAngle: 0,
+      scale: 1,
+      grips: null,
       x: c.x,
       y: c.y ?? 0,
       z: c.z,
@@ -368,11 +383,12 @@ export class CarFleet {
     v.holder.position.set(v.x, v.y, v.z)
     v.holder.rotation.y = v.facing
     v.holder.rotation.x = v.flip
+    if (v.holder.scaling.y !== v.scale) v.holder.scaling.setAll(v.scale)
   }
 
   /** Rodas, direção, pedivela, trucks e o balanço do carro (todo quadro). */
   private animate(v: CarView, dt: number) {
-    const r = MODELS[v.kind].wheelR
+    const r = MODELS[v.kind].wheelR * v.scale
     v.rollF += (v.sp / r) * dt
     // Freio de mão com a traseira escorregando: as traseiras travam.
     const lock = v.kind === "car" ? Math.min(1, v.hb * (0.4 + v.sl)) : 0
@@ -501,6 +517,34 @@ export class CarFleet {
   setCrank(key: string, angle: number) {
     const v = this.views.get(key)
     if (v) v.crankAngle = angle
+  }
+
+  /** Tamanho do veículo (a bike vai na escala de quem pedala). */
+  setScale(key: string, s: number) {
+    const v = this.views.get(key)
+    if (!v || !(s > 0)) return
+    v.scale = s
+    v.holder.scaling.setAll(s)
+  }
+
+  /**
+   * Punhos do guidão da bike no MUNDO [esquerdo, direito], girando com a
+   * direção (2026-11-21: as mãos do ciclista vão até eles). null sem modelo.
+   */
+  gripsOf(key: string): [Vector3, Vector3] | null {
+    const v = this.views.get(key)
+    if (!v || v.kind !== "bike" || !v.steer) return null
+    const st = v.steer.node
+    if (!v.grips) {
+      // BIKE_GRIP de build_ride_mocap.py, no referencial da bike (glTF: x = esquerda, z = frente)
+      const inv = Matrix.Compose(st.scaling, v.steer.rest, st.position).invert()
+      v.grips = [Vector3.TransformCoordinates(BIKE_GRIP_L, inv), Vector3.TransformCoordinates(BIKE_GRIP_R, inv)]
+    }
+    const chain: TransformNode[] = []
+    for (let n: Node | null = st; n; n = n.parent) chain.unshift(n as TransformNode)
+    for (const n of chain) n.computeWorldMatrix?.(true)
+    const w = st.getWorldMatrix()
+    return [Vector3.TransformCoordinates(v.grips[0], w), Vector3.TransformCoordinates(v.grips[1], w)]
   }
 
   /**
