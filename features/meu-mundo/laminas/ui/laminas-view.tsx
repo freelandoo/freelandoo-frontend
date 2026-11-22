@@ -368,6 +368,7 @@ function LaminasScreen({
       aeryn: [t("laminasAerynPhase2", "CHUVA DE BRONZE"), t("laminasAerynPhase3", "VOO DA ÁGUIA")] as [string, string],
       kragor: [t("laminasKragorPhase2", "MARTELO DE BASALTO"), t("laminasKragorPhase3", "CHIFRES DE LAVA")] as [string, string],
       iris: [t("laminasIrisPhase2", "PRISMA"), t("laminasIrisPhase3", "MIL CORES")] as [string, string],
+      varkos: [t("laminasVarkosPhase2", "ESTANDARTE EM CHAMAS"), t("laminasVarkosPhase3", "RUGIDO DA GUERRA")] as [string, string],
     },
     fleeWarn: t("laminasFleeWarn", "Tô com medo dessa luta, vou sair."),
     // apresentação 11: o letreiro que passa na saída da vitória

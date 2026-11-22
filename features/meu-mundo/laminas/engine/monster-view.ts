@@ -158,6 +158,8 @@ Object.assign(KNIGHT, { skSlash: KNIGHT.great, skDash: KNIGHT.thrust, skShield: 
 Object.assign(KNIGHT, { gale: KNIGHT.great, boltRush: KNIGHT.thrust, stormCut: KNIGHT.combo })
 // Domínios v2: Marú (espada) — onda = o corte largo, estocada no gelo = a estocada, redemoinho = o combo
 Object.assign(KNIGHT, { tide: KNIGHT.great, icePike: KNIGHT.thrust, whirlpool: KNIGHT.combo })
+// Varkos (lança-estandarte): estocada da lança = o corte largo, investida = a estocada, juba de lâminas = o combo
+Object.assign(KNIGHT, { bannerLance: KNIGHT.great, lionCharge: KNIGHT.thrust, maneBlades: KNIGHT.combo })
 // Aeryn e Íris (tiro): flechada/feixe = a rajada, mergulho/avanço = a carga, garras/explosão = o golpe largo
 Object.assign(CIBORG, { bronzeVolley: CIBORG.blast, eagleDive: BRUTE.charge, talon: BRUTE.sweep, prismBeam: CIBORG.blast, chromaDash: BRUTE.charge, rainbowBurst: BRUTE.sweep })
 // Kragor (machado): pancada = o golpe de cima, carga = a carga, giro = o golpe largo

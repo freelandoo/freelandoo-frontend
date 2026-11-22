@@ -431,6 +431,7 @@ const BOSS_PHASE_PT: Record<BossId, [string, string]> = {
   aeryn: ["CHUVA DE BRONZE", "VOO DA ÁGUIA"],
   kragor: ["MARTELO DE BASALTO", "CHIFRES DE LAVA"],
   iris: ["PRISMA", "MIL CORES"],
+  varkos: ["ESTANDARTE EM CHAMAS", "RUGIDO DA GUERRA"],
 }
 
 export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
@@ -1796,6 +1797,24 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
               v.fxAt = 0.08
               vfx.impact(new Vector3(m.x, 1, m.z), zc, false, 0.9)
               vfx.dust(new Vector3(m.x, 0.15, m.z), 6)
+            }
+            if (entered) audio.dash()
+          }
+        } else if (a.id === "bannerLance" || a.id === "lionCharge") {
+          // Varkos: a brasa da bandeira que corre reta pela lança e o rastro de fogo da investida (paleta dele)
+          const vp = signatureOf("varkos").pal
+          const vc = { main: Color3.FromHexString(vp[2]), edge: Color3.FromHexString(vp[3]) }
+          if (entered && a.id === "bannerLance") {
+            for (let i = 1; i <= 6; i++) vfx.impact(new Vector3(m.x + sx * far * (i / 6), 1.3, m.z + sz * far * (i / 6)), vc, i === 6, 1.25)
+            shake = Math.max(shake, 0.2)
+            audio.whoosh()
+          }
+          if (a.id === "lionCharge") {
+            v.fxAt -= dt
+            if (entered || v.fxAt <= 0) {
+              v.fxAt = 0.07
+              vfx.impact(new Vector3(m.x, 1, m.z), vc, false, 1)
+              vfx.dust(new Vector3(m.x, 0.15, m.z), 7)
             }
             if (entered) audio.dash()
           }

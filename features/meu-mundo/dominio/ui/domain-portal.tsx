@@ -37,11 +37,12 @@ const NAME_PT: Record<DomainId, string> = {
   fabrica: "Fábrica de Bronze",
   vulcao: "Vulcão de Kragor",
   orbital: "Cidade Orbital",
+  vermelha: "Floresta Vermelha",
 }
-const GOD_PT: Record<string, string> = { noctis: "Noctis", zephyra: "Zéphyra", maru: "Marú", aeryn: "Aeryn", kragor: "Kragor", iris: "Íris" }
+const GOD_PT: Record<string, string> = { noctis: "Noctis", zephyra: "Zéphyra", maru: "Marú", aeryn: "Aeryn", kragor: "Kragor", iris: "Íris", varkos: "Varkos" }
 /** Cor do tema (placa vencida, filete do capítulo). */
-const TINT: Record<DomainId, string> = { floresta: "#3FF2C4", canion: "#FF7A59", gelo: "#8FD8FF", fabrica: "#E5BE70", vulcao: "#FF5A3A", orbital: "#B48CFF" }
-const ROMAN = ["I", "II", "III", "IV", "V", "VI"]
+const TINT: Record<DomainId, string> = { floresta: "#3FF2C4", canion: "#FF7A59", gelo: "#8FD8FF", fabrica: "#E5BE70", vulcao: "#FF5A3A", orbital: "#B48CFF", vermelha: "#E0262B" }
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"]
 /** Placa do chefe: rubi (a mesma família do botão de luta da cidade, etapa 12). */
 const BOSS = { plate: "linear-gradient(180deg, #C2243A 0%, #8E1B2A 60%, #5A0F19 100%)", rim: "#FF526A" }
 
@@ -94,6 +95,12 @@ const FOE_PT: Record<string, string> = {
   cavaleiro: "Cavaleiro Dourado",
   arco: "O Arco Partido",
   iris: "Íris",
+  // 22/11: a Floresta Vermelha de Varkos (o campo da batalha mais longa dos quinze anos)
+  corvo: "Corvos da Batalha",
+  javali: "Javalis de Ferrugem",
+  caido: "Soldados Caídos",
+  portaestandarte: "O Porta-Estandarte",
+  varkos: "Varkos",
 }
 export const foeName = (t: Tr, id: string) => t(`domFoe_${id}`, FOE_PT[id] ?? id)
 

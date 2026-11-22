@@ -21,6 +21,7 @@ const GOD_NAME: Record<string, [string, string]> = {
   aeryn: ["pactGodAeryn", "Aeryn"],
   kragor: ["pactGodKragor", "Kragor"],
   iris: ["pactGodIris", "Íris"],
+  varkos: ["pactGodVarkos", "Varkos"],
 }
 
 export interface PactColors {

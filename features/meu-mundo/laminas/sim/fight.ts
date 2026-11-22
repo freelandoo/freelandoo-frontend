@@ -276,8 +276,8 @@ export const MOB_SHIELD = { cut: 0.7, dur: 4, below: 0.6 }
  * uma luta aberta antes desta regra (o ticket dela não tem `boss`), então sem RULES_VERSION.
  * Os golpes novos entram DEPOIS da conta do dano (como os poderes): a força dos de sempre fica.
  */
-export type BossId = "noctis" | "zephyra" | "maru" | "aeryn" | "kragor" | "iris"
-export const BOSS_IDS: readonly BossId[] = ["noctis", "zephyra", "maru", "aeryn", "kragor", "iris"]
+export type BossId = "noctis" | "zephyra" | "maru" | "aeryn" | "kragor" | "iris" | "varkos"
+export const BOSS_IDS: readonly BossId[] = ["noctis", "zephyra", "maru", "aeryn", "kragor", "iris", "varkos"]
 export interface BossPhase {
   /** A fase começa quando a vida cai a esta fração (ou menos). */
   below: number
@@ -408,6 +408,27 @@ export const BOSSES: Record<BossId, readonly BossPhase[]> = {
       add: [
         { id: "chromaDash", windup: 0.65, active: 0.55, recover: 0.85, range: 1.9, arc: 1.9, dmg: 18, lunge: 13, ram: true, weight: 4, minD: 3, maxD: 13, heavy: true },
         { id: "rainbowBurst", windup: 0.5, active: 0.25, recover: 0.6, range: 2.6, arc: 3, dmg: 14, lunge: 2, weight: 3, minD: 0, maxD: 3 },
+      ],
+    },
+  ],
+  // 22/11: Varkos, o Leão da Guerra (o 7º Domínio, a Floresta Vermelha; o último e o mais forte). Lança-estandarte
+  // (regra do Cavaleiro, como a skin). Fase 2 (Estandarte em Chamas): a estocada reta e longa da lança, que
+  // solta a brasa da bandeira (todo tiro é reto). Fase 3 (Rugido da Guerra): a investida do leão que arrasta e a
+  // juba de lâminas girando de perto. Descansa menos que os outros seis.
+  varkos: [
+    {
+      below: 0.66,
+      rest: 0.76,
+      speed: 1.2,
+      add: [{ id: "bannerLance", windup: 0.85, active: 0.18, recover: 0.75, range: 11, arc: 0, line: 1.1, dmg: 20, lunge: 0, weight: 4, minD: 2.5, maxD: 11.5, heavy: true }],
+    },
+    {
+      below: 0.33,
+      rest: 0.55,
+      speed: 1.38,
+      add: [
+        { id: "lionCharge", windup: 0.65, active: 0.6, recover: 0.85, range: 2, arc: 2, dmg: 20, lunge: 15, ram: true, weight: 4, minD: 3, maxD: 15, heavy: true },
+        { id: "maneBlades", windup: 0.5, active: 0.3, recover: 0.6, range: 3, arc: 3.3, dmg: 16, lunge: 1.5, weight: 3, minD: 0, maxD: 3.2 },
       ],
     },
   ],
@@ -817,6 +838,8 @@ export const BODY_SHEETS: Record<string, Sheet> = {
   iris: [90, 120, 80, 200, 110],
   noctis: [100, 130, 90, 150, 170],
   aeryn: [90, 110, 90, 180, 150],
+  // 22/11: Varkos, o Leão da Guerra — o mais forte dos deuses (vida e ataque altos, armadura das armas dos mortos)
+  varkos: [170, 160, 140, 140, 110],
   cavaleiro: [140, 110, 180, 110, 80],
   golem: [160, 110, 150, 80, 50],
   ciborgue: [130, 130, 130, 150, 70],

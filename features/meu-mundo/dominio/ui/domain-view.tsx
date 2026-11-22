@@ -198,6 +198,8 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
                   : tt("talkBossNeedMany", "Vença primeiro os setores {a} a {b}.").replace("{a}", String(c.needFrom)).replace("{b}", String(c.needTo))
               return [tt("talkBossSealed1", "Ainda não, viajante. Você não está pronto."), need, tt("talkBossSealed3", "Depois volte e lute comigo para abrir o portal.")]
             }
+            // Varkos é o último: não há próximo Domínio (a frase dele é a da lore, historia/v2/08-genese-alex.md)
+            if (c.god && d.god === "varkos") return [tt("talkVarkos1", "Eu não escolhi o sol. Escolhi o lado que nunca vai parar de lutar."), tt("talkVarkos2", "Vença-me, se a guerra deixar. Depois de mim não há mais Domínio.")]
             if (c.god) return [tt("talkGod1", "Então você chegou até mim."), tt("talkGod2", "Vença-me e o caminho para o próximo Domínio se abre.")]
             if (c.castle)
               return [tt("talkGuard1", "Ninguém entra no castelo de {god} sem passar por mim.").replace("{god}", godName), tt("talkGuard2", "Vença-me e a porta se abre.")]

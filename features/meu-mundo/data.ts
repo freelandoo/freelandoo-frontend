@@ -855,7 +855,7 @@ export const OPEN_ARCHIVE = "mm:open-archive"
 export const getBuildings = (token: string) => call<BuildingsState>(token, "GET", "/buildings")
 
 // ═══ Lore v2 D1 (mig 444): os Domínios — o servidor manda tudo pronto ═══════
-export type DomainId = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital"
+export type DomainId = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital" | "vermelha"
 /** D2: quem o monstro do setor É (lore) e o corpo que o desenha (skin que existe). */
 export interface DomainFoe {
   id: string
