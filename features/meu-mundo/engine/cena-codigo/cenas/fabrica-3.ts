@@ -11,6 +11,7 @@ import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
 import { casteloAeryn } from "../pecas/castelo-aeryn"
 import * as F from "./tema-fabrica"
 import * as P2 from "../pecas/fabrica"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   triBloco: F.TRI_BLOCO,
@@ -30,6 +31,8 @@ export function montar(lod = 0): Cena {
   const c = new Cena("fabrica-3", lod, 32, -16)
   // pegada da FORTALEZA DE BRONZE copiada (pecas/castelo-aeryn.ts): 56 m com as alas no morro; pátio 18
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 56, d: 40, patio: 18 } })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "fabrica", lod, { meia: 2.55 })
   const K = P.castelo!
   casteloAeryn(c, K, lod)
 
@@ -91,6 +94,8 @@ export function montar(lod = 0): Cena {
       if (r(5) < 0.5) F.caixote(c, x, z, 1, r(4) * 3 + 0.4, 1.2, false)
     }
   })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "fabrica", lod)
   return c
 }
 

@@ -10,6 +10,7 @@ import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta } from "../dominio"
 import * as F from "./tema-fabrica"
 import * as P2 from "../pecas/fabrica"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   triBloco: F.TRI_BLOCO,
@@ -27,6 +28,8 @@ const CAMINHO: XZ[] = [[-56, -73], [-54, -46], [-24, -40], [8, -48], [38, -36], 
 export function montar(lod = 0): Cena {
   const c = new Cena("fabrica-1", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [1, 2, 3], boss: 3, tZonas: [0.24, 0.5], tArena: 0.8 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "fabrica", lod, { meia: 2.35 })
   // portões em arco de tijolo nas duas pontas
   for (const [p, q] of [[CAMINHO[0], CAMINHO[1]], [CAMINHO[CAMINHO.length - 1], CAMINHO[CAMINHO.length - 2]]] as const) portao(c, p, q, lod)
   aoLongoDaBorda(18, 8, (x, z, a, k) => {
@@ -133,6 +136,8 @@ export function montar(lod = 0): Cena {
     const gx = P.arena.x + p.dz * (P.arena.r + 3), gz = P.arena.z - p.dx * (P.arena.r + 3)
     if (P.livre(gx, gz, 1)) guindaste(c, gx, gz, lod)
   }
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "fabrica", lod)
   return c
 }
 
