@@ -51,6 +51,24 @@ import { ARENA_DRESS } from "./arenas"
 import type { ArenaCtx, UnderKind } from "./arenas/types"
 import { drawGincana, isGincana } from "./arenas/gincana"
 import { PAINT_SPAN } from "../sim/maps"
+import { FloorLights, type FloorLightLook } from "../../engine/floor-lights"
+import { deckTexture } from "./deck-tex"
+
+/**
+ * Luzes do chão (22/11, pedido do Alex: as do Rolê Noturno e da Antigravidade): a linha e o filete da borda
+ * na cor de brilho do tema, os pontinhos na 2ª cor. Ajustes por fase aqui.
+ */
+function floorLook(id: string, th: PaintTheme): FloorLightLook {
+  // chão claro (gelo, vidro, concreto, areia) de dia: o néon somado estoura para branco — mais fraco
+  const lum = th.top[0] * 0.3 + th.top[1] * 0.59 + th.top[2] * 0.11
+  const k = lum > 0.6 ? 0.85 : lum > 0.42 ? 1.15 : 1.5
+  const base: FloorLightLook = { line: th.glow, chev: [mix(th.glow2, [1, 1, 1], 0.15), mul(th.glow2, 0.8)], dot: th.glow2, seam: null, lanes: [], chevrons: true, k }
+  const per: Record<string, Partial<FloorLightLook>> = {
+    fabrica: { line: th.glow2, chev: [[1, 0.95, 0.7], [1, 0.62, 0.12]], dot: th.glow },
+    forja: { chev: [[0.85, 0.97, 1], [0.3, 0.7, 1]] },
+  }
+  return { ...base, ...per[id] }
+}
 
 /** Pseudo-aleatório fixo (mesma cara a cada partida). */
 function rnd(n: number) {
@@ -288,7 +306,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   // do código (paint-tex.ts), não mais dos .webp assados no Blender.
   const fileTex = (name: PaintTexKind) => own(paintTexture(scene, name))
   const forest = th.tile === "moss"
-  const topTex = dress?.topTex ? own(dress.topTex(scene, th)) : forest ? fileTex("lajes-musgo") : th.tile === "garden" || th.tile === "rune" ? fileTex("lajes") : own(tileTexture(scene, th.tile, th))
+  const topTex = dress?.topTex ? own(dress.topTex(scene, th)) : forest ? fileTex("lajes-musgo") : th.tile === "garden" || th.tile === "rune" ? fileTex("lajes") : th.tile === "plate" || th.tile === "basalt" ? own(deckTexture(scene, th.tile, th.glow, lowEnd)) : own(tileTexture(scene, th.tile, th))
   const metalTex = fileTex("chapa")
   const topMat = own(new StandardMaterial("paint-arena-top", scene))
   topMat.diffuseTexture = topTex
@@ -319,6 +337,17 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   glowMat.diffuseColor = new Color3(0, 0, 0)
   glowMat.specularColor = new Color3(0, 0, 0)
 
+  const lights = own(new FloorLights(scene, "paint", floorLook(map.id, th), { low: lowEnd }))
+  /** Contorno aceso e, nas ilhas largas, o emblema no miolo (luzes do chão, 22/11). */
+  const lightIsland = (isl: Island) => {
+    const O = outlineOf(isl, 1.2)
+    const y = isl.y + 0.03
+    let rin = Infinity
+    for (const [x, z] of O) rin = Math.min(rin, Math.hypot(x - isl.x, z - isl.z))
+    if (rin < 1.4) return
+    lights.outline(O, y, rin > 4 ? 0.7 : 0.45, rin > 4 ? 0.8 : 0.5)
+    if (!isl.fill && rin >= 3.6) lights.emblem(isl.x, y, isl.z, Math.min(rin * 0.86, 9), krnd(isl.id * 13) * Math.PI)
+  }
   const tops = new ArenaGeo()
   const leaves = new ArenaGeo()
   const barks = new ArenaGeo()
@@ -591,6 +620,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
       drawGincana(isl.fill ? gkLow : gk, isl)
       continue
     }
+    lightIsland(isl)
     if (dress) {
       const c = dress.colors?.(isl)
       floorOf(isl, underKind(isl) === "metal" ? metal : tops, c?.top ?? th.top, c?.rim ?? th.rim, !!c?.stripes)
@@ -1540,6 +1570,10 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
   if (metal.vertexCount) built.push(metal.build("paint-arena-metal", scene, metalMat))
   if (deco.vertexCount) built.push(deco.build("paint-arena-deco", scene, solidMat))
   if (glow.vertexCount) built.push(glow.build("paint-arena-glow", scene, glowMat))
+  {
+    const fl = lights.build("paint-arena-floorlights")
+    if (fl) built.push(fl)
+  }
   if (far.vertexCount) {
     // 3e: o marco ao longe sem neblina (a cor já vem misturada com o ar)
     const fm = own(new StandardMaterial("paint-arena-far", scene))
@@ -1772,6 +1806,7 @@ export function buildArenaWorld(scene: Scene, map: PaintMap, tier: QualityTier, 
     camBlockers,
     tick(dt) {
       clock += dt
+      lights.tick(clock)
       dressed?.tick?.(dt, clock)
       if (pollen) {
         const cam = scene.activeCamera

@@ -45,6 +45,7 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import { GeoBuilder, place, type RGB } from "../../engine/geometry"
 import { postLantern, steamLamp } from "../../engine/steampunk/kit"
 import { Sky, applyLights, brasiliaHour, nightFactor } from "../../engine/steampunk/atmosphere"
+import { FloorLights } from "../../engine/floor-lights"
 import { AirshipFleet, SP, SteamStage, fleetRing, rivetRing, tierOf, xf } from "../../engine/steampunk/scenery"
 import type { Island, PaintMap, Solid } from "../sim/map"
 import { TUNING } from "../sim/tuning"
@@ -520,6 +521,21 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     stage.dispose()
   })
 
+  // ── luzes do chão (22/11, as do Rolê Noturno): filete aceso na beira de cada ilha e o emblema nas grandes;
+  // na Cidade em ouro de lampião, quase apagadas de dia (o sol lava o néon) ──
+  const lights = new FloorLights(scene, "paint-city", { line: [1, 0.74, 0.36], chev: [[1, 0.92, 0.66], [1, 0.58, 0.18]], dot: [1, 0.86, 0.55], seam: null, lanes: [], chevrons: true, k: 1.3 }, { low: lowEnd })
+  {
+    const baseIds = new Set(map.bases.map((b) => b.island))
+    for (const isl of islands) {
+      if (isl.r < 1.6) continue
+      lights.ring(isl.x, isl.y + 0.05, isl.z, isl.r, isl.r > 4 ? 0.7 : 0.45, isl.r > 4 ? 0.55 : 0.42, Math.max(16, Math.min(56, Math.round(isl.r * 4))))
+      // na base o emblema fica por fora da engrenagem de latão do nascer (raio 2,6)
+      if (!isl.fill && isl.r >= 4.5 && (!baseIds.has(isl.id) || isl.r * 0.8 * 0.34 > 2.9)) lights.emblem(isl.x, isl.y + 0.05, isl.z, Math.min(isl.r * 0.8, 9), rnd(isl.id * 13) * Math.PI)
+    }
+    lights.build("paint-city-floorlights")
+    disposers.push(() => lights.dispose())
+  }
+
   // ── dia e noite (mm3d-62e): relógio de Brasília, como no bairro e no centro ──
   const sky = new Sky(scene, 380)
   const cloudDay = new Color3(0.86, 0.8, 0.7)
@@ -531,6 +547,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     if (Math.abs(n - night) < 0.005) return
     night = n
     applyLights(scene, n)
+    lights.setLevel(0.2 + 0.8 * n)
     sky.set(n)
     stage.setNight(n)
     Color3.LerpToRef(cloudDay, cloudNight, n, cloudMat.emissiveColor)
@@ -564,6 +581,7 @@ export function buildPaintWorld(scene: Scene, map: PaintMap, lowEnd: boolean): P
     },
     tick(dt) {
       clock += dt
+      lights.tick(clock)
       for (const p of portalNodes) if (p.open) p.swirl.rotation.z = -clock * 1.6
     },
     dispose() {

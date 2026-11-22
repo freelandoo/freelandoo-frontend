@@ -55,9 +55,23 @@ import { TanqueView, tanqueBarrel, tanqueFloor, tanqueHook, tanquePistonHead } f
 import { CANION_SKIN, HELICES_SKIN, canionTileIdle, canionTileLit } from "./canion-view"
 import { PortoesDoors, portoesBlock, portoesFloor, portoesFrames, portoesIcicle, portoesSwingGantry } from "./portoes-view"
 import type { GincanaTheme } from "./phase-themes"
+import { FloorLights, type FloorLightLook } from "../../engine/floor-lights"
 import type { SkyRegionId } from "../../engine/sky/sky-registry"
 
 const IRON: RGB = [0.2, 0.2, 0.22]
+/**
+ * Luzes do chão por Domínio (22/11, pedido do Alex: as do Rolê Noturno e da Antigravidade). Sem seta de luz:
+ * a seta amarela da prova continua sendo a do caminho.
+ */
+const FLOOR_LIGHTS: Record<GincanaTheme["deco"], FloorLightLook> = {
+  city: { line: [1, 0.74, 0.36], chev: [[1, 0.9, 0.6], [1, 0.6, 0.2]], dot: [1, 0.86, 0.55], seam: null, lanes: [0.5], chevrons: false, k: 0.75 },
+  forest: { line: [0.25, 0.95, 0.77], chev: [[0.8, 1, 0.9], [0.2, 0.9, 0.7]], dot: [0.86, 1, 0.42], seam: null, lanes: [0.33, 0.67], chevrons: false },
+  canyon: { line: [0.36, 0.86, 1], chev: [[0.85, 0.97, 1], [0.3, 0.7, 1]], dot: null, seam: [1, 0.56, 0.26], lanes: [0.36, 0.64], chevrons: false },
+  orbital: { line: [0.36, 0.9, 1], chev: [[0.9, 0.98, 1], [0.4, 0.8, 1]], dot: [1, 0.36, 0.86], seam: [0.62, 0.42, 1], lanes: [0.3, 0.5, 0.7], chevrons: false },
+  forge: { line: [1, 0.5, 0.12], chev: [[0.8, 0.95, 1], [0.3, 0.7, 1]], dot: null, seam: [1, 0.34, 0.05], lanes: [0.5], chevrons: false },
+  factory: { line: [0.3, 0.88, 1], chev: [[1, 0.95, 0.7], [1, 0.65, 0.1]], dot: [1, 0.7, 0.2], seam: [1, 0.64, 0.16], lanes: [0.38, 0.62], chevrons: false },
+  ice: { line: [0.55, 0.92, 1], chev: [[1, 1, 1], [0.5, 0.85, 1]], dot: [0.9, 0.98, 1], seam: null, lanes: [0.33, 0.67], chevrons: false },
+}
 const darker = (c: RGB, k = 0.72): RGB => [c[0] * k, c[1] * k, c[2] * k]
 /** A arte de céu (céu v2) de cada fase: a do Domínio. */
 const SKY_OF: Record<GincanaTheme["deco"], SkyRegionId> = { city: "centro", forest: "noctis", canyon: "zephyra", orbital: "iris", forge: "kragor", factory: "aeryn", ice: "maru" }
@@ -169,6 +183,8 @@ export class CourseView {
   private readonly lava: boolean
   /** Neon das bordas (a cor de destaque da fase). */
   private readonly neon: RGB
+  /** Luzes do chão (22/11): uma malha para todos os pisos parados. */
+  private readonly lights: FloorLights
 
   constructor(
     private readonly scene: Scene,
@@ -186,6 +202,7 @@ export class CourseView {
     const PINK = C[2]
     const city = theme.deco === "city"
     this.lava = theme.fluid.kind === "lava"
+    this.lights = new FloorLights(scene, "gincana", FLOOR_LIGHTS[theme.deco], { low })
     const toy = new StandardMaterial("gincana-toy", scene)
     toy.diffuseColor = new Color3(1, 1, 1)
     toy.specularColor = new Color3(0.32, 0.32, 0.32)
@@ -432,6 +449,8 @@ export class CourseView {
     if (theme.deco !== "forest") buildTargets(st, glow, theme.deco, this.neon, low)
     const stat = st.build("gincana-course", scene, toy, true)
     this.meshes.push(stat)
+    const fl = this.lights.build("gincana-floorlights")
+    if (fl) this.meshes.push(fl)
     if (glow.vertexCount) {
       const g = glow.build("gincana-glow-static", scene, this.glowMat, true)
       this.meshes.push(g)
@@ -1670,6 +1689,8 @@ export class CourseView {
       this.scene.clearColor.set(c.r, c.g, c.b, 1)
     }
     this.sky.set(n)
+    // a Cidade de dia quase apaga (a luz do sol lava o néon); os Domínios ficam acesos de dia também
+    this.lights.setLevel(this.theme.deco === "city" ? 0.2 + 0.8 * n : 0.55 + 0.45 * n)
     this.stage.setNight(n)
     this.city?.setNight(n)
     // Cânion: de noite a nuvem fica malva (a do céu da arte), não a bola azul-marinho
@@ -1736,7 +1757,10 @@ export class CourseView {
     }
     if (this.theme.id === "altoforno") altoFornoFrame(g, glow, p)
     if (this.theme.id === "tanque" && !dyn && tanqueFloor(g, glow, p)) return
-    if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) return
+    if (this.theme.id === "moinhos" && !dyn && moinhosDisc(g, p)) {
+      this.lights.ring(p.x, p.y + 0.1, p.z, p.r, 0.5, 0.45)
+      return
+    }
     const millFloor = (this.theme.id === "moinhos" && !dyn && moinhosFloor(g, p)) || (this.theme.id === "serraria" && !dyn && serrariaFloor(g, p))
     if (this.theme.id === "helices" && dyn && isHelixBlade(p)) return helicesBlade(g, glow, p, this.bladeSeed++)
     if (p.k === 0 && dyn && p.mw > 0 && d0 === "forest") return this.lilyPad(g, glow, p)
@@ -1748,6 +1772,11 @@ export class CourseView {
     if (this.theme.id === "clareira" && isClareiraCannon(p)) return hollowLog(g, glow, p)
     if (this.theme.id === "clareira" && isClareiraFloor(p)) {
       clearingFloor(g, glow, p, dyn)
+      // luzes do chão (22/11): na grama só o filete aceso da borda (sem as linhas de pista)
+      if (!dyn && p.y2 === p.y) {
+        const rise = 0
+        this.lights.rectOutline(at(p.x, (p.y + p.y2) / 2, p.z, p.rot, -Math.atan2(rise, p.hz * 2)), p.hx * 2, Math.hypot(p.hz * 2, rise), 0.08, 0.5, 0.45)
+      }
       // largada e chegada: a cerca da Floresta
       if (!dyn && (p.s === 0 || p.s === 6) && p.y2 === p.y && p.hx >= 3) this.bollards(g, glow, p)
       return
@@ -1805,6 +1834,11 @@ export class CourseView {
       if (d0 === "orbital" && p.r >= 5) orbitalRim(g, glow, p.x, p.y, p.z, p.r)
       else g.torus(p.r * 2 + 0.1, 0.62, at(p.x, p.y - 0.12, p.z), (x, _y, z) => (Math.floor(((Math.atan2(z, x) / (Math.PI * 2)) + 1) * segs) % 2 ? rim : mix(rim, C[7], 0.55)), 48)
       glow.torus(p.r * 2 + 0.66, 0.18, at(p.x, p.y - 0.16, p.z), this.neon, 24)
+      // luzes do chão (22/11): anel aceso perto da borda e o emblema no miolo (só o disco parado)
+      if (!dyn && !(d0 === "orbital" && p.r >= 5)) {
+        this.lights.ring(p.x, p.y + 0.05, p.z, p.r, 0.55, 0.45)
+        if (p.r >= 2.5) this.lights.emblem(p.x, p.y + 0.05, p.z, p.r * 0.95)
+      }
       g.cylinder(p.r * 1.84, p.d - 0.4, at(p.x, p.y - 0.4 - (p.d - 0.4) / 2, p.z), this.skirt(body), 32, p.r * 1.9)
       if (!dyn) {
         for (let k = 0; k < 3; k++) {
@@ -1833,6 +1867,8 @@ export class CourseView {
       g.roundBox(p.hx * 2 - 0.3, 0.03, L - 0.3, 0.02, m(0.002), (x, _y, z) => (Math.floor((x + z * 0.3) / 1.6) % 2 ? mix(top, C[7], 0.12) : top), 2)
       this.grout(g, glow, p, top, L, pitch, yc)
     }
+    // luzes do chão (22/11): linhas acesas ao longo do piso, filetes da borda e pontinhos (Rolê Noturno)
+    if (!dyn) this.lights.strip(m(ice ? 0.06 : city ? 0.05 : 0.13), p.hx * 2 - 0.4, L - 0.4, 0, p.hx * 2 > 7 ? 8 : 6)
     if (!dyn && (p.s === 0 || p.s === 6) && rise === 0 && p.hx >= 3) this.bollards(g, glow, p)
     // postes/enfeites nas bordas dos pisos largos
     if (!dyn && p.s > 0 && p.s < 6 && p.hx >= 5 && Math.abs(p.rot) < 0.01 && rise === 0) {
@@ -2147,6 +2183,7 @@ export class CourseView {
     const C = this.course
     const tt = Math.max(0, t)
     if (C.rise) this.water.position.y = Math.max(0, riseAt(C, tt))
+    this.lights.tick(tt)
     this.gate.setEnabled(t < 0 && C.mode === "race")
     for (let i = 0; i < C.sweepers.length; i++) this.sweepNodes[i].rotation.y = sweeperAngle(C.sweepers[i], tt)
     for (let i = 0; i < C.pendulums.length; i++) {
@@ -2399,6 +2436,7 @@ export class CourseView {
     const w = window as unknown as { __mmSetHour?: (h: number | null) => void }
     if (w.__mmSetHour === this.devHour) delete w.__mmSetHour
     this.sky.dispose()
+    this.lights.dispose()
     this.city?.dispose()
     this.logos.dispose()
     this.fleet?.dispose()
