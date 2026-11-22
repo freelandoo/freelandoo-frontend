@@ -15651,7 +15651,13 @@
     "gear_escudo_ceu": "Escudo del Cielo Partido",
     "gearDesc_escudo_ceu": "Alto como una gota, con una grieta de luz y alas de marfil.",
     "gearSource_escudo_ceu": "Tienda de Armas del Arsenal: 202500000 monedas.",
-    "gearUses_escudo_ceu": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 24300000 Esmeraldas por unidad cuando no está equipado."
+    "gearUses_escudo_ceu": "Equipar en una ranura compatible; las bonificaciones comparten los límites de equipo. · Refinar de +0 a +10 mediante una propuesta, con costes, pisos y protección opcional. · Reciclar por 24300000 Esmeraldas por unidad cuando no está equipado.",
+    "skinGod_varkos": "Varkos",
+    "skinGodLine_varkos": "El León de la Guerra. Nació de quince años de batalla.",
+    "abilityVarkosUlt": "Rugido de la Guerra",
+    "abilityVarkosSlash": "Garra de Acero",
+    "abilityVarkosDash": "Embestida del León",
+    "abilityVarkosShield": "Melena de Escudos"
   },
   "Sports": {
     "eyebrow": "Deportes",

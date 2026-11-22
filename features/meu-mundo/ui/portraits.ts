@@ -20,7 +20,7 @@ const V2 = "/meu-mundo/retratos/v2"
  * o retrato (STATUS, placa de luta, HUD, escolha da classe) e o rosto.
  */
 const V3 = "/meu-mundo/retratos/v3"
-const V3_BODIES = ["garras", "raposa_f", "vampiro_adulto", "cavaleiro", "vampira", "vampira_adulta", "maru", "morkhan", "zephyra", "golem", "iris", "vampiro", "kragor", "aeryn", "brutamontes", "aurion", "noctis", "raposa_adulta", "raposa", "raposa_adulto", "ciborgue"] as const
+const V3_BODIES = ["garras", "raposa_f", "vampiro_adulto", "cavaleiro", "vampira", "vampira_adulta", "maru", "morkhan", "zephyra", "golem", "iris", "vampiro", "kragor", "aeryn", "varkos", "brutamontes", "aurion", "noctis", "raposa_adulta", "raposa", "raposa_adulto", "ciborgue"] as const
 const v3Portraits = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}.webp`])) as Record<(typeof V3_BODIES)[number], string>
 const v3Faces = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}-rosto.webp`])) as Record<(typeof V3_BODIES)[number], string>
 /** 22/11: NPCs com retrato próprio publicado em v3 (`<body>.webp` + `-rosto`). */
@@ -48,7 +48,6 @@ export const PORTRAIT: Record<BodyId, string> = {
   ...v3Portraits,
   // 22/11: os NPCs — retrato próprio no v3; quem ainda não tem usa o do povo dele
   ...byNpcBody((b) => (NPC_V3.has(b) ? `${V3}/${b}.webp` : v3Portraits[KIN_BODY[NPC_KIN[b]]])),
-  bastor: `${V3}/bastor.webp`,
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -59,7 +58,6 @@ const FACE: Record<BodyId, string> = {
   ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
   ...v3Faces,
   ...byNpcBody((b) => (NPC_V3.has(b) ? `${V3}/${b}-rosto.webp` : v3Faces[KIN_BODY[NPC_KIN[b]]])),
-  bastor: `${V3}/bastor-rosto.webp`,
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "sergio"] ?? SERGIO_FACE

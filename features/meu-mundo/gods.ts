@@ -11,22 +11,15 @@
 // mutadas pela Cinza). Os 12 continuam sendo corpos "altos" feitos pela mesma receita
 // (build_deuses.py, arquivos avatar-<id>.glb e retratos deus-<id>.webp): para arquivo, rig e
 // retrato vale TALL_BODIES; para o que é história (quem é deus) vale GOD_BODIES.
-export const GOD_BODIES = ["aurion", "morkhan", "kragor", "zephyra", "maru", "iris", "noctis", "aeryn"] as const
+// 22/11: + VARKOS, o Leão da Guerra (lado de Aurion; lore em arte/historias/pagina/lore.html). Tripo do
+// Alex, pipeline/npcs + build_deuses.py (3,20 m, todas as animações do Sergio). Skin de deus jogável.
+export const GOD_BODIES = ["aurion", "morkhan", "kragor", "zephyra", "maru", "iris", "noctis", "aeryn", "varkos"] as const
 export type GodBody = (typeof GOD_BODIES)[number]
 export const MONSTER_BODIES = ["ciborgue", "cavaleiro", "golem", "garras"] as const
 export type MonsterBody = (typeof MONSTER_BODIES)[number]
 /** Os corpos da receita dos deuses, na ordem de sempre (BODY_IDS depende dela). */
 export const TALL_BODIES = [...GOD_BODIES, ...MONSTER_BODIES] as const
 export type TallBody = GodBody | MonsterBody
-
-/**
- * 22/11: BASTOR, o Guardião do Paint e Deus dos Animais (historia/v2/00-classificacao.md;
- * Tripo do Alex, pipeline/npcs + build_deuses.py, 3,20 m). Por enquanto é o CHEFÃO do Paint
- * (paint/engine/boss-view.ts, com os cortes de espada dos Vampiros): corpo para desenhar,
- * fora de GOD_BODIES/TALL_BODIES/BODY_IDS — ainda não é skin (sem CHECK nem espelho no back).
- */
-export const BASTOR = "bastor" as const
-export type BastorBody = typeof BASTOR
 
 /** Nome próprio (não se traduz). */
 export const GOD_NAMES: Record<GodBody, string> = {
@@ -38,6 +31,7 @@ export const GOD_NAMES: Record<GodBody, string> = {
   iris: "Íris",
   noctis: "Noctis",
   aeryn: "Aeryn",
+  varkos: "Varkos",
 }
 export const MONSTER_NAMES: Record<MonsterBody, string> = {
   ciborgue: "Ciborgue",

@@ -15671,7 +15671,13 @@
     "gear_escudo_ceu": "Shield of the Broken Sky",
     "gearDesc_escudo_ceu": "Tall as a teardrop, with a crack of light and ivory wings.",
     "gearSource_escudo_ceu": "Arsenal Weapon Shop: 202500000 coins.",
-    "gearUses_escudo_ceu": "Equip in a compatible slot; adventure bonuses share the equipment caps. · Refine from +0 to +10 through a proposal, with costs, floors and optional protection. · Recycle for 24300000 Emeralds per unit when unequipped."
+    "gearUses_escudo_ceu": "Equip in a compatible slot; adventure bonuses share the equipment caps. · Refine from +0 to +10 through a proposal, with costs, floors and optional protection. · Recycle for 24300000 Emeralds per unit when unequipped.",
+    "skinGod_varkos": "Varkos",
+    "skinGodLine_varkos": "The Lion of War. Born from fifteen years of battle.",
+    "abilityVarkosUlt": "War Roar",
+    "abilityVarkosSlash": "Steel Claw",
+    "abilityVarkosDash": "Lion's Charge",
+    "abilityVarkosShield": "Mane of Shields"
   },
   "Sports": {
     "eyebrow": "Sports",

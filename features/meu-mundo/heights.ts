@@ -23,6 +23,7 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   iris: 3.2,
   noctis: 3.2,
   aeryn: 3.2,
+  varkos: 3.2,
   ciborgue: 2.7, // 2026-11-07 (Alex): todos os ciborgues, skin e monstro
   cavaleiro: 2.0,
   golem: 4.0,
@@ -30,7 +31,6 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   brutamontes: 4.0,
   // 22/11: os NPCs (adulto 2,70, jovem 1,70/1,65, criança 1,35)
   ...byNpcBody(npcBodyHeight),
-  bastor: 3.2,
 }
 
 /** Altura de referência das velocidades a pé (os avatares do bairro). */

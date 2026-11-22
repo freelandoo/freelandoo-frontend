@@ -10,7 +10,6 @@ import type { LifeSoul } from "./soul"
 import { TALL_BODIES, type TallBody } from "./gods"
 import { CLAN_BODIES, type ClanBody } from "./classes"
 import type { NpcBody } from "./npc-bodies"
-import type { BastorBody } from "./gods"
 
 export type Vec2 = { x: number; z: number }
 
@@ -213,7 +212,7 @@ export interface StreetSign {
  */
 export type MobBody = "brutamontes"
 /** 22/11: + os NPCs (npc-bodies.ts) — corpo para desenhar, nunca de jogador (fora de BODY_IDS). */
-export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody | NpcBody | BastorBody
+export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody | NpcBody
 export const BODY_IDS: BodyId[] = ["sergio", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes"]
 
 export interface SeatReservation {

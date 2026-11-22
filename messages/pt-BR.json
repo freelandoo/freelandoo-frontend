@@ -15085,7 +15085,13 @@
     "gear_escudo_ceu": "Escudo do Céu Partido",
     "gearDesc_escudo_ceu": "Alto como uma gota, com uma rachadura de luz e asas de marfim.",
     "gearSource_escudo_ceu": "Loja de Armas do Arsenal: 202500000 moedas.",
-    "gearUses_escudo_ceu": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 24300000 Esmeraldas por unidade quando não estiver equipado."
+    "gearUses_escudo_ceu": "Equipar no slot compatível; bônus de aventura sujeitos ao teto. · Refinar de +0 a +10 mediante proposta, com custo, pisos e proteção opcionais. · Reciclar por 24300000 Esmeraldas por unidade quando não estiver equipado.",
+    "skinGod_varkos": "Varkos",
+    "skinGodLine_varkos": "O Leão da Guerra. Nasceu de quinze anos de batalha.",
+    "abilityVarkosUlt": "Rugido da Guerra",
+    "abilityVarkosSlash": "Garra de Aço",
+    "abilityVarkosDash": "Investida do Leão",
+    "abilityVarkosShield": "Juba de Escudos"
   },
   "Sports": {
     "eyebrow": "Esportes",

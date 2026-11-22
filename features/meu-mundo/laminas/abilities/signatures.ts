@@ -112,6 +112,19 @@ export const SIGNATURES: Record<string, Signature> = {
     art: "morkhan",
     names: n("morkhan", "Fogo Sem Nome", "Corte Violeta", "Sombra Rasgada", "Pacto de Cinzas"),
   },
+  // 22/11: Varkos, o Leão da Guerra — a juba de fogo nas costas, o corte de espada e lâminas do chão
+  // (ícones da espada dos Vampiros até ter os próprios)
+  varkos: {
+    id: "varkos",
+    family: "ember",
+    pal: ["#1a0204", "#8f0a14", "#e0262b", "#ff9a3d", "#fff0d0"],
+    back: "crest",
+    strike: "sword",
+    rise: "blades",
+    glyph: "crest",
+    art: "vampiro",
+    names: n("varkos", "Rugido da Guerra", "Garra de Aço", "Investida do Leão", "Juba de Escudos"),
+  },
   zephyra: {
     id: "zephyra",
     family: "storm",
@@ -298,6 +311,7 @@ const OF_BODY: Record<string, string> = {
   maru: "maru",
   iris: "iris",
   aeryn: "aeryn",
+  varkos: "varkos",
   noctis: "noctis",
   ciborgue: "ciborgue",
   golem: "golem",
