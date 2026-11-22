@@ -63,6 +63,8 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
   // DV3: monstros soltos vencidos (id → hora) — somem até reaparecer; quem encostou agora
   const defeatedRef = useRef<Record<string, number>>({})
   const engagedRef = useRef<string | null>(null)
+  // 22/11: o guardião do castelo acabou de cair → a porta abre (afunda) na frente de quem volta da luta
+  const doorFreshRef = useRef(false)
   const [sector, setSector] = useState(0)
   const [place, setPlace] = useState<string | null>(null)
   // C5: perto do Golem (o servidor diz se valeu ou se a pessoa está armada)
@@ -171,6 +173,11 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
           bypass: bypassRef.current,
           spawn: spawn ? { sector: spawn } : { at: arrive },
           defeated: defeatedRef.current,
+          doorFresh: (() => {
+            const f = doorFreshRef.current
+            doorFreshRef.current = false
+            return f
+          })(),
           mapLabels: (() => {
             const tt = labels.current.t
             const godName = GOD_NAMES[d.god as GodBody] ?? d.god
@@ -225,7 +232,11 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
           onInteract: (n) => {
             if (!alive) return
             if (n.kind === "exit") onExit()
-            else if (n.kind === "guard") askFight.current(n.sector)
+            else if (n.kind === "guard") {
+              // o guardião do castelo pelo "Lutar": vencido, some de vez (igual ao que encostou)
+              if (sc.god && n.sector === sc.boss) engagedRef.current = `${n.sector}:chefe`
+              askFight.current(n.sector)
+            }
             else if (n.kind === "passage") cross.current()
             else if (n.kind === "back") go.current(sc.n - 1, "saida")
             else if (n.kind === "next") go.current(sc.n + 1, "entrada")
@@ -419,12 +430,20 @@ export function DomainView({ body, look, domain: first, start, onExit }: { body:
       engagedRef.current = null
       if (mid && r.result?.win) defeatedRef.current[mid] = Date.now()
       const adv = (r as Receipt & { domain?: DomainAdvance }).domain
+      // o guardião do castelo caiu: a porta se abre na volta (open-domain-game afunda a folha)
+      const scn = sceneRef.current
+      if (r.result?.win && scn?.god && mid === `${scn.boss}:chefe`) doorFreshRef.current = true
       if (!adv) return
       setInfo((cur) => (cur && cur.id === adv.domain ? { ...cur, best: Math.max(cur.best, adv.best), crossed: adv.crossed } : cur))
       const name = domainName(t, adv.domain)
       // D4: vencer o deus chefão sela o pacto do povo (7 dias de néctar extra no jogo dele)
       const pact = (r as Receipt & { pact?: DomainPact }).pact
-      const won = adv.crossedNow ? t("domCrossedNow", "Você atravessou {name}! A passagem abriu.").replace("{name}", name) : t("domWon", "Setor {n} vencido! O portão abriu.").replace("{n}", String(adv.sector))
+      const castleGate = !!scn?.god && adv.sector === scn.boss
+      const won = adv.crossedNow
+        ? t("domCrossedNow", "Você atravessou {name}! A passagem abriu.").replace("{name}", name)
+        : castleGate
+          ? t("domCastleOpen", "O guardião caiu! A porta do castelo se abriu.")
+          : t("domWon", "Setor {n} vencido! O portão abriu.").replace("{n}", String(adv.sector))
       const sealed = pact
         ? pact.fresh
           ? t("domPactSealed", "Pacto selado: o seu povo ganha néctar extra por 7 dias.")

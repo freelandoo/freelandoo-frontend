@@ -33,6 +33,7 @@ import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { face, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
+import { anel, marcarPorta } from "./porta-castelo"
 import { lanceta, prisma, vitral } from "./castelo-iris"
 import type { CasteloPlanta } from "../dominio"
 import { coral, cristalGelo, CORAL_B, CORAL_B_ESC, leque, PEROLA } from "./gelo"
@@ -385,8 +386,11 @@ function portalMaru(c: Cena, Q: Q, lod: number) {
   const in2 = lanceta(0, 0, 6.6, 3.1, 3.9, seg)
   moldura(GL, Q, in1.slice(2), in2.slice(2), 0.8, [0.92, 0.78, 0.96], [0.72, 0.7, 0.98])
   for (const s of [-1, 1]) cx(g, Q, s * 3.4, 0.55, 0.6, 0.5, 0, 6.6, mix(PER, VIT, 0.1))
-  // fundo do recesso: vitral ciano em leque (o vidro em cima da porta)
-  poli(GL, Q, in2, 0.63, [VIT, VIT, ...in2.slice(2).map((): RGB => mix(VIT, VIT_CL, 0.35))])
+  // fundo do recesso: vitral ciano em leque (o vidro em cima da porta) — anel até a moldura da porta: o vão
+  // fica aberto quando a folha some (porta-castelo.ts)
+  const door = lanceta(0, 0, 4.6, 2.0, 2.6, seg)
+  const doorF = lanceta(0, -0.05, 4.6, 2.35, 2.95, seg)
+  anel(GL, Q, in2, doorF, 0.63, VIT, mix(VIT, VIT_CL, 0.35))
   // o leque de PÉTALAS da ref: 7 pétalas de ponta redonda que se abrem do alto da porta, cada uma em 2 tons
   // (claro no meio, ciano na borda), com o contorno de pérola
   const nL = lod ? 5 : 7
@@ -406,17 +410,18 @@ function portalMaru(c: Cena, Q: Q, lod: number) {
     }
   }
   // a PORTA: lanceta de vitral (cortina acesa, sem colisão) com moldura de pérola e rendilhado
-  const door = lanceta(0, 0, 4.6, 2.0, 2.6, seg)
-  const doorF = lanceta(0, -0.05, 4.6, 2.35, 2.95, seg)
   moldura(g, Q, doorF.slice(2), door.slice(2), 0.82, PER_CL, PER_MEIO)
   for (const s of [-1, 1]) cx(g, Q, s * 2.17, 0.72, 0.36, 0.3, 0, 4.6, PER_CL)
-  vitral(GL, Q, door, [0, 2.6], 0.76, (y) => mix(mix(VIT, VIT_CL, 0.35), VIT_CL, Math.min(1, y / 7) * 0.7), lod, 5)
+  // a folha (vitral e rendilhado) é a malha da porta, que some quando o guardião cai
+  const gP = c.portaGeo, GLP = c.portaLuz
+  vitral(GLP, Q, door, [0, 2.6], 0.76, (y) => mix(mix(VIT, VIT_CL, 0.35), VIT_CL, Math.min(1, y / 7) * 0.7), lod, 5)
   if (!lod) {
-    fio(g, Q, [[0, 0], [0, 7.2]], 0.86, 0.07, CREME)
-    fio(g, Q, [[0, 4.4], [-1.4, 6.2]], 0.86, 0.06, CREME)
-    fio(g, Q, [[0, 4.4], [1.4, 6.2]], 0.86, 0.06, CREME)
-    fio(g, Q, [[-2, 2.6], [2, 2.6]], 0.86, 0.05, CREME)
+    fio(gP, Q, [[0, 0], [0, 7.2]], 0.86, 0.07, CREME)
+    fio(gP, Q, [[0, 4.4], [-1.4, 6.2]], 0.86, 0.06, CREME)
+    fio(gP, Q, [[0, 4.4], [1.4, 6.2]], 0.86, 0.06, CREME)
+    fio(gP, Q, [[-2, 2.6], [2, 2.6]], 0.86, 0.05, CREME)
   }
+  marcarPorta(c, Q, 2.0, 0.76, 8)
   // a gema do arco (no topo da moldura de fora)
   gema(GL, Q.P(0, 1.1, 11.6), 0.7, lod)
   return { arcoTopo: 11.8 }

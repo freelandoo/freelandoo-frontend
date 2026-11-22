@@ -11,8 +11,10 @@
 // percebe quem chega e corre atrás, como os lobos da rua); encostou = `onEngage` e a tela pede a
 // luta ao SERVIDOR (ele confere o setor aberto e escolhe monstro e nível). Setor ainda fechado =
 // bando selado (meio apagado, parado, não abre luta). O chefe da cena fica PARADO no ponto dele
-// (cena 3: o guardião na porta do castelo e o deus no salão) e luta pelo "Lutar". Vencido some
-// até reaparecer (a tela guarda a hora em `defeated`). A passagem (`saida`) só leva à próxima cena
+// (o deus no salão também) e luta pelo "Lutar". Vencido some até reaparecer (a tela guarda a hora
+// em `defeated`). Cena 3 (22/11): o GUARDIÃO da porta do castelo vai para cima de quem chega como
+// o bando e, vencido, some de vez; a porta (malha própria da cena) fica FECHADA (caixa no vão) até
+// ele cair e então afunda no chão — o vão aberto leva ao pátio do deus. A passagem (`saida`) só leva à próxima cena
 // quando o servidor diz que o chefe caiu (`scene.passage.open`): uma cena na memória por vez.
 //
 // Um ambiente 3D por vez (ui/offstage.ts): a tela desmonta esta cena para a luta e para trocar de
@@ -70,6 +72,14 @@ const CHASE_V = 3.1
 const TOUCH = 1.55
 /** Vencido volta depois de (ms). */
 export const RESPAWN_MS = 90_000
+/**
+ * Guardião do castelo (cena 3, 2026-11-22, pedido do Alex): vai para cima de quem chega como os monstros da rua,
+ * mas enxerga e persegue mais longe (protege a porta inteira) e não vagueia: sem ninguém, volta para a escada.
+ */
+const GUARD_SEE = SEE * 1.7
+const GUARD_LEASH = LEASH * 1.8
+/** A porta do castelo afunda no chão em (s) quando abre na frente de quem venceu. */
+const DOOR_OPEN_S = 1.8
 /** Lugar da lore (Pedraverde): raio da clareira em volta do ponto (m). */
 const PLACE_R = 9
 /** C5: "a ~4 m do Golem" (07-falas §1.2). */
@@ -111,8 +121,10 @@ export interface OpenDomainOptions {
   bypass?: boolean
   /** Onde nascer: setor N = de volta da luta (perto do chefe ou na zona); "saida" = voltando da cena seguinte. */
   spawn?: { sector?: number; at?: "entrada" | "saida" }
-  /** Monstros vencidos: id → hora (ms) da vitória; somem até `RESPAWN_MS` depois. */
+  /** Monstros vencidos: id → hora (ms) da vitória; somem até `RESPAWN_MS` depois. O guardião do castelo some de vez. */
   defeated?: Record<string, number>
+  /** O guardião do castelo acabou de cair: a porta abre (afunda) na frente de quem volta da luta. */
+  doorFresh?: boolean
   maxPixelRatio?: number
   onReady?: () => void
   onNearbyChange?: (n: OpenNear) => void
@@ -177,6 +189,8 @@ type Mob = {
   wait: number
   chasing: boolean
   model: MonsterModel | null
+  /** Guardião do castelo: persegue como os monstros soltos (e some de vez quando cai). */
+  guard?: boolean
   /** Quantas malhas já receberam o "selado" (o corpo carrega aos poucos: reaplica quando muda). */
   sealedLook: number
   /** Chefe: balão de fala e a fila de falas desta aproximação. */
@@ -250,18 +264,24 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   /** Blocos: centro + as duas malhas (o pano de fundo de longe sai: o de perto basta). */
   const S = cena.cell
   const blocks: { cx: number; cz: number; m0: Mesh | null; m1: Mesh | null }[] = []
+  /** A folha da porta do castelo (cena 3): malha própria, some quando o guardião cai. */
+  let doorMesh: Mesh | null = null
   {
     const byKey = new Map<string, { cx: number; cz: number; m0: Mesh | null; m1: Mesh | null }>()
     const keyOf = (m: Mesh) => m.name.slice(`cena-${cena.name}-`.length)
     for (const m of near0.meshes as Mesh[]) {
       const k = keyOf(m)
       if (k === "fundo" || k === "horizonte") continue
+      if (k === "porta") {
+        doorMesh = m
+        continue
+      }
       const [a, b] = k.split(",").map(Number)
       byKey.set(k, { cx: (a + 0.5) * S + cena.off, cz: (b + 0.5) * S + cena.off, m0: m, m1: null })
     }
     for (const m of far1.meshes as Mesh[]) {
       const k = keyOf(m)
-      if (k === "fundo" || k === "horizonte") {
+      if (k === "fundo" || k === "horizonte" || k === "porta") {
         m.setEnabled(false)
         continue
       }
@@ -329,6 +349,61 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const sectorOpen = (s: number) => (bypass || s <= best + 1) && !!domain.sectors[s - 1]?.open
   let passageOpen = !!sc.passage?.open
 
+  // ── a porta do castelo (cena 3, 2026-11-22): FECHADA (caixa no vão) até o guardião cair; depois some ──
+  const guardSector = sc.god ? sc.boss : 0
+  const guardId = `${guardSector}:chefe`
+  const defeatedAt = opts.defeated ?? {}
+  /** O guardião caiu (o servidor diz pelo `best`; nesta visita, a vitória que acabou de voltar também vale). */
+  const guardDown = () => !!guardSector && (best >= guardSector || defeatedAt[guardId] != null)
+  const doorBox = guardSector && cena.portaCaixa ? { ...cena.portaCaixa } : null
+  let doorOpen = !doorBox
+  /** Abrindo: segundos que faltam (a folha afunda no chão). */
+  let doorAnim = -1
+  const doorDelay = { t: 0 }
+  const openDoor = (animate: boolean) => {
+    if (doorOpen) return
+    doorOpen = true
+    const i = doorBox ? boxes.indexOf(doorBox) : -1
+    if (i >= 0) boxes.splice(i, 1)
+    if (!doorMesh) return
+    if (!animate) {
+      doorMesh.setEnabled(false)
+      return
+    }
+    doorMesh.unfreezeWorldMatrix()
+    doorAnim = DOOR_OPEN_S
+  }
+  const stepDoor = (dt: number) => {
+    if (doorAnim < 0 || !doorMesh) return
+    // atrás da cortina (cena ainda preparando) a porta espera: quem venceu tem que VER abrir
+    if (!readySent) return
+    if (doorDelay.t > 0) {
+      doorDelay.t -= dt
+      return
+    }
+    doorAnim -= dt
+    const k = 1 - Math.max(0, doorAnim) / DOOR_OPEN_S
+    // afunda acelerando, com um tremor no começo (o peso da pedra/madeira)
+    doorMesh.position.y = -10.5 * k * k
+    doorMesh.position.x = k < 0.35 ? Math.sin(k * 90) * 0.04 : 0
+    if (doorAnim <= 0) {
+      doorAnim = -1
+      doorMesh.setEnabled(false)
+    }
+  }
+  if (doorBox) {
+    if (!guardDown()) boxes.push(doorBox)
+    else if (opts.doorFresh && doorMesh) {
+      // volta da luta: a porta ainda fechada, abre logo depois (quem venceu vê abrir)
+      doorOpen = false
+      doorDelay.t = 0.9
+      openDoor(true)
+    } else {
+      doorOpen = false
+      openDoor(false)
+    }
+  }
+
   // ── portais: toda passagem tem um; aberto = redemoinho de partículas ─────
   const portalColor = PORTAL_COLOR[domain.id] ?? PORTAL_COLOR.floresta
   /** A saída abre? (null = não há para onde ir: sem portal) */
@@ -344,9 +419,14 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     if (want?.sector) {
       const b = bossSpots.find((q) => q.sector === want.sector)
       if (b) {
-        // na frente do chefe, um passo além do alcance (ele olha para quem chega)
-        const p = ahead(b, REACH + 1.4)
-        if (free(p.x, p.z)) return { x: p.x, z: p.z, facing: b.ang + Math.PI }
+        // na frente do chefe, um passo além do alcance (ele olha para quem chega); o guardião do castelo
+        // persegue: volta-se fora da vista dele (senão a luta reabre sozinha), de frente para a porta
+        // (vencido, ele sumiu: volta-se mais perto, de frente para a porta que abre)
+        const dists = b.sector !== guardSector ? [REACH + 1.4] : guardDown() ? [9, 7, REACH + 1.4] : [GUARD_SEE + 1.5, GUARD_SEE, SEE + 2, REACH + 1.4]
+        for (const dd of dists) {
+          const p = ahead(b, dd)
+          if (free(p.x, p.z)) return { x: p.x, z: p.z, facing: b.ang + Math.PI }
+        }
       }
       const q = zoneOf(want.sector)
       if (q) {
@@ -428,7 +508,12 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
         mobs.push({ id: `${s}:${i}`, sector: s, boss: false, x, z, hx: x, hz: z, facing: rnd() * 6.28, tx: x, tz: z, wait: rnd() * 3, chasing: false, model: null, sealedLook: 0 })
       }
     }
-    for (const b of bossSpots) mobs.push({ id: `${b.sector}:chefe`, sector: b.sector, boss: true, x: b.x, z: b.z, hx: b.x, hz: b.z, facing: b.ang, tx: b.x, tz: b.z, wait: 0, chasing: false, model: null, sealedLook: 0 })
+    for (const b of bossSpots) {
+      const guard = b.sector === guardSector
+      // o guardião do castelo vencido some DE VEZ (a porta já está aberta atrás dele)
+      if (guard && guardDown()) continue
+      mobs.push({ id: `${b.sector}:chefe`, sector: b.sector, boss: true, guard, x: b.x, z: b.z, hx: b.x, hz: b.z, facing: b.ang, tx: b.x, tz: b.z, wait: 0, chasing: false, model: null, sealedLook: 0 })
+    }
   }
   const pickTarget = (m: Mob) => {
     const q = zoneOf(m.sector)
@@ -575,21 +660,34 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       const open = sectorOpen(m.sector)
       setSealedLook(m, !open)
       let speed = 0
-      if (m.boss || !open) {
+      // o guardião do castelo (setor aberto) persegue como o bando; o selado fica parado como os outros chefes
+      const hunts = !m.boss || (!!m.guard && open)
+      if (!hunts || !open) {
         // o chefe e o bando selado ficam parados olhando quem chega (o chefe, perto)
         if (d < SEE * 1.6) m.facing = lerpAngle(m.facing, Math.atan2(body.x - m.x, body.z - m.z), 1 - Math.exp(-4 * dt))
         if (m.boss) bossTalk(m, d, open)
       } else {
         const home = Math.hypot(m.x - m.hx, m.z - m.hz)
+        const see = m.guard ? GUARD_SEE : SEE, leash = m.guard ? GUARD_LEASH : LEASH
         // atrás da cortina (monstros ainda sendo preparados) ninguém persegue
-        m.chasing = readySent && !engaged && !input.blocked && d < (m.chasing ? SEE * 1.5 : SEE) && home < LEASH
+        m.chasing = readySent && !engaged && !input.blocked && !story && d < (m.chasing ? see * 1.5 : see) && home < leash
+        // o guardião avisa (card com o retrato) ao ver quem chega, e não vagueia: sem ninguém, volta à escada
+        if (m.guard) {
+          bossTalk(m, d, open)
+          if (!m.chasing) {
+            m.tx = m.hx
+            m.tz = m.hz
+            m.wait = 1
+            if (home < 0.4) m.facing = lerpAngle(m.facing, d < see * 2 ? Math.atan2(body.x - m.x, body.z - m.z) : m.facing, 1 - Math.exp(-4 * dt))
+          }
+        }
         let gx = m.tx, gz = m.tz, v = WANDER_V
         if (m.chasing) {
           gx = body.x
           gz = body.z
           v = CHASE_V
         } else if (Math.hypot(m.tx - m.x, m.tz - m.z) < 0.4) {
-          m.wait -= dt
+          if (!m.guard) m.wait -= dt
           if (m.wait <= 0) {
             pickTarget(m)
             m.wait = 1.5 + Math.random() * 3
@@ -690,7 +788,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const findNearby = (): OpenNear => {
     for (const b of bossSpots) {
       if (Math.hypot(b.x - body.x, b.z - body.z) > REACH) continue
-      if (isDown(`${b.sector}:chefe`)) continue
+      if (isDown(`${b.sector}:chefe`) || (b.sector === guardSector && guardDown())) continue
       return sectorOpen(b.sector) ? { kind: "guard", sector: b.sector } : { kind: "sealed", sector: b.sector, boss: true }
     }
     if (Math.hypot(entrada.x - body.x, entrada.z - body.z) < REACH + 1) return sc.n > 1 ? { kind: "back" } : { kind: "exit" }
@@ -802,6 +900,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
     char.animate(dt, move, Math.hypot(body.vx, body.vz))
     for (const gm of golems) gm.char.animate(dt, 3, 0)
     stepMobs(dt)
+    stepDoor(dt)
     shadows.update(shadowWho)
     lodT -= dt
     if (lodT <= 0) {
@@ -912,6 +1011,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       ambient: () => ambient?.stats() ?? null,
       ambientOn: (on: boolean) => ambient?.setEnabled(on),
       zonas: () => cena.zonas,
+      door: () => ({ open: doorOpen, anim: doorAnim, mesh: !!doorMesh && doorMesh.isEnabled(), y: doorMesh ? +doorMesh.position.y.toFixed(2) : null, box: doorBox, guard: mobs.find((m) => m.guard)?.id ?? null }),
       pool: () => ({ ...poolStats, createMs: Math.round(poolStats.createMs), kept: [...parked.values()].reduce((n, l) => n + l.length, 0) }),
     }
 
@@ -941,6 +1041,17 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
       best = Math.max(best, Math.max(0, Math.min(10, b)))
       if (best >= sc.boss) passageOpen = !!sc.passage
       exitPortal?.setOpen(!!exitOpen())
+      // o guardião caiu sem a cena remontar: ele some e a porta abre na frente de quem está
+      if (guardDown() && !doorOpen) {
+        const gi = mobs.findIndex((m) => m.guard)
+        if (gi >= 0) {
+          const gm = mobs[gi]
+          gm.bubble?.dispose()
+          gm.model?.dispose()
+          mobs.splice(gi, 1)
+        }
+        openDoor(true)
+      }
     },
     dispose() {
       if (disposed) return

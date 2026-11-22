@@ -10,6 +10,7 @@ import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { face, mix, mul, rnd, tube } from "../kit-natureza"
 import { BRANCO, MARMORE, MARMORE_ESC, MARMORE_SOMBRA, OURO, bloco, quadro } from "./orbital"
+import { anel, marcarPorta } from "./porta-castelo"
 import type { CasteloPlanta } from "../dominio"
 
 // ── paleta (recortes do inventário: vitral e cristal da ref são SATURADOS; mármore quase branco) ──
@@ -130,8 +131,13 @@ export function portalMenagem(c: Cena, x: number, z: number, ang: number, lod = 
   const Q = quadro(x, z, ang)
   const g = c.geo(x, z), GL = c.glow(x, z)
   const W = 8, hw = W / 2, yBeiral = 9.7, yCume = 14.6, prof = 5
-  // corpo da empena (o bloco) e o telhado de duas águas
-  bloco(g, Q, 0, -prof / 2, W, prof, 0, yBeiral, MARMORE, MARMORE_SOMBRA)
+  // a porta (vão 4,4 m, ponta a 7,7): o corpo é VAZADO por ela — dois lados, o miolo acima e o teto do túnel
+  // (2026-11-22: a folha some quando o guardião cai e o vão leva ao pátio; porta-castelo.ts)
+  const pHw = 2.2, pyb = 4.7, pHp = 7.7 - pyb, pTopo = pyb + pHp
+  // corpo da empena e o telhado de duas águas
+  for (const s of [-1, 1]) bloco(g, Q, s * (pHw + (hw - pHw) / 2), -prof / 2, hw - pHw, prof, 0, yBeiral, MARMORE, MARMORE_SOMBRA)
+  bloco(g, Q, 0, -prof / 2, 2 * pHw, prof, pTopo, yBeiral, MARMORE, MARMORE_SOMBRA)
+  face(g, [Q.P(-pHw, 0, pTopo), Q.P(pHw, 0, pTopo), Q.P(pHw, -prof, pTopo), Q.P(-pHw, -prof, pTopo)], MARMORE_SOMBRA, Q.N(0, 0, -1))
   face(g, [Q.P(-hw, 0, yBeiral), Q.P(hw, 0, yBeiral), Q.P(0, 0, yCume)], MARMORE, Q.N(0, 1))
   for (const s of [-1, 1]) face(g, [Q.P(s * hw, 0, yBeiral), Q.P(0, 0, yCume), Q.P(0, -prof, yCume), Q.P(s * hw, -prof, yBeiral)], MARMORE_SOMBRA, Q.N(s * 0.6, 0, 0.8))
   // friso de ouro nas águas da empena (a linha dourada forte da ref)
@@ -160,26 +166,34 @@ export function portalMenagem(c: Cena, x: number, z: number, ang: number, lod = 
 
   // ── a PORTA: arco ogival próprio (arranque 4,7, ponta 7,7), arquivolta GROSSA de mármore que avança, moldura
   // de ouro dupla e vitral amarelo→ciano facetado; o losango grande na ponta ──
-  const pHw = 2.2, pyb = 4.7, pHp = 7.7 - pyb
-  poliL(g, lanceta(0, 0, pyb, pHw + 0.95, pHp + 1.05, seg), 0.75, mix(MARMORE, BRANCO, 0.6))
+  // as faixas da arquivolta (antes lancetas cheias): ANÉIS, cada uma até a de dentro, a última até a porta
+  const faixas: [number, number, number, RGB][] = [
+    [0.95, 1.05, 0.75, mix(MARMORE, BRANCO, 0.6)],
+    ...(lod ? [] : ([[0.62, 0.7, 0.8, OURO], [0.45, 0.5, 0.84, mix(MARMORE, BRANCO, 0.4)]] as [number, number, number, RGB][])),
+    [0.16, 0.2, 0.88, OURO],
+  ]
   if (!lod) {
     // espessura da arquivolta (lados de mármore à sombra) e soleira
     for (const sg of [-1, 1]) bloco(g, Q, sg * (pHw + 0.6), 0.38, 0.7, 0.74, 0, pyb, MARMORE_SOMBRA, MARMORE)
     bloco(g, Q, 0, 0.45, 2 * (pHw + 1), 0.9, 0, 0.14, MARMORE_SOMBRA, MARMORE)
-    poliL(g, lanceta(0, 0, pyb, pHw + 0.62, pHp + 0.7, seg), 0.8, OURO)
-    poliL(g, lanceta(0, 0, pyb, pHw + 0.45, pHp + 0.5, seg), 0.84, mix(MARMORE, BRANCO, 0.4))
   }
-  poliL(g, lanceta(0, 0, pyb, pHw + 0.16, pHp + 0.2, seg), 0.88, OURO)
+  faixas.forEach(([du, dh, v, cor], k) => {
+    const nx = faixas[k + 1]
+    anel(g, Q, lanceta(0, 0, pyb, pHw + du, pHp + dh, seg), lanceta(0, 0, pyb, pHw + (nx ? nx[0] : 0), pHp + (nx ? nx[1] : 0), seg), v, cor)
+  })
   // porta: OURO forte embaixo (a luz de dentro), ciano no alto
   const OURO_VIT: RGB = [1, 0.74, 0.22]
   const corPorta = (py: number): RGB => (py < 2.6 ? mix(OURO_VIT, VIT_AMARELO, py / 2.6) : mix(VIT_AMARELO, VIT_CIANO, Math.min(1, (py - 2.6) / 4.2)))
-  vitral(GL, Q, lanceta(0, 0, pyb, pHw, pHp, seg), [0, 3.4], 0.93, corPorta, lod, 7)
+  // a folha (vitral e rendilhado) é a malha da porta, que some quando o guardião cai
+  const gP = c.portaGeo
+  vitral(c.portaLuz, Q, lanceta(0, 0, pyb, pHw, pHp, seg), [0, 3.4], 0.93, corPorta, lod, 7)
   if (!lod) {
     const vt = 0.99
-    for (const du of [-pHw / 2, 0, pHw / 2]) bloco(g, Q, du, vt, 0.11, 0.08, 0, du ? pyb : pyb + pHp * 0.9, OURO)
-    for (const sg of [-1, 1]) tube(g, Q.P(sg * pHw / 2, vt + 0.02, pyb), Q.P(0, vt + 0.02, pyb + pHp * 0.6), 0.06, 0.06, 4, () => OURO, false)
+    for (const du of [-pHw / 2, 0, pHw / 2]) bloco(gP, Q, du, vt, 0.11, 0.08, 0, du ? pyb : pyb + pHp * 0.9, OURO)
+    for (const sg of [-1, 1]) tube(gP, Q.P(sg * pHw / 2, vt + 0.02, pyb), Q.P(0, vt + 0.02, pyb + pHp * 0.6), 0.06, 0.06, 4, () => OURO, false)
     losango(g, GL, Q, 0, 7.95, 1.0, vt + 0.12, VIT_CIANO)
   }
+  marcarPorta(c, Q, pHw, 0.93, 8)
   // a empena ganha a segunda linha de ouro por dentro (a moldura dupla da ref)
   if (!lod) for (const sg of [-1, 1]) tube(g, Q.P(sg * (hw - 0.55), 0.12, yBeiral + 0.15), Q.P(0, 0.12, yCume - 0.55), 0.09, 0.09, 4, () => OURO, false)
 

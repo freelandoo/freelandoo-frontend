@@ -32,6 +32,7 @@ import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { face, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
+import { anel, marcarPorta } from "./porta-castelo"
 import { lanceta } from "./castelo-iris"
 import type { CasteloPlanta } from "../dominio"
 
@@ -319,26 +320,31 @@ export function portalKragor(c: Cena, x: number, z: number, ang: number, lod = 0
   beam(1)
   // moldura da porta: lanceta escura grande + lanceta clara (a pedra da arquivolta) + o vão
   const dHw = 2.5, dYb = 5.3, dHp = 3.1
-  poli(g, Q, lanceta(0, 0, dYb, dHw + 0.75, dHp + 0.85, seg), 0.52, BAS)
-  poli(g, Q, lanceta(0, 0, dYb, dHw + 0.42, dHp + 0.48, seg), 0.56, BAS_SOMBRA)
+  // (anéis: o vão fica aberto quando a folha some — porta-castelo.ts)
+  const l1 = lanceta(0, 0, dYb, dHw + 0.75, dHp + 0.85, seg), l2 = lanceta(0, 0, dYb, dHw + 0.42, dHp + 0.48, seg), dp = lanceta(0, 0, dYb, dHw, dHp, seg)
+  anel(g, Q, l1, l2, 0.52, BAS)
+  anel(g, Q, l2, dp, 0.56, BAS_SOMBRA)
+  // a folha (vitral, chama e rendilhado) é a malha da porta, que some quando o guardião cai
+  const gP = c.portaGeo, GLP = c.portaLuz
   // a PORTA DE FOGO: vitral facetado (claro embaixo, a chama da ref) + a chama em triângulo amarela no pé
-  vitralFogo(GL, Q, lanceta(0, 0, dYb, dHw, dHp, seg), [0, 2.4], 0.6, 0, dYb + dHp, lod, 11)
+  vitralFogo(GLP, Q, dp, [0, 2.4], 0.6, 0, dYb + dHp, lod, 11)
   if (!lod) {
     // a CHAMA da ref: triângulos amarelos no pé (um grande e dois menores), na frente do vitral
-    face(GL, [Q.P(-1.7, 0.64, 0.05), Q.P(1.7, 0.64, 0.05), Q.P(0, 0.64, 2.9)], [FOGO, FOGO, [1, 0.95, 0.6]], Q.N(0, 1))
-    for (const s of [-1, 1]) face(GL, [Q.P(s * 0.9, 0.65, 0.05), Q.P(s * 2.3, 0.65, 0.05), Q.P(s * 1.7, 0.65, 2)], [FOGO_CL, FOGO, FOGO_CL], Q.N(0, 1))
+    face(GLP, [Q.P(-1.7, 0.64, 0.05), Q.P(1.7, 0.64, 0.05), Q.P(0, 0.64, 2.9)], [FOGO, FOGO, [1, 0.95, 0.6]], Q.N(0, 1))
+    for (const s of [-1, 1]) face(GLP, [Q.P(s * 0.9, 0.65, 0.05), Q.P(s * 2.3, 0.65, 0.05), Q.P(s * 1.7, 0.65, 2)], [FOGO_CL, FOGO, FOGO_CL], Q.N(0, 1))
     // rendilhado: 3 montantes, 2 sub-lancetas, o Y e o óculo no alto
     const vt = 0.7, r = 0.075
-    for (const du of [-dHw * 0.5, 0, dHw * 0.5]) fio(g, Q, [[du, 0], [du, du ? dYb : dYb + 0.6]], vt, r, BAS_SOMBRA)
-    fio(g, Q, lanceta(-dHw * 0.5, dYb - 0.6, dYb, dHw * 0.5, 1.5, 4).slice(2), vt, r, BAS_SOMBRA)
-    fio(g, Q, lanceta(dHw * 0.5, dYb - 0.6, dYb, dHw * 0.5, 1.5, 4).slice(2), vt, r, BAS_SOMBRA)
+    for (const du of [-dHw * 0.5, 0, dHw * 0.5]) fio(gP, Q, [[du, 0], [du, du ? dYb : dYb + 0.6]], vt, r, BAS_SOMBRA)
+    fio(gP, Q, lanceta(-dHw * 0.5, dYb - 0.6, dYb, dHw * 0.5, 1.5, 4).slice(2), vt, r, BAS_SOMBRA)
+    fio(gP, Q, lanceta(dHw * 0.5, dYb - 0.6, dYb, dHw * 0.5, 1.5, 4).slice(2), vt, r, BAS_SOMBRA)
     // os arcos que se cruzam no alto (de cada pé da sub-lanceta até o montante do outro lado) e a GOTA
-    fio(g, Q, [[-dHw, dYb], [-dHw * 0.55, dYb + 1.7], [0.2, dYb + 2.6]], vt, r * 0.85, BAS_SOMBRA)
-    fio(g, Q, [[dHw, dYb], [dHw * 0.55, dYb + 1.7], [-0.2, dYb + 2.6]], vt, r * 0.85, BAS_SOMBRA)
-    fio(g, Q, lanceta(0, dYb + 1.15, dYb + 1.6, 0.42, 0.9, 3), vt, r * 0.75, BAS_SOMBRA, true)
-    fio(g, Q, [[-dHw, dYb - 1.6], [dHw, dYb - 1.6]], vt, r * 0.8, BAS_SOMBRA)
+    fio(gP, Q, [[-dHw, dYb], [-dHw * 0.55, dYb + 1.7], [0.2, dYb + 2.6]], vt, r * 0.85, BAS_SOMBRA)
+    fio(gP, Q, [[dHw, dYb], [dHw * 0.55, dYb + 1.7], [-0.2, dYb + 2.6]], vt, r * 0.85, BAS_SOMBRA)
+    fio(gP, Q, lanceta(0, dYb + 1.15, dYb + 1.6, 0.42, 0.9, 3), vt, r * 0.75, BAS_SOMBRA, true)
+    fio(gP, Q, [[-dHw, dYb - 1.6], [dHw, dYb - 1.6]], vt, r * 0.8, BAS_SOMBRA)
   }
-  // colisão: só os pilares (o vão é livre — a cortina de fogo se atravessa)
+  marcarPorta(c, Q, dHw, 0.6, 9)
+  // colisão: só os pilares (o vão é livre depois que a porta abre; fechada, `marcarPorta` acima)
   for (const s of [-1, 1]) bloq(c, Q, s * (hw - 0.85), -1.2, 1.7, prof + 0.6, yC)
 }
 

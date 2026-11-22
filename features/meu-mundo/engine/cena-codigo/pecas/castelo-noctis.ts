@@ -28,6 +28,7 @@ import { quadro } from "./orbital"
 import { lanceta, prisma, vitral } from "./castelo-iris"
 import { bloq, cx, poli, tronco } from "./fabrica"
 import type { CasteloPlanta } from "../dominio"
+import { anel, marcarPorta } from "./porta-castelo"
 
 // sob o luar azul do jogo: ardósia escura e cantaria quase branca (a ref vive do contraste entre as duas)
 export const ARD: RGB = [0.32, 0.38, 0.76]
@@ -200,20 +201,24 @@ function portal(c: Cena, Q: Q, lod: number) {
   for (const s of [-1, 1]) tube(g, Q.P(s * (hw + 0.8), 0.45, 11.6), Q.P(0, 0.45, 17.1), 0.24, 0.24, 4, () => CANT, false)
   remate(GL, Q.P(0, 0.3, 17.9), 0.8)
   janela(g, GL, Q, 0, 0.1, 11.4, 0.9, 4.6, lod, 61)
-  // moldura em arco (2 anéis de cantaria) e a porta
+  // moldura em arco (2 anéis de cantaria) e a porta — os anéis ficam; a folha (vitral e rendilhado) é a
+  // malha da porta, que some quando o guardião cai (porta-castelo.ts)
   const yb = 6, hp = 3.8
-  poli(g, Q, lanceta(0, 0, yb, hw - 0.2, hp + 0.3, seg), 0.42, CANT)
-  poli(g, Q, lanceta(0, 0, yb, hw - 0.9, hp - 0.4, seg), 0.48, CANT_ESC)
+  const l1 = lanceta(0, 0, yb, hw - 0.2, hp + 0.3, seg), l2 = lanceta(0, 0, yb, hw - 0.9, hp - 0.4, seg)
   const dp = lanceta(0, 0, yb - 0.6, hw - 1.6, hp - 1.2, seg)
-  vitral(GL, Q, dp, [0, 3.4], 0.54, (y) => mix(LAV, LAV_CL, Math.min(1, y / 8)), lod, 62)
+  anel(g, Q, l1, l2, 0.42, CANT)
+  anel(g, Q, l2, dp, 0.48, CANT_ESC)
+  const gP = c.portaGeo, GLP = c.portaLuz
+  vitral(GLP, Q, dp, [0, 3.4], 0.54, (y) => mix(LAV, LAV_CL, Math.min(1, y / 8)), lod, 62)
   if (!lod) {
-    cx(g, Q, 0, 0.6, 0.14, 0.06, 0, yb + 1.2, CANT)
+    cx(gP, Q, 0, 0.6, 0.14, 0.06, 0, yb + 1.2, CANT)
     for (const s of [-1, 1]) {
-      tube(g, Q.P(0, 0.62, yb - 1), Q.P(s * 1.2, 0.62, yb + 0.8), 0.06, 0.06, 4, () => CANT, false)
-      cx(g, Q, s * 1, 0.6, 0.1, 0.06, 0, yb - 0.6, CANT)
+      tube(gP, Q.P(0, 0.62, yb - 1), Q.P(s * 1.2, 0.62, yb + 0.8), 0.06, 0.06, 4, () => CANT, false)
+      cx(gP, Q, s * 1, 0.6, 0.1, 0.06, 0, yb - 0.6, CANT)
     }
-    cx(g, Q, 0, 0.6, 2 * (hw - 1.6), 0.06, 2.6, 2.75, CANT)
+    cx(gP, Q, 0, 0.6, 2 * (hw - 1.6), 0.06, 2.6, 2.75, CANT)
   }
+  marcarPorta(c, Q, hw - 1.2, 0.54, 9)
   // o feixe de pináculos da ref (sobre os pilares do portal e as paredes dos estandartes)
   for (const s of [-1, 1]) {
     cx(g, Q, s * (hw + 0.4), 0.1, 0.9, 0.9, 9.4, 12.6, CANT_ESC, CANT, CANT)

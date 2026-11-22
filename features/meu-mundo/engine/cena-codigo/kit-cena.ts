@@ -40,6 +40,14 @@ export class Cena {
    */
   readonly horizonte = new Geo()
   readonly horizonteLuz = new Geo()
+  /**
+   * Domínio, cena 3: a FOLHA da porta do castelo (2026-11-22) numa malha própria (`cena-<nome>-porta`): o jogo
+   * a esconde quando o guardião cai. O arco em volta fica nos blocos (`pecas/porta-castelo.ts`).
+   */
+  readonly portaGeo = new Geo()
+  readonly portaLuz = new Geo()
+  /** A caixa que fecha o vão da porta enquanto o guardião não cai (NÃO entra em `blockers`: o jogo liga e desliga). */
+  portaCaixa: Box2 | null = null
   readonly blockers: Box2[] = []
   /** Caminhos de andar (polilinhas): o harness confere que estão livres e planos. */
   readonly walk: XZ[][] = []
@@ -96,7 +104,7 @@ export class Cena {
     this.block(x, z, r * 0.78, r * 0.78, h, Math.PI / 4)
   }
   get tris() {
-    let n = (this.fundo.i.length + this.horizonte.i.length + this.horizonteLuz.i.length) / 3
+    let n = (this.fundo.i.length + this.horizonte.i.length + this.horizonteLuz.i.length + this.portaGeo.i.length + this.portaLuz.i.length) / 3
     for (const g of this.cells.values()) n += g.i.length / 3
     for (const g of this.glows.values()) n += g.i.length / 3
     return n
@@ -312,7 +320,11 @@ export function fixarCena(c: Cena, o: { grime?: number; bare?: RGB } = {}) {
     desgastar(c.fundo, o)
     c.fundo.fixar()
   }
-  for (const g of [...c.glows.values(), c.horizonte, c.horizonteLuz]) if (g.count) g.fixar()
+  if (c.portaGeo.count) {
+    desgastar(c.portaGeo, o)
+    c.portaGeo.fixar()
+  }
+  for (const g of [...c.glows.values(), c.horizonte, c.horizonteLuz, c.portaLuz]) if (g.count) g.fixar()
 }
 
 export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RGB; bare?: RGB; chaoUma?: boolean } = {}) {
@@ -337,6 +349,13 @@ export function finishCena(scene: Scene, c: Cena, o: { grime?: number; spec?: RG
   }
   for (const [k, g] of c.cells) add(g, `cena-${c.name}-${k}`, c.glows.get(k))
   add(c.fundo, `cena-${c.name}-fundo`)
+  // a porta do castelo: corpo + luz numa malha só (a luz sozinha quando a folha é só vitral)
+  if (c.portaGeo.count) add(c.portaGeo, `cena-${c.name}-porta`, c.portaLuz)
+  else if (c.portaLuz.count) {
+    const m = c.portaLuz.build(`cena-${c.name}-porta`, scene, glowMat)
+    m.isPickable = false
+    meshes.push(m)
+  }
   if (c.horizonte.count || c.horizonteLuz.count) {
     // sem névoa na malha (a bruma já vem pintada) e sem a sujeira por ruído (a escala é de montanha)
     let m = c.horizonte.count ? c.horizonte.build(`cena-${c.name}-horizonte`, scene, mat) : null

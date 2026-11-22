@@ -26,6 +26,7 @@ import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { face, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
+import { anel, marcarPorta } from "./porta-castelo"
 import { arco, bloq, chamineFarol, cotovelo, cx, estandarte, lampadaHex, poli, rebite, tronco, AMB, AMB_CL, AMB_ESC } from "./fabrica"
 import type { CasteloPlanta } from "../dominio"
 
@@ -137,37 +138,42 @@ export function portalAeryn(c: Cena, x: number, z: number, ang: number, lod = 0)
   // a porta: arco redondo, folhas de tábua, tiras em V, vão aceso
   const dHw = 2.5, dYb = 4.3
   const ar = arco(0, 0, dYb, dHw, seg)
-  poli(g, Q, arco(0, 0, dYb, dHw + 1.15, seg), 0.74, BRZ)
-  poli(g, Q, arco(0, 0, dYb, dHw + 0.5, seg), 0.78, BRZ_ESC)
+  // os aros de bronze em volta (anéis: o vão fica aberto quando a folha some — porta-castelo.ts)
+  const a1 = arco(0, 0, dYb, dHw + 1.15, seg), a2 = arco(0, 0, dYb, dHw + 0.5, seg)
+  anel(g, Q, a1, a2, 0.74, BRZ)
+  anel(g, Q, a2, ar, 0.78, BRZ_ESC)
+  // a FOLHA (tábuas, tiras, puxadores, vão aceso) é a malha da porta, que some quando o guardião cai
+  const gP = c.portaGeo, GLP = c.portaLuz
   // placas de bronze que revestem a guarita dos dois lados da porta (até o beiral) com rebites
   for (const sd of [-1, 1]) {
     poli(g, Q, [[sd * (dHw + 1.15), 0], [sd * hw, 0], [sd * hw, 7.2], [sd * (dHw + 1.15), 7.2]], 0.72, sd < 0 ? BRZ : mix(BRZ, BRZ_ESC, 0.25))
     if (!lod) for (let k = 0; k < 5; k++) rebite(g, Q.P(sd * (hw - 0.25), 0.74, 0.8 + k * 1.5), Q.N(0, 1), 0.08, BRZ_CL)
   }
-  poli(g, Q, ar, 0.82, PORTA)
+  poli(gP, Q, ar, 0.82, PORTA)
   if (!lod) {
     // tábuas (faixas verticais escuras) e as tiras de bronze em V invertido em cada folha
     for (let k = 1; k < 6; k++) {
       const u = -dHw + (2 * dHw * k) / 6
       if (Math.abs(u) < 0.2) continue
       const yt = dYb + Math.sqrt(Math.max(0, dHw * dHw - u * u))
-      cx(g, Q, u, 0.86, 0.06, 0.04, 0.1, yt - 0.1, PORTA_ESC)
+      cx(gP, Q, u, 0.86, 0.06, 0.04, 0.1, yt - 0.1, PORTA_ESC)
     }
     for (const s of [-1, 1])
       for (const yy of [1.3, 3.6]) {
-        vigaQ(g, Q, s * 0.25, yy + 1.1, s * (dHw - 0.35), yy - 0.2, 0.9, 0.14, lod)
-        vigaQ(g, Q, s * (dHw - 0.35), yy - 0.2, s * (dHw - 0.35), yy + 1.4, 0.9, 0.12, lod)
+        vigaQ(gP, Q, s * 0.25, yy + 1.1, s * (dHw - 0.35), yy - 0.2, 0.9, 0.14, lod)
+        vigaQ(gP, Q, s * (dHw - 0.35), yy - 0.2, s * (dHw - 0.35), yy + 1.4, 0.9, 0.12, lod)
       }
     // puxadores (aros) e o losango aceso de cada folha
     for (const s of [-1, 1]) {
-      tube(g, Q.P(s * 0.6, 0.92, 2.6), Q.P(s * 0.6, 1.02, 2.6), 0.18, 0.18, 8, () => BRZ_CL, true)
-      poli(GL, Q, [[s * 0.6, 3.4], [s * 0.75, 3.75], [s * 0.6, 4.1], [s * 0.45, 3.75]], 0.92, AMB_CL)
+      tube(gP, Q.P(s * 0.6, 0.92, 2.6), Q.P(s * 0.6, 1.02, 2.6), 0.18, 0.18, 8, () => BRZ_CL, true)
+      poli(GLP, Q, [[s * 0.6, 3.4], [s * 0.75, 3.75], [s * 0.6, 4.1], [s * 0.45, 3.75]], 0.92, AMB_CL)
       // os V acesos (as frestas da madeira que deixam a luz passar)
-      poli(GL, Q, [[s * 0.9, 4.6], [s * 1.05, 4.6], [s * 1.9, 1.6], [s * 1.75, 1.6]], 0.88, [AMB, AMB, AMB_ESC, AMB_ESC])
+      poli(GLP, Q, [[s * 0.9, 4.6], [s * 1.05, 4.6], [s * 1.9, 1.6], [s * 1.75, 1.6]], 0.88, [AMB, AMB, AMB_ESC, AMB_ESC])
     }
   }
   // o VÃO aceso entre as folhas (do chão ao topo do arco)
-  poli(GL, Q, [[-0.18, 0], [0.18, 0], [0.18, dYb + dHw - 0.1], [-0.18, dYb + dHw - 0.1]], 0.9, [AMB_CL, AMB_CL, AMB, AMB])
+  poli(GLP, Q, [[-0.18, 0], [0.18, 0], [0.18, dYb + dHw - 0.1], [-0.18, dYb + dHw - 0.1]], 0.9, [AMB_CL, AMB_CL, AMB, AMB])
+  marcarPorta(c, Q, dHw, 0.82, 8)
   // moldura de vigas em volta do arco (os gomos) e as duas colunas de viga
   const am = arco(0, 0, dYb, dHw + 0.35, seg).slice(2)
   for (let k = 0; k < am.length - 1; k++) vigaQ(g, Q, am[k][0], am[k][1], am[k + 1][0], am[k + 1][1], 0.95, 0.42, lod)

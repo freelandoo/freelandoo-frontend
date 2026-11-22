@@ -15683,7 +15683,8 @@
     "gear_frag_deus_varkos": "Fragmento del dios: Varkos",
     "gearDesc_frag_deus_varkos": "Junta 100 para formar el embrión de Varkos. El dios suelta 1 en cada victoria y 5 más en la primera.",
     "gear_embriao_varkos": "Embrión: Varkos",
-    "gearDesc_embriao_varkos": "Embrión de Varkos, formado con 100 fragmentos. Su uso en la Criogenia llega en la próxima actualización: por ahora queda guardado en la mochila."
+    "gearDesc_embriao_varkos": "Embrión de Varkos, formado con 100 fragmentos. Su uso en la Criogenia llega en la próxima actualización: por ahora queda guardado en la mochila.",
+    "domCastleOpen": "¡El guardián cayó! La puerta del castillo se abrió."
   },
   "Sports": {
     "eyebrow": "Deportes",

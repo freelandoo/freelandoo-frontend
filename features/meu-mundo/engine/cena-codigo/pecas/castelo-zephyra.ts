@@ -24,6 +24,7 @@ import { type RGB, type V3 } from "../kit"
 import type { Cena } from "../kit-cena"
 import { face, mix, mul, rnd, tube } from "../kit-natureza"
 import { quadro } from "./orbital"
+import { anel, marcarPorta } from "./porta-castelo"
 import { lanceta } from "./castelo-iris"
 import { bloq, cx, poli, tronco } from "./fabrica"
 import { CIANO, CIANO_CL, CIANO_ESC, cristalCiano } from "./canion"
@@ -259,19 +260,24 @@ function portal(c: Cena, x: number, z: number, ang: number, lod: number) {
   // a porta: moldura em lanceta e o vitral de cristal com o rendilhado
   const dHw = 2.5, dYb = 5.2, dHp = 3
   const seg = lod ? 4 : 8
-  poli(g, Q, lanceta(0, 0, dYb, dHw + 0.9, dHp + 1, seg), 0.62, CREME)
-  poli(g, Q, lanceta(0, 0, dYb, dHw + 0.4, dHp + 0.45, seg), 0.66, CREME_ESC)
+  // (anéis: o vão fica aberto quando a folha some — porta-castelo.ts)
+  const l1 = lanceta(0, 0, dYb, dHw + 0.9, dHp + 1, seg), l2 = lanceta(0, 0, dYb, dHw + 0.4, dHp + 0.45, seg)
   const dp = lanceta(0, 0, dYb, dHw, dHp, seg)
-  poli(GL, Q, dp, 0.7, dp.map(([u, y]): RGB => (y < 2 ? CIANO_ESC : Math.abs(u) < 0.6 ? CIANO_CL : CIANO)))
+  anel(g, Q, l1, l2, 0.62, CREME)
+  anel(g, Q, l2, dp, 0.66, CREME_ESC)
+  // a folha (vitral e rendilhado) é a malha da porta, que some quando o guardião cai
+  const gP = c.portaGeo, GLP = c.portaLuz
+  poli(GLP, Q, dp, 0.7, dp.map(([u, y]): RGB => (y < 2 ? CIANO_ESC : Math.abs(u) < 0.6 ? CIANO_CL : CIANO)))
   if (!lod) {
     const vt = 0.76
-    for (const du of [-dHw * 0.5, 0, dHw * 0.5]) cx(g, Q, du, vt, du ? 0.1 : 0.16, 0.06, 0, du ? dYb : dYb + dHp * 0.9, [0.28, 0.32, 0.36])
+    for (const du of [-dHw * 0.5, 0, dHw * 0.5]) cx(gP, Q, du, vt, du ? 0.1 : 0.16, 0.06, 0, du ? dYb : dYb + dHp * 0.9, [0.28, 0.32, 0.36])
     for (const s of [-1, 1]) {
       const sub = lanceta(s * dHw * 0.5, dYb - 1.6, dYb - 0.6, dHw * 0.42, 1.1, 4).slice(2)
-      for (let k = 0; k < sub.length - 1; k++) tube(g, Q.P(sub[k][0], vt, sub[k][1]), Q.P(sub[k + 1][0], vt, sub[k + 1][1]), 0.05, 0.05, 4, () => [0.28, 0.32, 0.36], false)
+      for (let k = 0; k < sub.length - 1; k++) tube(gP, Q.P(sub[k][0], vt, sub[k][1]), Q.P(sub[k + 1][0], vt, sub[k + 1][1]), 0.05, 0.05, 4, () => [0.28, 0.32, 0.36], false)
     }
-    cx(g, Q, 0, vt, 2 * dHw, 0.05, 2.6, 2.75, [0.28, 0.32, 0.36])
+    cx(gP, Q, 0, vt, 2 * dHw, 0.05, 2.6, 2.75, [0.28, 0.32, 0.36])
   }
+  marcarPorta(c, Q, dHw, 0.7, 9)
   // PEDESTAIS DE CRISTAL na frente (u ±10,2) e os menores (u ±7,6)
   for (const s of [-1, 1]) {
     for (const [u, k] of [[10.2, 1], [7.6, 0.65]] as const) {
