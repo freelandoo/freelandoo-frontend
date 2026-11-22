@@ -12,6 +12,7 @@ import { AREA, H, planta } from "../dominio"
 import * as O from "./tema-orbital"
 import * as C from "../pecas/orbital"
 import { avenida, chaoAvenida, horizonte, quadras } from "./avenida-orbital"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: O.CEU,
@@ -29,6 +30,8 @@ const CAMINHO: XZ[] = [[-50, -73], [-50, -20], [30, -20], [30, 40], [-20, 40], [
 export function montar(lod = 0): Cena {
   const c = new Cena("orbital-1", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [1, 2, 3], boss: 3, tZonas: [0.24, 0.5], tArena: 0.8 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "orbital", lod, { meia: 2.35 })
   // marcos: arcos na entrada e na saída (vão = a avenida) e a torre de cristal na quadra do meio
   C.portalArco(c, -50, -70, 0, 12, lod)
   C.portalArco(c, -20, 70, Math.PI, 12, lod)
@@ -64,5 +67,7 @@ export function montar(lod = 0): Cena {
     if (!ok(x, z, 1) || r(1) > 0.12) return
     C.arvoreRedonda(c, x, z, 5 + r(3) * 1.5, r(4) * 99, lod)
   })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "orbital", lod)
   return c
 }

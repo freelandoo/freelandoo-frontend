@@ -13,6 +13,7 @@ import * as O from "./tema-orbital"
 import * as C from "../pecas/orbital"
 import { LAJE, LAJE_B } from "./avenida-orbital"
 import { NUVEM_FUNDO, PEDRA, PEDRA_ESC, PROFUNDO, alturaCeu, aqueduto, beirada, cachoeira, ceuDeFundo, escadaCurva, floreiraBalanco, ilhaCeu, marDeNuvens, palacioFlutuante, pedestalLuz, pingente, plataforma, ponteArco, ponteCristal, trepadeira } from "./ceu-orbital"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: [0.42, 0.68, 1] as RGB,
@@ -31,6 +32,8 @@ const PONTE = CAMINHO.length - 2
 export function montar(lod = 0): Cena {
   const c = new Cena("orbital-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.15, 0.36, 0.57], tArena: 0.8 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "orbital", lod, { meia: 2.35 })
   const L = plataforma(P, 5.5, [{ x: 10, z: 50, r: 8 }], { k: PONTE, w: 2.4 })
   const naPonte = (x: number, z: number) => Math.abs(x - 10) < 3.5 && z > 56
   const g0 = (x: number, z: number) => L.dentro(x, z) > 0.5
@@ -206,5 +209,7 @@ export function montar(lod = 0): Cena {
   }
   ground(c, { x0: -H, z0: -H, x1: H, z1: H, step: lod ? 4 : 2, color, height: (x, z) => alturaCeu(L, x, z) })
   ground(c, { x0: -220, z0: -220, x1: 220, z1: 220, step: 40, color: () => mul(NUVEM_FUNDO, 1.02), fundo: true, y: PROFUNDO + 0.5, hole: [-H, -H, H, H] })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "orbital", lod)
   return c
 }
