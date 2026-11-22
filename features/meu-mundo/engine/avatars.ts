@@ -90,6 +90,10 @@ const ASSETS = {
     iris: "avatar-iris-h320q.glb",
     noctis: "avatar-noctis-h320p.glb",
     aeryn: "avatar-aeryn-h320p.glb",
+    // 22/11 (-p1, pedido do Alex: "ajuste o peso das mãos"): braço, mão e perna pelos ossos do próprio
+    // modelo (`arm_chain`/`leg_chain` no build_deuses.py) — a mão saía com peso de perna e o antebraço
+    // e a caneleira esticavam em lâmina na corrida; o rabo vai inteiro no quadril.
+    varkos: "avatar-varkos-p1.glb",
     cavaleiro: "avatar-cavaleiro-p.glb",
     // 2026-11-07 (-h400b): queixo inteiro na cabeça (`head_rigid` do Golem) — deformava com o pescoço.
     golem: "avatar-golem-h400b.glb",
