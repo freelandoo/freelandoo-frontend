@@ -20,6 +20,7 @@ import { casteloNoctis } from "../pecas/castelo-noctis"
 import * as F from "./tema-floresta"
 import * as LP from "../pecas/floresta-lua"
 import { portal } from "./floresta-1"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: [0.12, 0.12, 0.36] as RGB,
@@ -37,6 +38,8 @@ const CAMINHO: XZ[] = [[-50, -73], [-48, -50], [-22, -42], [8, -48], [36, -36], 
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-3", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.26], castelo: { w: 64, d: 40, patio: 18 } })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "floresta", lod, { meia: 2.65 })
   F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   const K = P.castelo!
   portal(c, CAMINHO[0], CAMINHO[1], lod, true)
@@ -119,5 +122,7 @@ export function montar(lod = 0): Cena {
     })
   // o caminho de LAJES soltas da ref 3 (geometria 3 cm acima: a junta é o chão aparecendo)
   LP.lajesCaminho(c, CAMINHO, 2.2, 31, lod, (x, z) => P.aberto(x, z) > 0.4)
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "floresta", lod)
   return c
 }

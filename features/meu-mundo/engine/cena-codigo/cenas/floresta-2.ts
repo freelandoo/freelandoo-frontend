@@ -18,6 +18,7 @@ import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as F from "./tema-floresta"
 import { portal } from "./floresta-1"
 import * as LP from "../pecas/floresta-lua"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: F.CEU,
@@ -39,6 +40,8 @@ const PEDRA = { x: 40, z: 29, r: 8 }
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, desvios: [DESVIO], setores: [4, 5, 6, 7], boss: 7, tZonas: [0.13, 0.33, 0.55], tArena: 0.84 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "floresta", lod, { meia: 2.75 })
   F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   P.reserva(PEDRA.x, PEDRA.z, PEDRA.r + 1)
   // Pedraverde: o lugar do setor 6 (o servidor confere o setor) e o trono do Golem, de frente para quem chega
@@ -139,6 +142,8 @@ export function montar(lod = 0): Cena {
   // fora das clareiras e do anel de Pedraverde (que tem o chão de lajes dele)
   const pula = (x: number, z: number) => P.aberto(x, z) > 0.4 || Math.hypot(x - PEDRA.x, z - PEDRA.z) < PEDRA.r + 1
   // (polimento 14/11: sem lajes nas cenas 1 e 2 — a ref é trilha de terra)
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "floresta", lod)
   return c
 }
 

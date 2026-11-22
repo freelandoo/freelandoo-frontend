@@ -329,6 +329,38 @@ export class FloorLights {
     this.outline(pts, y, inset, w)
   }
 
+  /**
+   * Faixa acesa ABERTA que acompanha uma polilinha (beira de trilha dos Domínios), com a junta
+   * pela média das direções (sem a cunha dobrada de faixas retas emendadas). `pts` = (x, y, z)
+   * de cada ponto; `w` = largura da faixa.
+   */
+  ribbon(pts: readonly (readonly [number, number, number])[], w = 0.4) {
+    const n = pts.length
+    if (n < 2) return
+    const side = (k: number): [number, number] => {
+      const a = pts[Math.max(0, k - 1)], b = pts[Math.min(n - 1, k + 1)]
+      const dx = b[0] - a[0], dz = b[2] - a[2]
+      const L = Math.hypot(dx, dz) || 1
+      return [-dz / L, dx / L]
+    }
+    const h = w / 2
+    for (let k = 0; k < n - 1; k++) {
+      const p = pts[k], q = pts[k + 1]
+      const [sx, sz] = side(k)
+      const [tx, tz] = side(k + 1)
+      this.quad(
+        new Vector3(p[0] - sx * h, p[1], p[2] - sz * h),
+        new Vector3(q[0] - tx * h, q[1], q[2] - tz * h),
+        new Vector3(q[0] + tx * h, q[1], q[2] + tz * h),
+        new Vector3(p[0] + sx * h, p[1], p[2] + sz * h),
+        [PROFILE.u0, PROFILE.v0],
+        [PROFILE.u0, PROFILE.v1],
+        [PROFILE.u1, PROFILE.v1],
+        [PROFILE.u1, PROFILE.v0],
+      )
+    }
+  }
+
   get empty() {
     return this.idx.length === 0
   }

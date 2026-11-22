@@ -17,6 +17,7 @@ import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as F from "./tema-floresta"
 import * as LP from "../pecas/floresta-lua"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: F.CEU,
@@ -35,6 +36,8 @@ const DESVIO: XZ[] = [[34, 8], [50, 22], [56, 36]]
 export function montar(lod = 0): Cena {
   const c = new Cena("floresta-1", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, desvios: [DESVIO], setores: [1, 2, 3], boss: 3, tZonas: [0.2, 0.47], tArena: 0.8 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "floresta", lod, { meia: 2.75 })
   F.minucia((x, z) => P.dWalk(x, z) < 13) // a minúcia completa só onde o jogador passa perto
   const lagoa = { x: 58, z: 44, r: 6 }
   P.reserva(lagoa.x, lagoa.z, lagoa.r + 2)
@@ -155,6 +158,8 @@ export function montar(lod = 0): Cena {
   F.arvoreLua(c, lagoa.x + 8, lagoa.z + 9, 24, 777, lod)
   // o caminho de LAJES soltas da cena 3 (geometria 3 cm acima: a junta é o chão aparecendo), no desvio também
   // (polimento 14/11: sem lajes nas cenas 1 e 2 — a ref é trilha de terra)
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "floresta", lod)
   return c
 }
 
