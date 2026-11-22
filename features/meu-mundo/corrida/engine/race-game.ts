@@ -246,6 +246,18 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   window.addEventListener("keydown", kd)
   window.addEventListener("keyup", ku)
   window.addEventListener("blur", blur)
+  // 21/11 (o Alex: "vira duro, parece 5 fps"): a tecla dava ±1 na hora — a nave mudava de giro e de
+  // inclinação num quadro só. Agora o volante sobe em rampa (~0,2 s para o batente), volta ao centro um pouco
+  // mais rápido e, ao trocar de lado, corre mais ainda. O joystick já é analógico: só uma rampa curta.
+  let steerSm = 0
+  const easeSteer = (target: number, joy: boolean) => {
+    const flip = target !== 0 && steerSm !== 0 && Math.sign(target) !== Math.sign(steerSm)
+    const tau = joy ? 0.07 : flip ? 0.09 : target === 0 ? 0.13 : 0.2
+    const d = target - steerSm
+    const max = TUNING.step / tau
+    steerSm += Math.abs(d) <= max ? d : Math.sign(d) * max
+    return steerSm
+  }
   const readInput = (): CarInput => {
     const left = keys.has("ArrowLeft") || keys.has("KeyA")
     const right = keys.has("ArrowRight") || keys.has("KeyD")
@@ -255,7 +267,8 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     // celular: acelera sozinho (o joystick só vira e freia)
     let throttle = up || (opts.touch && !down) ? 1 : 0
     let brake = down ? 1 : 0
-    if (joyOn || (!up && !down && !left && !right && Math.hypot(joyX, joyY) > 0.05)) {
+    const joy = joyOn || (!up && !down && !left && !right && Math.hypot(joyX, joyY) > 0.05)
+    if (joy) {
       // joystick: acelera sozinho; puxar para trás freia
       steer = Math.abs(joyX) > 0.08 ? Math.sign(joyX) * Math.min(1, (Math.abs(joyX) - 0.08) / 0.8) : 0
       throttle = joyY < -0.35 ? 0 : 1
@@ -263,7 +276,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
     }
     const turbo = turboPending
     turboPending = false
-    return { steer, throttle, brake, turbo }
+    return { steer: easeSteer(steer, joy), throttle, brake, turbo }
   }
 
   // ── laço ───────────────────────────────────────────────────────────────────
@@ -278,6 +291,7 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
   let camY = race.player.Y + 3
   const camPos = new Vector3()
   const camTarget = new Vector3()
+  const camBp = {} as ReturnType<typeof trackAt>
   let shake = 0
   /** 0 → 1 enquanto o turbo está ligado (sobe rápido, volta devagar). */
   let turboK = 0
@@ -591,7 +605,22 @@ export function createRaceGame(opts: RaceGameOptions): RaceGameHandle {
       const bx = pose.x + ux * HOVER
       const by = pose.y + uy * HOVER
       const bz = pose.z + uz * HOVER
-      camPos.set(bx - fx * back + ux * 2.6, by - fy * back + uy * 2.6, bz - fz * back + uz * 2.6)
+      // 21/11 (o Alex: no loop a nave sumia): ir para trás pela TANGENTE sai do círculo e a câmera ficava
+      // atrás da pista, vendo o lado de baixo. Agora ela vai para trás pelo próprio caminho (o ponto da pista
+      // `back` m antes) e sobe pela normal DAQUELE ponto — sempre do lado de dentro do loop, um pouco mais alta.
+      const bp = trackAt(track, p.dist - back * 1.1, camBp)
+      let nx = 0
+      let ny = 1
+      let nz = 0
+      if (bp.inLoop) {
+        const s2 = Math.sin(bp.loop)
+        const c2 = Math.cos(bp.loop)
+        nx = -Math.sin(bp.yaw) * s2
+        ny = c2
+        nz = -Math.cos(bp.yaw) * s2
+      }
+      const lift = HOVER + 3.4
+      camPos.set(bp.x + nx * lift, bp.y + ny * lift, bp.z + nz * lift)
       camTarget.set(bx + fx * 9 + ux * 0.9, by + fy * 9 + uy * 0.9, bz + fz * 9 + uz * 0.9)
       cam.upVector.set(ux, uy, uz)
       camYaw = lp.yaw
