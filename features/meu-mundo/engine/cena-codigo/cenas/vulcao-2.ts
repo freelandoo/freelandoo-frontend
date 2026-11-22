@@ -9,6 +9,7 @@ import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as V from "./tema-vulcao"
 import { cabe } from "./tema-fabrica"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: [0.56, 0.22, 0.18] as RGB,
@@ -27,6 +28,8 @@ const LAVA2: XZ[] = [[-76, 30], [-50, 34], [-24, 30], [0, 30], [22, 28], [30, 40
 export function montar(lod = 0): Cena {
   const c = new Cena("vulcao-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.15, 0.37, 0.57], tArena: 0.84 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "vulcao", lod, { meia: 2.35 })
   const dLava = (x: number, z: number) => Math.min(distPath(x, z, LAVA1), distPath(x, z, LAVA2))
   const paredes: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   aoLongoDaBorda(17, 7, (x, z, _a, k) => {
@@ -98,5 +101,7 @@ export function montar(lod = 0): Cena {
   })
   // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
   V.lajesPoligonais(c, -H, -H, H, H, 1.9, 42, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "vulcao", lod)
   return c
 }

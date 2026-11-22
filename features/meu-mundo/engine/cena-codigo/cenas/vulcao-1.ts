@@ -9,6 +9,7 @@ import { caixa } from "../kit-cidade"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as V from "./tema-vulcao"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: V.CEU,
@@ -26,6 +27,8 @@ const CAMINHO: XZ[] = [[-56, -73], [-52, -48], [-24, -42], [6, -50], [36, -38], 
 export function montar(lod = 0): Cena {
   const c = new Cena("vulcao-1", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [1, 2, 3], boss: 3, tZonas: [0.24, 0.5], tArena: 0.8 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "vulcao", lod, { meia: 2.35 })
   const paredes: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   // bocas de mina viradas para o caminho (a 9 m dele)
   for (const [t, s] of [[0.1, 1], [0.34, -1], [0.6, 1], [0.7, -1], [0.92, 1]] as const) {
@@ -115,5 +118,7 @@ export function montar(lod = 0): Cena {
   })
   // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
   V.lajesPoligonais(c, -H, -H, H, H, 1.9, 41, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "vulcao", lod)
   return c
 }

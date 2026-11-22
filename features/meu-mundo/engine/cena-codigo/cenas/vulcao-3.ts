@@ -10,6 +10,7 @@ import { face, mix, mul, smooth, tube } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import { casteloKragor } from "../pecas/castelo-kragor"
 import * as V from "./tema-vulcao"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: [0.5, 0.18, 0.16] as RGB,
@@ -28,6 +29,8 @@ export function montar(lod = 0): Cena {
   const c = new Cena("vulcao-3", lod, 32, -16)
   // pegada da FORTALEZA copiada (pecas/castelo-kragor.ts): 60 m com as alas no morro; pátio 18 (o salão do deus)
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 60, d: 40, patio: 18 } })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "vulcao", lod, { meia: 2.55 })
   const K = P.castelo!
   casteloKragor(c, K, lod)
   aoLongoDaBorda(17, 7, (x, z, _a, k) => {
@@ -95,6 +98,8 @@ export function montar(lod = 0): Cena {
   })
   // piso de LAJES poligonais da ref no caminho (largura 9 m) e nas praças
   V.lajesPoligonais(c, -H, -H, H, H, 1.9, 43, (x, z) => P.dWalk(x, z) < 4.2 || P.aberto(x, z) > 0.6, lod)
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "vulcao", lod)
   return c
 }
 
