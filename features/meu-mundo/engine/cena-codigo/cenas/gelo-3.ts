@@ -11,6 +11,7 @@ import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import { casteloMaru } from "../pecas/castelo-maru"
 import * as G from "./tema-gelo"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: [0.06, 0.1, 0.24] as RGB,
@@ -29,6 +30,8 @@ export function montar(lod = 0): Cena {
   const c = new Cena("gelo-3", lod, 32, -16)
   // pegada do PALÁCIO copiado: 64 m com as torres pequenas e a ilha; pátio 18 (o salão do deus)
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 64, d: 40, patio: 18 } })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "gelo", lod, { meia: 2.55 })
   const K = P.castelo!
   casteloMaru(c, K, lod)
   const noCastelo = (x: number, z: number, pad = 5) => Math.abs(x - K.x) < K.w / 2 + pad && z > K.z - K.d / 2 - pad - 4 && z < K.z + K.d / 2 + pad
@@ -84,5 +87,7 @@ export function montar(lod = 0): Cena {
     if (!ok(x, z, 0.4) || r(1) > 0.14) return
     G.rochaNeve(c, x, z, 0.9 + r(2) * 1.8, r(3) * 99, lod)
   })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "gelo", lod)
   return c
 }

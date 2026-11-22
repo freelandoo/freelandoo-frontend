@@ -9,6 +9,7 @@ import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
 import { mix, mul, smooth } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as G from "./tema-gelo"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: G.CEU,
@@ -27,6 +28,8 @@ const DESVIO: XZ[] = [[34, -6], [54, 2], [60, 16]]
 export function montar(lod = 0): Cena {
   const c = new Cena("gelo-1", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, desvios: [DESVIO], setores: [1, 2, 3], boss: 3, tZonas: [0.22, 0.48], tArena: 0.8 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "gelo", lod, { meia: 2.35 })
   const paredes: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   /** O mar congelado: longe da trilha, mais para o leste e o norte. */
   const mar = (x: number, z: number) => smooth(0.38, 0.55, noise(x * 0.025 + 1, 2.2, z * 0.025) + (x + z) * 0.002) * smooth(6, 12, P.dWalk(x, z))
@@ -114,5 +117,7 @@ export function montar(lod = 0): Cena {
     if (r(1) < (near ? 0.28 : 0.06)) G.capimGelo(c, x, z, 0.6 + r(2) * 0.5, r(3) * 99, lod)
     else if (r(1) < (near ? 0.38 : 0.09)) G.cristalGelo(c, x, z, 0.8 + r(2) * 1.2, r(3) * 99, lod)
   })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "gelo", lod)
   return c
 }

@@ -11,6 +11,7 @@ import { Cena, blocked, ground, scatter, type XZ } from "../kit-cena"
 import { mix, mul } from "../kit-natureza"
 import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as G from "./tema-gelo"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   ceu: [0.08, 0.22, 0.32] as RGB,
@@ -27,6 +28,8 @@ const CAMINHO: XZ[] = [[0, -73], [4, -50], [28, -40], [50, -20], [42, 4], [14, 1
 export function montar(lod = 0): Cena {
   const c = new Cena("gelo-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.15, 0.36, 0.56], tArena: 0.84 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "gelo", lod, { meia: 2.55 })
   const paredes: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   // ARCOS de rocha por cima do caminho (as bocas das galerias)
   for (const t of [0.035, 0.26, 0.47, 0.7, 0.95]) {
@@ -96,5 +99,7 @@ export function montar(lod = 0): Cena {
     else if (r(1) < (pe ? 0.55 : 0.08)) G.esponjaTubo(c, x, z, 0.8 + r(2) * 0.6, r(3) * 99, lod)
     else if (r(1) < (pe ? 0.7 : 0.1)) G.rochaNeve(c, x, z, 0.9 + r(2) * 1.4, r(3) * 99, lod)
   })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "gelo", lod)
   return c
 }
