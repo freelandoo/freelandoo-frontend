@@ -16,7 +16,7 @@ import { Matrix } from "@babylonjs/core/Maths/math.vector"
 import { FloorLights, type FloorLightLook } from "../../engine/floor-lights"
 import type { Cena, XZ } from "../../engine/cena-codigo"
 
-export type DomainFloorTheme = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital"
+export type DomainFloorTheme = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital" | "vermelha"
 
 interface DomainFloorStyle {
   look: FloorLightLook
@@ -66,6 +66,13 @@ export const DOMAIN_FLOOR: Record<DomainFloorTheme, DomainFloorStyle> = {
     fita: 0.4,
     // mármore branco: força baixa (a cor fica nas balizas)
     dia: 0.7,
+  },
+  // Floresta Vermelha de Varkos: neon vermelho de guerra na beira, seta dourada (chão preto: força cheia)
+  vermelha: {
+    look: { line: [1, 0.12, 0.1], chev: [[1, 0.8, 0.3], [1, 0.2, 0.08]], dot: [1, 0.58, 0.16], seam: null, lanes: [], chevrons: true, k: 1.2 },
+    centro: true,
+    fita: 0.44,
+    dia: 1,
   },
 }
 

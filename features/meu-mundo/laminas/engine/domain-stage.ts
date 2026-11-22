@@ -59,7 +59,9 @@ export function buildDomainStage(scene: Scene, low: boolean, spec: DomainStageSp
   const moon = scene.getLightByName("mm-sun") as DirectionalLight | null
   const sky = applyDomainLook(scene, look, hemi, moon, spec.sky, low)
   // Domínio da luta (pela área do céu da cena; sem céu = o kit)
-  const dom = spec.sky ? (Object.entries(DOMAIN_SKY).find(([, r]) => r === spec.sky!.region)?.[0] ?? spec.kit) : spec.kit
+  // (a cena de origem decide primeiro: a Floresta Vermelha usa o céu de Kragor e não pode cair no palco do Vulcão)
+  const pre = spec.cena?.split("-")[0]
+  const dom = pre && temPalco(pre) ? pre : spec.sky ? (Object.entries(DOMAIN_SKY).find(([, r]) => r === spec.sky!.region)?.[0] ?? spec.kit) : spec.kit
   // os 6 Domínios: palco com as peças em código (palcos.ts; Floresta e Cânion desde 14/11) e a luz da cena de origem
   const codigo = temPalco(dom) ? dom : null
   const meta = spec.cena ? CENAS[spec.cena]?.meta : undefined

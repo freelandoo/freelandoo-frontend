@@ -50,7 +50,8 @@ export interface AmbientPreset {
   layers: readonly AmbientLayer[]
 }
 
-export type AmbientRegion = SkyRegionId
+/** Região do céu, ou um ambiente só de Domínio (`varkos`: a Floresta Vermelha usa o céu de Kragor). */
+export type AmbientRegion = SkyRegionId | "varkos"
 
 const T = (low: number, mid: number, high: number): PerTier => ({ low, mid, high })
 
@@ -144,6 +145,17 @@ export const AMBIENT_PRESETS: Readonly<Record<AmbientRegion, AmbientPreset>> = {
       { cell: CELL.ember, frames: 1, fps: 0, add: true, color: [1, 0.42, 0.12], colorVar: 0.3, size: 0.08, sizeVar: 0.5, vel: [0.3, 1.3, 0.1], wobble: [0.5, 0.5], flicker: 0.6, spin: 0, life: 3.4, day: 0.8, night: 1, n: T(24, 70, 140) },
     ],
   },
+  // Floresta Vermelha de Varkos (7º Domínio): FOLHAS vermelhas e laranja caindo (muitas, de dia e de noite) +
+  // brasas subindo do chão queimado
+  varkos: {
+    range: T(10, 12, 14),
+    height: 7,
+    below: 1.3,
+    layers: [
+      { ...LEAVES([0.92, 0.22, 0.08], 1, 0.8, T(36, 90, 170)), colorVar: 0.5, size: 0.16 },
+      { cell: CELL.ember, frames: 1, fps: 0, add: true, color: [1, 0.36, 0.1], colorVar: 0.3, size: 0.07, sizeVar: 0.5, vel: [0.3, 1.1, 0.1], wobble: [0.5, 0.5], flicker: 0.6, spin: 0, life: 3.4, day: 0.6, night: 1, n: T(16, 44, 90) },
+    ],
+  },
   // Cidade Orbital: pontos de luz flutuando + peças tecnológicas (quadrado/losango) subindo
   iris: {
     range: T(10, 12, 14),
@@ -178,4 +190,10 @@ export const DOMAIN_REGION: Readonly<Record<string, AmbientRegion>> = {
   fabrica: "aeryn",
   vulcao: "kragor",
   orbital: "iris",
+  vermelha: "kragor",
+}
+
+/** Domínio com ambiente PRÓPRIO (vale mais que o do céu da cena). */
+export const DOMAIN_AMBIENT: Readonly<Record<string, AmbientRegion>> = {
+  vermelha: "varkos",
 }

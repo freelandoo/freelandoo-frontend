@@ -101,6 +101,8 @@ export const DOMAIN_SKY: Readonly<Record<string, SkyRegionId>> = {
   fabrica: "aeryn",
   vulcao: "kragor",
   orbital: "iris",
+  // Floresta Vermelha de Varkos: o céu de fogo de Kragor (o Leão marchou de lá)
+  vermelha: "kragor",
 }
 
 /** Céu de uma cena em código (`gelo-2` → Marú); null = cena sem arte (fatias de teste). */

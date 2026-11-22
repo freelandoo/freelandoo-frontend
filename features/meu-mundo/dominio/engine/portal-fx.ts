@@ -30,6 +30,7 @@ export const PORTAL_COLOR: Readonly<Record<string, C3>> = {
   fabrica: [1, 0.72, 0.35],
   vulcao: [1, 0.45, 0.2],
   orbital: [1, 0.85, 1],
+  vermelha: [1, 0.2, 0.12],
 }
 
 const VERTEX = /* glsl */ `

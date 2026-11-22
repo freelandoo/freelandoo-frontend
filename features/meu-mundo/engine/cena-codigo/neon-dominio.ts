@@ -13,7 +13,7 @@ import { type Geo, type RGB, type V3 } from "./kit"
 import { blocked, type Cena } from "./kit-cena"
 import type { Planta } from "./dominio"
 
-export type TemaNeon = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital"
+export type TemaNeon = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital" | "vermelha"
 
 interface EstiloBaliza {
   n: number
@@ -34,6 +34,8 @@ const ESTILO: Record<TemaNeon, EstiloBaliza> = {
   fabrica: { n: 8, corpo: [0.36, 0.33, 0.42], corpoEsc: [0.2, 0.18, 0.25], base: [0.94, 0.62, 0.22], luz: [1, 0.72, 0.2], luzCl: [1, 0.95, 0.6], topo: "lampada", h: 1.2, r: 0.19 },
   vulcao: { n: 6, corpo: [0.32, 0.27, 0.31], corpoEsc: [0.18, 0.15, 0.18], base: [0.42, 0.4, 0.46], luz: [1, 0.4, 0.06], luzCl: [1, 0.84, 0.36], topo: "brasa", h: 1.2, r: 0.23 },
   orbital: { n: 6, corpo: [0.97, 0.95, 0.92], corpoEsc: [0.74, 0.76, 0.84], base: [0.96, 0.76, 0.36], luz: [1, 0.44, 0.82], luzCl: [0.6, 0.95, 1], topo: "lampada", h: 1.3, r: 0.18 },
+  // Floresta Vermelha: obelisco preto com a fenda de neon vermelho e a brasa dourada no topo
+  vermelha: { n: 4, corpo: [0.09, 0.07, 0.08], corpoEsc: [0.04, 0.03, 0.035], base: [0.2, 0.06, 0.05], luz: [1, 0.1, 0.08], luzCl: [1, 0.7, 0.3], topo: "brasa", h: 1.35, r: 0.2 },
 }
 
 const SUN: V3 = [0.48, 0, 0.3]

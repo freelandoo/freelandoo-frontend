@@ -53,7 +53,7 @@ import { createAmbientFx } from "../../engine/ambiente-fx/ambient-fx"
 import { CharShadows } from "../../engine/char-shadows"
 import { buildDomainFloorLights } from "./domain-floor-lights"
 import { SceneBloom } from "../../engine/bloom-cena"
-import { DOMAIN_REGION } from "../../engine/ambiente-fx/presets"
+import { DOMAIN_AMBIENT, DOMAIN_REGION } from "../../engine/ambiente-fx/presets"
 import { SpeechBubble } from "../../engine/speech-bubble"
 import { SKY_REGIONS, skyArt, skyFog, skyOfCena, variantOfCena } from "../../engine/sky/sky-registry"
 import { dominioMapModel, setCityMap, type DominioMapLabels } from "../../engine/city-map"
@@ -257,7 +257,7 @@ export function createOpenDomainGame(opts: OpenDomainOptions): OpenDomainHandle 
   const skyGrade = aplicarCor(scene, vis?.cor)
   if (sky && skyGrade) sky.setGrade(skyGrade[0], skyGrade[1], skyGrade[2])
   // partículas de ambiente da região (E5): 1 chamada; noite fixa pela arte da cena
-  const ambient = createAmbientFx(scene, skyId ?? DOMAIN_REGION[domain.id], quality.tier, { night: skyVar === "noite" ? 1 : 0 })
+  const ambient = createAmbientFx(scene, DOMAIN_AMBIENT[domain.id] ?? skyId ?? DOMAIN_REGION[domain.id], quality.tier, { night: skyVar === "noite" ? 1 : 0 })
   // luzes no chão (o que deu certo no Rolê e na Gincana): beira da trilha, setas, anéis das clareiras e da arena — 1 chamada
   const floorLights = buildDomainFloorLights(scene, cena, { low, night: skyVar === "noite" })
 

@@ -125,6 +125,8 @@ export const DOMAIN_MAP_PALETTE: Record<string, Partial<MapPalette>> = {
   // Forja de Kragor (vulcão): papel tostado, rocha escura e lava
   vulcao: { paper: "#e6cfa8", ground: "#cfa686", relief: "#5c3628", reliefEdge: "#24120a", trail: "#ecd2a6", trailEdge: "#6a3a1e", water: "#d9592a", zone: "#e8c9a0", build: "#4a2418", buildEdge: "#1c0a05", ink: "#3d1a0c" },
   // Orbital: papel lilás pálido, metal e vidro
+  // Floresta Vermelha de Varkos: papel tostado, mata rubra, chão de cinza e lava
+  vermelha: { paper: "#e6d2b8", ground: "#bfa89a", relief: "#3a2a2a", reliefEdge: "#140a0a", trail: "#e8d6c0", trailEdge: "#5a2a22", water: "#e0502a", zone: "#e9d6c0", build: "#5a1414", buildEdge: "#1a0606", ink: "#3a0e0e" },
   orbital: { paper: "#e2dce6", ground: "#d0c9da", relief: "#5e577a", reliefEdge: "#241f38", trail: "#eee8f3", trailEdge: "#57507a", water: "#8fb4d6", zone: "#e9e3f0", build: "#4a4268", buildEdge: "#1a1530", ink: "#2a2445" },
 }
 

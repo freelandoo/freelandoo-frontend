@@ -21,10 +21,11 @@ import * as FL from "./cenas/tema-floresta"
 import * as CA from "./cenas/tema-canion"
 import * as PF from "./pecas/floresta-lua"
 import * as PC from "./pecas/canion"
+import { palcoVermelha } from "./pecas/palco-vermelha"
 
-export type PalcoDominio = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital"
+export type PalcoDominio = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital" | "vermelha"
 export type PalcoLugar = "entrada" | "fundo" | "palacio"
-export const PALCO_DOMINIOS: readonly PalcoDominio[] = ["floresta", "canion", "gelo", "fabrica", "vulcao", "orbital"]
+export const PALCO_DOMINIOS: readonly PalcoDominio[] = ["floresta", "canion", "gelo", "fabrica", "vulcao", "orbital", "vermelha"]
 export const temPalco = (d: string): d is PalcoDominio => (PALCO_DOMINIOS as readonly string[]).includes(d)
 
 /** Raio do círculo da luta (laminas/sim/fight.ts ARENA_R) — nada entra aqui. */
@@ -276,6 +277,7 @@ export function montarPalco(dom: PalcoDominio, lugar: PalcoLugar, lod = 0): Cena
   else if (dom === "gelo") gelo(c, lugar, lod)
   else if (dom === "vulcao") vulcao(c, lugar, lod)
   else if (dom === "fabrica") fabrica(c, lugar, lod)
+  else if (dom === "vermelha") palcoVermelha(c, lugar, lod) // 7º Domínio (pecas/palco-vermelha.ts)
   else orbital(c, lugar, lod)
   return c
 }

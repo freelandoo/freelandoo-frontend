@@ -54,7 +54,9 @@ export const AMB = {
 } as const
 
 /** Domínio → a música dele (S11, 2026-11-11): musica-dominio-floresta/canion/gelo/fabrica/vulcao/orbital. */
-export const domainMusic = (id: string) => `musica-dominio-${id}`
+/** Domínio sem faixa própria ainda → a de outro (Floresta Vermelha de Varkos: o fogo de Kragor). */
+const DOMAIN_MUSIC_ALIAS: Readonly<Record<string, string>> = { vermelha: "vulcao" }
+export const domainMusic = (id: string) => `musica-dominio-${DOMAIN_MUSIC_ALIAS[id] ?? id}`
 
 /** Minijogo → música; fase → fundo (ids das fases de cada jogo). */
 export const GAME_MUSIC = {
