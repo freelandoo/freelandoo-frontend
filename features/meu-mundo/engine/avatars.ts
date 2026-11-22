@@ -41,6 +41,7 @@ import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 import { byTall, isGod, isTall } from "../gods"
+import { byNpcBody } from "../npc-bodies"
 import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
@@ -65,6 +66,9 @@ const ASSETS = {
     // triângulos do original (resto a 7 mil) e malha leve de 4 mil para quem
     // está longe (pipeline/build_classes_lod.py).
     ...byClanBody((b) => `avatar-${b}-m58e-basecolor-1024.jpg`),
+    // 22/11: os NPCs do Tripo (pipeline/npcs + build_deuses.py), mesma receita das classes.
+    ...byNpcBody((b) => `avatar-${b}-basecolor-1024.jpg`),
+    bastor: "avatar-bastor-basecolor-1024.jpg",
   } satisfies Record<BodyId, string>,
   bodies: {
     // mm3d-22: pesos do ombro suavizados (pipeline/fix_sergio_shoulder.py) —
@@ -108,6 +112,9 @@ const ASSETS = {
     // 2026-11-07 (-m58l): raposa adulta e raposa jovem fêmea com ombro, cotovelo e pulso onde o Alex marcou
     // na silhueta (`sh_joint` + `el`/`wr` no build_deuses.py; na adulta também o tornozelo, dentro da bota).
     ...byClanBody((b) => (b === "raposa_adulto" || b === "raposa_f" ? `avatar-${b}-m58l.glb` : b === "raposa_adulta" ? `avatar-${b}-m58k.glb` : b === "vampiro" || b === "vampira_adulta" ? `avatar-${b}-m58j.glb` : b === "vampira" || b === "raposa" ? `avatar-${b}-m58i.glb` : `avatar-${b}-m58h.glb`)),
+    ...byNpcBody((b) => `avatar-${b}.glb`),
+    // 22/11: Bastor, o chefão do Paint (mesma receita dos deuses, 3,20 m)
+    bastor: "avatar-bastor.glb",
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -312,7 +319,7 @@ export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { sergio: 0.
 type AnimSet = keyof typeof ASSETS.anims
 // mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
 // repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
-const ANIM_SET: Record<BodyId, AnimSet> = { sergio: "sergio", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), brutamontes: "sergio" }
+const ANIM_SET: Record<BodyId, AnimSet> = { sergio: "sergio", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), ...byNpcBody((): AnimSet => "sergio"), bastor: "sergio", brutamontes: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */

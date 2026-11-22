@@ -2,7 +2,8 @@
 //
 // O servidor só sabe QUEM existe e ONDE a conversa vale (meuMundoPlaces.js no
 // back: talk:<npc> exige a última visita no lugar do NPC). Aqui mora a
-// apresentação: corpo (de classe ou dos NPCs de prédio, sem modelo novo),
+// apresentação: corpo (22/11: o modelo próprio de cada NPC, npc-bodies.ts; Profª Lina
+// ainda sem modelo = Vampira adulta),
 // retrato e as conversas, escolhidas pelo passo do capítulo em que a pessoa está.
 // Texto: ui/talk/npc-text.json ([pt, en, es]; scripts/i18n-meu-mundo-npcs-merge.js).
 // Fala 18+ conta o fato sem detalhar sangue; variante por classe = chave
@@ -68,7 +69,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // Lore v2 C1: as conversas inteiras de historia/v2/07-falas-e-arquivo.md §2. A
   // escolha de classe da conta nova é a MESMA conversa, antes do jogo (clan-choice.tsx).
   nivea: {
-    body: "raposa_adulta",
+    body: "npc_nivea",
     look: "",
     conversations: [
       {
@@ -105,7 +106,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   delegado: {
-    body: "sergio",
+    body: "npc_bento",
     look: "",
     conversations: [
       { id: "tregua", when: at("cap2", "tregua"), lines: [{ key: "tregua_1" }, { key: "tregua_2" }, { key: "tregua_3" }, { key: "tregua_4" }] },
@@ -146,7 +147,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // e a azul-noite pedem máscara de cor do corpo de classe, que ainda não existe).
   // A Sacerdotisa do Sol: Bairro das Matas, em cima do pedestal do Aurion.
   sacerdotisa: {
-    body: "raposa_adulta",
+    body: "npc_sacerdotisa",
     look: "",
     ambient: true,
     conversations: [
@@ -159,7 +160,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   },
   // O Arauto da Lua: praça, em cima do pedestal de Morkhan, só de noite.
   arauto: {
-    body: "vampiro_adulto",
+    body: "npc_arauto",
     look: "",
     ambient: true,
     conversations: [
@@ -172,7 +173,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // ambiente. Corpo = o do prédio (NPC_LOOK de engine/place-game.ts). No cap. 4 a fala
   // inteira; fora dele, a solta. Um Armeiro só: a fala muda pela classe de quem ouve.
   forjador: {
-    body: "raposa",
+    body: "npc_tiburcio",
     look: "",
     ambient: true,
     conversations: [
@@ -183,7 +184,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     shop: "forge",
   },
   armeiro: {
-    body: "vampiro",
+    body: "npc_davi",
     look: "",
     ambient: true,
     conversations: [
@@ -197,7 +198,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // Matas, o Vampiro). No passo "ninho" ela o entrega; o servidor só grava a leitura
   // com a visita à Biblioteca (ou à ruína) — o aparelho não decide nada.
   bibliotecaria: {
-    body: "ekaterina",
+    body: "npc_salvia",
     look: "",
     ambient: true,
     conversations: [
@@ -225,7 +226,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // §12, pergunta 3). Corpo de Vampiro adulto: a farda velha das Raposas com medalhas
   // é arte do Alex (o corpo de classe não tem máscara de cor).
   fulvo: {
-    body: "vampiro_adulto",
+    body: "npc_fulvo",
     look: "",
     conversations: [
       { id: "fulvo", when: at("cap6", "fulvo"), lines: [{ key: "fulvo_1", byClan: true }, { key: "fulvo_2" }, { key: "fulvo_3" }, { key: "fulvo_4" }, { key: "fulvo_5" }] },
@@ -239,7 +240,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // classe não tem máscara de cor). No passo "pipa" a conversa inteira; a
   // personalidade comenta no fim.
   pipa: {
-    body: "raposa_adulta",
+    body: "npc_pipa",
     look: "",
     conversations: [
       { id: "pipa", when: at("cap8", "pipa"), lines: [{ key: "pipa_1" }, { key: "pipa_2" }, { key: "pipa_3" }, { key: "pipa_4" }, { key: "pipa_5" }] },
@@ -265,7 +266,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   // 17/11 (pedido do Alex): quem atende nos prédios do centro fala. A 1ª visita conta quem é e o lugar
   // na história de Lúmen; depois, uma fala curta de sempre. Dono de loja: a loja abre logo depois.
   atendente_sangue: {
-    body: "vampiro_adulto",
+    body: "npc_atendente_sangue",
     look: "",
     ambient: true,
     conversations: [
@@ -275,7 +276,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     shop: "order",
   },
   acougueiro: {
-    body: "raposa_adulto",
+    body: "npc_acougueiro",
     look: "",
     ambient: true,
     conversations: [
@@ -285,7 +286,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     shop: "order",
   },
   caixa: {
-    body: "ekaterina",
+    body: "npc_neide",
     look: "",
     ambient: true,
     conversations: [
@@ -295,7 +296,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     shop: "market",
   },
   armeira: {
-    body: "raposa_f",
+    body: "npc_dora",
     look: "",
     ambient: true,
     conversations: [
@@ -305,7 +306,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     shop: "armory",
   },
   secretaria: {
-    body: "ekaterina",
+    body: "npc_rosalia",
     look: "",
     ambient: true,
     conversations: [
@@ -314,7 +315,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   professor: {
-    body: "sergio",
+    body: "npc_quirino",
     look: "",
     ambient: true,
     conversations: [
@@ -323,7 +324,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   professora: {
-    body: "ekaterina",
+    body: "vampira_adulta",
     look: "",
     ambient: true,
     conversations: [
@@ -332,7 +333,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   recepcionista: {
-    body: "ekaterina",
+    body: "npc_cida",
     look: "",
     ambient: true,
     conversations: [
@@ -341,7 +342,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   personal: {
-    body: "sergio",
+    body: "npc_juca",
     look: "",
     ambient: true,
     conversations: [
@@ -350,7 +351,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
     ],
   },
   padre: {
-    body: "sergio",
+    body: "npc_anselmo",
     look: "",
     ambient: true,
     conversations: [

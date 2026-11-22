@@ -31,6 +31,9 @@ import { buildInterior } from "./interior"
 import { Barbells } from "./barbell"
 import { Kettlebells } from "./kettlebell"
 import { Character } from "./player"
+import { NpcIdle } from "./npc-idle"
+import { isNpcBody } from "../npc-bodies"
+import { BODY_IDS } from "../types"
 import { AvatarLibrary, type PlacePose } from "./avatars"
 import { FollowCamera, INDOOR_CAMERA } from "./camera"
 import { GainPillar, setGainFx } from "./gain-pillar"
@@ -110,31 +113,31 @@ const LIGHT: Record<string, { clear: [number, number, number]; ground: [number, 
 }
 const WARM = { clear: [0.17, 0.13, 0.1] as [number, number, number], ground: [0.68, 0.6, 0.5] as [number, number, number], hemi: 1.05 }
 
-/** Corpo de cada NPC: homens Sergio, mulheres Ekaterina (o personagem padrão pintável saiu em 2026-11-14). */
-const NPC_LOOK: Record<string, { body: BodyId; look: string }> = {
-  vendedor: { body: "sergio", look: "" },
-  caixa: { body: "ekaterina", look: "" },
-  // VS5: no Banco de Sangue atende um Vampiro; no Açougue, uma Raposa
-  pizzaiolo: { body: "vampiro_adulto", look: "" },
-  atendente: { body: "raposa_adulto", look: "" },
-  secretaria: { body: "ekaterina", look: "" },
-  professor: { body: "sergio", look: "" },
-  professora: { body: "ekaterina", look: "" },
-  bibliotecaria: { body: "ekaterina", look: "" },
-  recepcionista: { body: "ekaterina", look: "" },
-  personal: { body: "sergio", look: "" },
-  padre: { body: "sergio", look: "" },
-  delegado: { body: "sergio", look: "" },
-  policial: { body: "sergio", look: "" },
-  // Corpos de raposa existentes; não inventar o asset do Mestre de Armas javali.
-  forjador: { body: "raposa", look: "" },
-  armeira: { body: "raposa_f", look: "" },
-  // vendedor do balcão de armas (mm3d-66): um guerreiro vende espadas
-  armeiro: { body: "vampiro", look: "" },
-  // B12 → lore v2 F4: a criogenista do laboratório é a Dra. Nívea, uma Raposa
-  // (historia/v2/03-capitulos.md, cap. 1): corpo de classe, sem modelo novo
-  criogenista: { body: "raposa_adulta", look: "" },
+/**
+ * Corpo de cada NPC pelo papel (22/11: os NPCs do Tripo, npc-bodies.ts). O servidor manda o
+ * corpo em `body` (meuMundoCenterInteriors.js); este mapa é a reserva para quem veio sem.
+ * A Profª Lina ainda não tem modelo: corpo de Vampira adulta.
+ */
+const NPC_LOOK: Record<string, BodyId> = {
+  vendedor: "npc_edu",
+  caixa: "npc_neide",
+  pizzaiolo: "npc_atendente_sangue",
+  atendente: "npc_acougueiro",
+  secretaria: "npc_rosalia",
+  professor: "npc_quirino",
+  professora: "vampira_adulta",
+  bibliotecaria: "npc_salvia",
+  recepcionista: "npc_cida",
+  personal: "npc_juca",
+  padre: "npc_anselmo",
+  delegado: "npc_bento",
+  policial: "npc_tito",
+  forjador: "npc_tiburcio",
+  armeira: "npc_dora",
+  armeiro: "npc_davi",
+  criogenista: "npc_nivea",
 }
+const npcBodyOf = (n: InteriorNpc): BodyId => (n.body && (isNpcBody(n.body) || (BODY_IDS as string[]).includes(n.body)) ? (n.body as BodyId) : (NPC_LOOK[n.role] ?? "vampira_adulta"))
 
 export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   const { canvas, interior: def } = opts
@@ -185,11 +188,11 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
   let pose: PlacePose | null = null
 
   // NPCs (mm3d-37): parados no lugar, sentados ou em pé.
-  const npcs: { char: Character; npc: InteriorNpc }[] = (def.npcs ?? []).map((n) => {
-    const who = NPC_LOOK[n.role] ?? { body: "sergio" as BodyId, look: "" }
-    const c = new Character(scene, lib, mats, who.body, null, false, who.look)
+  // 22/11: respiram parados e, em pé, viram para quem chega (engine/npc-idle.ts)
+  const npcs: { char: Character; npc: InteriorNpc; idle: NpcIdle }[] = (def.npcs ?? []).map((n, i) => {
+    const c = new Character(scene, lib, mats, npcBodyOf(n), null, false, "")
     c.place(n.x, n.z, n.facing, def.floors[n.floor]?.y ?? 0)
-    return { char: c, npc: n }
+    return { char: c, npc: n, idle: new NpcIdle(scene, c, n.facing, i + 1) }
   })
 
   const beds = def.beds ?? []
@@ -341,7 +344,10 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
     steps.update(move, Math.hypot(body.vx, body.vz), interiorFloor(def, body.floor, body.x, body.z))
     if (barbells.count) barbells.update(dt, char, pose === "GymSquat", body.x, body.z, body.floor, visualFacing)
     if (kettles.count) kettles.update(dt, char, pose === "GymKettle", body.x, body.z, body.floor)
-    for (const n of npcs) n.char.animate(dt, n.npc.pose === "sit" ? 3 : 0, 0)
+    for (const n of npcs) {
+      n.char.animate(dt, n.npc.pose === "sit" ? 3 : 0, 0)
+      n.idle.update(dt, n.npc.pose === "stand" && n.npc.floor === body.floor ? body : null)
+    }
     follow.update(dt, body.x, body.z, viewBoxes(), body.y)
     governor.tick(engine.getDeltaTime())
 
@@ -416,7 +422,10 @@ export function createPlaceGame(opts: PlaceGameOptions): PlaceGameHandle {
       barbells.dispose()
       kettles.dispose()
       char.dispose()
-      for (const n of npcs) n.char.dispose()
+      for (const n of npcs) {
+        n.idle.dispose()
+        n.char.dispose()
+      }
       lib.dispose()
       interior.dispose()
       fallbackMat.dispose()

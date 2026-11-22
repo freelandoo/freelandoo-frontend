@@ -31,6 +31,7 @@ import { CenterMobs } from "./center-mobs"
 import { CharShadows, isSceneryMesh } from "./char-shadows"
 import { SceneBloom, wantsSceneBloom } from "./bloom-cena"
 import { setMonsterSkinMax } from "../laminas/engine/monster-view"
+import { NpcIdle } from "./npc-idle"
 import { Character, LocalPlayer, RemotePlayer } from "./player"
 import { emitBanter, placeTopic, sightEvents } from "../banter"
 import { GOD_BODIES, MONSTER_BODIES, TALL_NAMES } from "../gods"
@@ -416,9 +417,12 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
   // Lore v2 C2: NPC com `hours: "night"` (o Arauto) só existe de noite: de dia some e
   // não abre conversa (alcance -1). Fica em cima do pedestal (`y`), sem caixa própria.
   const npcHours: { c: Character; it: { radius: number }; radius: number }[] = []
-  const streetNpcs = (centerP?.center.npcs ?? nb?.npcs ?? []).map((n) => {
+  // 22/11: respiram parados e viram para quem chega perto (engine/npc-idle.ts)
+  const streetIdle: NpcIdle[] = []
+  const streetNpcs = (centerP?.center.npcs ?? nb?.npcs ?? []).map((n, i) => {
     const c = new Character(scene, lib, mats, n.body, null, false, "")
     c.place(n.x, n.z, n.facing, n.y ?? 0)
+    streetIdle.push(new NpcIdle(scene, c, n.facing, i + 1))
     const it = { kind: "npc" as const, id: `npc-${n.id}`, x: n.x, z: n.z, radius: n.radius, npc: n.id }
     world.interactables.push(it)
     if (n.hours === "night") npcHours.push({ c, it, radius: n.radius })
@@ -890,6 +894,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     fleet.sync(net.cars(), dt, driving, driving && veh ? pose : null)
     if (driving && veh && drivingKind !== "car") placeRider(fleet, local.char, String(driving), drivingKind, pose.x, pose.z, pose.facing, pose.sp, dt)
     for (const c of streetNpcs) c.animate(dt, 0, 0)
+    for (const n of streetIdle) n.update(dt, driving ? null : local.body)
     applyNpcHours(now)
     applySceneSound(now)
     for (const r of remotes.values()) {
@@ -1204,6 +1209,7 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
       select.dispose()
       for (const r of remotes.values()) r.dispose()
       remotes.clear()
+      for (const n of streetIdle) n.dispose()
       for (const c of streetNpcs) c.dispose()
       local.dispose()
       steps.dispose()

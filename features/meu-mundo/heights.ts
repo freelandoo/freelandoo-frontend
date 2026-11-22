@@ -4,6 +4,7 @@
 // Golem e Ciborgue 4 m (2ª regra do Alex, 2026-11-01). A escala mora no GLB (raiz do esqueleto, pipeline/build_deuses.py);
 // aqui só o que fica SOBRE a cabeça (nome, balão, destaque) acompanha.
 import type { BodyId } from "./types"
+import { byNpcBody, npcBodyHeight } from "./npc-bodies"
 
 const HEIGHT: Partial<Record<BodyId, number>> = {
   raposa: 1.7,
@@ -27,6 +28,9 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   golem: 4.0,
   garras: 2.0,
   brutamontes: 4.0,
+  // 22/11: os NPCs (adulto 2,70, jovem 1,70/1,65, criança 1,35)
+  ...byNpcBody(npcBodyHeight),
+  bastor: 3.2,
 }
 
 /** Altura de referência das velocidades a pé (os avatares do bairro). */

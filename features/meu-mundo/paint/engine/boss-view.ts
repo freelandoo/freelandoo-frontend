@@ -1,196 +1,228 @@
-// features/meu-mundo/paint/engine/boss-view.ts — PAINT (mm3d-38): o chefão.
+// features/meu-mundo/paint/engine/boss-view.ts — PAINT: o chefão é BASTOR.
 //
-// Gato-gorila de porcelana de 5 m (pipeline/build_boss_paint.py + build_boss_anim.py
-// → boss-m38.glb, clipes Idle/Walk/Swipe/Slam/Roar/Die). Quem decide é a sim
-// (`PaintMatch.boss`: posição, para onde olha, o ato e desde quando); aqui só
-// desenha: a pose vai suavizada até o estado e o clipe do ato toca a partir
-// de `time - at` — assim o golpe aparece no mesmo instante em que acerta.
+// 22/11: o Guardião do Paint é Bastor, o Deus dos Animais (historia/v2/00-classificacao.md).
+// Era o gato-gorila de porcelana do mm3d-38 (boss-m38.glb, clipes próprios); agora é o
+// corpo novo do Bastor (Tripo do Alex, pipeline/npcs + build_deuses.py — 3,20 m, todas as
+// animações do Sergio) escalado para os 10 m do chefão (TUNING.bossH), com a ESPADA na
+// mão e os cortes dos Vampiros (anim-vampiro-sergio: nenhum conjunto de animação novo):
+//   parado = VIdle (guarda de espada) · andar = o Walk de todos · patada = VSlash1 ·
+//   pancada no chão = VGSlash (corte de cima, duas mãos) · rugido = VPower · morte = VDie.
+// Quem decide continua sendo a sim (`PaintMatch.boss`: posição, para onde olha, o ato e
+// desde quando); aqui só desenha. Cada golpe é esticado para a duração da sim com o
+// instante do corte (a fase "strike" do monster-view) caindo no `hit` do TUNING — o golpe
+// aparece no mesmo instante em que acerta.
 
 import type { Scene } from "@babylonjs/core/scene"
 import { LoadAssetContainerAsync } from "@babylonjs/core/Loading/sceneLoader"
-import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
-import type { AnimationGroup } from "@babylonjs/core/Animations/animationGroup"
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial"
+import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
-import { ensureLoaders } from "../../engine/avatars"
+import type { TransformNode } from "@babylonjs/core/Meshes/transformNode"
+import type { AssetContainer } from "@babylonjs/core/assetContainer"
+import { AvatarLibrary, ensureLoaders, type BoxeClip } from "../../engine/avatars"
+import { Character } from "../../engine/player"
+import { GRIP_BONES, WeaponGrip } from "../../engine/weapon-grip"
+import { CLAN_WEAPON } from "../../classes"
+import { BASTOR } from "../../gods"
+import { bodyHeight } from "../../heights"
 import type { BossAct, BossState } from "../sim/match"
-import { CAT_ASSETS } from "./cat-herd"
 import { TUNING } from "../sim/tuning"
 
-const BOSS_FILE = "boss-m38.glb"
-const CLIP: Record<BossAct | "die", string> = {
-  idle: "Idle",
-  walk: "Walk",
-  swipe: "Swipe",
-  slam: "Slam",
-  roar: "Roar",
-  die: "Die",
+/** Golpe: clipe dos Vampiros, trecho tocado e a fase do corte dentro do clipe (monster-view KNIGHT). */
+interface Strike {
+  clip: BoxeClip
+  from: number
+  contact: number
+  dur: number
+  hit: number
 }
-const LOOP = new Set<string>(["Idle", "Walk"])
-const FPS = 30
-/** O GLB tem 5 m; no jogo 10 m (mm3d-38, pedido do Alex). Bate com TUNING.bossH. */
-const BOSS_SCALE = 2
-/** O clipe Walk foi feito para 2,4 m/s no tamanho do GLB: na escala anda 2,4 × BOSS_SCALE sem escorregar. */
-const WALK_SPEED = 2.4 * BOSS_SCALE
-/**
- * Lore v2 B5: troca de clipe com mistura (era seca: o gato-gorila de 10 m estalava de uma
- * pose para outra). Entrar num golpe é rápido (o golpe aparece quando acerta); parado ↔
- * andando e a morte entram mais devagar; quem sai, sai em 0,2 s.
- */
-const FADE_IN_ACT = 0.06
-const FADE_IN_LOOP = 0.15
-const FADE_OUT = 0.2
+const STRIKE: Record<"swipe" | "slam" | "roar", Strike> = {
+  swipe: { clip: "VSlash1", from: 0.1, contact: 0.44, dur: TUNING.bossSwipe.dur, hit: TUNING.bossSwipe.hit },
+  slam: { clip: "VGSlash", from: 0.05, contact: 0.46, dur: TUNING.bossSlam.dur, hit: TUNING.bossSlam.hit },
+  roar: { clip: "VPower", from: 0, contact: 0.5, dur: TUNING.bossRoar.dur, hit: TUNING.bossRoar.dur / 2 },
+}
+/** Até onde o clipe vai para o corte cair no `hit` (o resto da duração é a recuperação). */
+const strikeTo = (s: Strike) => Math.min(1, s.from + ((s.contact - s.from) * s.dur) / s.hit)
+/** Comprimento do GLB da espada (m) e a regra do Alex: 3 m na mão de um adulto de 2,70 m (laminas-game) — no Bastor de 10 m, ~11 m. */
+const SWORD_GLB = 1.065
+const SWORD_LEN = (3 * TUNING.bossH) / 2.7
+const DIE_DUR = 2.2
 
 export class BossView {
-  private readonly root: TransformNode
-  private clips = new Map<string, AnimationGroup>()
-  private playing: AnimationGroup | null = null
-  private playingKey = ""
-  /** B5: clipes saindo (peso caindo até 0) e o tempo de entrada do que toca. */
-  private fading: AnimationGroup[] = []
-  private fadeIn = 0
+  private readonly lib: AvatarLibrary
+  private readonly char: Character
+  private readonly mats: { fallback: StandardMaterial; shadow: StandardMaterial }
+  private readonly k = TUNING.bossH / bodyHeight(BASTOR)
+  private sword: AssetContainer | null = null
+  private swordRoot: TransformNode | null = null
+  private grip: WeaponGrip | null = null
   private disposed = false
   private placed = false
   private dead = false
+  private shown = true
+  /** Ato em cena (`ato@at`) — um golpe novo só começa quando a sim troca. */
+  private actKey = ""
   /** Parado ↔ andando só troca depois de firmar (na distância de parada a sim alterna). */
   private loopAct: BossAct = "idle"
   private loopSince = 0
   private clock = 0
-  /** Antebraço e mão de cada lado (o arco de luz do golpe sai das garras — mm3d-62). */
-  private arms: { fore: TransformNode; hand: TransformNode }[] = []
+  private x = 0
+  private z = 0
+  private facing = 0
 
-  constructor(private readonly scene: Scene, y: number) {
+  constructor(
+    private readonly scene: Scene,
+    private readonly y: number,
+  ) {
     ensureLoaders()
-    this.root = new TransformNode("paint-boss", scene)
-    this.root.position.y = y
-    this.root.scaling.setAll(BOSS_SCALE)
-    void this.load()
+    // biblioteca própria: os cortes da classe (Vampiro) para um corpo que não é de classe
+    this.lib = new AvatarLibrary(scene, false, false, 1e6, false, false, true, false, true, "vampiro")
+    const fallback = new StandardMaterial("paint-boss-fallback", scene)
+    fallback.diffuseColor = new Color3(0.75, 0.2, 0.2)
+    const shadow = new StandardMaterial("paint-boss-shadow", scene)
+    shadow.diffuseColor = new Color3(0, 0, 0)
+    shadow.specularColor = new Color3(0, 0, 0)
+    shadow.disableLighting = true
+    shadow.alpha = 0.22
+    this.mats = { fallback, shadow }
+    this.char = new Character(scene, this.lib, this.mats, BASTOR, null, false, "")
+    this.char.setHeight(TUNING.bossH)
+    this.char.setBoxe("VIdle")
+    void this.loadSword()
   }
 
-  private async load() {
+  private async loadSword() {
     try {
-      const c = await LoadAssetContainerAsync(CAT_ASSETS + BOSS_FILE, this.scene)
+      const c = await LoadAssetContainerAsync(CLAN_WEAPON.vampiro, this.scene)
       if (this.disposed) {
         c.dispose()
         return
       }
       c.addAllToScene()
-      for (const n of c.rootNodes) n.parent = this.root
       for (const m of c.meshes) {
         m.isPickable = false
-        m.alwaysSelectAsActiveMesh = true // o boss é grande e se mexe muito: sem recorte pela caixa de repouso
+        m.alwaysSelectAsActiveMesh = true
       }
-      const node = (n: string) => c.transformNodes.find((t) => t.name === n) ?? null
-      for (const side of ["Left", "Right"]) {
-        const fore = node(`mixamorig:${side}ForeArm`)
-        const hand = node(`mixamorig:${side}Hand`)
-        if (fore && hand) this.arms.push({ fore, hand })
-      }
-      for (const g of c.animationGroups) {
-        g.stop()
-        this.clips.set(g.name, g)
-      }
+      this.sword = c
+      this.swordRoot = (c.rootNodes[0] as TransformNode) ?? null
     } catch (err) {
-      if (!this.disposed) console.warn("[paint] chefão não carregou", err)
+      if (!this.disposed) console.warn("[paint] espada do Bastor não carregou", err)
     }
+  }
+
+  /** Espada na mão quando os ossos existirem (o corpo chega depois); o corpo grande não é recortado. */
+  private settle() {
+    if (this.grip || !this.swordRoot || !this.char.loaded) return
+    const hand = this.char.bone(GRIP_BONES.hand)
+    const index = this.char.bone(GRIP_BONES.index)
+    const thumb = this.char.bone(GRIP_BONES.thumb)
+    if (!hand || !index || !thumb) return
+    this.grip = new WeaponGrip(this.scene, { hand, index, thumb }, this.swordRoot, "paint-boss-sword")
+    this.grip.root.scaling.setAll(SWORD_LEN / SWORD_GLB)
+    this.grip.root.setEnabled(this.shown)
+    for (const m of this.char.bodyMeshes) m.alwaysSelectAsActiveMesh = true // se mexe muito: sem recorte pela caixa de repouso
   }
 
   /** Some quando quem olha não está na ilha do chefão. */
   setVisible(on: boolean) {
-    if (this.root.isEnabled() !== on) this.root.setEnabled(on)
+    if (this.shown === on) return
+    this.shown = on
+    this.char.setVisible(on)
+    this.grip?.root.setEnabled(on)
   }
 
-  /** Começa (ou continua) o clipe `name` no ponto `t` (s). */
-  private play(name: string, key: string, t: number) {
-    const g = this.clips.get(name)
-    if (!g) return
-    if (this.playingKey === key) return
-    const old = this.playing
-    if (old && old !== g && !this.fading.includes(old)) this.fading.push(old)
-    this.fading = this.fading.filter((o) => o !== g)
-    const loop = LOOP.has(name)
-    const len = (g.to - g.from) / FPS
-    const at = loop ? t % len : Math.min(t, len)
-    // sem nada tocando (primeira vez) entra inteiro; senão sobe do zero
-    g.weight = old ? 0 : 1
-    this.fadeIn = loop || name === CLIP.die ? FADE_IN_LOOP : FADE_IN_ACT
-    g.start(loop, name === CLIP.walk ? TUNING.bossWalk / WALK_SPEED : 1, g.from, g.to, false)
-    g.goToFrame(g.from + at * FPS)
-    if (!loop) g.onAnimationGroupEndObservable.addOnce(() => g.goToFrame(g.to))
-    this.playing = g
-    this.playingKey = key
-  }
-
-  /** B5: sobe o peso do clipe que entra e desce o dos que saem (a soma fica perto de 1). */
-  private blend(dt: number) {
-    const g = this.playing
-    if (g && g.weight < 1) g.weight = Math.min(1, g.weight + dt / Math.max(1e-3, this.fadeIn))
-    if (!this.fading.length) return
-    for (const o of this.fading) {
-      o.weight = Math.max(0, o.weight - dt / FADE_OUT)
-      if (o.weight <= 0) o.stop()
-    }
-    this.fading = this.fading.filter((o) => o.weight > 0)
+  /** Golpe (ou rugido) da sim que começou há `e` s: o trecho que falta, no ritmo certo. */
+  private strike(s: Strike, e: number) {
+    const to = strikeTo(s)
+    const left = s.dur - e
+    if (left <= 0.05) return
+    const from = s.from + (to - s.from) * Math.min(1, e / s.dur)
+    this.char.boxeAct(s.clip, left, from, to)
   }
 
   /** `time` = s de partida; `alive` = vida do chefão > 0. */
   tick(dt: number, b: BossState, time: number, alive: boolean) {
-    this.blend(dt)
-    const r = this.root
+    this.settle()
     if (!this.placed) {
-      r.position.x = b.x
-      r.position.z = b.z
-      r.rotation.y = b.facing
+      this.x = b.x
+      this.z = b.z
+      this.facing = b.facing
       this.placed = true
     } else {
       const k = 1 - Math.exp(-dt * 10)
-      r.position.x += (b.x - r.position.x) * k
-      r.position.z += (b.z - r.position.z) * k
-      let d = b.facing - r.rotation.y
+      this.x += (b.x - this.x) * k
+      this.z += (b.z - this.z) * k
+      let d = b.facing - this.facing
       while (d > Math.PI) d -= Math.PI * 2
       while (d < -Math.PI) d += Math.PI * 2
-      r.rotation.y += d * (1 - Math.exp(-dt * 12))
+      this.facing += d * (1 - Math.exp(-dt * 12))
     }
+    this.char.place(this.x, this.z, this.facing, this.y)
     if (!alive) {
       if (!this.dead) {
         this.dead = true
-        this.play(CLIP.die, "die", 0)
+        this.actKey = "die"
+        this.char.setBoxe(null)
+        this.char.boxeAct("VDie", DIE_DUR, 0, 1, true)
       }
+      this.char.animate(dt, 0, 0)
       return
     }
-    this.dead = false
+    if (this.dead) {
+      this.dead = false
+      this.char.boxeClear()
+      this.actKey = ""
+    }
     this.clock += dt
     if (b.act === "idle" || b.act === "walk") {
       if (b.act !== this.loopAct) {
         if (!this.loopSince) this.loopSince = this.clock
-        if (this.clock - this.loopSince > 0.2 || !this.playingKey.startsWith("loop")) {
+        if (this.clock - this.loopSince > 0.2 || this.actKey !== "loop") {
           this.loopAct = b.act
           this.loopSince = 0
         }
       } else this.loopSince = 0
-      this.play(CLIP[this.loopAct], `loop:${this.loopAct}`, Math.max(0, time - b.at))
+      this.actKey = "loop"
+      const walking = this.loopAct === "walk"
+      this.char.setBoxe(walking ? null : "VIdle")
+      // a passada no tamanho do Bastor de 10 m (a velocidade do clipe vem do corpo de 3,20 m)
+      this.char.animate(dt, walking ? 1 : 0, walking ? TUNING.bossWalk / this.k : 0)
       return
     }
-    this.play(CLIP[b.act], `${b.act}@${b.at.toFixed(3)}`, Math.max(0, time - b.at))
+    const key = `${b.act}@${b.at.toFixed(3)}`
+    if (key !== this.actKey) {
+      this.actKey = key
+      this.char.setBoxe("VIdle")
+      this.strike(STRIKE[b.act], Math.max(0, time - b.at))
+    }
+    this.char.animate(dt, 0, 0)
   }
 
   /**
-   * Garra `side` (0 esquerda, 1 direita) em coordenadas do mundo: [punho, ponta
-   * das garras] — o arco de luz do golpe é a fita entre os dois. null = ainda
-   * carregando ou escondido.
+   * Rastro do golpe (mm3d-62, a fita de luz): `side` 1 = a ESPADA (punho → ponta),
+   * 0 = o punho esquerdo (pulso → um pouco além da mão). null = carregando ou escondido.
    */
   claw(side: number): [Vector3, Vector3] | null {
-    const a = this.arms[side]
-    if (!a || !this.root.isEnabled()) return null
-    const f = a.fore.getAbsolutePosition()
-    const h = a.hand.getAbsolutePosition()
-    const tip = h.add(h.subtract(f).scale(0.9))
-    return [h.clone(), tip]
+    if (!this.shown || !this.char.loaded) return null
+    if (side === 1 && this.grip) {
+      const r = this.grip.root
+      const base = r.getAbsolutePosition().clone()
+      const up = Vector3.TransformNormal(Vector3.Up(), r.getWorldMatrix()).normalize()
+      return [base, base.add(up.scale(SWORD_LEN))]
+    }
+    const f = this.char.bonePosition("mixamorig:LeftForeArm")
+    const h = this.char.bonePosition("mixamorig:LeftHand")
+    if (!f || !h) return null
+    return [h, h.add(h.subtract(f).scale(0.9))]
   }
 
   dispose() {
     this.disposed = true
-    for (const g of this.clips.values()) g.dispose()
-    this.clips.clear()
-    this.root.dispose(false, true)
+    this.grip?.dispose()
+    this.sword?.dispose()
+    this.char.dispose()
+    this.lib.dispose()
+    this.mats.fallback.dispose()
+    this.mats.shadow.dispose()
   }
 }

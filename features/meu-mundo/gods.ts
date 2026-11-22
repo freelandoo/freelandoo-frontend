@@ -19,6 +19,15 @@ export type MonsterBody = (typeof MONSTER_BODIES)[number]
 export const TALL_BODIES = [...GOD_BODIES, ...MONSTER_BODIES] as const
 export type TallBody = GodBody | MonsterBody
 
+/**
+ * 22/11: BASTOR, o Guardião do Paint e Deus dos Animais (historia/v2/00-classificacao.md;
+ * Tripo do Alex, pipeline/npcs + build_deuses.py, 3,20 m). Por enquanto é o CHEFÃO do Paint
+ * (paint/engine/boss-view.ts, com os cortes de espada dos Vampiros): corpo para desenhar,
+ * fora de GOD_BODIES/TALL_BODIES/BODY_IDS — ainda não é skin (sem CHECK nem espelho no back).
+ */
+export const BASTOR = "bastor" as const
+export type BastorBody = typeof BASTOR
+
 /** Nome próprio (não se traduz). */
 export const GOD_NAMES: Record<GodBody, string> = {
   aurion: "Aurion",

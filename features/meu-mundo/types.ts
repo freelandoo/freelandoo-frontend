@@ -9,6 +9,8 @@
 import type { LifeSoul } from "./soul"
 import { TALL_BODIES, type TallBody } from "./gods"
 import { CLAN_BODIES, type ClanBody } from "./classes"
+import type { NpcBody } from "./npc-bodies"
+import type { BastorBody } from "./gods"
 
 export type Vec2 = { x: number; z: number }
 
@@ -210,7 +212,8 @@ export interface StreetSign {
  * machado). Também é skin de teste de administrador, então está em BODY_IDS.
  */
 export type MobBody = "brutamontes"
-export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody
+/** 22/11: + os NPCs (npc-bodies.ts) — corpo para desenhar, nunca de jogador (fora de BODY_IDS). */
+export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody | NpcBody | BastorBody
 export const BODY_IDS: BodyId[] = ["sergio", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes"]
 
 export interface SeatReservation {
@@ -639,6 +642,8 @@ export interface InteriorNpc {
   pose: "sit" | "stand"
   /** Lore v2 F4: o NPC conversa ("Falar" → talk:<id>). */
   talk?: string
+  /** 22/11: corpo do NPC (npc-bodies.ts); sem = o do papel (NPC_LOOK de place-game.ts). */
+  body?: string
 }
 
 /** Lore v2 F4: NPC parado na rua/praça (colisão vem na lista de obstáculos do servidor). */

@@ -11,6 +11,7 @@
 import type { BodyId } from "../types"
 import { byTall, isTall } from "../gods"
 import { byClanBody, isClanBody } from "../classes"
+import { byNpcBody, NPC_KIN, type NpcBody } from "../npc-bodies"
 
 const V2 = "/meu-mundo/retratos/v2"
 /**
@@ -22,6 +23,9 @@ const V3 = "/meu-mundo/retratos/v3"
 const V3_BODIES = ["garras", "raposa_f", "vampiro_adulto", "cavaleiro", "vampira", "vampira_adulta", "maru", "morkhan", "zephyra", "golem", "iris", "vampiro", "kragor", "aeryn", "brutamontes", "aurion", "noctis", "raposa_adulta", "raposa", "raposa_adulto", "ciborgue"] as const
 const v3Portraits = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}.webp`])) as Record<(typeof V3_BODIES)[number], string>
 const v3Faces = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}-rosto.webp`])) as Record<(typeof V3_BODIES)[number], string>
+/** 22/11: NPCs com retrato próprio publicado em v3 (`<body>.webp` + `-rosto`). */
+const NPC_V3 = new Set<NpcBody>([])
+const KIN_BODY = { rm: "raposa_adulto", rf: "raposa_adulta", vm: "vampiro_adulto", vf: "vampira_adulta" } as const
 /** O Lobo (monstro da luta, sem corpo de jogador). */
 export const WOLF_PORTRAIT = `${V3}/lobo.webp`
 // 2026-11-14: o personagem padrão e a feminina saíram (e os retratos deles); o de reserva é o Sergio.
@@ -41,6 +45,9 @@ export const PORTRAIT: Record<BodyId, string> = {
   ...byClanBody((b) => `${V2}/classe-${b}_m58e.webp`),
   // brutamontes (monstro e skin de admin): a foto nova vem no v3
   ...v3Portraits,
+  // 22/11: os NPCs — retrato próprio no v3; quem ainda não tem usa o do povo dele
+  ...byNpcBody((b) => (NPC_V3.has(b) ? `${V3}/${b}.webp` : v3Portraits[KIN_BODY[NPC_KIN[b]]])),
+  bastor: `${V3}/bastor.webp`,
 }
 
 /** Recorte do rosto para círculos (avatar, notificação). */
@@ -50,6 +57,8 @@ const FACE: Record<BodyId, string> = {
   ...byTall((g) => `${V2}/deus-${g}-rosto.webp`),
   ...byClanBody((b) => `${V2}/classe-${b}_m58e-rosto.webp`),
   ...v3Faces,
+  ...byNpcBody((b) => (NPC_V3.has(b) ? `${V3}/${b}-rosto.webp` : v3Faces[KIN_BODY[NPC_KIN[b]]])),
+  bastor: `${V3}/bastor-rosto.webp`,
 }
 
 export const faceOf = (body: BodyId | null | undefined) => FACE[body ?? "sergio"] ?? SERGIO_FACE
