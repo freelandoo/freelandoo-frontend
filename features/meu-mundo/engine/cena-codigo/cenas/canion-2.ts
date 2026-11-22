@@ -16,6 +16,7 @@ import { AREA, H, aoLongoDaBorda, planta, trilha } from "../dominio"
 import * as T from "./tema-canion"
 import * as F from "./tema-fabrica"
 import * as P2 from "../pecas/canion"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   triBloco: T.TRI_BLOCO,
@@ -34,6 +35,8 @@ const TRILHO: V3[] = [[72, 10, -70], [62, 10, -40], [60, 11, -10], [62, 12, 18],
 export function montar(lod = 0): Cena {
   const c = new Cena("canion-2", lod, 32, -16)
   const P = planta(c, { path: CAMINHO, setores: [4, 5, 6, 7], boss: 7, tZonas: [0.16, 0.36, 0.56], tArena: 0.84 })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "canion", lod, { meia: 2.35 })
   const mesas: { inside: (x: number, z: number, k?: number) => boolean }[] = []
   const add = (ms: { inside: (x: number, z: number, k?: number) => boolean }[]) => mesas.push(...ms)
   const pilarOk = (x: number, z: number) => P.livre(x, z, 0.5) && P.beira(x, z) > 2
@@ -120,5 +123,7 @@ export function montar(lod = 0): Cena {
       }
     }
   })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "canion", lod)
   return c
 }

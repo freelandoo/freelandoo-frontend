@@ -13,6 +13,7 @@ import { casteloZephyra } from "../pecas/castelo-zephyra"
 import * as T from "./tema-canion"
 import * as F from "./tema-fabrica"
 import * as P2 from "../pecas/canion"
+import { balizasDaArena, balizasDoCaminho } from "../neon-dominio"
 
 export const meta = {
   triBloco: T.TRI_BLOCO,
@@ -31,6 +32,8 @@ export function montar(lod = 0): Cena {
   const c = new Cena("canion-3", lod, 32, -16)
   // pegada da CIDADELA copiada (pecas/castelo-zephyra.ts): 62 m com os faróis; pátio 18 (o salão da deusa)
   const P = planta(c, { path: CAMINHO, setores: [8, 9, 10], boss: 9, deus: 10, tZonas: [0.28], castelo: { w: 62, d: 40, patio: 18 } })
+  // balizas neon em pares pela trilha (o pilarete do Rolê / o marco da Gincana, na pele do Domínio)
+  balizasDoCaminho(c, P, "canion", lod, { meia: 2.75 })
   const K = P.castelo!
   casteloZephyra(c, K, lod)
   T.raio(c, K.x - 18, K.z, 60, 24, 3)
@@ -122,6 +125,8 @@ export function montar(lod = 0): Cena {
       if (P.dWalk(x, z) < 3 || inMesa(x, z, 1.02) || r(1) > (P.dWalk(x, z) < 6 ? 0.4 : 0.1)) return
       T.pampa(c, x, z, 0.5 + r(2) * 0.5, r(3) * 99)
     })
+  // roda de balizas maiores em volta da arena do chefe (o fim de fase da Gincana)
+  balizasDaArena(c, P, "canion", lod)
   return c
 }
 
