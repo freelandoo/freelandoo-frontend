@@ -2141,7 +2141,13 @@
       "duracao_s": 115.66,
       "versao": 1,
       "modelo": "ACE-Step 1.5 turbo"
+    },
+    "musica-dominio-vermelha": {
+      "arquivo": "musica/musica-dominio-vermelha.v1.mp3",
+      "duracao_s": 120,
+      "versao": 1,
+      "modelo": "ACE-Step 1.5 turbo"
     }
   },
-  "importado_em": "2026-11-15T16:24:13-03:00"
+  "importado_em": "2026-11-22T14:20:55-03:00"
 }

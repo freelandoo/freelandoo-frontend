@@ -53,9 +53,9 @@ export const AMB = {
   streetDanger: "lugar-centro-rua-noite-perigo",
 } as const
 
-/** Domínio → a música dele (S11, 2026-11-11): musica-dominio-floresta/canion/gelo/fabrica/vulcao/orbital. */
-/** Domínio sem faixa própria ainda → a de outro (Floresta Vermelha de Varkos: o fogo de Kragor). */
-const DOMAIN_MUSIC_ALIAS: Readonly<Record<string, string>> = { vermelha: "vulcao" }
+/** Domínio → a música dele (S11, 2026-11-11): musica-dominio-floresta/canion/gelo/fabrica/vulcao/orbital/vermelha (Varkos, 22/11). */
+/** Domínio sem faixa própria ainda → a de outro (vazio: os 7 têm a sua). */
+const DOMAIN_MUSIC_ALIAS: Readonly<Record<string, string>> = {}
 export const domainMusic = (id: string) => `musica-dominio-${DOMAIN_MUSIC_ALIAS[id] ?? id}`
 
 /** Minijogo → música; fase → fundo (ids das fases de cada jogo). */
