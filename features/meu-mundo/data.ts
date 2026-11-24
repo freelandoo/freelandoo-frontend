@@ -400,7 +400,8 @@ export interface GearItem {
   /** E8: fragmento — junta `need` para fabricar `of` (de conjunto: `set`); sobra vira `powder` de Pó de Refino cada. */
   fragment?: { of?: string; need: number; powder?: number; set?: string; rank?: GearRank }
   /** weapon-v1 (24/11/2026): pó de refino — a faixa de níveis de DESTINO que ele cobre e a chance de cada tentativa. */
-  powder?: { from: number; upTo: number; chance: number }
+  /** weapon-v2: o pó refina armas desta classe */
+  powder?: { rank: GearRank }
   /** weapon-v1: saiu do jogo (fica só para recibos e cópias antigas; sem origem). */
   retired?: boolean
   /** E8: onde o fragmento cai (região, chefão, tabela de saque) — para o Índice. */
@@ -481,26 +482,39 @@ export interface GearCatalog {
   /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
   sets?: GearSet[]
 }
-/** weapon-v1 (24/11/2026): a regra pública das armas (o servidor confere a versão em cada pedido). */
+/** weapon-v2 (24/11/2026): a regra pública das armas (o servidor confere a versão em cada pedido). */
 export interface WeaponProgress {
   rulesVersion: string
   maxLevel: number
   maxStars: number
-  powders: { id: string; from: number; upTo: number; chance: number }[]
+  /** "Refinar N vezes" */
+  batch: number
+  /** um pó por classe: pó B só refina arma B */
+  powders: { id: string; rank: GearRank }[]
+  /** faixas do sorteio de XP (a de perda tem min/max negativos) */
+  tiers: { id: WeaponTier; p: number; min: number; max: number }[]
+  /** XP para sair de cada nível: índice 0 = nível 1 … 88 = nível 89 (dobra a cada 5 níveis) */
+  xpNeed: number[]
   fragmentNeed: Record<string, number>
   fragments: Record<string, string>
 }
-/** weapon-v1: a próxima tentativa de refino de uma cópia (pó da faixa do nível de destino). */
+export type WeaponTier = "loss" | "normal" | "good" | "great"
+/** weapon-v2: a tentativa sorteada que espera a pessoa aceitar ou recusar. */
+export interface WeaponPending { xp: number; tier: WeaponTier; level: number; xpBefore: number; powder: string }
+/** weapon-v2: a barra de XP da cópia e a próxima tentativa (pó da CLASSE da arma). */
 export interface WeaponRefineView {
   rulesVersion: string
-  from: number
-  to: number
+  level: number
+  xp: number
+  need: number
   powder: string
-  chance: number
   needs: Record<string, number>
+  pending: WeaponPending | null
   bonusBefore: Partial<GearBonus>
   bonusAfter: Partial<GearBonus>
 }
+/** weapon-v2: uma tentativa no recibo (no "10 vezes": `accepted` e a barra depois). */
+export interface WeaponRoll { tier: WeaponTier; xp: number; accepted?: boolean; level?: number; xpAfter?: number }
 /** weapon-v1: a próxima estrela (consome uma cópia idêntica nova: `donors` = as que servem). */
 export interface WeaponStarsView {
   from: number
@@ -572,6 +586,9 @@ export interface GearInstance {
   locked: boolean
   /** weapon-v1: só arma — nível da cópia (1…90) e estrelas (1…5). */
   weaponLevel?: number
+  /** weapon-v2: XP dentro do nível e a tentativa esperando decisão */
+  weaponXp?: number
+  weaponPending?: WeaponPending | null
   stars?: number
   /** Personagem que segura a cópia (vivo ou na cápsula); null = solta na mochila. */
   equippedBy: string | null
@@ -759,11 +776,15 @@ export const forgeGear = (token: string, recipe: string, key: string) => call<Ge
 /** E11: trava/destrava a cópia (não recicla nem serve de doadora de estrela). */
 export const lockGear = (token: string, instance: string, locked: boolean) => call<GearOut>(token, "POST", "/gear/lock", { instance, locked })
 /**
- * weapon-v1 (24/11/2026): REFINAR a arma — 1 pó da faixa do nível de destino; o servidor sorteia (falhou = gasta o pó e
- * a cópia fica no nível). `rulesVersion` diferente da do servidor = 410 (a tela recarrega).
+ * weapon-v2 (24/11/2026): REFINAR a arma — cada tentativa gasta 1 pó da CLASSE da arma e o servidor sorteia um XP.
+ * `times` 1: o resultado fica esperando `decideWeapon`; `times` 10: aceita sozinho só o que aumenta o XP.
+ * `rulesVersion` diferente da do servidor = 410 (a tela recarrega).
  */
-export const refineWeapon = (token: string, instance: string, key: string, version?: number, rulesVersion?: string) =>
-  call<GearOut>(token, "POST", "/gear/weapon/refine", { instance, key, ...(version != null ? { version } : {}), ...(rulesVersion ? { rulesVersion } : {}) })
+export const refineWeapon = (token: string, instance: string, key: string, version?: number, rulesVersion?: string, times = 1) =>
+  call<GearOut>(token, "POST", "/gear/weapon/refine", { instance, key, times, ...(version != null ? { version } : {}), ...(rulesVersion ? { rulesVersion } : {}) })
+/** weapon-v2: ACEITAR (soma o XP; sobra passa de nível, perda nunca desce) ou RECUSAR (descarta) o resultado que espera. */
+export const decideWeapon = (token: string, instance: string, decision: "accept" | "reject", key: string) =>
+  call<GearOut>(token, "POST", "/gear/weapon/refine/decide", { instance, decision, key })
 /** weapon-v1: SUBIR ESTRELA consumindo a cópia idêntica `donor` (nova: nível 1, 1 estrela, solta e sem trava). */
 export const starWeapon = (token: string, instance: string, donor: string, key: string, version?: number) =>
   call<GearOut>(token, "POST", "/gear/weapon/stars", { instance, donor, key, ...(version != null ? { version } : {}) })

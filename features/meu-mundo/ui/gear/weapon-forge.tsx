@@ -1,16 +1,17 @@
 "use client"
 
-// features/meu-mundo/ui/gear/weapon-forge.tsx — weapon-v1 (24/11/2026): a Forja e a Bancada de refino das ARMAS.
+// features/meu-mundo/ui/gear/weapon-forge.tsx — weapon-v2 (24/11/2026): a Forja e a Bancada de refino das ARMAS.
 //
 // Lista de miniaturas com pouca informação (arte, nome, classe, nível e estrelas). Ao tocar numa, abre o
 // INSPETOR do mesmo tamanho ao lado (moldura própria) com a ação: "Refinar" (bancada), "Subir estrela" ou
-// "Montar arma" (forja). Quem decide tudo é o servidor (custo, chance, sorteio, doadora); a tela só mostra o
-// que veio na mochila (`bag.forge[cópia]`) e o recibo. O resultado do refino aparece como na referência do
-// Alex: SUCESSO/FALHOU, o número que saiu e a faixa que vencia.
+// "Montar arma" (forja). Quem decide tudo é o servidor (pó, sorteio, doadora); a tela só mostra o que veio na
+// mochila (`bag.forge[cópia]`) e o recibo. Refino (pedido do Alex): cada nível tem uma BARRA DE XP; cada
+// tentativa gasta 1 pó da CLASSE da arma e sorteia um XP (muito, pouco ou até negativo); a pessoa ACEITA ou
+// RECUSA; "Refinar 10 vezes" aceita sozinho só o que aumenta.
 
 import { useMemo, useState, type ReactNode } from "react"
 import { ArrowLeft } from "lucide-react"
-import { assembleWeapon, refineWeapon, starWeapon, type GearBag, type GearCatalog, type GearInstance, type GearItem } from "../../data"
+import { assembleWeapon, decideWeapon, refineWeapon, starWeapon, type GearBag, type GearCatalog, type GearInstance, type GearItem, type WeaponRoll, type WeaponTier } from "../../data"
 import type { GearBonus } from "../../laminas/sim/fight"
 import { AetherButton } from "../kit/aether-modal"
 import { AetherCarousel, type CarouselItem } from "../kit/aether-carousel"
@@ -26,7 +27,15 @@ export type WeaponMode = "refine" | "stars" | "assemble"
 type Props = { catalog: GearCatalog; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; busy: boolean; act: GearAction }
 
 const isWeapon = (item: GearItem | undefined) => !!item && item.category === "weapon" && !!item.slot
-const pct = (v: number) => (Math.round(v * 10000) / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + "%"
+const signed = (n: number) => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toLocaleString("pt-BR")
+const num = (n: number) => n.toLocaleString("pt-BR")
+/** Cor e nome de cada faixa do sorteio de XP. */
+const TIER: Record<WeaponTier, { color: string; key: string; label: string }> = {
+  loss: { color: "#FF3B4E", key: "wfTierLoss", label: "Perdeu XP" },
+  normal: { color: "#3FA9FF", key: "wfTierNormal", label: "Normal" },
+  good: { color: "#4BE38A", key: "wfTierGood", label: "Bom!" },
+  great: { color: "#F2B705", key: "wfTierGreat", label: "Excelente!" },
+}
 
 /** Miniatura com pouca informação: arte, nome, classe, nível e estrelas. */
 function WeaponThumb({ item, inst, t, note, onOpen, selected = false }: {
@@ -81,7 +90,8 @@ function PairView({ thumb, inspector, onBack, t }: { thumb: ReactNode; inspector
       </button>
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-stretch sm:justify-center">
         <div className="w-full max-w-[300px] shrink-0" style={{ aspectRatio: "2 / 3" }}>{thumb}</div>
-        <div className="w-full max-w-[300px] shrink-0" style={{ aspectRatio: "2 / 3" }}>{inspector}</div>
+        {/* o brilho que corre na moldura sai pela lateral: corta só no eixo x (o losango do topo fica) */}
+        <div className="w-full max-w-[300px] shrink-0" style={{ aspectRatio: "2 / 3", overflowX: "clip" }}>{inspector}</div>
       </div>
     </div>
   )
@@ -117,67 +127,116 @@ function PowderLine({ id, have, byId, t }: { id: string; have: number; byId: Map
   )
 }
 
-type RefineOutcome = { success: boolean; roll: number; chance: number; from: number; to: number; level: number }
-
-/** O resultado do sorteio, como na referência: o número que saiu sobre a faixa que vencia. */
-function RefineResult({ r, t, onAgain, canAgain, busy }: { r: RefineOutcome; t: GearTr; onAgain: () => void; canAgain: boolean; busy: boolean }) {
-  const color = r.success ? "#4BE38A" : "#FF3B4E"
+/**
+ * A barra de XP do nível. Com `delta`, mostra a prévia: ganho em verde por cima (passou do fim = sobe de
+ * nível), perda em vermelho (para no começo da barra: nunca desce de nível).
+ */
+function XpBar({ xp, need, delta, t }: { xp: number; need: number; delta?: number | null; t: GearTr }) {
+  const w = (v: number) => `${Math.max(0, Math.min(100, (v / Math.max(1, need)) * 100))}%`
+  const gain = delta != null && delta > 0
+  const loss = delta != null && delta < 0
+  const end = delta != null ? Math.max(0, xp + delta) : xp
   return (
-    <div role="status" aria-live="polite" className="grid gap-3">
-      <p className={teko.className + " text-center text-[40px] font-semibold uppercase leading-none"} style={{ color, textShadow: `0 0 12px ${color}88` }}>
-        {r.success ? t("wfRefineSuccess", "Sucesso!") : t("wfRefineFail", "Falhou")}
-      </p>
-      <p className="text-center text-[13px] font-semibold" style={{ color: AE.text }}>
-        {r.success
-          ? t("wfRefineUp", "A arma subiu do nível {from} para o {to}.").replace("{from}", String(r.from)).replace("{to}", String(r.to))
-          : t("wfRefineStay", "O pó foi gasto e a arma continua no nível {from}.").replace("{from}", String(r.from))}
-      </p>
-      <div className="grid gap-1">
-        <div className="relative h-4 w-full overflow-hidden" style={{ background: AE.well, boxShadow: "inset 0 0 0 1px " + AE.brassLine }}>
-          <span className="absolute inset-y-0 left-0" style={{ width: `${r.chance * 100}%`, background: "linear-gradient(90deg, rgba(75,227,138,0.25), rgba(75,227,138,0.55))" }} />
-          <span aria-hidden className="absolute inset-y-[-2px] w-[3px]" style={{ left: `calc(${Math.min(99.6, r.roll * 100)}% - 1px)`, background: color, boxShadow: `0 0 6px ${color}` }} />
-        </div>
-        <p className="text-[12px]" style={{ color: AE.muted }}>
-          {t("wfRollLine", "Saiu {roll}. Números menores que {chance} vencem.").replace("{roll}", pct(r.roll)).replace("{chance}", pct(r.chance))}
-        </p>
+    <div className="grid gap-1">
+      <div className="relative h-4 w-full overflow-hidden" style={{ background: AE.well, boxShadow: "inset 0 0 0 1px " + AE.brassLine }}
+        role="meter" aria-valuemin={0} aria-valuemax={need} aria-valuenow={xp} aria-label={t("wfXpOf", "{xp} / {need} XP").replace("{xp}", num(xp)).replace("{need}", num(need))}>
+        <span className="absolute inset-y-0 left-0" style={{ width: w(loss ? end : xp), background: "linear-gradient(90deg, #8A6A10, #F2B705)" }} />
+        {gain && <span className="absolute inset-y-0" style={{ left: w(xp), width: `calc(${w(Math.min(need, end))} - ${w(xp)})`, background: "repeating-linear-gradient(135deg, rgba(75,227,138,0.95) 0 6px, rgba(75,227,138,0.6) 6px 12px)" }} />}
+        {loss && <span className="absolute inset-y-0" style={{ left: w(end), width: `calc(${w(xp)} - ${w(end)})`, background: "repeating-linear-gradient(135deg, rgba(255,59,78,0.95) 0 6px, rgba(255,59,78,0.55) 6px 12px)" }} />}
       </div>
-      <AetherButton busy={busy} disabled={!canAgain} onClick={onAgain}>{t("wfRefineAgain", "Refinar de novo")}</AetherButton>
+      <p className="flex justify-between gap-2 text-[12px] tabular-nums" style={{ color: AE.muted }}>
+        <span>{delta != null
+          ? t("wfXpPreview", "{from} → {to} / {need} XP").replace("{from}", num(xp)).replace("{to}", num(end)).replace("{need}", num(need))
+          : t("wfXpOf", "{xp} / {need} XP").replace("{xp}", num(xp)).replace("{need}", num(need))}</span>
+        {gain && end >= need && <span className="font-semibold" style={{ color: "#4BE38A" }}>{t("wfLevelUp", "Sobe de nível!")}</span>}
+      </p>
     </div>
   )
 }
 
-/** Bancada: a próxima tentativa de refino da cópia escolhida. */
-function RefineInspector({ item, inst, bag, byId, t, busy, act, maxLevel, rulesVersion }: Props & { item: GearItem; inst: GearInstance; maxLevel: number; rulesVersion?: string }) {
+/** O resultado que espera decisão: a faixa, o XP sorteado, a prévia na barra e Aceitar / Recusar. */
+function PendingResult({ xp, need, roll, tier, t, busy, onDecide }: {
+  xp: number; need: number; roll: number; tier: WeaponTier; t: GearTr; busy: boolean; onDecide: (d: "accept" | "reject") => void
+}) {
+  const st = TIER[tier] || TIER.normal
+  return (
+    <div role="status" aria-live="polite" className="grid gap-3">
+      <div className="grid justify-items-center gap-1">
+        <p className={teko.className + " text-[22px] font-semibold uppercase leading-none"} style={{ color: st.color }}>{t(st.key, st.label)}</p>
+        <p className={teko.className + " text-[44px] font-semibold leading-none tabular-nums"} style={{ color: st.color, textShadow: `0 0 12px ${st.color}88` }}>{signed(roll)} XP</p>
+      </div>
+      <XpBar xp={xp} need={need} delta={roll} t={t} />
+      <p className="text-[12px]" style={{ color: AE.muted }}>{t("wfPendingHow", "Aceite para somar à barra ou recuse para descartar. O pó já foi gasto.")}</p>
+      <div className="mt-auto grid grid-cols-2 gap-2">
+        <AetherButton tone="secondary" busy={busy} disabled={busy} onClick={() => onDecide("reject")}>{t("wfReject", "Recusar")}</AetherButton>
+        <AetherButton busy={busy} disabled={busy} onClick={() => onDecide("accept")}>{t("wfAccept", "Aceitar")}</AetherButton>
+      </div>
+    </div>
+  )
+}
+
+/** O "10 vezes": cada tentativa com o XP e se entrou (o que tira XP é recusado sozinho). */
+function BatchResult({ rolls, t }: { rolls: WeaponRoll[]; t: GearTr }) {
+  const ok = rolls.filter((r) => r.accepted)
+  const sum = ok.reduce((a, r) => a + r.xp, 0)
+  return (
+    <div role="status" aria-live="polite" className="grid gap-2">
+      <p className="text-[13px] font-semibold" style={{ color: AE.text }}>
+        {t("wfBatchSummary", "{ok} de {n} aceitas · {xp} XP").replace("{ok}", String(ok.length)).replace("{n}", String(rolls.length)).replace("{xp}", signed(sum))}
+      </p>
+      <ol className="grid grid-cols-5 gap-1">
+        {rolls.map((r, i) => {
+          const st = TIER[r.tier] || TIER.normal
+          return (
+            <li key={i} className={teko.className + " grid place-items-center py-1 text-[17px] leading-none tabular-nums"}
+              style={{ background: AE.well, color: r.accepted ? st.color : AE.muted, boxShadow: `inset 0 0 0 1px ${r.accepted ? st.color : AE.brassLine}`, textDecoration: r.accepted ? "none" : "line-through" }}>
+              {signed(r.xp)}
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}
+
+/** Bancada: a barra de XP da cópia escolhida, o pó da classe e a tentativa (1 ou 10 vezes). */
+function RefineInspector({ item, inst, bag, byId, t, busy, act, maxLevel, rulesVersion, batch }: Props & { item: GearItem; inst: GearInstance; maxLevel: number; rulesVersion?: string; batch: number }) {
   const view = bag.forge?.[inst.id]?.refine || null
-  const [last, setLast] = useState<RefineOutcome | null>(null)
+  const [tried, setTried] = useState(false)
+  const [rolls, setRolls] = useState<WeaponRoll[] | null>(null)
   const have = view ? bag.owned[view.powder]?.qty || 0 : 0
-  const run = async () => {
-    const out = await act("refine-" + inst.id, (tk, key) => refineWeapon(tk, inst.id, key, inst.version, rulesVersion), undefined, { quiet: true })
-    const r = out?.receipt?.result as Partial<RefineOutcome> | undefined
-    if (r && typeof r.success === "boolean") setLast({ success: r.success, roll: Number(r.roll) || 0, chance: Number(r.chance) || 0, from: Number(r.from) || 0, to: Number(r.to) || 0, level: Number(r.level) || 0 })
+  const rankName = t(RANK[rankOf(item)].labelKey, RANK[rankOf(item)].label)
+  const run = async (times: number) => {
+    setRolls(null)
+    const out = await act("refine-" + inst.id, (tk, key) => refineWeapon(tk, inst.id, key, inst.version, rulesVersion, times), undefined, { quiet: true })
+    const r = out?.receipt?.result as { rolls?: WeaponRoll[] } | undefined
+    if (r?.rolls) { setTried(true); if (times > 1) setRolls(r.rolls) }
   }
+  const decide = (d: "accept" | "reject") => void act("decide-" + inst.id, (tk, key) => decideWeapon(tk, inst.id, d, key), undefined, { quiet: true })
   return (
     <Inspector title={t("wfRefineTitle", "Refinar")}>
       <div className="flex items-center justify-between gap-2">
         <span className={teko.className + " text-[26px] leading-none tabular-nums"} style={{ color: AE.text }}>
           {t("wfLevelShort", "Nv {n}").replace("{n}", String(inst.weaponLevel || 1))}
-          {view && <span style={{ color: AE.goldSoft }}> → {view.to}</span>}
         </span>
         <WeaponStars stars={inst.stars || 1} size={14} t={t} />
       </div>
-      {last ? (
-        <RefineResult r={last} t={t} busy={busy} canAgain={!!view && (bag.owned[view.powder]?.qty || 0) > 0} onAgain={() => { setLast(null); void run() }} />
-      ) : !view ? (
+      {!view ? (
         <p className="text-[13px] font-semibold" style={{ color: AE.goldSoft }}>{t("wfMaxLevel", "Nível máximo ({n}).").replace("{n}", String(maxLevel))}</p>
+      ) : view.pending ? (
+        <PendingResult xp={view.xp} need={view.need} roll={view.pending.xp} tier={view.pending.tier} t={t} busy={busy} onDecide={decide} />
       ) : (
         <>
-          <p className="text-[12px]" style={{ color: AE.muted }}>{t("wfRefineHow", "Cada tentativa gasta 1 pó da faixa do próximo nível. Se falhar, a arma não desce.")}</p>
+          <XpBar xp={view.xp} need={view.need} t={t} />
           <PowderLine id={view.powder} have={have} byId={byId} t={t} />
-          <p className="text-[13px] font-semibold" style={{ color: AE.text }}>{t("wfChance", "Chance de sucesso: {p}").replace("{p}", pct(view.chance))}</p>
+          {rolls ? <BatchResult rolls={rolls} t={t} /> : <p className="text-[12px]" style={{ color: AE.muted }}>{t("wfRefineHow", "Cada tentativa gasta 1 pó da classe da arma e dá XP: pode ser muito, pouco ou até tirar. Você aceita ou recusa — a arma nunca desce de nível.")}</p>}
           <BonusDiff before={view.bonusBefore} after={view.bonusAfter} t={t} />
           <div className="mt-auto grid gap-2">
-            {have < 1 && <p className="text-[12px]" style={{ color: AE.bad }}>{t("wfNoPowder", "Falta o pó desta faixa. Ele cai nos Domínios, nas lutas e nas partidas, e sai na loja de troca.")}</p>}
-            <AetherButton busy={busy} disabled={have < 1 || busy} onClick={() => void run()}>{t("wfRefineButton", "Refinar")}</AetherButton>
+            {have < 1 && <p className="text-[12px]" style={{ color: AE.bad }}>{t("wfNoPowderClass", "Falta o pó da classe {r}. Ele cai nos Domínios, nas lutas e nas partidas, e sai na loja de troca.").replace("{r}", rankName)}</p>}
+            <div className="grid gap-2">
+              <AetherButton busy={busy} disabled={have < 1 || busy} onClick={() => void run(1)}>{tried ? t("wfRefineMore", "Refinar mais uma vez") : t("wfRefineButton", "Refinar")}</AetherButton>
+              <AetherButton tone="secondary" busy={busy} disabled={have < 1 || busy} onClick={() => void run(batch)}>{t("wfRefineTen", "Refinar {n} vezes").replace("{n}", String(batch))}</AetherButton>
+            </div>
           </div>
         </>
       )}
@@ -321,7 +380,7 @@ export function WeaponWorkshop({ mode, ...p }: Props & { mode: WeaponMode }) {
     return (
       <PairView t={t} onBack={() => setOpen(null)} thumb={<WeaponThumb item={chosenItem} inst={chosen} t={t} selected />}
         inspector={mode === "refine"
-          ? <RefineInspector key={chosen.id} {...p} item={chosenItem} inst={chosen} maxLevel={maxLevel} rulesVersion={rules?.rulesVersion} />
+          ? <RefineInspector key={chosen.id} {...p} item={chosenItem} inst={chosen} maxLevel={maxLevel} rulesVersion={rules?.rulesVersion} batch={rules?.batch || 10} />
           : <StarsInspector key={chosen.id} {...p} item={chosenItem} inst={chosen} maxStars={maxStars} />} />
     )
   const items: CarouselItem[] = copies.map((x) => {

@@ -254,6 +254,11 @@ const ROWS = [
   ["A cópia consumida não pode ser a própria arma", "The copy used up can't be the weapon itself", "La copia consumida no puede ser la propia arma"],
   ["A cópia consumida precisa ser da mesma arma", "The copy used up must be the same weapon", "La copia consumida debe ser la misma arma"],
   ["Use como doadora uma cópia nova: nível 1, 1 estrela e sem investimento", "Use a fresh copy as the donor: level 1, 1 star, nothing invested", "Usa como donante una copia nueva: nivel 1, 1 estrella y sin inversión"],
+  // weapon-v2 (24/11/2026): refino por barra de XP com o pó da classe
+  ["Falta o pó da classe desta arma", "You're missing this weapon class's powder", "Falta el polvo de la clase de esta arma"],
+  ["Aceite ou recuse o resultado do último refino antes de refinar de novo", "Accept or reject the last refining result before refining again", "Acepta o rechaza el resultado del último refinado antes de refinar otra vez"],
+  ["Nenhum resultado de refino esperando decisão", "No refining result waiting for a decision", "Ningún resultado de refinado esperando decisión"],
+  ["Refine 1 ou 10 vezes", "Refine 1 or 10 times", "Refina 1 o 10 veces"],
   // trilha E13: runas
   ["Isso não é uma runa", "That isn't a rune", "Eso no es una runa"],
   ["Essa peça não tem engaste livre", "That item has no free socket", "Esa pieza no tiene engaste libre"],
