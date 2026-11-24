@@ -1,6 +1,6 @@
 // weapon-v1 (24/11/2026): a Forja e a Bancada das armas (nível 1…90 por pó, estrelas, fragmento de classe).
 // Textos da tela (wf*) + nome e descrição dos 9 pós de refino e dos 10 fragmentos de classe.
-// Idempotente (fill-if-absent). node <script> [pasta dos dicionários]
+// Idempotente (fill-if-absent; a descrição dos fragmentos é OVERRIDE: E = 20 e +20 por classe, pedido do Alex). node <script> [pasta dos dicionários]
 const fs = require("fs")
 const path = require("path")
 const DIR = process.argv[2] || path.join(__dirname, "..", "messages")
@@ -46,7 +46,7 @@ const UI = [
 
 // pós: [id, sufixo, de, até, chance %]
 const POWDERS = [["d", "D", 1, 10, 100], ["c", "C", 10, 20, 95], ["b", "B", 20, 30, 90], ["a", "A", 30, 40, 80], ["s", "S", 40, 50, 70], ["ss", "SS", 50, 60, 60], ["sss1", "SSS I", 60, 70, 45], ["sss2", "SSS II", 70, 80, 30], ["sss3", "SSS III", 80, 90, 20]]
-// fragmentos: [id, pt, en, es]
+// fragmentos: [id, pt, en, es] — na ordem das classes: precisa 20 × (posição + 1)
 const CLASSES = [["e", "E", "E", "E"], ["d", "D", "D", "D"], ["c", "C", "C", "C"], ["b", "B", "B", "B"], ["a", "A", "A", "A"], ["s", "S", "S", "S"], ["ss", "SS", "SS", "SS"], ["ssr", "SSR", "SSR", "SSR"], ["legendary", "Lendária", "Legendary", "Legendaria"], ["divine", "Divina", "Divine", "Divina"]]
 const ITEM_TEXT = {
   "pt-BR": {
@@ -54,21 +54,21 @@ const ITEM_TEXT = {
     powder: (n) => `Pó de Refinamento ${n}`,
     powderDesc: (a, b, p) => `Refina armas do nível ${a} ao ${b}: uma unidade por tentativa, ${p}% de chance. Se falhar, o pó se gasta e a arma fica como estava.`,
     frag: (r) => `Fragmento de classe ${r}`,
-    fragDesc: (r) => `Junte 20 e escolha na Forja qual arma de classe ${r} montar — inclusive uma que você já tem.`,
+    fragDesc: (r, n) => `Junte ${n} e escolha na Forja qual arma de classe ${r} montar — inclusive uma que você já tem.`,
   },
   en: {
     i: 2,
     powder: (n) => `Refining Powder ${n}`,
     powderDesc: (a, b, p) => `Refines weapons from level ${a} to ${b}: one per attempt, ${p}% chance. If it fails, the powder is used and the weapon stays as it was.`,
     frag: (r) => `Class ${r} fragment`,
-    fragDesc: (r) => `Collect 20 and choose at the Forge which class ${r} weapon to assemble — even one you already have.`,
+    fragDesc: (r, n) => `Collect ${n} and choose at the Forge which class ${r} weapon to assemble — even one you already have.`,
   },
   es: {
     i: 3,
     powder: (n) => `Polvo de Refinado ${n}`,
     powderDesc: (a, b, p) => `Refina armas del nivel ${a} al ${b}: una unidad por intento, ${p}% de probabilidad. Si falla, el polvo se gasta y el arma queda como estaba.`,
     frag: (r) => `Fragmento de clase ${r}`,
-    fragDesc: (r) => `Junta 20 y elige en la Forja qué arma de clase ${r} montar, incluso una que ya tengas.`,
+    fragDesc: (r, n) => `Junta ${n} y elige en la Forja qué arma de clase ${r} montar, incluso una que ya tengas.`,
   },
 }
 
@@ -83,12 +83,14 @@ for (const [lang, L] of Object.entries(ITEM_TEXT)) {
     add["gear_po_ref_" + id] = L.powder(n)
     add["gearDesc_po_ref_" + id] = L.powderDesc(a, b, p)
   }
-  for (const c of CLASSES) {
+  const override = {}
+  CLASSES.forEach((c, i) => {
     add["gear_frag_classe_" + c[0]] = L.frag(c[L.i])
-    add["gearDesc_frag_classe_" + c[0]] = L.fragDesc(c[L.i])
-  }
+    override["gearDesc_frag_classe_" + c[0]] = L.fragDesc(c[L.i], 20 * (i + 1))
+  })
   let n = 0
   for (const [k, v] of Object.entries(add)) if (!(k in mm)) { mm[k] = v; n++ }
+  for (const [k, v] of Object.entries(override)) if (mm[k] !== v) { mm[k] = v; n++ }
   fs.writeFileSync(file, JSON.stringify(dict, null, 2) + "\n")
   console.log(lang, "+" + n)
 }

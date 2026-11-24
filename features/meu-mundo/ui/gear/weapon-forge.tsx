@@ -273,7 +273,8 @@ export function WeaponWorkshop({ mode, ...p }: Props & { mode: WeaponMode }) {
   const [open, setOpen] = useState<string | null>(null)
   // montar: a classe escolhida (a primeira que já dá para montar; senão a primeira que tem fragmento)
   const fragOf = (r: Rank) => rules?.fragments?.[r] || `frag_classe_${r.toLowerCase()}`
-  const needOf = (r: Rank) => rules?.fragmentNeed?.[r] || 20
+  // o servidor manda; sem regra, a mesma escada dele: E = 20 e +20 por classe (… Divina = 200)
+  const needOf = (r: Rank) => rules?.fragmentNeed?.[r] || 20 * (RANKS.indexOf(r) + 1)
   const weaponsBy = useMemo(() => {
     const m = new Map<Rank, GearItem[]>()
     for (const it of catalog.items) if (isWeapon(it) && !it.retired) (m.get(rankOf(it)) || m.set(rankOf(it), []).get(rankOf(it))!).push(it)
