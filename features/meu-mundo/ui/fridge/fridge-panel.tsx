@@ -25,6 +25,7 @@ import { itemName } from "../status/status-pages"
 import { categories, effectsOf, mealFit, thumbOf, verbOf, type CategoryCard, type FridgeCategory } from "./fridge-logic"
 import { Arc, Card, ICE, effectText, toneColor } from "./shelf"
 import { RankSeal } from "../kit/rank-seal"
+import { usePreloadImages } from "../kit/shelf-arc"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -57,6 +58,7 @@ type Level = { lv: "cats" } | { lv: "items"; cat: FridgeCategory } | { lv: "item
 
 export default function FridgePanel({ items, stock, character, pending, notice, compact, t, onEat, onClose }: FridgePanelProps) {
   const cats = useMemo(() => categories(items, stock), [items, stock])
+  usePreloadImages(items.map((i) => thumbOf(i.id)))
   const [level, setLevel] = useState<Level>({ lv: "cats" })
   const [catSel, setCatSel] = useState(0)
   const [itemSel, setItemSel] = useState(0)

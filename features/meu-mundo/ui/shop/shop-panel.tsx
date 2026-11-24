@@ -175,6 +175,7 @@ export default function ShopPanel({
           return {
             key: item.id,
             label: nameOf(item, t),
+            thumb: gearThumb(item),
             render: () => (
               <ShopCard
                 img={gearThumb(item)}
@@ -228,6 +229,7 @@ export default function ShopPanel({
         return {
           key: m.kind,
           label: name,
+          thumb: MOB_PORTRAIT[m.kind],
           render: () => (
             <ShopCard
               img={MOB_PORTRAIT[m.kind]}
@@ -266,6 +268,7 @@ export default function ShopPanel({
           return {
             key: sp.id,
             label: name,
+            thumb: PORTRAIT[speciesBody(sp)],
             render: () => (
               <ShopCard
                 img={PORTRAIT[speciesBody(sp)]}
@@ -296,6 +299,7 @@ export default function ShopPanel({
         return {
           key: it.id,
           label: itemName(it, t),
+          thumb: thumbOf(it.id),
           render: () => (
             <ShopCard
               img={thumbOf(it.id)}

@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { archivo, teko } from "../status/evo-skin"
 import { AE, chamfer } from "./aether-tokens"
-import { Arc } from "./shelf-arc"
+import { Arc, usePreloadImages } from "./shelf-arc"
 import { uiSound } from "../../engine/audio"
 
 export interface CarouselItem {
@@ -25,6 +25,8 @@ export interface CarouselItem {
   /** Rótulo curto para leitores de tela ("Espada de latão"). */
   label: string
   render: (active: boolean) => ReactNode
+  /** Miniatura do card: o carrossel pré-carrega todas ao abrir (o arco só monta os cards por perto). */
+  thumb?: string | null
 }
 
 export function AetherCarousel({
@@ -50,6 +52,7 @@ export function AetherCarousel({
   const t = useTranslations("MeuMundo")
   const [own, setOwn] = useState(initial)
   const n = items.length
+  usePreloadImages(items.map((it) => it.thumb))
   const idx = Math.max(0, Math.min(n - 1, controlled ?? own))
   const setIdx = useCallback(
     (i: number) => {

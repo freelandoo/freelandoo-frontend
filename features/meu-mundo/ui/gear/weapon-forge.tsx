@@ -334,7 +334,7 @@ export function WeaponWorkshop({ mode, ...p }: Props & { mode: WeaponMode }) {
       return <PairView p={p} item={chosen} onBack={() => setOpen(null)} inspector={<AssembleInspector {...p} item={chosen} need={needOf(rank)} fragment={fragOf(rank)} />} />
     const items: CarouselItem[] = list.map((it) => {
       const own = (bag.instances || []).filter((x) => x.item === it.id).length
-      return { key: it.id, label: nameOf(it, t), render: () => <WeaponThumb item={it} t={t} onOpen={() => setOpen(it.id)} count={own} /> }
+      return { key: it.id, label: nameOf(it, t), thumb: gearThumb(it), render: () => <WeaponThumb item={it} t={t} onOpen={() => setOpen(it.id)} count={own} /> }
     })
     return (
       <div className="grid gap-3">
@@ -368,7 +368,7 @@ export function WeaponWorkshop({ mode, ...p }: Props & { mode: WeaponMode }) {
     )
   const items: CarouselItem[] = copies.map((x) => {
     const it = byId.get(x.item)!
-    return { key: x.id, label: nameOf(it, t), render: () => <WeaponThumb item={it} inst={x} t={t} onOpen={() => setOpen(x.id)} /> }
+    return { key: x.id, label: nameOf(it, t), thumb: gearThumb(it), render: () => <WeaponThumb item={it} inst={x} t={t} onOpen={() => setOpen(x.id)} /> }
   })
   return <AetherCarousel key={"list-" + mode} title={mode === "refine" ? t("wfRefineTitle", "Refinar") : t("wfStarsTitle", "Subir estrela")} items={items} cardWidth={240} cardHeight={360}
     empty={t("wfNoWeapon", "Nenhuma arma na mochila. Monte uma na Forja com fragmentos de classe.")} />

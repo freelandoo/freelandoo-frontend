@@ -12,7 +12,7 @@ import { type Receipt } from "../../data"
 import { AetherModal, AetherButton } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
 import { AE } from "../kit/aether-tokens"
-import { nameOf, type GearTr } from "./gear-card"
+import { gearThumb, nameOf, type GearTr } from "./gear-card"
 import { ForgeCard } from "./forge-card"
 import { useWorkshop } from "./use-workshop"
 import { WeaponWorkshop } from "./weapon-forge"
@@ -43,7 +43,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
     const items: CarouselItem[] = catalog.recipes
       .filter(recipe => byId.has(recipe.out) && (!byId.get(recipe.out)?.clan || byId.get(recipe.out)?.clan === bag.clan))
       .map(recipe => ({
-        key: recipe.id, label: nameOf(byId.get(recipe.out)!, t),
+        key: recipe.id, label: nameOf(byId.get(recipe.out)!, t), thumb: gearThumb(byId.get(recipe.out)!),
         render: () => <ForgeCard item={byId.get(recipe.out)!} recipe={recipe} bag={bag} byId={byId} t={t} busy={!!busy} act={act} />,
       }))
     body = <AetherCarousel key="recipes" title={t("wfRecipesTab", "Receitas")} items={items} cardWidth={240} cardHeight={360} empty={t("gearNothing", "Nada por aqui ainda.")} />

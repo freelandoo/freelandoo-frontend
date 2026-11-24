@@ -6,7 +6,7 @@
 // carrossel do kit, que agora desenha por aqui). Card escrito duas vezes diverge
 // em silêncio — mexeu aqui, muda em todos.
 
-import { useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Chamfer, EVO, FUNDO, archivo } from "../status/evo-skin"
 import { MM } from "../hud/tokens"
@@ -14,6 +14,26 @@ import { MM } from "../hud/tokens"
 type Tr = (key: string, fallback: string) => string
 
 export const ICE = "#bfe6ff"
+
+// Pré-carga das miniaturas: o arco só monta os cards perto do escolhido
+// (MOUNT), então a <img> de um card distante nem existe e a foto só começava a
+// baixar quando ele chegava perto (aparecia vazio). Quem abre a prateleira pede
+// TODAS as miniaturas de uma vez (WebP de ~25 KB); ao rolar, já estão no cache.
+const warmed = new Set<string>()
+export function usePreloadImages(urls: readonly (string | null | undefined)[]) {
+  const sig = urls.filter((u): u is string => !!u).join("\n")
+  useEffect(() => {
+    if (!sig) return
+    for (const u of sig.split("\n")) {
+      if (warmed.has(u)) continue
+      warmed.add(u)
+      const img = new Image()
+      img.decoding = "async"
+      img.onerror = () => warmed.delete(u)
+      img.src = u
+    }
+  }, [sig])
+}
 
 // ═══ a prateleira em arco ══════════════════════════════════════════════════
 const MOUNT = 3.2
