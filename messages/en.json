@@ -15704,7 +15704,12 @@
     "gearDesc_frag_deus_varkos": "Collect 100 to form the embryo of Varkos. The god drops 1 on every win and 5 more on the first.",
     "gear_embriao_varkos": "Embryo: Varkos",
     "gearDesc_embriao_varkos": "Embryo of Varkos, formed from 100 fragments. Its use in Cryogenics arrives in the next update: for now it stays in your backpack.",
-    "domCastleOpen": "The guardian has fallen! The castle gate is open."
+    "domCastleOpen": "The guardian has fallen! The castle gate is open.",
+    "domAdminJump": "Admin · jump straight into {name}",
+    "domAdminPart": "Part {n}",
+    "domAdminSectors": "Sectors {a}–{b}",
+    "domAdminEnterSector": "Enter at sector {n}",
+    "domAdminSectorNote": "Admin: you spawn in part {p}, in front of sector {n}."
   },
   "Sports": {
     "eyebrow": "Sports",

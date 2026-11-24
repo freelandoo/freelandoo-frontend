@@ -139,8 +139,13 @@ export interface DomainStart {
  * próximo setor a vencer. Nasce na cena desse setor, na frente do chefe ou no meio da zona
  * (open-domain-game `spawn.sector`). Sem nada vencido, ou cena ainda fechada, a entrada.
  */
-export function resumePoint(d: DomainInfo, pick: Pick | null): DomainStart {
+export function resumePoint(d: DomainInfo, pick: Pick | null, admin = false): DomainStart {
   const scenes = d.scenes ?? []
+  if (admin && pick?.kind === "sector") {
+    // admin (bypass do servidor): nasce na cena da placa escolhida, na frente dela
+    const sc = scenes.find((s) => s.sectors.includes(pick.n))
+    if (sc) return { scene: sc.n, sector: pick.n }
+  }
   if (!scenes.length || d.best <= 0) return { scene: 1, sector: 0 }
   const placeSector = pick?.kind === "place" ? (d.places ?? []).find((p) => p.id === pick.id)?.sector : undefined
   const picked = pick?.kind === "sector" ? d.sectors[pick.n - 1] : placeSector ? d.sectors[placeSector - 1] : undefined
@@ -226,7 +231,18 @@ export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnte
           <ChapterRail domains={state.domains} cur={dom.id} t={t} onPick={choose} />
           <DomainTitle d={dom} t={t} />
           <Track key={dom.id} d={dom} t={t} pick={pick} onPick={setPick} next={state.domains[state.domains.indexOf(dom) + 1] ?? null} />
-          {pick && <PhasePanel d={dom} pick={pick} power={state.power} next={state.domains[state.domains.indexOf(dom) + 1] ?? null} t={t} start={resumePoint(dom, pick)} onEnter={() => onEnter(dom.id, resumePoint(dom, pick))} />}
+          {pick && (
+            <PhasePanel
+              d={dom}
+              pick={pick}
+              power={state.power}
+              next={state.domains[state.domains.indexOf(dom) + 1] ?? null}
+              t={t}
+              start={resumePoint(dom, pick, state.bypass)}
+              onEnter={() => onEnter(dom.id, resumePoint(dom, pick, state.bypass))}
+              onJump={state.bypass ? (scene) => onEnter(dom.id, { scene, sector: 0 }) : undefined}
+            />
+          )}
         </>
       )}
     </div>
@@ -505,7 +521,53 @@ function LootRows({ loot, tint, t }: { loot: DomainSectorLoot; tint: string; t: 
 }
 
 /** O painel da fase (Anexo A §7.3): objetivos · recomendado · ambiente · prêmios · entrar. */
-function PhasePanel({ d, pick, power, next, t, start, onEnter }: { d: DomainInfo; pick: Pick; power: number; next: DomainInfo | null; t: Tr; start: DomainStart; onEnter: () => void }) {
+/** Só admin: escolhe o Domínio na fileira de cima e entra direto em qualquer parte dele. */
+function AdminJump({ d, t, onJump }: { d: DomainInfo; t: Tr; onJump: (scene: number) => void }) {
+  return (
+    <div className="mt-3 pt-2.5" style={{ borderTop: `1px solid ${SP.goldDeep}` }}>
+      <p className={`${TX.label} font-bold uppercase tracking-[0.14em]`} style={{ color: SP.cyan }}>
+        {t("domAdminJump", "Admin · entrar direto em {name}").replace("{name}", domainName(t, d.id))}
+      </p>
+      <div className="mt-1.5 flex gap-1.5">
+        {(d.scenes ?? []).map((sc) => (
+          <button
+            key={sc.n}
+            type="button"
+            onClick={() => onJump(sc.n)}
+            className={`${TX.label} flex flex-1 flex-col items-center justify-center font-bold uppercase tracking-[0.08em] transition-transform duration-100 active:scale-[0.96]`}
+            style={{ minHeight: TAP, background: "rgba(10,13,17,0.6)", color: SP.text, border: `1px solid ${SP.cyan}` }}
+          >
+            <span>{t("domAdminPart", "Parte {n}").replace("{n}", String(sc.n))}</span>
+            <span className="tabular-nums" style={{ color: SP.muted }}>
+              {t("domAdminSectors", "Setores {a}–{b}").replace("{a}", String(sc.sectors[0])).replace("{b}", String(sc.sectors[sc.sectors.length - 1]))}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PhasePanel({
+  d,
+  pick,
+  power,
+  next,
+  t,
+  start,
+  onEnter,
+  onJump,
+}: {
+  d: DomainInfo
+  pick: Pick
+  power: number
+  next: DomainInfo | null
+  t: Tr
+  start: DomainStart
+  onEnter: () => void
+  /** Só admin: entra direto na entrada da parte escolhida do Domínio. */
+  onJump?: (scene: number) => void
+}) {
   const lock = lockText(t, d)
   const dn = domainName(t, d.id)
   let eyebrow: string
@@ -596,17 +658,22 @@ function PhasePanel({ d, pick, power, next, t, start, onEnter }: { d: DomainInfo
               style={{ height: 52, background: SP.goldPlate, color: SP.ink, fontFamily: anton.style.fontFamily, fontSize: TYPE.title }}
             >
               <Swords className="h-5 w-5" aria-hidden />
-              {start.sector > 0
+              {onJump && start.sector > 0
+                ? t("domAdminEnterSector", "Entrar no setor {n}").replace("{n}", String(start.sector))
+                : start.sector > 0
                 ? t("domContinue", "Continuar no setor {n}").replace("{n}", String(start.sector))
                 : d.best > 0
                   ? t("domEnterAgain", "Voltar ao começo")
                   : t("domEnter", "Entrar")}
             </button>
             <p className={`${TX.label} mt-1.5 text-center`} style={{ color: SP.muted }}>
-              {start.sector > 0
+              {onJump && start.sector > 0
+                ? t("domAdminSectorNote", "Admin: nasce na parte {p}, na frente do setor {n}.").replace("{p}", String(start.scene)).replace("{n}", String(start.sector))
+                : start.sector > 0
                 ? t("domResumeNote", "Você volta para onde parou: parte {p}, perto do setor {n}.").replace("{p}", String(start.scene)).replace("{n}", String(start.sector))
                 : t("domStartNote", "A travessia começa na entrada; os setores ficam em ordem no caminho.")}
             </p>
+            {onJump && (d.scenes ?? []).length > 0 && <AdminJump d={d} t={t} onJump={onJump} />}
           </>
         )}
       </div>

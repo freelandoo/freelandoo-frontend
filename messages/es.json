@@ -15684,7 +15684,12 @@
     "gearDesc_frag_deus_varkos": "Junta 100 para formar el embrión de Varkos. El dios suelta 1 en cada victoria y 5 más en la primera.",
     "gear_embriao_varkos": "Embrión: Varkos",
     "gearDesc_embriao_varkos": "Embrión de Varkos, formado con 100 fragmentos. Su uso en la Criogenia llega en la próxima actualización: por ahora queda guardado en la mochila.",
-    "domCastleOpen": "¡El guardián cayó! La puerta del castillo se abrió."
+    "domCastleOpen": "¡El guardián cayó! La puerta del castillo se abrió.",
+    "domAdminJump": "Admin · entrar directo en {name}",
+    "domAdminPart": "Parte {n}",
+    "domAdminSectors": "Sectores {a}–{b}",
+    "domAdminEnterSector": "Entrar en el sector {n}",
+    "domAdminSectorNote": "Admin: apareces en la parte {p}, frente al sector {n}."
   },
   "Sports": {
     "eyebrow": "Deportes",
