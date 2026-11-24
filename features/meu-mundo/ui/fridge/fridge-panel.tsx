@@ -219,11 +219,6 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
                   <div className={`${teko.className} truncate ${compact ? "text-[17px]" : "text-[24px]"} font-bold uppercase leading-none`} style={{ color: EVO.branco }}>
                     {t(CATEGORY_LABEL[c.id][0], CATEGORY_LABEL[c.id][1])}
                   </div>
-                  <div className={`mt-1 ${compact ? "line-clamp-2 text-[10px] leading-[12px]" : "truncate text-[12px]"}`} style={{ color: EVO.mudo }}>
-                    {c.qty
-                      ? t("frUnits", "{n} na geladeira").replace("{n}", String(c.qty))
-                      : t("frCatEmpty", "Nada aqui — compre no Mercado")}
-                  </div>
                 </Card>
               )
             }}
@@ -244,25 +239,14 @@ export default function FridgePanel({ items, stock, character, pending, notice, 
             render={(i, active) => {
               const it = cat.items[i]
               const n = stock[it.id] ?? 0
-              const fx = effectsOf(it)
               return (
-                <Card overlay active={active} empty={n === 0} img={thumbOf(it.id)} badge={n ? `×${n}` : t("frOut", "Acabou")} w={cardW} h={cardH} compact={compact}>
+                <Card overlay active={active} empty={n === 0} img={thumbOf(it.id)} badge={`×${n}`} w={cardW} h={cardH} compact={compact}>
                   <div className="flex items-start justify-between gap-1">
                     <div className={`${teko.className} line-clamp-2 ${compact ? "text-[15px]" : "text-[20px]"} font-semibold uppercase leading-[0.95]`} style={{ color: EVO.branco }}>
                       {itemName(it, t)}
                     </div>
                     {it.rank && <RankSeal rank={it.rank} t={t} size={compact ? "sm" : "md"} />}
                   </div>
-                  {fx[0] && (
-                    <div className={`${teko.className} ${compact ? "mt-0.5 text-[14px]" : "mt-1 text-[19px]"} leading-none`} style={{ color: toneColor(fx[0].tone) }}>
-                      {effectText(fx[0], t)}
-                    </div>
-                  )}
-                  {fx.length > 1 && (
-                    <div className={`mt-0.5 truncate ${compact ? "text-[10px]" : "text-[11px]"}`} style={{ color: EVO.mudo }}>
-                      {fx.slice(1, 3).map((e) => effectText(e, t)).join(" · ")}
-                    </div>
-                  )}
                 </Card>
               )
             }}

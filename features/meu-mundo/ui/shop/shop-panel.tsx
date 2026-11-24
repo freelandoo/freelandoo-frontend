@@ -24,7 +24,8 @@ import { AetherButton, AetherModal } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
 import { AE, rankOf } from "../kit/aether-tokens"
 import type { ItemCategory } from "../kit/item-image"
-import { itemLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
+import { gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
+import { ItemFacts } from "../gear/item-facts"
 import { useWorkshop } from "../gear/use-workshop"
 import { effectText } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
@@ -177,7 +178,7 @@ export default function ShopPanel({
             render: () => (
               <ShopCard
                 img={gearThumb(item)}
-                art={!!gearThumb(item)}
+                art
                 category={(item.category === "shield" ? "armor" : item.category) as ItemCategory}
                 rarity={rank}
                 rank={rank}
@@ -185,7 +186,7 @@ export default function ShopPanel({
                 title={nameOf(item, t)}
                 badge={t("gearPrice", "{p} moedas").replace("{p}", String(price))}
                 subtitle={item.level > 1 ? t("shopFromLevel", "A partir do nível {n}").replace("{n}", String(item.level)) : undefined}
-                lines={itemLines(item, t).map((text) => ({ text, tone: "good" as const }))}
+                details={<ItemFacts item={item} t={t} bag={bag} />}
                 note={lock ?? undefined}
               >
                 {owned ? (
@@ -411,7 +412,7 @@ export default function ShopPanel({
       ) : tab === "exchange" && catalog && bag ? (
         <ExchangePanel catalog={catalog} bag={bag} t={t} act={act} busy={!!busy} />
       ) : (
-        <AetherCarousel key={tab + "-" + shelf + "-" + food} title={tabs.find((x) => x.id === tab)?.label} items={items} cardWidth={340} cardHeight={500} empty={empty} />
+        <AetherCarousel key={tab + "-" + shelf + "-" + food} title={tabs.find((x) => x.id === tab)?.label} items={items} cardWidth={tab === "gear" || tab === "food" ? 250 : 340} cardHeight={tab === "gear" || tab === "food" ? 375 : 500} empty={empty} />
       )}
       {message && (
         <p role="status" className="mt-3 text-center text-[13px]" style={{ color: AE.goldSoft }}>

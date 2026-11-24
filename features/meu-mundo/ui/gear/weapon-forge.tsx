@@ -16,12 +16,11 @@ import type { GearBonus } from "../../laminas/sim/fight"
 import { AetherButton } from "../kit/aether-modal"
 import { AetherCarousel, type CarouselItem } from "../kit/aether-carousel"
 import { AE, RANK, RANKS, rankOf, type Rank } from "../kit/aether-tokens"
-import { RankSeal } from "../kit/rank-seal"
-import { ItemImage } from "../kit/item-image"
-import { SteamFrame } from "../kit/steam/steam-frame"
+import { ItemDetailLayout, ItemTile } from "../kit/item-detail"
 import { teko } from "../status/evo-skin"
 import { bonusLines, gearLock, gearThumb, nameOf, type GearAction, type GearTr } from "./gear-card"
 import { FragmentPiece, PowderVial, WeaponStars } from "./weapon-marks"
+import { ItemFacts } from "./item-facts"
 
 export type WeaponMode = "refine" | "stars" | "assemble"
 type Props = { catalog: GearCatalog; bag: GearBag; byId: Map<string, GearItem>; t: GearTr; busy: boolean; act: GearAction }
@@ -37,62 +36,46 @@ const TIER: Record<WeaponTier, { color: string; key: string; label: string }> = 
   great: { color: "#F2B705", key: "wfTierGreat", label: "Excelente!" },
 }
 
-/** Miniatura com pouca informação: arte, nome, classe, nível e estrelas. */
-function WeaponThumb({ item, inst, t, note, onOpen, selected = false }: {
-  item: GearItem; inst?: GearInstance | null; t: GearTr; note?: string; onOpen?: () => void; selected?: boolean
+/** Miniatura: só a arte (selo da classe e estrelas no canto) e o nome + nível na faixa de baixo. */
+function WeaponThumb({ item, inst, t, count, onOpen, selected = false }: {
+  item: GearItem; inst?: GearInstance | null; t: GearTr; count?: number; onOpen?: () => void; selected?: boolean
 }) {
-  const art = gearThumb(item)
-  const rank = rankOf(item)
-  const body = (
-    <>
-      <span className="absolute inset-0">
-        <ItemImage src={art} category="weapon" rarity={rank} alt="" fill fit="cover" />
-      </span>
-      <span aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(8,10,14,0) 55%, rgba(8,10,14,0.82) 78%, rgba(8,10,14,0.96) 100%)" }} />
-      <span className="absolute left-2 top-2"><RankSeal rank={rank} t={t} size="sm" /></span>
-      <span className="absolute inset-x-0 bottom-0 grid gap-1 p-3 text-left" style={{ textShadow: "0 1px 2px #000" }}>
-        <span className={teko.className + " text-[22px] font-semibold uppercase leading-none"} style={{ color: AE.text }}>{nameOf(item, t)}</span>
-        {inst ? (
-          <span className="flex items-center justify-between gap-2">
-            <span className={teko.className + " text-[20px] leading-none tabular-nums"} style={{ color: AE.goldSoft }}>{t("wfLevelShort", "Nv {n}").replace("{n}", String(inst.weaponLevel || 1))}</span>
-            <WeaponStars stars={inst.stars || 1} size={14} t={t} />
-          </span>
-        ) : note ? <span className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>{note}</span> : null}
-      </span>
-    </>
-  )
-  const style = { aspectRatio: "2 / 3", background: AE.well, boxShadow: `inset 0 0 0 ${selected ? 2 : 1}px ${selected ? AE.gold : RANK[rank].color}` }
-  if (!onOpen) return <div className="relative h-full w-full overflow-hidden" style={style}>{body}</div>
   return (
-    <button type="button" onClick={onOpen} aria-label={t("wfOpenWeapon", "Abrir {name}").replace("{name}", nameOf(item, t))}
-      className="relative block h-full w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[#FF8A1F]" style={style}>
-      {body}
-    </button>
+    <ItemTile art={{ src: gearThumb(item), category: "weapon", rank: rankOf(item) }} name={nameOf(item, t)} t={t} selected={selected} onOpen={onOpen}
+      openLabel={t("wfOpenWeapon", "Abrir {name}").replace("{name}", nameOf(item, t))}
+      sub={inst ? t("wfLevelShort", "Nv {n}").replace("{n}", String(inst.weaponLevel || 1)) : undefined}
+      corner={inst ? <WeaponStars stars={inst.stars || 1} size={12} t={t} /> : undefined}
+      badge={count ? "×" + count : undefined} />
   )
 }
 
-/** O inspetor: mesmo tamanho da miniatura, fundo próprio (moldura steampunk). */
+/** O miolo da ação (Refinar, Subir estrela, Montar arma): título e conteúdo na coluna de dados do detalhe. */
 function Inspector({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <SteamFrame tone="gold" className="h-full w-full" innerClassName="flex h-full flex-col gap-3 overflow-y-auto overscroll-contain p-4">
+    <div className="grid gap-3">
       <h4 className={teko.className + " text-[24px] font-semibold uppercase leading-tight"} style={{ color: AE.goldSoft }}>{title}</h4>
       {children}
-    </SteamFrame>
+    </div>
   )
 }
 
-/** Miniatura + inspetor lado a lado (no celular, um embaixo do outro), com o "voltar à lista". */
-function PairView({ thumb, inspector, onBack, t }: { thumb: ReactNode; inspector: ReactNode; onBack: () => void; t: GearTr }) {
+/**
+ * O detalhe da arma no padrão compartilhado (arte | dados; no celular, empilhado): a ação no topo da coluna de
+ * dados e, embaixo, a ficha inteira da arma (classe, status da classe, nível, estrelas, bônus de agora…).
+ */
+function PairView({ item, inst, p, inspector, onBack }: { item: GearItem; inst?: GearInstance | null; p: Props; inspector: ReactNode; onBack: () => void }) {
+  const { t } = p
   return (
     <div className="grid gap-3">
       <button type="button" onClick={onBack} className="flex min-h-11 items-center gap-2 self-start text-[13px] font-semibold" style={{ color: AE.goldSoft }}>
         <ArrowLeft className="h-4 w-4" aria-hidden /> {t("wfBackToList", "Voltar à lista")}
       </button>
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-stretch sm:justify-center">
-        <div className="w-full max-w-[300px] shrink-0" style={{ aspectRatio: "2 / 3" }}>{thumb}</div>
-        {/* o brilho que corre na moldura sai pela lateral: corta só no eixo x (o losango do topo fica) */}
-        <div className="w-full max-w-[300px] shrink-0" style={{ aspectRatio: "2 / 3", overflowX: "clip" }}>{inspector}</div>
-      </div>
+      <ItemDetailLayout art={{ src: gearThumb(item), category: "weapon", rank: rankOf(item) }} name={nameOf(item, t)} t={t}
+        corner={inst ? <WeaponStars stars={inst.stars || 1} size={14} t={t} /> : undefined}>
+        {inspector}
+        <div className="h-px shrink-0" style={{ background: AE.brassLine }} />
+        <ItemFacts item={item} t={t} bag={p.bag} inst={inst} byId={p.byId} />
+      </ItemDetailLayout>
     </div>
   )
 }
@@ -348,10 +331,10 @@ export function WeaponWorkshop({ mode, ...p }: Props & { mode: WeaponMode }) {
     const list = weaponsBy.get(rank) || []
     const chosen = open ? list.find((x) => x.id === open) : null
     if (chosen)
-      return <PairView t={t} onBack={() => setOpen(null)} thumb={<WeaponThumb item={chosen} t={t} selected />} inspector={<AssembleInspector {...p} item={chosen} need={needOf(rank)} fragment={fragOf(rank)} />} />
+      return <PairView p={p} item={chosen} onBack={() => setOpen(null)} inspector={<AssembleInspector {...p} item={chosen} need={needOf(rank)} fragment={fragOf(rank)} />} />
     const items: CarouselItem[] = list.map((it) => {
       const own = (bag.instances || []).filter((x) => x.item === it.id).length
-      return { key: it.id, label: nameOf(it, t), render: () => <WeaponThumb item={it} t={t} onOpen={() => setOpen(it.id)} note={own ? t("wfOwnedN", "Na mochila: {n}").replace("{n}", String(own)) : t("wfTapToAssemble", "Toque para montar")} /> }
+      return { key: it.id, label: nameOf(it, t), render: () => <WeaponThumb item={it} t={t} onOpen={() => setOpen(it.id)} count={own} /> }
     })
     return (
       <div className="grid gap-3">
@@ -378,7 +361,7 @@ export function WeaponWorkshop({ mode, ...p }: Props & { mode: WeaponMode }) {
   const chosenItem = chosen ? byId.get(chosen.item) : null
   if (chosen && chosenItem)
     return (
-      <PairView t={t} onBack={() => setOpen(null)} thumb={<WeaponThumb item={chosenItem} inst={chosen} t={t} selected />}
+      <PairView p={p} item={chosenItem} inst={chosen} onBack={() => setOpen(null)}
         inspector={mode === "refine"
           ? <RefineInspector key={chosen.id} {...p} item={chosenItem} inst={chosen} maxLevel={maxLevel} rulesVersion={rules?.rulesVersion} batch={rules?.batch || 10} />
           : <StarsInspector key={chosen.id} {...p} item={chosenItem} inst={chosen} maxStars={maxStars} />} />

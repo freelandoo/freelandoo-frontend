@@ -24,12 +24,13 @@ import { AE, RANK, chamfer, rankOf, type Rank } from "../kit/aether-tokens"
 import { AetherButton } from "../kit/aether-modal"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { TX } from "../kit/type-scale"
-import { GearItemCard, itemLines, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
+import { GearItemCard, gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
+import { gearSlotName } from "../gear/item-facts"
+import { ItemDetailModal } from "../kit/item-detail"
 import { useWorkshop } from "../gear/use-workshop"
 import { SlotDetail, SlotThumb } from "../items/items-panel"
 import { buildSlots, slotName, type Slot } from "../items/item-catalog"
 import { uiSound } from "../../engine/audio"
-import { ShopCard } from "../shop/shop-card"
 import { effectsOf } from "../fridge/fridge-logic"
 import { effectText } from "../fridge/shelf"
 
@@ -58,18 +59,6 @@ interface Cell {
 }
 
 const tabOfGear = (g: GearItem): Tab => (g.category === "weapon" ? "weapons" : g.slot ? "armor" : "materials")
-/** E6: nome do slot (as mesmas chaves da página Equipado). */
-const gearSlotName = (s: GearSlot, t: GearTr) =>
-  ({
-    weapon: t("lkSlotWeapon", "Arma"),
-    offhand: t("lkSlotOffhand", "Mão secundária"),
-    helm: t("lkSlotHelm", "Cabeça"),
-    chest: t("lkSlotChest", "Peito"),
-    gloves: t("lkSlotGloves", "Mãos"),
-    boots: t("lkSlotBoots", "Pés"),
-    amulet: t("lkSlotAmulet", "Amuleto"),
-    relic: t("lkSlotRelic", "Relíquia"),
-  })[s]
 /** E6: o slot vem do catálogo (um só por peça). */
 const slotsFor = (item: GearItem): GearSlot[] => (item.slot ? [item.slot] : [])
 
@@ -198,7 +187,7 @@ export default function BagPanel({
           })}
         </div>
 
-        <div className="grid min-h-0 flex-1 sm:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid min-h-0 flex-1">
           {/* a grade */}
           <div className="min-h-0 overflow-y-auto px-3 pb-4 pt-3">
             {failed ? (
@@ -254,38 +243,28 @@ export default function BagPanel({
             )}
           </div>
 
-          {/* o detalhe: coluna no PC; no celular, folha que sobe de baixo */}
-          <aside
-            className={`min-h-0 overflow-y-auto border-t sm:static sm:block sm:border-l sm:border-t-0 ${selected ? "absolute inset-x-0 bottom-0 z-10 max-h-[72%]" : "hidden"}`}
-            style={{ background: AE.steel, borderColor: AE.brassLine, boxShadow: selected ? "0 -4px 0 #000" : undefined }}
-            aria-live="polite"
-          >
-            {selected ? (
-              <Detail
-                cell={selected}
-                t={t}
-                busy={!!busy}
-                confirm={confirm}
-                setConfirm={setConfirm}
-                onClose={() => setPick(null)}
-                equip={(item, slot) => {
-                  const target = slot || slotsFor(item).find((s) => !bag?.equipped[s]) || slotsFor(item)[0]
-                  uiSound(slot ? "unequip" : "equip")
-                  void act("equip-" + item.id, (tk) => equipGear(tk, target, slot ? null : item.id, slot ? null : bag?.owned[item.id]?.instance), t("gearEquippedOk", "Equipamento atualizado.")).then(() => onChanged?.())
-                }}
-                use={(item) => void (uiSound("useItem"), act("use-" + item.id, (tk, key) => applyGearItem(tk, item.id, key), t("forgeUsed", "Uso registrado.")))}
-                recycle={(item) => {
-                  void act("recycle-" + item.id, (tk, key) => recycleGear(tk, item.id, 1, key))
-                  setConfirm(null)
-                }}
-                bag={bag}
-              />
-            ) : (
-              <p className={`${TX.body} hidden p-4 sm:block`} style={{ color: AE.muted }}>
-                {t("bagPickHint", "Toque numa casa para ver o item.")}
-              </p>
-            )}
-          </aside>
+          {/* 24/11/2026: o detalhe abre num modal lado a lado (arte | dados) ao tocar na casa */}
+          {selected && (
+            <Detail
+              cell={selected}
+              t={t}
+              busy={!!busy}
+              confirm={confirm}
+              setConfirm={setConfirm}
+              onClose={() => setPick(null)}
+              equip={(item, slot) => {
+                const target = slot || slotsFor(item).find((s) => !bag?.equipped[s]) || slotsFor(item)[0]
+                uiSound(slot ? "unequip" : "equip")
+                void act("equip-" + item.id, (tk) => equipGear(tk, target, slot ? null : item.id, slot ? null : bag?.owned[item.id]?.instance), t("gearEquippedOk", "Equipamento atualizado.")).then(() => onChanged?.())
+              }}
+              use={(item) => void (uiSound("useItem"), act("use-" + item.id, (tk, key) => applyGearItem(tk, item.id, key), t("forgeUsed", "Uso registrado.")))}
+              recycle={(item) => {
+                void act("recycle-" + item.id, (tk, key) => recycleGear(tk, item.id, 1, key))
+                setConfirm(null)
+              }}
+              bag={bag}
+            />
+          )}
         </div>
         {message && (
           <p role="status" className={`${TX.body} shrink-0 px-3 pb-3 text-center`} style={{ color: AE.goldSoft }}>
@@ -371,37 +350,25 @@ function Detail({
   recycle: (item: GearItem) => void
   bag: ReturnType<typeof useWorkshop>["bag"]
 }) {
-  const close = (
-    <button type="button" onClick={onClose} className={`${TX.body} absolute right-1 top-1 z-10 grid h-11 w-11 place-items-center sm:hidden`} style={{ color: AE.muted }} aria-label={t("stCardClose", "Fechar")}>
-      ✕
-    </button>
-  )
-  // 17/11: comida e tônico no cartão grande (arte 2:3, classe e efeitos por cima), como a Loja
+  // 24/11/2026: comida e tônico também abrem no detalhe lado a lado (arte | efeitos), nada por cima da arte
   if (cell.slot?.item) {
     const it = cell.slot.item
+    const fx = effectsOf(it)
     return (
-      <div className="relative">
-        {close}
-        <ShopCard
-          img={cell.slot.thumb}
-          art
-          category={it.kind === "drink" ? "drink" : "food"}
-          rank={it.rank}
-          t={t}
-          title={cell.name}
-          badge={cell.qty != null ? "×" + cell.qty : undefined}
-          lines={effectsOf(it).map((e) => ({ text: effectText(e, t) ?? "", tone: e.tone === "good" ? ("good" as const) : e.tone === "bad" ? ("bad" as const) : ("gold" as const) }))}
-          note={t("itEatHint", "Para comer ou tomar, abra a geladeira dentro de casa.")}
-        />
-      </div>
+      <ItemDetailModal art={{ src: cell.slot.thumb, category: it.kind === "drink" ? "drink" : "food", rank: it.rank }} name={cell.name} t={t} onClose={onClose}>
+        {cell.qty != null && <p className={TX.body} style={{ color: AE.goldSoft }}>{t("itInFridge", "{n} na sua geladeira").replace("{n}", String(cell.qty))}</p>}
+        <ul className="grid gap-1 text-[13px] font-semibold">
+          {fx.map((e) => <li key={e.key} style={{ color: e.tone === "good" ? AE.good : e.tone === "bad" ? AE.bad : AE.goldSoft }}>{effectText(e, t)}</li>)}
+        </ul>
+        <p className={TX.label} style={{ color: AE.muted }}>{t("itEatHint", "Para comer ou tomar, abra a geladeira dentro de casa.")}</p>
+      </ItemDetailModal>
     )
   }
   if (cell.slot)
     return (
-      <div className="relative p-3">
-        {close}
+      <ItemDetailModal art={{ src: cell.slot.thumb, category: cell.slot.skin ? "skin" : "material" }} name={cell.name} t={t} onClose={onClose}>
         <SlotDetail slot={cell.slot} t={t} busy={busy} onEquip={() => {}} />
-      </div>
+      </ItemDetailModal>
     )
   const item = cell.gear!
   const own = bag?.owned[item.id]
@@ -437,17 +404,16 @@ function Detail({
       ),
     )
   return (
-    <div className="relative">
-      {close}
-      <GearItemCard
-        item={item}
-        t={t}
-        subtitle={own ? t("forgeOwnedCount", "Na mochila: {n}").replace("{n}", String(own.qty)) + (own.level ? " · +" + own.level : "") : undefined}
-        lines={itemLines(item, t)}
-      >
-        {lock && <p className={TX.label} style={{ color: AE.bad }}>{lock}</p>}
-        {actions.length > 0 && <div className="mt-auto grid gap-2">{actions}</div>}
-      </GearItemCard>
-    </div>
+    <GearItemCard
+      item={item}
+      t={t}
+      bag={bag}
+      detailOnly
+      onClose={onClose}
+      subtitle={own ? t("forgeOwnedCount", "Na mochila: {n}").replace("{n}", String(own.qty)) + (own.level ? " · +" + own.level : "") : undefined}
+    >
+      {lock && <p className={TX.label} style={{ color: AE.bad }}>{lock}</p>}
+      {actions.length > 0 && <div className="grid gap-2">{actions}</div>}
+    </GearItemCard>
   )
 }

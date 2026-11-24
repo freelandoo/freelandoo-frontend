@@ -46,7 +46,7 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
         key: recipe.id, label: nameOf(byId.get(recipe.out)!, t),
         render: () => <ForgeCard item={byId.get(recipe.out)!} recipe={recipe} bag={bag} byId={byId} t={t} busy={!!busy} act={act} />,
       }))
-    body = <AetherCarousel key="recipes" title={t("wfRecipesTab", "Receitas")} items={items} cardWidth={360} cardHeight={510} empty={t("gearNothing", "Nada por aqui ainda.")} />
+    body = <AetherCarousel key="recipes" title={t("wfRecipesTab", "Receitas")} items={items} cardWidth={240} cardHeight={360} empty={t("gearNothing", "Nada por aqui ainda.")} />
   }
 
   return (

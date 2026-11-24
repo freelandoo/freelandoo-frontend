@@ -187,7 +187,7 @@ export function Card({
   art?: ReactNode
   /** Fração da altura do card ocupada pela imagem (padrão 0,6). */
   imgK?: number
-  /** 17/11: a foto ocupa o card inteiro (2:3) e o texto vai por cima, no degradê do pé (ArtCard). */
+  /** 24/11/2026: carta de arte — a foto ocupa quase tudo e o nome fica numa faixa EMBAIXO (nada por cima da arte). */
   overlay?: boolean
   /** selo do canto (quantidade, preço); vazio = sem selo */
   badge?: string
@@ -196,7 +196,7 @@ export function Card({
   compact: boolean
   children: ReactNode
 }) {
-  const imgH = overlay ? h : Math.round(h * imgK)
+  const imgH = overlay ? h - (compact ? 40 : 54) : Math.round(h * imgK)
   return (
     <div className="relative h-full w-full">
       {/* contorno rubi do escolhido: camada estática, só a opacidade muda */}
@@ -233,16 +233,7 @@ export function Card({
           </span>
           )}
         </div>
-        {overlay ? (
-          <div
-            className={`absolute inset-x-0 bottom-0 ${compact ? "px-2 pb-1.5 pt-8" : "px-2.5 pb-2 pt-12"}`}
-            style={{ background: "linear-gradient(180deg, rgba(8,10,14,0) 0%, rgba(8,10,14,0.82) 40%, rgba(8,10,14,0.95) 100%)", textShadow: "0 1px 2px #000" }}
-          >
-            {children}
-          </div>
-        ) : (
-          <div className={compact ? "px-2 pb-1.5 pt-1" : "px-2.5 pb-2 pt-1.5"}>{children}</div>
-        )}
+        <div className={`flex flex-col justify-center ${compact ? "px-2 pb-1.5 pt-1" : "px-2.5 pb-2 pt-1.5"}`} style={overlay ? { height: h - imgH } : undefined}>{children}</div>
       </Chamfer>
     </div>
   )

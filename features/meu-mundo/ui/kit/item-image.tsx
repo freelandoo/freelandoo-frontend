@@ -184,7 +184,7 @@ export function ItemImage({
   size?: number
   /** B5: "cover" preenche o quadro (retratos); padrão "contain" (itens). */
   fit?: "contain" | "cover"
-  /** 17/11: ocupa o pai inteiro (altura 100%, sem proporção) e, em "cover", centraliza — fundo do ArtCard. */
+  /** 17/11: ocupa o pai inteiro (altura 100%, sem proporção) e, em "cover", centraliza — a arte das cartas (`kit/item-detail.tsx`). */
   fill?: boolean
 }) {
   const [state, setState] = useState<"loading" | "ok" | "fail">(src ? "loading" : "fail")

@@ -493,7 +493,7 @@ export interface WeaponProgress {
   powders: { id: string; rank: GearRank }[]
   /** faixas do sorteio de XP (a de perda tem min/max negativos) */
   tiers: { id: WeaponTier; p: number; min: number; max: number }[]
-  /** XP para sair de cada nível: índice 0 = nível 1 … 88 = nível 89 (dobra a cada 5 níveis) */
+  /** XP para sair de cada nível: índice 0 = nível 1 … 88 = nível 89 (dobra a cada 10 níveis, weapon-v2.1) */
   xpNeed: number[]
   fragmentNeed: Record<string, number>
   fragments: Record<string, string>

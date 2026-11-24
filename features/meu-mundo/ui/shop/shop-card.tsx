@@ -5,13 +5,14 @@
 // esta peça, dentro do carrossel do kit (que roda pela prateleira em arco do mercado).
 // Imagem em cima (item, retrato ou o desenho da categoria), nome, selo, linhas e a
 // ação embaixo. Rolagem só vertical dentro do card.
-// 17/11: `art` = a imagem é a arte 2:3 da arma — ocupa o card todo e o texto vai por cima (ArtCard).
+// 24/11/2026 (pedido do Alex): `art` = a carta é só a arte + o nome (selo da classe no canto); tocar abre o detalhe
+// lado a lado (arte | dados) com preço, linhas, nota, a ficha (`details`) e a ação. Nada por cima da arte.
 
 import type { ReactNode } from "react"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { AE, toneOf, type Rank, type Rarity } from "../kit/aether-tokens"
 import { RankSeal } from "../kit/rank-seal"
-import { ArtCard } from "../kit/art-card"
+import { ItemCardWithDetail } from "../kit/item-detail"
 import { archivo, teko } from "../status/evo-skin"
 
 export interface ShopLine {
@@ -37,6 +38,8 @@ export function ShopCard({
   portrait = false,
   dim = false,
   art = false,
+  count,
+  details,
   children,
 }: {
   img?: string | null
@@ -59,8 +62,12 @@ export function ShopCard({
   portrait?: boolean
   /** ainda não tem / nunca enfrentou: a imagem apagada */
   dim?: boolean
-  /** a imagem é a arte 2:3 da arma: preenche o card e o texto fica por cima */
+  /** a imagem é arte 2:3: a carta é só a arte + nome e o resto abre no detalhe */
   art?: boolean
+  /** modo arte: quantidade no canto da carta (×N); o `badge` (preço) vai para o detalhe */
+  count?: number
+  /** modo arte: a ficha inteira no detalhe (ex.: `ItemFacts`) */
+  details?: ReactNode
   children?: ReactNode
 }) {
   const color = tagColor ?? toneOf(rarity)?.color ?? AE.goldSoft
@@ -74,7 +81,7 @@ export function ShopCard({
   )
   const body = (
     <>
-      <div className="flex items-start justify-between gap-2">
+      {!art && <div className="flex items-start justify-between gap-2">
         <h4 className={`${teko.className} text-[24px] font-semibold uppercase leading-tight`} style={{ color: AE.text }}>
           {title}
         </h4>
@@ -83,7 +90,7 @@ export function ShopCard({
             {tag}
           </span>
         )}
-      </div>
+      </div>}
       {subtitle && (
         <p className={`${archivo.className} text-[12px]`} style={{ color: AE.muted }}>
           {subtitle}
@@ -106,11 +113,13 @@ export function ShopCard({
       {children && <div className="mt-auto grid gap-2 pt-1">{children}</div>}
     </>
   )
-  if (art && img)
+  if (art)
     return (
-      <ArtCard src={img} category={category} rarity={rarity} alt={title} badge={badgeEl} dim={dim}>
+      <ItemCardWithDetail art={{ src: img, category, rank, rarity, dim }} name={title} t={t ?? ((_k, f) => f)} badge={count ? "×" + count : undefined}>
+        {badge && <p className={`${teko.className} text-[22px] leading-none`} style={{ color: AE.goldSoft }}>{badge}</p>}
         {body}
-      </ArtCard>
+        {details}
+      </ItemCardWithDetail>
     )
   return (
     <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">

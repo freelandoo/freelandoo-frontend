@@ -1,12 +1,11 @@
 "use client"
 
 import type { ReactNode } from "react"
-import type { ApiResult, ClassStatKey, GearBag, GearClassStats, GearItem, GearOut } from "../../data"
-import { ItemImage, type ItemCategory } from "../kit/item-image"
-import { ArtCard } from "../kit/art-card"
+import type { ApiResult, ClassStatKey, GearBag, GearClassStats, GearInstance, GearItem, GearOut } from "../../data"
+import type { ItemCategory } from "../kit/item-image"
+import { ItemCardWithDetail, ItemDetailModal, type ItemArt } from "../kit/item-detail"
 import { AE, rankOf } from "../kit/aether-tokens"
-import { RankSeal } from "../kit/rank-seal"
-import { teko } from "../status/evo-skin"
+import { ItemFacts } from "./item-facts"
 import { shopBow, shopGun, shopHeavy, shopShield, shopStaff, shopSword } from "../../engine/shop-swords"
 import { itemArt } from "../../engine/item-art"
 
@@ -88,46 +87,27 @@ export function gearLock(item: GearItem, bag: GearBag | null, t: GearTr): string
   return item.clan && item.clan !== bag.clan ? t("gearOtherClan", "Arma de outra classe") : null
 }
 
-export function GearItemCard({ item, t, subtitle, lines, children }: {
-  item: GearItem; t: GearTr; subtitle?: string; lines?: string[]; children?: ReactNode
+/**
+ * 24/11/2026 (pedido do Alex): a carta é só a arte + o nome (selo da classe no canto); tocar abre o detalhe lado a
+ * lado (arte | dados) com a ação (`children`) e a ficha inteira (`ItemFacts`). `detailOnly` = já abre o detalhe
+ * (a Mochila abre pela casa da grade).
+ */
+export function GearItemCard({ item, t, subtitle, children, bag, inst, byId, sub, detailOnly = false, onClose }: {
+  item: GearItem; t: GearTr; subtitle?: string; children?: ReactNode
+  bag?: GearBag | null; inst?: GearInstance | null; byId?: Map<string, GearItem>
+  /** linha curta na faixa do nome (fora da arte) */
+  sub?: string
+  detailOnly?: boolean; onClose?: () => void
 }) {
-  const rank = rankOf(item)
-  const art = gearThumb(item)
-  const category = (item.category === "shield" ? "armor" : item.category) as ItemCategory
-  const body = (
+  const art: ItemArt = { src: gearThumb(item), category: (item.category === "shield" ? "armor" : item.category) as ItemCategory, rank: rankOf(item) }
+  const name = nameOf(item, t)
+  const content = (
     <>
-      <div className="flex items-start justify-between gap-2">
-        <h4 className={teko.className + " text-[24px] font-semibold uppercase leading-tight"} style={{ color: AE.text }}>{nameOf(item, t)}</h4>
-        <RankSeal rank={rank} t={t} />
-      </div>
       {subtitle && <p className="text-[12px]" style={{ color: AE.muted }}>{subtitle}</p>}
-      <ClassStats stats={item.stats} t={t} />
-      {item.set && <p className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>{t("gearSetLine", "Conjunto {name}").replace("{name}", t("gearSet_" + item.set, item.set))}</p>}
-      {!!lines?.length && <ul className="grid gap-1 text-[13px] font-semibold" style={{ color: AE.aether }}>{lines.map(line => <li key={line}>{line}</li>)}</ul>}
-      {item.description && <p className="text-[12px]" style={{ color: AE.muted }}>{t("gearDesc_" + item.id, item.description)}</p>}
-      {(item.source || item.uses?.length) && (
-        <details className="text-[12px]" style={{ color: AE.muted }}>
-          <summary className="min-h-9 py-2 font-semibold" style={{ color: AE.goldSoft }}>{t("forgeItemGuide", "Onde conseguir e como usar")}</summary>
-          {item.source && <p className="mb-1">{t("gearSource_" + item.id, item.source.join(" · "))}</p>}
-          {!!item.uses?.length && <p>{t("gearUses_" + item.id, item.uses.join(" · "))}</p>}
-        </details>
-      )}
-      <div className="mt-auto grid gap-2 pt-1">{children}</div>
+      {children && <div className="grid gap-2">{children}</div>}
+      <ItemFacts item={item} t={t} bag={bag} inst={inst} byId={byId} />
     </>
   )
-  // 17/11: arma com arte 2:3 — a arte ocupa o cartão e o texto fica por cima (Loja, Forja, Mochila…)
-  if (art)
-    return (
-      <ArtCard src={art} category={category} rarity={rank} alt={nameOf(item, t)}>
-        {body}
-      </ArtCard>
-    )
-  return (
-    <div className="flex h-full flex-col gap-2 overflow-y-auto overscroll-contain p-3">
-      <div className="shrink-0">
-        <ItemImage src={null} category={category} rarity={rank} alt={nameOf(item, t)} ratio={16 / 7} />
-      </div>
-      {body}
-    </div>
-  )
+  if (detailOnly) return <ItemDetailModal art={art} name={name} t={t} onClose={onClose || (() => {})}>{content}</ItemDetailModal>
+  return <ItemCardWithDetail art={art} name={name} sub={sub} t={t}>{content}</ItemCardWithDetail>
 }

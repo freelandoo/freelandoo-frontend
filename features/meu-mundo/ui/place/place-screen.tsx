@@ -299,10 +299,10 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
                       : t("pvDietNote_vampiro", "Aqui é o Açougue: Vampiro só toma a água da fonte. O sangue fica no Banco de Sangue.")}
                   </p>
                 )}
-                {/* 17/11: cardápio em cartões grandes (arte 2:3, classe e status por cima), como a Loja */}
+                {/* 24/11/2026: cardápio em cartas só com a arte + nome (como a Loja); tocar abre o detalhe com preço e efeitos */}
                 <AetherCarousel
-                  cardWidth={280}
-                  cardHeight={420}
+                  cardWidth={250}
+                  cardHeight={375}
                   items={menu.items.map((it) => {
                     const poor = menu.coins < it.price
                     return {
