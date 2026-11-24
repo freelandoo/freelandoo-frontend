@@ -836,6 +836,8 @@ export interface CenterLayout {
   portal: Vec2 & { id: string; radius: number; nameKey: string }
   /** Lore v2 D1: o Portal dos Domínios (lado leste da praça; pilares a ±span em z). */
   domainPortal?: Vec2 & { id: string; facing: number; radius: number; span: number; h: number; nameKey: string }
+  /** gacha-v1b: a Fonte do Éter (canto nordeste da praça; r = raio da bacia, radius = alcance do "Convocar"). */
+  fountain?: Vec2 & { id: string; r: number; h: number; radius: number; nameKey: string }
   /** Lore v2 F4: os NPCs da praça. */
   npcs?: StreetNpc[]
   obstacles: Box2Def[]
@@ -929,6 +931,8 @@ export type Interactable =
   | { kind: "portal"; id: string; x: number; z: number; radius: number }
   // Lore v2 D1: o Portal dos Domínios (abre a tela da travessia).
   | { kind: "domains"; id: string; x: number; z: number; radius: number }
+  // gacha-v1b: a Fonte do Éter (abre as Convocações).
+  | { kind: "fountain"; id: string; x: number; z: number; radius: number }
   // Lore v2 F4: conversar com um NPC (rua ou prédio).
   | { kind: "npc"; id: string; x: number; z: number; radius: number; npc: string }
   // Lore v2 C1: ler uma placa (texto do cenário, `qw_*`).

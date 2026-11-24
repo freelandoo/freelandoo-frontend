@@ -3,17 +3,17 @@
 // features/meu-mundo/ui/gacha/gacha-reveal.tsx — gacha-v1 (24/11/2026): a ABERTURA das Convocações.
 //
 // Só desenha o que o SERVIDOR já gravou (o recibo chega antes de abrir): a animação não sorteia, não muda a
-// garantia e terminar/pular não entrega nada de novo. Cinco tempos:
-//   1. portal — o anel de éter carrega (dourado, a faixa ainda escondida);
-//   2. sinal  — o anel ganha a COR da melhor faixa do lote (a classe do jogo, não estrelas);
-//   3. cartas — cada giro vira uma carta de FRAGMENTO, na ordem; a melhor brilha mais;
-//   4. resumo — a lista inteira: fragmento, classe, quantidade, saldo e quanto falta para usar.
+// garantia e terminar/pular não entrega nada de novo. gacha-v1b (pedido do Alex): três tempos —
+//   1. fonte  — a Fonte do Éter jorra água de partículas (gacha-sky.ts); ao convocar ela dispara;
+//   2. céu    — cada giro vira um feixe que SOBE ao céu e acende uma ESTRELA da cor da faixa; cada estrela
+//               abre a carta do FRAGMENTO ganho em cima dela (a melhor estrela é maior; no Topo, halo dourado);
+//   3. resumo — a lista inteira: fragmento, classe, quantidade, saldo e quanto falta para usar.
 // Pular vai direto ao resumo. Movimento reduzido = resumo com um fade. Aba escondida = resumo.
-// Vídeo opcional (gacha-media.ts): se o clipe existir e tocar, as cartas abrem no `revealAt`; qualquer falha
-// cai na animação. Nada é do tamanho da janela (o véu é parado; só o anel e as cartas mexem).
+// Vídeo opcional (gacha-media.ts): se o clipe existir e tocar, as cartas abrem no `revealAt` nos mesmos lugares;
+// qualquer falha cai na fonte. O canvas fica numa caixa de até 960×720 (DPR ≤ 1,5).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { FastForward, Hammer, Snowflake, X } from "lucide-react"
 import type { GachaPullResult, GachaResult, GachaTier } from "../../data"
 import { uiSound } from "../../engine/audio/ui-sound"
@@ -22,9 +22,10 @@ import { ItemImage } from "../kit/item-image"
 import { RankSeal } from "../kit/rank-seal"
 import { archivo, teko } from "../status/evo-skin"
 import { clipFor, GACHA_MEDIA_TIMEOUT_MS, sourceOf } from "./gacha-media"
+import { GachaSky, skySlots } from "./gacha-sky"
 
 type Tr = (key: string, fallback: string) => string
-type Stage = "portal" | "signal" | "cards" | "summary"
+type Stage = "sky" | "summary"
 
 /** Cor de cada faixa (a dos Personagens não tem classe: usa a classe equivalente). */
 export const TIER_RANK: Record<GachaTier, Rank> = { common: "C", rare: "A", epic: "SS", top: "legendary" }
@@ -54,13 +55,18 @@ export default function GachaReveal({
   onUse?: () => void
 }) {
   const reduce = useReducedMotion()
-  const [stage, setStage] = useState<Stage>(reduce ? "summary" : "portal")
-  const [shown, setShown] = useState(reduce ? pull.results.length : 0)
+  const [stage, setStage] = useState<Stage>(reduce ? "summary" : "sky")
+  /** Cartas abertas (índice do giro): cada uma abre quando a estrela dela acende. */
+  const [open, setOpen] = useState<Set<number>>(() => new Set())
+  const [allOpen, setAllOpen] = useState(false)
   const [video, setVideo] = useState<"off" | "loading" | "playing">(() => (reduce ? "off" : clipFor(pull.banner, pull.best) ? "loading" : "off"))
   const timers = useRef<number[]>([])
   const vref = useRef<HTMLVideoElement | null>(null)
+  const cref = useRef<HTMLCanvasElement | null>(null)
   const best = pull.results.reduce((b, r) => (TIER_ORDER.indexOf(r.tier) > TIER_ORDER.indexOf(b.tier) ? r : b), pull.results[0])
-  const bestColor = tierColor(best)
+  /** Celular em pé: 4 estrelas por fileira (5 não cabem). Lido uma vez: a abertura dura segundos. */
+  const [tallBox] = useState(() => typeof window !== "undefined" && window.innerHeight > window.innerWidth)
+  const slots = skySlots(pull.results.length, tallBox)
 
   const clear = () => {
     for (const id of timers.current) window.clearTimeout(id)
@@ -72,31 +78,57 @@ export default function GachaReveal({
     clear()
     vref.current?.pause()
     setVideo("off")
-    setShown(pull.results.length)
     setStage("summary")
-  }, [pull.results.length])
+  }, [])
 
-  /** As cartas, uma por uma (o lote de 10 leva ~1,5 s). */
+  /** Todas abertas: um tempo para ver o céu e segue ao resumo (ou "Ver resumo"). */
+  const finish = useCallback(() => {
+    setAllOpen(true)
+    later(2600, () => setStage("summary"))
+  }, [])
+
+  /** Vídeo: as cartas abrem no revealAt, nos lugares das estrelas. */
   const dealCards = useCallback(() => {
-    setStage("cards")
     uiSound("reward")
-    const step = pull.results.length > 1 ? 150 : 0
-    pull.results.forEach((_, i) => later(i * step, () => setShown(i + 1)))
-    later(pull.results.length * step + 900, () => setStage("summary"))
+    pull.results.forEach((_, i) => later(i * 120, () => setOpen((o) => new Set(o).add(i))))
+    later(pull.results.length * 120, finish)
     if (best.tier === "top") later(200, () => uiSound("levelUp"))
-  }, [pull.results, best.tier])
+  }, [pull.results, best.tier, finish])
 
-  // animação do jogo (sem vídeo, ou o vídeo falhou)
+  const skyOn = stage === "sky" && video === "off" && !reduce
+  // a fonte e o céu (sem vídeo, ou o vídeo falhou)
   useEffect(() => {
-    if (reduce || video !== "off" || stage !== "portal") return
-    uiSound("gate")
-    later(1100, () => setStage("signal"))
-    later(1800, dealCards)
-    return clear
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- roda uma vez por tentativa (video/stage mudam o caminho)
-  }, [video])
+    const canvas = cref.current
+    if (!skyOn || !canvas) return
+    let rewarded = false
+    const sky = new GachaSky(
+      canvas,
+      pull.results.map((r, i) => ({ ...slots[i], color: tierColor(r), big: r === best && r.tier !== "common", top: r.tier === "top" })),
+      {
+        launch: () => uiSound("gate"),
+        star: (i) => {
+          if (!rewarded) {
+            rewarded = true
+            uiSound("reward")
+          }
+          if (pull.results[i].tier === "top") uiSound("levelUp")
+          later(220, () => setOpen((o) => new Set(o).add(i)))
+        },
+        all: () => later(400, finish),
+      },
+    )
+    const onResize = () => sky.resize()
+    window.addEventListener("resize", onResize)
+    sky.start()
+    return () => {
+      sky.stop()
+      window.removeEventListener("resize", onResize)
+      clear()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- uma vez por tentativa (o recibo não muda)
+  }, [skyOn])
 
-  // vídeo opcional: espera começar; demorou ou falhou → animação
+  // vídeo opcional: espera começar; demorou ou falhou → fonte
   useEffect(() => {
     if (video !== "loading") return
     const id = window.setTimeout(() => setVideo("off"), GACHA_MEDIA_TIMEOUT_MS)
@@ -130,63 +162,53 @@ export default function GachaReveal({
         </button>
       )}
 
-      {/* vídeo opcional (o Alex manda depois): só a abertura; o resultado é sempre o overlay */}
-      {clip && src && video !== "off" && stage !== "summary" && (
-        <video
-          ref={vref}
-          className="absolute inset-0 m-auto max-h-full max-w-full"
-          playsInline
-          muted={false}
-          autoPlay
-          poster={clip.poster}
-          onPlaying={() => setVideo("playing")}
-          onError={() => setVideo("off")}
-          onTimeUpdate={(e) => {
-            if (stage === "portal" && e.currentTarget.currentTime >= clip.revealAt) dealCards()
-          }}
-          onEnded={toSummary}
-        >
-          {src.webm && <source src={src.webm} type="video/webm" />}
-          {src.mp4 && <source src={src.mp4} type="video/mp4" />}
-        </video>
-      )}
-
-      {/* 1–2: o anel de éter (sem vídeo) */}
-      <AnimatePresence>
-        {video === "off" && (stage === "portal" || stage === "signal") && (
-          <motion.div key="ring" className="relative flex h-[300px] w-[300px] items-center justify-center" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.25 }} transition={{ duration: 0.45 }}>
-            {[0, 1, 2].map((i) => (
-              <motion.span
-                key={i}
-                className="absolute rounded-full"
-                style={{ inset: i * 28, border: `2px solid ${stage === "signal" ? bestColor : AE.gold}`, boxShadow: `0 0 ${18 + i * 8}px ${stage === "signal" ? bestColor : AE.gold}66` }}
-                animate={{ rotate: i % 2 ? -360 : 360, opacity: [0.5, 1, 0.5] }}
-                transition={{ rotate: { duration: 3 - i * 0.6, repeat: Infinity, ease: "linear" }, opacity: { duration: 1.1, repeat: Infinity } }}
-              />
-            ))}
-            {Array.from({ length: 12 }, (_, i) => (
-              <motion.span
-                key={`s${i}`}
-                className="absolute h-1.5 w-1.5 rounded-full"
-                style={{ background: stage === "signal" ? bestColor : AE.goldSoft }}
-                initial={{ x: Math.cos((i / 12) * Math.PI * 2) * 150, y: Math.sin((i / 12) * Math.PI * 2) * 150, opacity: 0 }}
-                animate={{ x: 0, y: 0, opacity: [0, 1, 0] }}
-                transition={{ duration: 0.9, delay: (i % 6) * 0.12, repeat: Infinity }}
-              />
-            ))}
-            <span className={`${teko.className} relative text-[26px] uppercase tracking-[0.2em]`} style={{ color: stage === "signal" ? bestColor : AE.goldSoft }}>
-              {stage === "signal" ? t(`gaTier_${best.tier}`, TIER_LABEL[best.tier]) : t("gaCalling", "Convocando…")}
+      {stage === "sky" && (
+        <div className="relative h-[min(100dvh,720px)] w-full max-w-[960px] overflow-hidden" style={{ background: "radial-gradient(ellipse at 50% 110%, #0d2a44 0%, #070b16 55%, #04050a 100%)" }}>
+          {/* vídeo opcional (o Alex manda depois): só a abertura; o resultado é sempre o overlay */}
+          {clip && src && video !== "off" ? (
+            <video
+              ref={vref}
+              className="absolute inset-0 h-full w-full object-cover"
+              playsInline
+              muted={false}
+              autoPlay
+              poster={clip.poster}
+              onPlaying={() => setVideo("playing")}
+              onError={() => setVideo("off")}
+              onTimeUpdate={(e) => {
+                if (open.size === 0 && e.currentTarget.currentTime >= clip.revealAt) dealCards()
+              }}
+              onEnded={toSummary}
+            >
+              {src.webm && <source src={src.webm} type="video/webm" />}
+              {src.mp4 && <source src={src.mp4} type="video/mp4" />}
+            </video>
+          ) : (
+            <canvas ref={cref} className="absolute inset-0 h-full w-full" aria-hidden />
+          )}
+          {open.size === 0 && (
+            <span className={`${teko.className} absolute inset-x-0 top-[40%] text-center text-[24px] uppercase tracking-[0.2em]`} style={{ color: "#BFE8FF", textShadow: "0 0 12px #3fa9ff" }}>
+              {t("gaCalling", "Convocando…")}
             </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 3: as cartas */}
-      {stage === "cards" && (
-        <div className={`relative grid gap-2 ${pull.results.length > 1 ? "grid-cols-5" : "grid-cols-1"}`}>
-          {pull.results.slice(0, shown).map((r, i) => (
-            <FragmentCard key={i} t={t} r={r} info={info(r.item)} big={pull.results.length === 1} best={r === best && r.tier !== "common"} />
-          ))}
+          )}
+          {/* as cartas, cada uma em cima da sua estrela */}
+          {pull.results.map((r, i) =>
+            open.has(i) ? (
+              <div key={i} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${slots[i].x * 100}%`, top: `${slots[i].y * 100}%` }}>
+                <FragmentCard t={t} r={r} info={info(r.item)} big={pull.results.length === 1} tall={tallBox} best={r === best && r.tier !== "common"} />
+              </div>
+            ) : null,
+          )}
+          {allOpen && (
+            <button
+              type="button"
+              onClick={toSummary}
+              className={`${teko.className} absolute bottom-[4%] left-1/2 -translate-x-1/2 px-4 py-1.5 text-[18px] uppercase`}
+              style={{ background: AE.goldPlate, color: "#1a1200", boxShadow: "3px 3px 0 #000" }}
+            >
+              {t("gaSeeSummary", "Ver resumo")}
+            </button>
+          )}
         </div>
       )}
 
@@ -198,15 +220,15 @@ export default function GachaReveal({
 
 const TIER_LABEL: Record<GachaTier, string> = { common: "Comum", rare: "Raro", epic: "Épico", top: "Topo" }
 
-function FragmentCard({ t, r, info, big, best }: { t: Tr; r: GachaResult; info: RevealItemInfo; big: boolean; best: boolean }) {
+function FragmentCard({ t, r, info, big, best, tall = false }: { t: Tr; r: GachaResult; info: RevealItemInfo; big: boolean; best: boolean; tall?: boolean }) {
   const color = tierColor(r)
   const reduce = useReducedMotion()
   return (
     <motion.div
-      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18, rotateY: 90 }}
-      animate={{ opacity: 1, y: 0, rotateY: 0 }}
-      transition={{ duration: 0.35 }}
-      className={`relative flex flex-col items-center p-1.5 ${big ? "w-[220px]" : "w-[min(17vw,120px)]"}`}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.2, rotateY: 90 }}
+      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+      transition={{ duration: 0.4, ease: [0.2, 0.9, 0.3, 1.2] }}
+      className={`relative flex flex-col items-center p-1.5 ${big ? "w-[200px]" : tall ? "w-[min(20vw,96px)]" : "w-[min(15vw,104px)]"}`}
       style={{ background: AE.steel, boxShadow: `inset 0 0 0 ${best ? 2 : 1}px ${color}, 0 0 ${best ? 22 : 8}px ${color}55, 3px 3px 0 #000` }}
     >
       <div className="relative aspect-square w-full" style={{ background: AE.well }}>

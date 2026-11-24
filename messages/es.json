@@ -16180,7 +16180,10 @@
     "invRule": "Quien entra en Meu Mundo por primera vez con tu enlace y juega {m} minutos en hasta {d} días te da {n} fragmentos de un personaje que eliges. No se repite hasta pasar por los 12; luego la lista vuelve a empezar.",
     "invCounts": "Esperando jugar: {w} · premios para elegir: {p} · entregados: {e}",
     "invCapped": "por encima del límite de {n} en {d} días: {x}",
-    "invPick": "Elige el personaje (ronda {r}):"
+    "invPick": "Elige el personaje (ronda {r}):",
+    "centerFountain": "Fuente del Éter",
+    "centerFountainUse": "Fuente del Éter · Convocar",
+    "gaSeeSummary": "Ver resumen"
   },
   "Sports": {
     "eyebrow": "Deportes",

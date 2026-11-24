@@ -16200,7 +16200,10 @@
     "invRule": "Anyone who joins Meu Mundo for the first time with your link and plays {m} minutes within {d} days earns you {n} fragments of a character you choose. No repeats until all 12; then the list starts over.",
     "invCounts": "Waiting to play: {w} · prizes to choose: {p} · delivered: {e}",
     "invCapped": "over the limit of {n} in {d} days: {x}",
-    "invPick": "Choose the character (round {r}):"
+    "invPick": "Choose the character (round {r}):",
+    "centerFountain": "Aether Fountain",
+    "centerFountainUse": "Aether Fountain · Summon",
+    "gaSeeSummary": "See summary"
   },
   "Sports": {
     "eyebrow": "Sports",
