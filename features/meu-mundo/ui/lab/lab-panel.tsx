@@ -13,10 +13,10 @@
 // (MeuMundoCharacterService.buyEmbryo/accelerate, regra em characters/rules.ts LAB).
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Dna, Egg, FastForward, FlaskConical, Loader2, MessagesSquare, Snowflake, X } from "lucide-react"
+import { Dna, Egg, FastForward, FlaskConical, Loader2, MessagesSquare, Package, Snowflake, X } from "lucide-react"
 import { useLocale } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
-import { getCharacters, postCharacterAccelerate, postCharacterEmbryo } from "../../data"
+import { getCharacters, getGear, postCapsuleUse, postCharacterAccelerate, postCharacterEmbryo, type GearItem } from "../../data"
 import type { BodyId, CharactersResult } from "../../types"
 import { speciesBody } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
@@ -26,7 +26,8 @@ import { Chamfer, EVO, archivo, teko } from "../status/evo-skin"
 import { MM } from "../hud/tokens"
 
 type Tr = (key: string, fallback: string) => string
-export type LabMode = "talk" | "embryo" | "accelerate"
+// gacha-v1 (24/11/2026): "capsule" = USAR A CÁPSULA que a Forja faz com 100 fragmentos (Convocações / Domínios)
+export type LabMode = "talk" | "embryo" | "accelerate" | "capsule"
 
 /** O gelo do laboratório (mesmo ciano das cápsulas do prédio e do interior). */
 export const ICE = { glow: "#73E0FF", deep: "#0B1E2C", panel: "#0F2636", frost: "#D6EEF6", line: "rgba(115,224,255,.45)" }
@@ -63,6 +64,24 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
   const [line] = useState(() => LINES[Math.floor(Math.random() * LINES.length)])
   // chave do pedido: a mesma para o reenvio da mesma compra (clique duplo não compra 2×)
   const keyRef = useRef<{ species: string; key: string } | null>(null)
+
+  // gacha-v1: as Cápsulas da mochila (embriao_*: personagem/deus feito com 100 fragmentos)
+  const [capsules, setCapsules] = useState<{ item: GearItem; qty: number }[] | null>(null)
+  const capKey = useRef<{ item: string; key: string } | null>(null)
+  useEffect(() => {
+    if (mode !== "capsule") return
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    void getGear(token).then((r) => {
+      if (!alive || !r.ok) return
+      const owned = r.data.bag.owned || {}
+      setCapsules(r.data.gear.items.filter((i) => i.id.startsWith("embriao_") && (owned[i.id]?.qty ?? 0) > 0).map((i) => ({ item: i, qty: owned[i.id].qty })))
+    })
+    return () => {
+      alive = false
+    }
+  }, [mode])
 
   const say = useCallback((msg: string) => {
     setNotice(msg)
@@ -113,12 +132,26 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
     say(t("labAccelerated", "Pronto: agora ele tem 15 anos."))
   }
 
+  const wakeCapsule = async (item: string) => {
+    const token = getToken()
+    if (!token || busy) return
+    if (!capKey.current || capKey.current.item !== item) capKey.current = { item, key: newKey() }
+    setBusy(true)
+    const r = await postCapsuleUse(token, item, capKey.current.key)
+    setBusy(false)
+    if (!r.ok) return say(r.error)
+    capKey.current = null
+    setData(r.data)
+    setCapsules((cur) => (cur ?? []).map((c) => (c.item.id === item ? { ...c, qty: c.qty - 1 } : c)).filter((c) => c.qty > 0))
+    say(t("labCapsuleDone", "Pronto: o personagem nasceu congelado numa vaga da cápsula."))
+  }
+
   const portraitOf = (species: string, sx: "m" | "f" | null) => {
     const body = speciesBody(species, sx ?? sex, "young") as BodyId | null
     return (body && PORTRAIT[body]) || PORTRAIT.sergio
   }
 
-  const title = mode === "embryo" ? t("labEmbryoTitle", "Tanque de embriões") : mode === "accelerate" ? t("labAccelTitle", "Acelerador") : t("labTitle", "Laboratório de Criogenia")
+  const title = mode === "capsule" ? t("labCapsuleTitle", "Usar Cápsula") : mode === "embryo" ? t("labEmbryoTitle", "Tanque de embriões") : mode === "accelerate" ? t("labAccelTitle", "Acelerador") : t("labTitle", "Laboratório de Criogenia")
   const accelList = (data?.characters.list ?? []).filter((c) => c.canAccel)
 
   return (
@@ -161,6 +194,9 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
               </EvoButton>
               <EvoButton size="sm" variant="ghost" icon={<FastForward className="h-4 w-4" />} onClick={() => onMode("accelerate")}>
                 {t("pvAccelerate", "Usar o acelerador")}
+              </EvoButton>
+              <EvoButton size="sm" variant="ghost" icon={<Package className="h-4 w-4" />} onClick={() => onMode("capsule")}>
+                {t("pvCapsule", "Usar Cápsula")}
               </EvoButton>
             </div>
           </div>
@@ -212,6 +248,46 @@ export default function LabPanel({ t, mode, onMode, onClose }: LabPanelProps) {
                           <EvoButton size="sm" icon={<Egg className="h-4 w-4" />} disabled={busy || full || (coins != null && coins < e.price)} onClick={() => void buy(e.species, e.sex ? null : sex)}>
                             {t("labBuy", "Comprar")}
                           </EvoButton>
+                        </div>
+                      </div>
+                    </div>
+                  </Chamfer>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {mode === "capsule" && (
+          <>
+            <p className="mt-2 text-[13px]" style={{ color: EVO.mudo }}>
+              {t("labCapsuleIntro", "A Cápsula se faz na Forja com 100 fragmentos do personagem. Aqui ela vira o personagem: nasce congelado, com 1 m, numa vaga livre. Repetido pode: é outro indivíduo.")}
+            </p>
+            {full && <p className="mt-2 text-[13px]" style={{ color: EVO.perigo }}>{t("labCapsuleFull", "A cápsula está cheia: libere uma vaga. A sua Cápsula fica guardada.")}</p>}
+            {!capsules && <Loader2 className="mx-auto my-6 h-5 w-5 animate-spin" style={{ color: EVO.mudo }} />}
+            {capsules && !capsules.length && <p className="mt-4 text-[14px]" style={{ color: EVO.branco }}>{t("labCapsuleNone", "Você ainda não tem Cápsulas. Junte 100 fragmentos nas Convocações ou nos Domínios e fabrique na Forja.")}</p>}
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {(capsules ?? []).map(({ item, qty }) => {
+                const species = item.id.replace(/^embriao_/, "")
+                const playable = !!speciesBody(species, "m", "young")
+                return (
+                  <Chamfer key={item.id} cut={12}>
+                    <div className="flex gap-3 p-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={portraitOf(species, "m")} alt="" className="h-20 w-14 shrink-0 object-cover" style={{ borderRadius: MM.radius.card }} />
+                      <div className="min-w-0 flex-1">
+                        <div className={`${teko.className} text-[20px] uppercase leading-none tracking-[0.06em]`} style={{ color: ICE.frost }}>
+                          {playable ? speciesName(species, t) : t("gear_" + item.id, item.name)}
+                        </div>
+                        <div className="mt-1 text-[12px]" style={{ color: EVO.mudo }}>×{qty}</div>
+                        <div className="mt-2">
+                          {playable ? (
+                            <EvoButton size="sm" icon={<Snowflake className="h-4 w-4" />} disabled={busy || full} onClick={() => void wakeCapsule(item.id)}>
+                              {t("labCapsuleGo", "Acordar na cápsula")}
+                            </EvoButton>
+                          ) : (
+                            <span className="text-[12px]" style={{ color: EVO.mudo }}>{t("labCapsuleSoon", "Em breve: ainda não é jogável.")}</span>
+                          )}
                         </div>
                       </div>
                     </div>

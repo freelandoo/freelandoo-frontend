@@ -291,6 +291,23 @@ const ROWS = [
   ["Há um encanto sorteado esperando a sua escolha", "An enchantment roll is waiting for your choice", "Hay un encantamiento sorteado esperando tu elección"],
   ["Nenhum encanto esperando escolha", "No enchantment waiting for a choice", "Ningún encantamiento esperando elección"],
   ["Essa opção não saiu no sorteio", "That option wasn't rolled", "Esa opción no salió en el sorteo"],
+  // gacha-v1: Convocações, Cápsula e convites do jogo
+  ["Convocação desconhecida", "Unknown Summon", "Convocación desconocida"],
+  ["Escolha 1 ou 10 giros", "Choose 1 or 10 summons", "Elige 1 o 10 giros"],
+  ["Escolha um alvo válido para essa Convocação", "Choose a valid target for this Summon", "Elige un objetivo válido para esta Convocación"],
+  ["Faíscas de Éter insuficientes", "Not enough Aether Sparks", "Chispas de Éter insuficientes"],
+  ["As Convocações mudaram: atualize a página", "The Summons changed: refresh the page", "Las Convocaciones cambiaron: actualiza la página"],
+  ["Convocação não encontrada", "Summon not found", "Convocación no encontrada"],
+  ["Página inválida", "Invalid page", "Página no válida"],
+  ["Essa Cápsula não existe", "That Capsule doesn't exist", "Esa Cápsula no existe"],
+  ["Essa Cápsula ainda não vira personagem: fica guardada", "That Capsule can't become a character yet: it stays saved", "Esa Cápsula aún no se convierte en personaje: queda guardada"],
+  ["Você não tem essa Cápsula", "You don't have that Capsule", "No tienes esa Cápsula"],
+  ["Convite inválido", "Invalid invite", "Invitación no válida"],
+  ["Você não pode usar o seu próprio convite", "You can't use your own invite", "No puedes usar tu propia invitación"],
+  ["O convite vale para quem está entrando no Meu Mundo pela primeira vez", "The invite is for people joining Meu Mundo for the first time", "La invitación vale para quien entra en Meu Mundo por primera vez"],
+  ["Escolha um personagem da lista", "Choose a character from the list", "Elige un personaje de la lista"],
+  ["Esse personagem já foi escolhido nesta rodada", "That character was already chosen this round", "Ese personaje ya fue elegido en esta ronda"],
+  ["Nenhum prêmio de convite esperando", "No invite prize waiting", "Ningún premio de invitación esperando"],
 ]
 const MENU = { menuLanguage: ["Idioma", "Language", "Idioma"] }
 const LOCALES = ["pt-BR", "en", "es"]

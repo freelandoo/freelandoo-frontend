@@ -6,10 +6,14 @@
 // afiliado da Carteira — o servidor cria o cadastro e o cupom se faltarem.
 
 import { useEffect, useState } from "react"
-import { Check, Copy, Loader2, Share2 } from "lucide-react"
+import { Check, Copy, Gift, Loader2, Share2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { getShareLink, type ShareLink } from "../../data"
+import { getInvite, getShareLink, postInviteReward, type InviteState, type ShareLink } from "../../data"
+import { speciesBody } from "../../characters/rules"
+import { speciesName } from "../../characters/names"
+import type { BodyId } from "../../types"
+import { PORTRAIT } from "../portraits"
 import { MM } from "../hud/tokens"
 import { EvoButton, EvoDialog } from "../hud/hud-kit"
 
@@ -95,6 +99,8 @@ export default function ShareModal({ onClose }: { onClose: () => void }) {
           <li>{t("shareRuleTerms", "Compra estornada não rende. Prazo e saque seguem a regra do programa de afiliados.")}</li>
         </ul>
 
+        <InviteGame t={t} />
+
         {error ? (
           <p className="rounded-none p-2.5 text-[13px]" style={{ background: MM.card, border: `1px solid ${MM.border}`, color: MM.text }}>
             {error}
@@ -130,5 +136,75 @@ export default function ShareModal({ onClose }: { onClose: () => void }) {
         )}
       </div>
     </EvoDialog>
+  )
+}
+
+/**
+ * gacha-v1 (24/11/2026): CONVITES DO JOGO (registro próprio do servidor, fora da comissão acima). Quem entra pela
+ * 1ª vez com o seu link e joga 15 minutos em até 14 dias rende 10 fragmentos de um personagem que VOCÊ escolhe;
+ * não repete na rodada e, depois dos 12, a lista recomeça. Só totais: nenhum dado dos convidados aparece.
+ */
+function InviteGame({ t }: { t: (k: string, f: string) => string }) {
+  const [st, setSt] = useState<InviteState | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    let alive = true
+    void getInvite(token).then((r) => alive && r.ok && setSt(r.data))
+    return () => {
+      alive = false
+    }
+  }, [])
+  if (!st) return null
+  const pick = async (character: string) => {
+    const token = getToken()
+    if (!token || busy) return
+    setBusy(true)
+    const r = await postInviteReward(token, character)
+    setBusy(false)
+    if (!r.ok) return setMsg(r.error)
+    setSt({ ...st, counts: r.data.counts, round: r.data.round })
+    setMsg(t("invGot", "+{n} fragmentos de {c} na mochila.").replace("{n}", String(r.data.reward.qty)).replace("{c}", speciesName(r.data.reward.character, t)))
+  }
+  const c = st.counts
+  return (
+    <div className="p-2.5" style={{ background: MM.card, border: `1px solid ${MM.goldBorder}` }}>
+      <div className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.1em]" style={{ color: MM.text }}>
+        <Gift className="h-4 w-4" /> {t("invTitle", "Convites do jogo")}
+      </div>
+      <p className="mt-1 text-[13px]" style={{ color: MM.muted }}>
+        {t("invRule", "Quem entra no Meu Mundo pela primeira vez com o seu link e joga {m} minutos em até {d} dias rende {n} fragmentos de um personagem que você escolhe. Não repete até passar pelos 12; depois a lista recomeça.")
+          .replace("{m}", String(Math.round(st.rules.activationMs / 60000)))
+          .replace("{d}", String(st.rules.activationDays))
+          .replace("{n}", String(st.rules.qty))}
+      </p>
+      <p className="mt-1 text-[12px]" style={{ color: MM.muted }}>
+        {t("invCounts", "Esperando jogar: {w} · prêmios para escolher: {p} · entregues: {e}")
+          .replace("{w}", String(c.waiting))
+          .replace("{p}", String(c.pending))
+          .replace("{e}", String(c.delivered))}
+        {c.capped > 0 && ` · ${t("invCapped", "acima do limite de {n} em {d} dias: {x}").replace("{n}", String(st.rules.cap)).replace("{d}", String(st.rules.capDays)).replace("{x}", String(c.capped))}`}
+      </p>
+      {c.pending > 0 && (
+        <div className="mt-2">
+          <span className="text-[12px]" style={{ color: MM.text }}>{t("invPick", "Escolha o personagem (rodada {r}):").replace("{r}", String(st.round.round))}</span>
+          <div className="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+            {st.round.available.map((id) => {
+              const body = speciesBody(id, "m", "adult") as BodyId | null
+              return (
+                <button key={id} type="button" disabled={busy} onClick={() => void pick(id)} className="flex flex-col items-center p-1" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={(body && PORTRAIT[body]) || PORTRAIT.sergio} alt="" loading="lazy" className="aspect-square w-full object-cover" />
+                  <span className="line-clamp-1 text-[10px]" style={{ color: MM.text }}>{speciesName(id, t)}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {msg && <p className="mt-1.5 text-[12px]" style={{ color: MM.text }} role="status">{msg}</p>}
+    </div>
   )
 }

@@ -268,7 +268,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
       {gearTab && <GearPanel initialTab={gearTab} onClose={() => setGearTab(null)} />}
       {shelf && <ShopPanel initialTab="gear" initialShelf={shelf} onClose={() => setShelf(null)} />}
       {(lab === "cryo" || lab === "mix" || lab === "genes") && <CryoStage t={t} initial={lab === "cryo" ? null : lab} onClose={() => setLab(null)} />}
-      {(lab === "talk" || lab === "embryo" || lab === "accelerate") && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
+      {(lab === "talk" || lab === "embryo" || lab === "accelerate" || lab === "capsule") && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[75] -translate-x-1/2">
           <EvoToast tone={toast.tone}>{toast.text}</EvoToast>

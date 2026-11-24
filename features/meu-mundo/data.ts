@@ -1389,3 +1389,52 @@ export async function postHouseLevel(token: string, level: number): Promise<Hous
   }
   return { ok: true, house: Number(body.house), level: body.level, rev: body.rev }
 }
+
+// ═══ gacha-v1 (24/11/2026): CONVOCAÇÕES — três banners que entregam só fragmentos ═══════════
+// O servidor sorteia (crypto), debita a Faísca de Éter, entrega e grava o recibo; a tela só desenha.
+export type GachaBanner = "weapons" | "protections" | "characters"
+export type GachaTier = "common" | "rare" | "epic" | "top"
+export interface GachaRate { rank?: GearRank; tier: GachaTier; base: number; qty: number; item?: string; pieces?: number; from?: string }
+export interface GachaBannerRules {
+  id: GachaBanner
+  target: "none" | "optional" | "required"
+  rates: GachaRate[]
+  topConsolidated: number
+  targets?: { id: string; rank?: GearRank; kind?: "special" | "god"; frag: string; capsule?: string }[]
+}
+export interface GachaRules { version: string; currency: string; costPerPull: number; times: number[]; pity: { rare: number; top: number }; banners: GachaBannerRules[] }
+export interface GachaState { banner: GachaBanner; sinceRare: number; sinceTop: number; guaranteed: boolean; target: string | null; pulls: number; toRare: number; toTop: number }
+export interface GachaResult { item: string; qty: number; tier: GachaTier; rank?: GearRank; character?: string; featured?: boolean; pity: "rare" | "top" | null }
+export interface GachaPullResult {
+  banner: GachaBanner
+  times: number
+  target: string | null
+  version: string
+  cost: number
+  results: GachaResult[]
+  best: GachaTier
+  before: { sinceRare: number; sinceTop: number; guaranteed: boolean }
+  after: { sinceRare: number; sinceTop: number; guaranteed: boolean; target: string | null; pulls: number }
+}
+export type GachaPullOut = { receipt: Receipt & { result: GachaPullResult }; replay: boolean; bag?: GearBag; state?: GachaState; spark?: number }
+export const getGacha = (token: string) => call<{ rules: GachaRules; spark: number; states: GachaState[] }>(token, "GET", "/gacha")
+export const postGachaPull = (token: string, banner: GachaBanner, times: number, key: string, target: string | null, version?: string) =>
+  call<GachaPullOut>(token, "POST", "/gacha/pull", { banner, times, key, ...(target ? { target } : {}), ...(version ? { version } : {}) })
+/** Recupera um giro pela chave (recarregou a página / caiu a rede). Nunca sorteia de novo. */
+export const getGachaPull = (token: string, key: string) => call<GachaPullOut>(token, "GET", `/gacha/pull/${encodeURIComponent(key)}`)
+export const getGachaHistory = (token: string, before?: string | null) =>
+  call<{ items: (GachaPullResult & { key: string; at: string })[]; next: string | null }>(token, "GET", `/gacha/history${before ? `?before=${encodeURIComponent(before)}` : ""}`)
+/** Usar a Cápsula (100 fragmentos na Forja): o personagem nasce na cápsula do Laboratório. */
+export const postCapsuleUse = (token: string, item: string, key: string) =>
+  call<CharactersResult & { granted?: string[]; repeat?: boolean }>(token, "POST", "/characters/capsule", { item, key })
+
+// ═══ gacha-v1: CONVITES do jogo (registro próprio no servidor, fora das comissões) ═══════════
+export interface InviteState {
+  rules: { activationMs: number; activationDays: number; firstEntryHours: number; cap: number; capDays: number; qty: number; characters: { id: string; kind: "special" | "god"; frag: string }[] }
+  counts: { waiting: number; pending: number; delivered: number; capped: number; expired: number }
+  round: { delivered: number; round: number; chosen: string[]; available: string[] }
+}
+export const getInvite = (token: string) => call<InviteState>(token, "GET", "/invite")
+export const postInviteClaim = (token: string, code: string) => call<{ linked: boolean; already: boolean }>(token, "POST", "/invite/claim", { code })
+export const postInviteReward = (token: string, character: string) =>
+  call<{ reward: { character: string; item: string; qty: number }; counts: InviteState["counts"]; round: InviteState["round"] }>(token, "POST", "/invite/reward", { character })
