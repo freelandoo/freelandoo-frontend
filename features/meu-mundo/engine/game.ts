@@ -192,6 +192,13 @@ export interface GameHandle {
   mobBusy: (on: boolean) => void
   /** Lore v2 N4: o deus solto alcançou e a luta não aconteceu/acabou sem vitória (`busy` = ocupado). A vitória é do servidor. */
   reportGod: (god: string, busy?: boolean) => void
+  /** Mensagem avulsa para a sala (o Coliseu: duel/dready/dst/dhit/dquit). */
+  send: (type: string, msg: unknown) => void
+  /**
+   * Coliseu (2026-11-24): quem pode ser chamado para lutar agora — eu e a pessoa a até `near` m de
+   * `spot` (a porta), a até `pair` m de mim, a pé e na tela; com a caixa dela na tela (botão em cima).
+   */
+  duelTargets: (spot: { x: number; z: number }, near: number, pair: number) => { sid: string; name: string; x: number; top: number }[]
   /** Lore v2 N3: estado da corrida das estátuas (a tela busca; a sala manda "statue"). */
   setStatues: (w: StatueWire | null) => void
   /** Tira a rua da memória e devolve a sala viva, agora falando com `cb`. */
@@ -1151,6 +1158,23 @@ export function createMeuMundoGame(opts: GameOptions): GameHandle {
     },
     reportGod(god, busy = false) {
       if (!disposed) net.send("gfight", busy ? { g: god, r: 0, b: 1 } : { g: god, r: 0 })
+    },
+    send(type, msg) {
+      if (!disposed) net.send(type, msg)
+    },
+    duelTargets(spot, near, pair) {
+      if (disposed || driving || Math.hypot(local.x - spot.x, local.z - spot.z) > near) return []
+      const out: { sid: string; name: string; x: number; top: number }[] = []
+      const states = net.players()
+      for (const [sid, r] of remotes) {
+        // robô de teste (MM_TEST_BOTS) não tem aparelho: não luta
+        if (sid.startsWith("bot-") || !r.char.holder.isEnabled()) continue
+        if (states?.get(sid)?.car) continue
+        if (Math.hypot(r.x - spot.x, r.z - spot.z) > near || Math.hypot(r.x - local.x, r.z - local.z) > pair) continue
+        const b = select.screenBox(r.char)
+        if (b) out.push({ sid, name: r.name, x: b.x, top: b.top })
+      }
+      return out
     },
     setQuality(c) {
       governor.setProfile(resolveQuality(c))

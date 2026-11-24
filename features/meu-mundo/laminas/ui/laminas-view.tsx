@@ -46,6 +46,7 @@ import { emitMinigame } from "../../banter"
 import { MinigameBanter } from "../../ui/inbox/minigame-banter"
 import { BruteVoice, ClawWriting, EcoVoice, GodVoice } from "../../ui/quest/god-voice"
 import type { DomainStageSpec } from "../engine/domain-stage"
+import type { DuelChannel } from "../engine/duel-link"
 
 /** Luta vinda de um monstro da cidade (id na sala do centro). */
 export interface LaminasEncounter {
@@ -70,6 +71,8 @@ export interface LaminasViewProps {
   onReceipt?: (r: Receipt) => void
   /** B8: luta já aberta pelo servidor (o desafio do Hall) e o nome de quem defende. */
   opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null; foeRig?: boolean } | null
+  /** Coliseu (2026-11-24): luta contra outra pessoa, já aberta pela sala do centro (sem ticket, sem prêmio). */
+  duel?: DuelChannel | null
 }
 
 const SAND = "#E9CF98"
@@ -111,14 +114,14 @@ export function useMobName(ring = false) {
   )
 }
 
-export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", domain, tutorial = false, onReceipt, opened = null }: LaminasViewProps) {
+export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, onEncounterEnd, stage = "arena", domain, tutorial = false, onReceipt, opened = null, duel: pvp = null }: LaminasViewProps) {
   // Corpo e cores ficam os da abertura: se a sala mandar outros no meio, recriar a cena
   // deixaria a luta parada para sempre (ela nasce esperando o botão, que já foi apertado).
   const [{ body, look }] = useState({ body: bodyNow, look: lookNow })
   // 2026-11-08 (pedido do Alex): a Arena abre no HALL DA FAMA (pódio + top 10); o treino
   // contra a máquina fica no botão "Treinar". `duel` = o desafio aberto pelo servidor.
   const [fight, setFight] = useState<{ key: number; choice: Choice; duel?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null } } | null>(() =>
-    opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level }, duel: opened } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "cavaleiro", level: 1 } } : null,
+    pvp ? { key: 1, choice: { kind: "cavaleiro", level: 1 } } : opened ? { key: 1, choice: { kind: opened.ticket.setup.kind, level: opened.ticket.setup.level }, duel: opened } : encounter ? { key: 1, choice: { kind: encounter.kind, level: 1 } } : tutorial ? { key: 1, choice: { kind: "cavaleiro", level: 1 } } : null,
   )
   // a celebração (ganho/nível) espera a luta acabar: sai quando a tela fecha
   useEffect(() => {
@@ -143,6 +146,7 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
           mobId={encounter?.mobId}
           tutorial={tutorial}
           opened={fight.duel ?? null}
+          pvp={pvp}
           onReceipt={(r) => {
             celebrate(r)
             onReceipt?.(r)
@@ -153,8 +157,8 @@ export function LaminasView({ body: bodyNow, look: lookNow, onExit, encounter, o
               onEncounterEnd?.(win)
             }
           }}
-          onAgain={encounter || tutorial || fight.duel ? undefined : () => start(fight.choice)}
-          onMenu={encounter || tutorial || opened ? onExit : () => setFight(null)}
+          onAgain={encounter || tutorial || fight.duel || pvp ? undefined : () => start(fight.choice)}
+          onMenu={encounter || tutorial || opened || pvp ? onExit : () => setFight(null)}
         />
       ) : stage === "arena" ? (
         // Arena: só o Hall da Fama (Alex, 2026-11-08: a tela de treino "Arena das Lâminas" saiu)
@@ -189,7 +193,7 @@ function Menu({ onPick, onExit, onBack, ring }: { onPick: (c: Choice) => void; o
               {t("laminasKicker", "Os Jogos Eternos de Lúmen")}
             </div>
             <h1 className="mt-1.5 text-[32px] font-black italic leading-none tracking-tight max-[759px]:text-[26px]" style={{ color: SAND }}>
-              {ring ? t("centerPlace_boxe", "Arena de Boxe") : t("laminasTitle", "Arena das Lâminas")}
+              {ring ? t("centerPlace_boxe", "Coliseu") : t("laminasTitle", "Arena das Lâminas")}
             </h1>
             <p className="mt-2 text-[14px] leading-snug max-[759px]:text-[13px] [@media(max-height:520px)]:hidden" style={{ color: MM.muted }}>
               {ring
@@ -247,6 +251,7 @@ function LaminasScreen({
   mobId,
   tutorial,
   opened = null,
+  pvp = null,
   onReceipt,
   onEnd,
   onAgain,
@@ -261,6 +266,7 @@ function LaminasScreen({
   mobId?: number
   tutorial?: boolean
   opened?: { ticket: FightTicket; foe: string; foeBody?: BodyId | null; foeRig?: boolean } | null
+  pvp?: DuelChannel | null
   onReceipt?: (r: Receipt) => void
   onEnd: (win: boolean) => void
   onAgain?: () => void
@@ -319,7 +325,7 @@ function LaminasScreen({
   useEffect(() => {
     let alive = true
     const token = getToken()
-    if (!token) {
+    if (!token || pvp) {
       setTicket("offline")
       return
     }
@@ -344,7 +350,7 @@ function LaminasScreen({
     return () => {
       alive = false
     }
-  }, [choice, stage, portal, mobId, tutorial, opened])
+  }, [choice, stage, portal, mobId, tutorial, opened, pvp])
   const ultName = abilityKit(body, stage).slots.ult.name
   const labelsRef = useRef({
     evade: t("laminasEvade", "ESQUIVOU!"),
@@ -392,7 +398,8 @@ function LaminasScreen({
   const armed = ticket !== null
   // E16: o preparo muda o ticket depois de a luta montar — remonta com o ticket novo (o servidor re-simula o mesmo)
   const [rearm, setRearm] = useState(0)
-  const foeBodyOpened = opened?.foeBody ?? null
+  const foeBodyOpened = opened?.foeBody ?? pvp?.foe.body ?? null
+  const foeLookOpened = pvp?.foe.look || undefined
   const foeRigOpened = !!opened?.foeRig
   // O palco do Domínio entra pelo VALOR: o recibo atualiza a tela do Domínio (setores) e ela
   // recria o objeto; remontar a luta nessa hora apagava o palco e a tela de prêmio ("A arena não abriu").
@@ -412,12 +419,15 @@ function LaminasScreen({
         canvas,
         body,
         look,
-        foe: foeBodyOpened ? { body: foeBodyOpened, rig: foeRigOpened } : undefined,
+        foe: foeBodyOpened ? { body: foeBodyOpened, look: foeLookOpened, rig: foeRigOpened } : undefined,
+        duel: pvp ?? undefined,
         hold: true,
         labels: { ...labelsRef.current, foeSkills: labelsRef.current.foes[fromServer ? fromServer.setup.kind : choice.kind] },
         setup: fromServer
           ? { kind: fromServer.setup.kind, level: fromServer.setup.level, seed: fromServer.setup.seed, stats: fromServer.setup.stats, gear: fromServer.setup.gear ?? undefined, hero: fromServer.setup.hero ?? 1, peer: fromServer.setup.peer ?? undefined, tier: fromServer.setup.tier ?? undefined, body: fromServer.setup.body ?? undefined, temper: fromServer.setup.temper ?? undefined, affection: fromServer.setup.affection ?? undefined, boss: fromServer.setup.boss ?? undefined, god: fromServer.setup.god ?? undefined, prep: fromServer.setup.prep ? { key: fromServer.setup.prep.key, v: fromServer.setup.prep.v } : undefined, classGear: fromServer.setup.classGear ?? undefined }
-          : { kind: choice.kind, level: choice.level, body, peer: stage === "ring" ? peerOf(choice.kind) : undefined, tier: tutorial || stage === "ring" ? undefined : portal ? "street" : "arena" },
+          : pvp
+            ? { kind: "cavaleiro", level: 1, body, peer: 1 }
+            : { kind: choice.kind, level: choice.level, body, peer: stage === "ring" ? peerOf(choice.kind) : undefined, tier: tutorial || stage === "ring" ? undefined : portal ? "street" : "arena" },
         kit: fromServer ? (fromServer.setup.kit === "hammer" ? "hammer" : fromServer.setup.kit === "bow" ? "bow" : fromServer.setup.kit === "gun" ? "gun" : fromServer.setup.style === "mage" ? "mage" : "blade") : undefined,
         appearance: fromServer?.setup.appearance,
         stage,
@@ -492,7 +502,7 @@ function LaminasScreen({
       gameRef.current?.dispose()
       gameRef.current = null
     }
-  }, [body, look, choice, stage, domainSpec, armed, tutorial, portal, foeBodyOpened, foeRigOpened, rearm])
+  }, [body, look, choice, stage, domainSpec, armed, tutorial, portal, foeBodyOpened, foeLookOpened, foeRigOpened, rearm, pvp])
 
   // a passagem violeta do portal some quando a cena está pronta
   useEffect(() => {
@@ -522,7 +532,9 @@ function LaminasScreen({
   const hide = cinema || intro || !!hud?.over
   const hudFade = { opacity: hide ? 0 : 1, transition: `opacity ${hide ? 140 : 220}ms ease-out` }
   // desafio do Hall: o retrato é o do personagem de quem foi desafiado
-  const foeBody = opened?.foeBody ?? (stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind])
+  const foeBody = opened?.foeBody ?? pvp?.foe.body ?? (stage === "ring" ? RING_BODY[choice.kind] : MOB_BODY[choice.kind])
+  // Coliseu: o nome de quem está do outro lado
+  const foeName = pvp ? pvp.foe.name || t("coliseuFoe", "Adversário") : opened ? opened.foe : null
   const foePortrait = foeBody ? PORTRAIT[foeBody] : stage !== "ring" && choice.kind === "wolf" ? WOLF_PORTRAIT : null
   const heroLevel = ticket && ticket !== "offline" ? (ticket.setup.hero ?? 1) : 1
   const foeHp = hud ? hud.mobs.reduce((s, m) => s + Math.max(0, m.hp), 0) : 0
@@ -536,7 +548,7 @@ function LaminasScreen({
       {status === "ready" && !veil && !started && sheet && (
         <VersusScreen
           me={{ name: t("fightYou", "VOCÊ"), level: heroLevel, portrait: PORTRAIT[body], accent: "#FFB43B" }}
-          foe={{ name: opened ? opened.foe : mobName(choice.kind), level: (portal || stage === "dominio") && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
+          foe={{ name: foeName ?? mobName(choice.kind), level: (portal || stage === "dominio") && ticket && ticket !== "offline" ? ticket.setup.level : heroLevel, portrait: foePortrait, accent: FOE_ACCENT[choice.kind] }}
           sheet={sheet}
           onStart={begin}
         />
@@ -554,7 +566,9 @@ function LaminasScreen({
             mirrored
             portrait={foePortrait}
             name={
-              portal && ticket && ticket !== "offline"
+              pvp
+                ? foeName!
+                : portal && ticket && ticket !== "offline"
                 ? `${mobName(choice.kind)} · ${t("laminasFoeLevel", "Nv. {n}").replace("{n}", String(ticket.setup.level))}`
                 : `${mobName(choice.kind)}${choice.kind === "cavaleiro" ? ` ${choice.level}` : ""}`
             }
@@ -684,7 +698,7 @@ function LaminasScreen({
       {/* C2: a voz de Kragor no fim da luta do ringue (cap. 3 em diante) */}
       {stage === "ring" && !tutorial && !portal && <GodVoice god="kragor" show={result !== null} />}
       {/* C4: na Arena, o adversário é um Eco (cap. 6, passo "ecos") */}
-      {stage === "arena" && !tutorial && !portal && !opened && <EcoVoice show={started && result === null} />}
+      {stage === "arena" && !tutorial && !portal && !opened && !pvp && <EcoVoice show={started && result === null} />}
       {/* C4: a Dama das Garras escreve na parede (cap. 7, passo "telhados"; Arena ou rua) */}
       {choice.kind === "garras" && stage !== "ring" && !tutorial && !opened && <ClawWriting fighting={started && result === null} won={result === true} />}
       {/* C5 (cap. 8): o Brutamontes ouve um nome toda noite (só no passo "campeao") */}
@@ -695,7 +709,9 @@ function LaminasScreen({
           win={result}
           sign={result ? t("fightSign", "VITÓRIA") : t("fightSignLose", "DERROTA")}
           subtitle={
-            result
+            pvp
+              ? (result ? t("coliseuWin", "Você venceu {name} no Coliseu.") : t("coliseuLose", "{name} venceu no Coliseu.")).replace("{name}", foeName ?? "")
+              : result
               ? portal
                 ? t("laminasWinPortal", "O monstro foi derrotado e sumiu da cidade.")
                 : t("laminasWinTrain", "Mais um treino vencido. Os Sete estão de olho.")
@@ -706,7 +722,7 @@ function LaminasScreen({
           me={{ portrait: PORTRAIT[body], name: t("fightYou", "VOCÊ"), level: receipt?.deltas.xp?.to ?? heroLevel }}
           stats={summary}
           onContinue={onMenu}
-          continueLabel={`${t("fightTapGo", "Toque para continuar")} · ${portal ? t("laminasBackCity", "Voltar à cidade") : t("laminasBackMenu", "Escolher outro")}`}
+          continueLabel={`${t("fightTapGo", "Toque para continuar")} · ${portal || pvp ? t("laminasBackCity", "Voltar à cidade") : t("laminasBackMenu", "Escolher outro")}`}
           again={onAgain ? { label: t("laminasAgain", "Lutar de novo"), onClick: onAgain } : undefined}
         >
           {/* mm3d-59: o prêmio é o que o SERVIDOR conferiu (recibo) */}
@@ -734,6 +750,10 @@ function LaminasScreen({
                 {t("fightRetry", "Tentar de novo")}
               </button>
             </div>
+          ) : pvp ? (
+            <p className="text-[13px]" style={{ color: MM.muted }}>
+              {t("coliseuNoPrize", "Luta entre jogadores: sem prêmio por enquanto.")}
+            </p>
           ) : ticket === "offline" ? (
             <p className="text-[13px]" style={{ color: MM.muted }}>
               {t("fightOffline", "Treino sem conexão com o servidor: sem prêmio desta vez.")}

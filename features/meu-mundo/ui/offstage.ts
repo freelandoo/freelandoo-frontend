@@ -14,7 +14,7 @@ import type { NetStatus } from "../types"
 /** A sala, com ou sem a rua montada. Vem antes do `useMobEncounter`. */
 export function useRoomLink(gameRef: RefObject<GameHandle | null>) {
   const parked = useRef<ParkedGame | null>(null)
-  const room = useRef<Pick<GameHandle, "reportMob" | "engageMob" | "reportGod" | "mobBusy">>({
+  const room = useRef<Pick<GameHandle, "reportMob" | "engageMob" | "reportGod" | "mobBusy" | "send">>({
     reportMob(id, win, busy = false) {
       if (gameRef.current) gameRef.current.reportMob(id, win, busy)
       else parked.current?.net.send("mfight", busy ? { id, r: 0, b: 1 } : { id, r: win ? 1 : 0 })
@@ -32,6 +32,11 @@ export function useRoomLink(gameRef: RefObject<GameHandle | null>) {
     reportGod(god, busy = false) {
       if (gameRef.current) gameRef.current.reportGod(god, busy)
       else parked.current?.net.send("gfight", busy ? { g: god, r: 0, b: 1 } : { g: god, r: 0 })
+    },
+    // Coliseu (2026-11-24): a luta com outra pessoa corre com a rua guardada
+    send(type, msg) {
+      if (gameRef.current) gameRef.current.send(type, msg)
+      else parked.current?.net.send(type, msg)
     },
   })
   return { parked, room }

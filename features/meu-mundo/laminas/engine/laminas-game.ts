@@ -38,8 +38,9 @@ import { Character } from "../../engine/player"
 import { BoxeAudio } from "./audio"
 import { StrikeAudio } from "./strike-audio"
 import type { BodyId } from "../../types"
-import { BOSS_ROAR, ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind, type BossId } from "../sim/fight"
+import { BOSS_ROAR, ARENA_R, COMBO, DT, Fight, MOBS, MOB_SHIELD, POWER, RANKS, SKILLS, mobAttack, type Cooldowns, type Rank, type SkillId, type Stats, type FightEvent, type FightSetup, type Input, type MobKind, type BossId, type Mob, type MobState } from "../sim/fight"
 import { createSkillFx, SKILL_COLORS, type SkillPalette } from "./skill-fx"
+import type { DuelChannel } from "./duel-link"
 import { buildArena } from "./arena-view"
 import { buildStreet } from "./street-view"
 import { buildDomainStage, type DomainStageSpec } from "./domain-stage"
@@ -165,6 +166,12 @@ export interface LaminasGameOptions {
   kit?: "mage" | "blade" | "hammer" | "bow" | "gun"
   /** Equipamento/cosmético confirmado pelo servidor; ausente mantém a arma antiga. */
   appearance?: WeaponAppearance | null
+  /**
+   * Coliseu (2026-11-24): luta contra OUTRA PESSOA. O "monstro" da regra vira o boneco dela (segue o
+   * estado que a sala repassa, sem cabeça própria); as pancadas vão para a sala, que guarda a vida
+   * dos dois e decide o fim. Sem ticket nem prêmio.
+   */
+  duel?: DuelChannel
 }
 
 /** Os status dos dois lados, como a regra vai usar. `count` = quantos inimigos. */
@@ -509,6 +516,120 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const seed = opts.setup.seed ?? (Date.now() & 0x7fffffff)
   const fight = new Fight({ ...opts.setup, seed, style: mage ? "mage" : undefined })
   const frames: FightFrames = []
+
+  // ── Coliseu: o outro lutador é gente (duel-link.ts) ─────────────────────
+  const duel = opts.duel ?? null
+  const puppet: Mob | null = duel ? fight.mobs[0] : null
+  if (duel && puppet) {
+    // sem cabeça própria: quem move o boneco é o aparelho do outro (o golpe dele chega pela sala)
+    ;(fight as unknown as { stepMob: (m: Mob) => void }).stepMob = () => {}
+    puppet.hp = puppet.hpMax = fight.me.hpMax
+  }
+  let duelSentAt = 0
+  let duelDmg = 0
+  let duelHeavy = false
+  let duelDmgAt = 0
+  /** O estado do outro no MEU quadro: ele nasce no lado oposto do palco (girado meia volta). */
+  const DUEL_MOB_STATE: Record<string, MobState> = { attack: "strike", power: "strike", skill: "strike", hurt: "hurt", down: "hurt", win: "circle", dodge: "chase" }
+  const duelBefore = () => {
+    if (!duel || !puppet) return
+    const st = duel.foeState
+    if (st) {
+      const tx = -st.x
+      const tz = -st.z
+      const d = Math.hypot(tx - puppet.x, tz - puppet.z)
+      if (d > 3) {
+        puppet.x = tx
+        puppet.z = tz
+      } else {
+        puppet.x += (tx - puppet.x) * 0.3
+        puppet.z += (tz - puppet.z) * 0.3
+      }
+      puppet.facing = st.f + Math.PI
+      const ms: MobState = DUEL_MOB_STATE[st.s] ?? (st.v > 0.3 ? "chase" : "circle")
+      // só os golpes comuns do tipo (os poderes do monstro têm desenho próprio): o combo dele = o golpe dele
+      const basic = puppet.attacks.map((x, i) => (x.skill ? -1 : i)).filter((i) => i >= 0)
+      const atk = basic.length ? (st.s === "attack" ? basic[st.c % basic.length] : st.s === "power" || st.s === "skill" ? basic[basic.length - 1] : basic[0]) : 0
+      if (puppet.state !== ms || (ms === "strike" && puppet.atk !== atk)) {
+        puppet.state = ms
+        puppet.atk = Math.max(0, atk)
+        puppet.t = 0
+      } else puppet.t += DT
+      puppet.y = 0
+    }
+    if (duel.hp) {
+      puppet.hpMax = duel.hp.foeMax
+      puppet.hp = Math.max(duel.end?.win ? 0 : 1, duel.hp.foe)
+      fight.me.hpMax = duel.hp.meMax
+      fight.me.hp = duel.hp.me
+    }
+  }
+  const duelAfter = () => {
+    if (!duel || !puppet) return
+    const now = performance.now()
+    // minhas pancadas no boneco: somadas e mandadas no ritmo que a sala aceita
+    for (const e of fight.events) {
+      if (e.t === "hit" && e.on === "mob") {
+        duelDmg += e.dmg
+        duelHeavy = duelHeavy || e.heavy
+      }
+    }
+    if (duelDmg > 0 && now - duelDmgAt >= 110) {
+      duel.hit(duelDmg, duelHeavy)
+      duelDmg = 0
+      duelHeavy = false
+      duelDmgAt = now
+    }
+    // o fim é da sala: a regra local não derruba ninguém sozinha
+    if (fight.over && !duel.end) {
+      if (fight.over.quit === "me") duel.quit()
+      else {
+        fight.over = null
+        fight.events = fight.events.filter((e) => e.t !== "end")
+        if (fight.me.state === "win") fight.me.state = "idle"
+        if (puppet.state === "dead") {
+          puppet.state = "hurt"
+          puppet.t = 0
+        }
+        puppet.hp = Math.max(1, puppet.hp)
+      }
+    }
+    // pancada que levei (a sala já descontou a vida)
+    for (const h of duel.hurts.splice(0)) {
+      const p = fight.me
+      if (fight.over) break
+      const l = Math.hypot(p.x - puppet.x, p.z - puppet.z) || 1
+      const push = h.h ? 1.4 : 0.6
+      p.x += ((p.x - puppet.x) / l) * push
+      p.z += ((p.z - puppet.z) / l) * push
+      p.queued = false
+      p.state = h.h ? "down" : "hurt"
+      p.t = 0
+      fight.events.push({ t: "hit", on: "me", dmg: h.d, x: p.x, z: p.z, heavy: h.h, dead: (duel.hp?.me ?? 1) <= 0 })
+    }
+    if (duel.end && !fight.over) {
+      const win = duel.end.win
+      fight.over = { win, at: fight.time }
+      fight.events.push({ t: "end", win })
+      if (win) {
+        fight.me.state = "win"
+        fight.me.t = 0
+        puppet.state = "dead"
+        puppet.hp = 0
+        puppet.t = 0
+      } else {
+        fight.me.hp = 0
+        fight.me.state = "down"
+        fight.me.t = 0
+        puppet.state = "circle"
+      }
+    }
+    if (now - duelSentAt >= 50) {
+      duelSentAt = now
+      const p = fight.me
+      duel.state({ x: p.x, z: p.z, f: p.facing, s: p.state, t: p.t, c: p.combo, v: Math.hypot(p.vx, p.vz), k: p.state === "skill" ? (p.skill ?? undefined) : undefined })
+    }
+  }
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
   // Corpo de classe (fora do ringue do Boxe): golpes e arma da classe.
@@ -1581,7 +1702,9 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       wantPower = false
       wantQuit = false
       wantSkill.slash = wantSkill.dash = wantSkill.shield = false
+      duelBefore()
       fight.step(inp)
+      duelAfter()
       onEvents(fight.events)
       ran += DT
       steps++
@@ -2045,6 +2168,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   return {
     begin: () => {
+      duel?.ready(fight.me.hpMax)
       audio.whoosh()
       wantAttack = false
       wantDodge = false

@@ -12,7 +12,7 @@
 import { setGameCover } from "./hud/game-cover"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
 import { Activity, Crown, Droplet, Gamepad2, Hand, Home, LocateFixed, Lock, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
@@ -36,6 +36,7 @@ import type { NoturnoJoin } from "../noturno/ui/run-view"
 import type { JetpackJoin } from "../jetpack/ui/jetpack-view"
 import type { GincanaJoin } from "../gincana/ui/gincana-view"
 import { useMobEncounter } from "./mob-encounter"
+import { ColiseuButtons, useColiseuDuel } from "./coliseu-duel"
 import { NpcTalk, npcTx } from "./talk/npc-talk"
 import { StatuePanel } from "./statue/statue-panel"
 import { pushStatueWire, useStatueRace, wireOf } from "./statue/statue-store"
@@ -141,7 +142,7 @@ const PLACE_PT: Record<CenterPlace["id"], string> = {
   paint: "Paint",
   corrida: "Antigravidade",
   noturno: "Rolê Noturno",
-  boxe: "Arena de Boxe",
+  boxe: "Coliseu",
   gincana: "Gincana",
   laminas: "Hall da Fama",
   igreja: "Igreja",
@@ -214,7 +215,14 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const [look, setLook] = useState(payload.me.look ?? "")
   // Monstros da rua (mm3d-48b/57b): aviso, luta quando ele te alcança ou no "Lutar".
   const link = useRoomLink(gameRef)
-  const mob = useMobEncounter({ gameRef: link.room, busy: !!minigame || !!suspended || !!blocked, body, look, place: "centro" })
+  // Coliseu (2026-11-24): "Lutar" em cima de outra pessoa na porta = os dois na mesma luta
+  const duelFight = useColiseuDuel({ room: link.room, body, look })
+  const duelRef = useRef(duelFight)
+  useEffect(() => {
+    duelRef.current = duelFight
+  })
+  const coliseuDoor = useMemo(() => payload.center.places.find((p) => p.id === "boxe")?.door ?? null, [payload])
+  const mob = useMobEncounter({ gameRef: link.room, busy: !!minigame || !!suspended || !!blocked || duelFight.active, body, look, place: "centro" })
   const mounted = useRef(true)
   useEffect(() => {
     mounted.current = true
@@ -266,11 +274,12 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
 
   const cbRef = useRef({ onGoHome, onMoved, onServerMessage })
   // Regra do Alex (2026-11-07): um ambiente por vez. Luta, minijogo e prédio tiram a rua da memória.
-  const off = !!minigame || !!suspended || !!mob.encounter
+  const off = !!minigame || !!suspended || !!mob.encounter || duelFight.active
   const stage = useOffstage(off, link.parked, {
     setNet,
     onMessage: (type, p) => {
       mobRef.current.onServerMessage(type, p)
+      duelRef.current.onServerMessage(type, p)
       cbRef.current.onServerMessage(type, p)
     },
     onMoved: () => cbRef.current.onMoved(),
@@ -338,6 +347,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             if (!alive) return
             if (type === "statue") pushStatueWire(p)
             mobRef.current.onServerMessage(type, p)
+            duelRef.current.onServerMessage(type, p)
             cbRef.current.onServerMessage(type, p)
           },
           onPlayerTap: (tp) => alive && playerCb.current.onPlayerTap?.(tp),
@@ -413,7 +423,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   }, [statueRace, status])
 
   // mm3d-60f: luta/minijogo cobrindo a tela → o HUD do personagem sai (fica só a placa da luta)
-  const covered = !!minigame || !!mob.encounter
+  const covered = !!minigame || !!mob.encounter || duelFight.active
   useEffect(() => {
     setGameCover("center", covered)
   }, [covered])
@@ -733,8 +743,11 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
         />
       )}
       {status === "ready" && !minigame && mob.toast}
+      {status === "ready" && !off && <ColiseuButtons gameRef={gameRef} door={coliseuDoor} onFight={duelFight.challenge} />}
+      {status === "ready" && !minigame && !duelFight.active && duelFight.toast}
       {/* Luta com um monstro da rua (mm3d-57b): abre sozinha quando ele te alcança */}
       {mob.view}
+      {duelFight.view}
       {status === "ready" && winded && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-4" style={{ top: "max(12px, env(safe-area-inset-top))" }}>
           <WindedToast />

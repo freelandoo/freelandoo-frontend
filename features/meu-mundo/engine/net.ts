@@ -21,6 +21,7 @@ import { getPublicBackendUrl } from "@/lib/backend-public"
 import type { MultiplayerSession, NetStatus } from "../types"
 import type { Intent } from "./motion"
 import type { DriveInput } from "./vehicle"
+import { DUEL_MESSAGES } from "../laminas/engine/duel-link"
 
 const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000, 20000]
 const SEND_MIN_MS = 80
@@ -187,8 +188,8 @@ export class NetClient {
       replaced = true
     })
     // Tipo que a sala manda e não está aqui é DESCARTADO pelo Colyseus (em
-    // silêncio): "ride" (mm3d-15) e "fridge" (mm3d-28) ficaram de fora até 2026-10-25; "chat"/"say" = mm3d-32; "dm" = mm3d-33; "crime" = mm3d-37f; "mobs"/"mobwin" = mm3d-48b; "mcatch" = mm3d-57b; "trainer" = lore v2 F2; "visited" = lore v2 F4; "statue" = lore v2 N3; "gods"/"gcatch" = lore v2 N4; "mchase" = 21/11 (o monstro te viu).
-    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned", "ride", "fridge", "notice", "chat", "say", "dm", "crime", "mobs", "mobwin", "mcatch", "receipt", "trainer", "visited", "statue", "gods", "gcatch", "mchase"]) {
+    // silêncio): "ride" (mm3d-15) e "fridge" (mm3d-28) ficaram de fora até 2026-10-25; "chat"/"say" = mm3d-32; "dm" = mm3d-33; "crime" = mm3d-37f; "mobs"/"mobwin" = mm3d-48b; "mcatch" = mm3d-57b; "trainer" = lore v2 F2; "visited" = lore v2 F4; "statue" = lore v2 N3; "gods"/"gcatch" = lore v2 N4; "mchase" = 21/11 (o monstro te viu); dgo/dno/dlive/dst/dhurt/dhp/dend = o Coliseu (2026-11-24).
+    for (const type of ["visits", "visit_ended", "seat", "stood", "bed", "life", "car_denied", "tuned", "ride", "fridge", "notice", "chat", "say", "dm", "crime", "mobs", "mobwin", "mcatch", "receipt", "trainer", "visited", "statue", "gods", "gcatch", "mchase", ...DUEL_MESSAGES]) {
       room.onMessage(type, (p: unknown) => {
         if (!this.disposed) this.cb.onMessage?.(type, p)
       })
