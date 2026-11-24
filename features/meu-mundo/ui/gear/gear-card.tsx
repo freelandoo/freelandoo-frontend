@@ -11,7 +11,7 @@ import { shopBow, shopGun, shopHeavy, shopShield, shopStaff, shopSword } from ".
 import { itemArt } from "../../engine/item-art"
 
 export type GearTr = (key: string, fallback: string) => string
-export type GearAction = (id: string, run: (token: string, key: string) => Promise<ApiResult<GearOut>>, message?: string) => Promise<void>
+export type GearAction = (id: string, run: (token: string, key: string) => Promise<ApiResult<GearOut>>, message?: string, opts?: { quiet?: boolean }) => Promise<GearOut | null>
 export const nameOf = (item: GearItem, t: GearTr) => t("gear_" + item.id, item.name)
 export const percentage = (value: number) => String(Math.round(value * 1000) / 10) + "%"
 

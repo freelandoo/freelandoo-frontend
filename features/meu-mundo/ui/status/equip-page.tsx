@@ -14,7 +14,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { Check, X } from "lucide-react"
-import { socketRune, unsocketRune, type ApiResult, type GearBag, type GearCatalog, type GearInstance, type GearItem, type GearOut, type GearSlot } from "../../data"
+import { type ApiResult, type GearBag, type GearCatalog, type GearInstance, type GearItem, type GearOut, type GearSlot } from "../../data"
+import { WeaponStars } from "../gear/weapon-marks"
 import type { GearBonus } from "../../laminas/sim/fight"
 import type { BodyId } from "../../types"
 import type { SkinStage } from "../../engine/skin-stage"
@@ -92,13 +93,14 @@ export function bonusChanges(before: Partial<GearBonus> | undefined, after: Part
 /** Peças da mochila que cabem na casa (cada cópia é uma linha; sem cópias, uma por item). */
 function candidates(catalog: GearCatalog, bag: GearBag, slot: GearSlot) {
   const byId = new Map(catalog.items.map((i) => [i.id, i]))
+  // weapon-v1 (24/11/2026): arma ordena por nível (1…90); as outras peças pelo +N
   const rows: { item: GearItem; inst: GearInstance | null; plus: number; here: boolean; elsewhere: boolean }[] = []
   const seen = new Set<string>()
   for (const inst of bag.instances ?? []) {
     const item = byId.get(inst.item)
     if (!item || item.slot !== slot) continue
     seen.add(item.id)
-    rows.push({ item, inst, plus: inst.plus, here: inst.equippedHere && inst.equippedSlot === slot, elsewhere: !!inst.equippedBy && !inst.equippedHere })
+    rows.push({ item, inst, plus: inst.weaponLevel ?? inst.plus, here: inst.equippedHere && inst.equippedSlot === slot, elsewhere: !!inst.equippedBy && !inst.equippedHere })
   }
   for (const [id, own] of Object.entries(bag.owned)) {
     const item = byId.get(id)
@@ -119,7 +121,6 @@ export function EquipPage({
   compact,
   busy,
   onEquip,
-  onGearOp,
   t,
 }: {
   body?: BodyId
@@ -133,7 +134,7 @@ export function EquipPage({
   busy: boolean
   /** Equipa (item) ou tira (item null) no servidor; devolve a mochila nova, ou null se recusou. */
   onEquip?: (slot: GearSlot, item: string | null, instance?: string | null) => Promise<GearBag | null>
-  /** Engastar/tirar runa direto na lista (a mesma oficina da aba Runas). */
+  /** weapon-v1: as runas saíram (prop mantida por compatibilidade; não é usada). */
   onGearOp?: (run: (token: string, key: string) => Promise<ApiResult<GearOut>>, done?: string) => Promise<GearBag | null>
   t: Tr
 }) {
@@ -184,21 +185,6 @@ export function EquipPage({
   const gear = data.gear
   const byId = useMemo(() => new Map((gear?.catalog.items ?? []).map((i) => [i.id, i])), [gear])
   const list = useMemo(() => (gear && slot ? candidates(gear.catalog, gear.bag, slot) : []), [gear, slot])
-  const runes = useMemo(
-    () => (gear ? gear.catalog.items.filter((it) => it.category === "rune" && (gear.bag.owned[it.id]?.qty || 0) > 0).sort((a, b) => (b.rune?.grade || 0) - (a.rune?.grade || 0)) : []),
-    [gear],
-  )
-  const [picking, setPicking] = useState<string | null>(null)
-  const runeOp = async (run: (token: string, key: string) => Promise<ApiResult<GearOut>>, done: string) => {
-    if (!onGearOp || working || busy) return
-    setWorking(true)
-    const bag = await onGearOp(run, done)
-    setWorking(false)
-    if (!bag) uiSound("error")
-    else playSample(SND.glow, { bus: "ui", gain: 0.5 })
-    setPicking(null)
-  }
-
   /** O espetáculo: brilho, números contando e som. `rows` = o que mudou no total. */
   const celebrate = useCallback((rows: Change[], put: boolean) => {
     const up = rows.some((r) => r.to > r.from)
@@ -246,6 +232,7 @@ export function EquipPage({
     const item = id ? byId.get(id) : null
     const inst = gear?.bag.instances?.find((i) => i.equippedHere && i.equippedSlot === s)
     const plus = inst?.plus ?? (id ? gear?.bag.owned[id]?.level || 0 : 0)
+    const wLevel = inst?.weaponLevel
     const tone = item ? RANK[rankOf(item)].color : "rgba(232,182,91,0.45)"
     const on = slot === s
     return (
@@ -280,7 +267,11 @@ export function EquipPage({
               +
             </span>
           )}
-          {plus > 0 && (
+          {wLevel ? (
+            <span className={`${teko.className} absolute bottom-0 right-0 px-1 text-[13px] leading-[1.15] tabular-nums`} style={{ background: "rgba(0,0,0,0.78)", color: "#FFE2A6" }}>
+              {t("wfLevelShort", "Nv {n}").replace("{n}", String(wLevel))}
+            </span>
+          ) : plus > 0 && (
             <span className={`${teko.className} absolute bottom-0 right-0 px-1 text-[13px] leading-[1.15] tabular-nums`} style={{ background: "rgba(0,0,0,0.78)", color: "#FFE2A6" }}>
               +{plus}
             </span>
@@ -438,8 +429,9 @@ export function EquipPage({
                       <span className="block truncate text-[15px] font-semibold" style={{ color: r.color }}>
                         <span className="mr-1.5 inline-block align-middle"><RankSeal rank={rank} t={t} size="sm" /></span>
                         {nameOf(row.item, t)}
-                        {row.plus > 0 ? ` +${row.plus}` : ""}
+                        {row.inst?.weaponLevel ? ` · ${t("wfLevelShort", "Nv {n}").replace("{n}", String(row.inst.weaponLevel))}` : row.plus > 0 ? ` +${row.plus}` : ""}
                       </span>
+                      {row.inst?.weaponLevel ? <span className="mt-0.5 block"><WeaponStars stars={row.inst.stars || 1} size={11} t={t} /></span> : null}
                       <span className="mt-0.5 flex flex-wrap gap-1">
                         {row.item.stats
                           ? classStatLines(row.item.stats, t).map((line) => (
@@ -465,20 +457,6 @@ export function EquipPage({
                       </span>
                     )}
                   </button>
-                  {row.inst && (
-                    <RuneSockets
-                      inst={row.inst}
-                      byId={byId}
-                      runes={runes}
-                      owned={gear.bag.owned}
-                      open={picking === row.inst.id}
-                      disabled={working || busy || !onGearOp}
-                      onOpen={(open) => setPicking(open ? row.inst!.id : null)}
-                      onSocket={(rune) => void runeOp((tk, key) => socketRune(tk, row.inst!.id, rune, key, row.inst!.version), t("runeSocketed", "Runa engastada."))}
-                      onRemove={(i) => void runeOp((tk, key) => unsocketRune(tk, row.inst!.id, i, key, row.inst!.version), t("runeRemoved", "A runa voltou para a mochila."))}
-                      t={t}
-                    />
-                  )}
                 </li>
               )
             })}
@@ -504,68 +482,6 @@ export function EquipPage({
 }
 
 /** Número inteiro que corre até o valor novo quando ele muda (o Poder). */
-/** Encaixes de runa da cópia, na própria linha da lista: livre (toca → escolhe a runa) ou com a runa (× tira). */
-function RuneSockets({ inst, byId, runes, owned, open, disabled, onOpen, onSocket, onRemove, t }: {
-  inst: GearInstance
-  byId: Map<string, GearItem>
-  runes: GearItem[]
-  owned: GearBag["owned"]
-  open: boolean
-  disabled: boolean
-  onOpen: (open: boolean) => void
-  onSocket: (rune: string) => void
-  onRemove: (index: number) => void
-  t: Tr
-}) {
-  const max = inst.socketsMax || 0
-  const sockets = inst.sockets || []
-  const chip = "inline-flex min-h-8 items-center gap-1.5 px-2.5 text-[12px] font-semibold outline-none transition-transform active:scale-[0.97] disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#FF8A1F]"
-  return (
-    <div className="mt-1 flex flex-wrap items-center gap-1.5 pl-[66px]">
-      <span className={`${archivo.className} text-[11px] font-bold uppercase tracking-[0.08em]`} style={{ color: EVO.mudo }}>
-        {t("eqRuneSockets", "Encaixes")}
-      </span>
-      {max === 0 && <Tag tone="mudo">{t("eqRuneNone", "sem encaixe")}</Tag>}
-      {Array.from({ length: max }, (_, i) => {
-        const id = sockets[i]
-        const rune = id ? byId.get(id) : null
-        if (id)
-          return (
-            <button key={i} type="button" disabled={disabled} onClick={() => onRemove(i)} aria-label={t("eqRuneRemove", "Tirar a runa")} className={chip}
-              style={{ color: rune ? RANK[rankOf(rune)].color : EVO.branco, background: "rgba(12,15,20,0.6)", boxShadow: "inset 0 0 0 1px rgba(232,182,91,0.45)", borderRadius: 999 }}>
-              <span aria-hidden className="inline-block h-2.5 w-2.5 rotate-45" style={{ background: rune ? RANK[rankOf(rune)].color : "#FFE2A6" }} />
-              {rune ? nameOf(rune, t) : id}
-              <X className="h-3.5 w-3.5 opacity-70" />
-            </button>
-          )
-        return (
-          <button key={i} type="button" disabled={disabled} onClick={() => onOpen(!open)} aria-expanded={open} className={chip}
-            style={{ color: "#FFE2A6", background: open ? "rgba(255,226,166,0.14)" : "transparent", boxShadow: "inset 0 0 0 1px rgba(255,226,166,0.5)", borderRadius: 999 }}>
-            <span aria-hidden className="inline-block h-2.5 w-2.5 rotate-45" style={{ boxShadow: "inset 0 0 0 1.5px #FFE2A6" }} />
-            {t("eqRuneFree", "Encaixe livre")}
-          </button>
-        )
-      })}
-      {open && sockets.length < max && (
-        <div className="mt-1 flex w-full flex-wrap gap-1.5">
-          {runes.length === 0 ? (
-            <span className="text-[12px]" style={{ color: EVO.mudo }}>
-              {t("eqRuneNoneOwned", "Sem runas na mochila. Troque fichas dos minijogos ou lute nos Domínios.")}
-            </span>
-          ) : (
-            runes.map((r) => (
-              <button key={r.id} type="button" disabled={disabled} onClick={() => onSocket(r.id)} className={chip}
-                style={{ color: RANK[rankOf(r)].color, background: "rgba(12,15,20,0.6)", boxShadow: `inset 0 0 0 1px ${RANK[rankOf(r)].color}66`, borderRadius: 999 }}>
-                {nameOf(r, t)} · {owned[r.id]?.qty || 0}
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function CountUp({ value, className, style, color }: { value: number | null; className?: string; style?: CSSProperties; color: string }) {
   const ref = useRef<HTMLSpanElement | null>(null)
   const shown = useRef<number | null>(null)

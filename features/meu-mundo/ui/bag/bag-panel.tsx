@@ -78,7 +78,6 @@ export default function BagPanel({
   onClose,
   onOpenShop,
   onOpenPolens,
-  onOpenRefine,
   onChanged,
   onReceipt,
 }: {
@@ -89,8 +88,8 @@ export default function BagPanel({
   onOpenShop: () => void
   /** "+" do Gold. */
   onOpenPolens?: () => void
-  /** Refino pendente: a bancada (mora na Loja). */
-  onOpenRefine: () => void
+  /** weapon-v1: o refino pendente saiu (prop mantida por compatibilidade; não é usada). */
+  onOpenRefine?: () => void
   onChanged?: () => void
   onReceipt?: (r: Receipt) => void
 }) {
@@ -269,7 +268,6 @@ export default function BagPanel({
                 confirm={confirm}
                 setConfirm={setConfirm}
                 onClose={() => setPick(null)}
-                onRefine={onOpenRefine}
                 equip={(item, slot) => {
                   const target = slot || slotsFor(item).find((s) => !bag?.equipped[s]) || slotsFor(item)[0]
                   uiSound(slot ? "unequip" : "equip")
@@ -357,7 +355,6 @@ function Detail({
   confirm,
   setConfirm,
   onClose,
-  onRefine,
   equip,
   use,
   recycle,
@@ -369,7 +366,6 @@ function Detail({
   confirm: string | null
   setConfirm: (v: string | null) => void
   onClose: () => void
-  onRefine: () => void
   equip: (item: GearItem, slot: GearSlot | undefined) => void
   use: (item: GearItem) => void
   recycle: (item: GearItem) => void
@@ -411,10 +407,8 @@ function Detail({
   const own = bag?.owned[item.id]
   const slot = bag ? (Object.entries(bag.equipped).find(([, id]) => id === item.id)?.[0] as GearSlot | undefined) : undefined
   const lock = gearLock(item, bag ?? null, t)
-  const pending = bag?.pendingProposals?.some((p) => p.item === item.id && p.status === "pending")
   const actions: ReactNode[] = []
-  if (pending) actions.push(<AetherButton key="ref" disabled={busy} onClick={onRefine}>{t("refinePending", "Resolver refinamento pendente")}</AetherButton>)
-  else if (own && slotsFor(item).length)
+  if (own && slotsFor(item).length)
     actions.push(
       <AetherButton key="eq" disabled={!!lock || busy} onClick={() => equip(item, slot)}>
         {slot ? t("gearUnequip", "Tirar") : t("gearEquip", "Equipar")}

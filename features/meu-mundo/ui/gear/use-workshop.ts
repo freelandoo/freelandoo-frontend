@@ -29,9 +29,10 @@ export function useWorkshop(t: GearTr, onReceipt?: (receipt: Receipt) => void) {
     void load()
     return () => { alive.current = false }
   }, [load])
-  const act: GearAction = useCallback(async (id, operation, success) => {
+  // weapon-v1: devolve o resultado (a bancada mostra o sorteio do refino); `quiet` = sem a festa do recibo
+  const act: GearAction = useCallback(async (id, operation, success, opts) => {
     const token = getToken()
-    if (!token || flight.current) return
+    if (!token || flight.current) return null
     flight.current = true
     setBusy(id)
     setMessage(null)
@@ -40,13 +41,13 @@ export function useWorkshop(t: GearTr, onReceipt?: (receipt: Receipt) => void) {
     keys.current.set(id, key)
     try {
       const result = await operation(token, key)
-      if (!alive.current) return
+      if (!alive.current) return null
       if (!result.ok) {
         const ambiguous = result.status === 0 || result.status >= 500 || result.status === 200
         if (!ambiguous) keys.current.delete(id)
         setMessage(ambiguous ? t("forgeNetworkRetry", "Resposta não confirmada. Confira o estado e repita a mesma ação para recuperar o resultado sem cobrar novamente.") : result.error)
         await load()
-        return
+        return null
       }
       keys.current.delete(id)
       setBag(result.data.bag)
@@ -54,7 +55,8 @@ export function useWorkshop(t: GearTr, onReceipt?: (receipt: Receipt) => void) {
       if (story?.action === "inspect_quest" && typeof story.lore === "string" && typeof story.item === "string") {
         setMessage(t("gearLore_" + story.item, story.lore))
       } else if (success) setMessage(success)
-      if (result.data.receipt) (onReceipt || celebrate)(result.data.receipt)
+      if (result.data.receipt && !opts?.quiet) (onReceipt || celebrate)(result.data.receipt)
+      return result.data
     } finally {
       flight.current = false
       if (alive.current) setBusy(null)

@@ -245,6 +245,15 @@ const ROWS = [
   ["Tire a peça de quem a veste antes de desmontar", "Take the item off whoever wears it before salvaging", "Quítale la pieza a quien la lleva antes de desmontar"],
   ["Confirme a desmontagem de uma peça rara ou acima", "Confirm salvaging a rare or better item", "Confirma el desmontaje de una pieza rara o superior"],
   ["Esses materiais não se transmutam um no outro", "These materials can't be transmuted into each other", "Estos materiales no se transmutan entre sí"],
+  // weapon-v1 (24/11/2026): armas por nível (pó) e estrelas; fragmento de classe
+  ["Essa ação saiu do jogo: as armas agora evoluem por refinamento com pó e estrelas na forja", "That action is gone: weapons now grow by refining with powder and by stars at the forge", "Esa acción salió del juego: ahora las armas mejoran refinando con polvo y con estrellas en la forja"],
+  ["O refinamento mudou: atualize a página", "Refining has changed: reload the page", "El refinado cambió: recarga la página"],
+  ["Só armas evoluem por nível e estrelas", "Only weapons grow by level and stars", "Solo las armas mejoran por nivel y estrellas"],
+  ["Faltam fragmentos dessa classe", "You need more fragments of that class", "Faltan fragmentos de esa clase"],
+  ["Escolha a cópia que será consumida", "Choose the copy that will be used up", "Elige la copia que se consumirá"],
+  ["A cópia consumida não pode ser a própria arma", "The copy used up can't be the weapon itself", "La copia consumida no puede ser la propia arma"],
+  ["A cópia consumida precisa ser da mesma arma", "The copy used up must be the same weapon", "La copia consumida debe ser la misma arma"],
+  ["Use como doadora uma cópia nova: nível 1, 1 estrela e sem investimento", "Use a fresh copy as the donor: level 1, 1 star, nothing invested", "Usa como donante una copia nueva: nivel 1, 1 estrella y sin inversión"],
   // trilha E13: runas
   ["Isso não é uma runa", "That isn't a rune", "Eso no es una runa"],
   ["Essa peça não tem engaste livre", "That item has no free socket", "Esa pieza no tiene engaste libre"],

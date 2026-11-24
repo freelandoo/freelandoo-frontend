@@ -268,7 +268,7 @@ export interface Receipt {
     nectar?: { stolenMl: number; pendingMl: number }
   }
   /** E3: fragmento traz `progress` (quanto tem / quanto pede o item `of`). */
-  items: { id: string; qty: number; rarity?: string; /** classe de raridade (E…Divina), do servidor */ rank?: string; progress?: { of: string; have: number; need: number } }[]
+  items: { id: string; qty: number; rarity?: string; /** classe de raridade (E…Divina), do servidor */ rank?: string; progress?: { of?: string; rank?: string; have: number; need: number } }[]
   at: string
 }
 /** F2 (lore v2): o nível do TREINADOR é da conta (não zera ao trocar de personagem). */
@@ -398,7 +398,11 @@ export interface GearItem {
   /** E8: arma de linha (fabricada por fragmentos, não se vende). */
   line?: boolean
   /** E8: fragmento — junta `need` para fabricar `of` (de conjunto: `set`); sobra vira `powder` de Pó de Refino cada. */
-  fragment?: { of: string; need: number; powder: number; set?: string }
+  fragment?: { of?: string; need: number; powder?: number; set?: string; rank?: GearRank }
+  /** weapon-v1 (24/11/2026): pó de refino — a faixa de níveis de DESTINO que ele cobre e a chance de cada tentativa. */
+  powder?: { from: number; upTo: number; chance: number }
+  /** weapon-v1: saiu do jogo (fica só para recibos e cópias antigas; sem origem). */
+  retired?: boolean
   /** E8: onde o fragmento cai (região, chefão, tabela de saque) — para o Índice. */
   origin?: { region: string; boss: string | null; table: string; kind: "boss" | "activity" | "sector" }
   /** E11: entra numa transmutação (3 → 1 do mesmo tier). */
@@ -472,8 +476,39 @@ export interface GearCatalog {
   runes?: { sockets: Record<GearRarity, number>; maxSockets: number; fuseIn: number; grades: number; kinds: Record<string, keyof GearBonus>; value: Partial<Record<keyof GearBonus, number[]>> }
   items: GearItem[]
   recipes: GearRecipe[]
+  /** weapon-v1: armas com nível 1…`maxLevel` (1 pó por tentativa), estrelas até `maxStars`, forja por fragmento de classe. */
+  weaponProgress?: WeaponProgress
   /** E7: conjuntos de 4 peças; `steps` = { nº de peças: fração da fatia do conjunto }. */
   sets?: GearSet[]
+}
+/** weapon-v1 (24/11/2026): a regra pública das armas (o servidor confere a versão em cada pedido). */
+export interface WeaponProgress {
+  rulesVersion: string
+  maxLevel: number
+  maxStars: number
+  powders: { id: string; from: number; upTo: number; chance: number }[]
+  fragmentNeed: Record<string, number>
+  fragments: Record<string, string>
+}
+/** weapon-v1: a próxima tentativa de refino de uma cópia (pó da faixa do nível de destino). */
+export interface WeaponRefineView {
+  rulesVersion: string
+  from: number
+  to: number
+  powder: string
+  chance: number
+  needs: Record<string, number>
+  bonusBefore: Partial<GearBonus>
+  bonusAfter: Partial<GearBonus>
+}
+/** weapon-v1: a próxima estrela (consome uma cópia idêntica nova: `donors` = as que servem). */
+export interface WeaponStarsView {
+  from: number
+  to: number
+  copies: number
+  donors: string[]
+  bonusBefore: Partial<GearBonus>
+  bonusAfter: Partial<GearBonus>
 }
 /** E17: uma oferta da loja de troca. */
 export interface ExchangeOffer { id: string; token: string; cost: number; gives: Record<string, number>; event?: string }
@@ -508,9 +543,10 @@ export interface GearBag {
   stacks?: Record<string, number>
   /** E19: eventos ligados agora (a loja de troca só mostra as ofertas deles). */
   events?: string[]
-  /** E9: a bancada de cada cópia (próximo passo garantido). */
-  /** E9/E10/E11: próximo passo garantido, próximo grau e o que a desmontagem devolve. */
-  forge?: Record<string, { upgrade: UpgradeView | null; grade?: GradeView | null; salvage?: Record<string, number> | null; ascend?: StepView; awaken?: StepView & { bonus?: Partial<GearBonus> }; enchant?: EnchantView }>
+  /** weapon-v1: por cópia de ARMA, a próxima tentativa de refino, a próxima estrela e o bônus de agora. */
+  forge?: Record<string, { refine: WeaponRefineView | null; stars: WeaponStarsView | null; bonus: Partial<GearBonus> }>
+  /** weapon-v1: a regra em vigor (a mesma do catálogo). */
+  progression?: WeaponProgress
   /** R3: só o que se faz na peça (aprimoramento, refino, conjunto, runas, despertar, encanto). */
   bonus: GearBonus
   /** R3 (2026-11-17): status da classe somados das peças vestidas (número + %). */
@@ -534,6 +570,9 @@ export interface GearInstance {
   /** E15: chave secundária encantada (null = a do catálogo). */
   enchant?: keyof GearBonus | null
   locked: boolean
+  /** weapon-v1: só arma — nível da cópia (1…90) e estrelas (1…5). */
+  weaponLevel?: number
+  stars?: number
   /** Personagem que segura a cópia (vivo ou na cápsula); null = solta na mochila. */
   equippedBy: string | null
   equippedSlot: GearSlot | null
@@ -717,40 +756,19 @@ export const buyGear = (token: string, item: string, key: string) => call<GearOu
 export const equipGear = (token: string, slot: GearSlot, item: string | null, instance?: string | null) =>
   call<{ bag: GearBag }>(token, "POST", "/gear/equip", instance ? { slot, item, instance } : { slot, item })
 export const forgeGear = (token: string, recipe: string, key: string) => call<GearOut>(token, "POST", "/gear/forge", { recipe, key })
-/** E9: aprimoramento garantido da cópia (`instance`; sem ela, a representante do item). */
-export const upgradeGear = (token: string, item: string, key: string, instance?: string | null) =>
-  call<GearOut>(token, "POST", "/gear/upgrade", instance ? { item, instance, key } : { item, key })
-/** E11: desmontar a cópia (raro ou acima pede `confirm`). */
-export const salvageGear = (token: string, item: string, instance: string, key: string, confirm = false) =>
-  call<GearOut>(token, "POST", "/gear/salvage", { item, instance, key, confirm })
-/** E11: 3 × `qty` de `from` → `qty` de `to` (mesmo tier). */
-export const transmuteGear = (token: string, from: string, to: string, qty: number, key: string) =>
-  call<GearOut>(token, "POST", "/gear/transmute", { from, to, qty, key })
-/** E11: trava/destrava a cópia (não desmonta nem recicla). */
+/** E11: trava/destrava a cópia (não recicla nem serve de doadora de estrela). */
 export const lockGear = (token: string, instance: string, locked: boolean) => call<GearOut>(token, "POST", "/gear/lock", { instance, locked })
-/** E10: refinamento I–V da cópia. */
-export const gradeGear = (token: string, item: string, key: string, instance?: string | null) =>
-  call<GearOut>(token, "POST", "/gear/grade", instance ? { item, instance, key } : { item, key })
-/** E14: Ascensão da cópia no +10 (Selos de Domínio). */
-export const ascendGear = (token: string, instance: string, key: string, version?: number) =>
-  call<GearOut>(token, "POST", "/gear/ascend", { instance, key, ...(version != null ? { version } : {}) })
-/** E14: Despertar da cópia ascendida (Essências + Selos). */
-export const awakenGear = (token: string, instance: string, key: string, version?: number) =>
-  call<GearOut>(token, "POST", "/gear/awaken", { instance, key, ...(version != null ? { version } : {}) })
-/** E15: sortear o encanto da cópia (paga Pó de Refino e Cristal Bruto). */
-export const enchantGear = (token: string, instance: string, key: string, version?: number) =>
-  call<GearOut>(token, "POST", "/gear/enchant", { instance, key, ...(version != null ? { version } : {}) })
-/** E15: escolher uma opção do sorteio (`choice`) ou manter a atual (`null`); não cobra de novo. */
-export const resolveEnchant = (token: string, instance: string, choice: string | null, key: string) =>
-  call<GearOut>(token, "POST", "/gear/enchant/resolve", { instance, choice, key })
-/** E13: engastar a runa `rune` na cópia (`version` = a que a tela viu). */
-export const socketRune = (token: string, instance: string, rune: string, key: string, version?: number) =>
-  call<GearOut>(token, "POST", "/gear/socket", { instance, rune, key, ...(version != null ? { version } : {}) })
-/** E13: tirar a runa do engaste `index` (volta inteira para a mochila). */
-export const unsocketRune = (token: string, instance: string, index: number, key: string, version?: number) =>
-  call<GearOut>(token, "POST", "/gear/unsocket", { instance, index, key, ...(version != null ? { version } : {}) })
-/** E13: fundir `qty` vezes 3 runas de grau N numa de grau N+1. */
-export const fuseRunes = (token: string, rune: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/rune/fuse", { rune, qty, key })
+/**
+ * weapon-v1 (24/11/2026): REFINAR a arma — 1 pó da faixa do nível de destino; o servidor sorteia (falhou = gasta o pó e
+ * a cópia fica no nível). `rulesVersion` diferente da do servidor = 410 (a tela recarrega).
+ */
+export const refineWeapon = (token: string, instance: string, key: string, version?: number, rulesVersion?: string) =>
+  call<GearOut>(token, "POST", "/gear/weapon/refine", { instance, key, ...(version != null ? { version } : {}), ...(rulesVersion ? { rulesVersion } : {}) })
+/** weapon-v1: SUBIR ESTRELA consumindo a cópia idêntica `donor` (nova: nível 1, 1 estrela, solta e sem trava). */
+export const starWeapon = (token: string, instance: string, donor: string, key: string, version?: number) =>
+  call<GearOut>(token, "POST", "/gear/weapon/stars", { instance, donor, key, ...(version != null ? { version } : {}) })
+/** weapon-v1: MONTAR a arma escolhida com os fragmentos da classe dela (nasce nível 1, 1 estrela, não vestida). */
+export const assembleWeapon = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/weapon/assemble", { item, key })
 /** E19: eventos (o admin liga e desliga). */
 export interface EventConfig { events: { id: string; name: string; active: boolean; open: boolean; endsAt: string | null; updatedAt: string | null }[] }
 export const getEventConfig = (token: string) => call<EventConfig>(token, "GET", "/evento/config")
@@ -768,8 +786,6 @@ export const getCollection = (token: string) => call<Collection>(token, "GET", "
 export const openChest = (token: string, chest: string, key: string) => call<GearOut>(token, "POST", "/gear/chest/open", { chest, key })
 /** E17: loja de troca — `qty` vezes a oferta (fichas → itens). */
 export const exchangeGear = (token: string, offer: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/exchange", { offer, qty, key })
-/** E8: fragmento que sobra vira Pó de Refino (o servidor diz quanto). */
-export const convertFragments = (token: string, item: string, qty: number, key: string) => call<GearOut>(token, "POST", "/gear/fragment/convert", { item, qty, key })
 export const applyGearItem = (token: string, item: string, key: string) => call<GearOut>(token, "POST", "/gear/use", { item, key })
 // ═══ lore v2 F3: missões = os 10 capítulos (abrem pelo nível do treinador) ═══
 export interface QuestStepView {
