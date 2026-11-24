@@ -62,7 +62,7 @@ export const TUNING = {
   /** Custo em munição de cada tiro (índice = cor). */
   cost: [1, 1, 2, 1] as readonly number[],
   /** Alcance (m) do raio de cada cor. */
-  range: [13, 24, 9, 48] as readonly number[],
+  range: [48, 24, 48, 48] as readonly number[], // mm3d-63: ponte e cama elástica vão longe como o muro
 
   /**
    * Ponte (laranja): placa QUADRADA (mm3d-62c, pedido do Alex: laranja,
@@ -71,8 +71,6 @@ export const TUNING = {
    */
   bridgeR: 1.25,
   bridgeH: 0.34,
-  /** A ponte cresce até esta distância horizontal de quem atira. */
-  bridgeReach: 12,
   /** Cama elástica (amarelo, mm3d-35e): almofada baixa (dá para entrar andando) que lança para cima. */
   stepR: 1.25,
   stepH: 0.34,

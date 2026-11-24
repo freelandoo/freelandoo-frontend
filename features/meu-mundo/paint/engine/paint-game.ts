@@ -519,7 +519,8 @@ export function createPaintGame(opts: PaintGameOptions): PaintGameHandle {
     playSample("jogo-paint-tiro", { gain: 0.55, minGap: 45, vary: 0.06 })
     port.pose(posePacket())
     const o = muzzleOf(body, body.facing)
-    if (c === PAINT.WALL) {
+    // mm3d-63: ponte e cama elástica (no chão) seguem a mesma regra do muro
+    if (c !== PAINT.HARM) {
       // mm3d-62d (Alex: "olha onde a mira está e onde surgiu a parede"): o muro
       // nasce no ponto da MIRA. Mirando o céu o ponto fica a 70 m — além do
       // alcance; recua ao longo do raio da CÂMERA (não da arma) até caber,
