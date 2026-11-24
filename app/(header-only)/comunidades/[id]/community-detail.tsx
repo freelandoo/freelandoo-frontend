@@ -1,0 +1,3299 @@
+"use client"
+
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
+import type { ReactNode } from "react"
+import {
+  Users, Trophy, ArrowLeft, Palette, Crown, Shield, ScrollText, Eye,
+  ImagePlus, Loader2, Save, Hash, Sparkles, Target, Megaphone, Star,
+  Pin, Trash2, BarChart3, Plus, Hexagon, X, MessageSquare,
+  Lock, Globe, PawPrint, Car, UserRound, Bike, ShoppingBag, Building2,
+  Camera, Check,
+} from "lucide-react"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { useTranslations } from "@/components/i18n/I18nProvider"
+import { useTaxonomy } from "@/lib/i18n/taxonomy"
+import { getToken, getStoredUser } from "@/lib/auth"
+import { externalSitePath } from "@/lib/external-sites"
+import type { FeedFilters, FeedPost } from "@/lib/types/portfolio-feed"
+import { PublishMenuButton, type PublishItem } from "@/components/composer/publish-menu-button"
+import { InviteShareButton } from "@/components/community/invite-share-button"
+import { SubjectSwitcher } from "@/components/community/subject-switcher"
+import { toast } from "sonner"
+// O Plano Negócio (mig 234): o modal com os "prints" e o botão de assinar. É
+// dele que dependem o aviãozinho (convidar membro) e o "Entrar" do visitante.
+import { BusinessPlanModal } from "@/components/plans/business-plan-modal"
+import { useFeature } from "@/components/feature-flags/FeatureFlagsProvider"
+// Os botões retráteis atrás da foto — a MESMA mecânica do headcard do perfil e
+// da Carteira. Aqui a pilha é a da COMUNIDADE: por enquanto um botão só,
+// "Perfil" (azul), que abre o que a comunidade é — enxame, privacidade,
+// temporada e o texto do líder. Botão novo de headcard de comunidade entra
+// nessa pilha, nunca como bloco solto no meio da página.
+import { PillStack, type PillSpec } from "@/components/profile/headcard-pills"
+import { litBox, neonText } from "./_business/bz-tokens"
+// A agenda do negócio só existe para o líder: carregada sob demanda, ela não
+// pesa na página de quem só visita.
+// O letreiro aceso do banner (WebGPU/WebGL2) — só no negócio, carregado à parte.
+const StorefrontShader = dynamic(
+  () => import("./_business/storefront-shader").then((m) => m.StorefrontShader),
+  { ssr: false }
+)
+const BusinessShop = dynamic(
+  () => import("./_business/business-shop").then((m) => m.BusinessShop),
+  { ssr: false }
+)
+const BusinessAgenda = dynamic(
+  () => import("@/components/agenda/BusinessAgenda").then((m) => m.BusinessAgenda),
+  { ssr: false }
+)
+// A coluna retrátil dos números (membros, nível, XP, benchmark, destaque e
+// ranking). A peça é só a MECÂNICA — o que entra na coluna é desta página.
+// A comunidade de NEGÓCIO troca o conteúdo do dock global. Quem sabe qual é a
+// modalidade é ESTA página (ela não está na URL), então é ela que declara.
+import { CommunityShellBeacon, onCommunityView } from "@/components/layout/community-shell"
+import { LightSurfaceBeacon } from "@/components/layout/light-surface"
+// A paleta editável do líder e o formatador de XP moram FORA desta página: o
+// ranking cheio (`[id]/ranking`) pinta o pódio com o MESMO accent, e uma cópia
+// da lista faria as duas telas da mesma comunidade divergirem de tom.
+import {
+  ACCENTS,
+  accentHex,
+  defaultAccentFor, lockedAccentFor,
+  BACKDROPS,
+  backdropTint,
+  canBuildCommunitySite,
+  compact,
+  platformSkinVars,
+} from "./_components/community-ui"
+
+const PortfolioPostCard = dynamic(
+  () => import("@/components/feed/portfolio-post-card").then((m) => m.PortfolioPostCard),
+  { ssr: false }
+)
+// O fundo do ambiente: uma textura estática na cor da plataforma. Import
+// DIRETO (e não por `dynamic`) porque ele deixou de ser um shader e virou
+// quatro divs de CSS — um chunk à parte só faria a cor do ambiente piscar na
+// entrada da tela. Ver components/platform/tech-backdrop.tsx.
+import { TechBackdrop } from "@/components/platform/tech-backdrop"
+
+/** Espelho, para `style` inline, dos valores da pele `.fl-pet` (globals.css). */
+const PET_INLINE: Record<string, string> = {
+  "#15120E": "#FFF8EC",
+  "#1D1810": "#F0DBBA",
+  "#F5F1E8": "#3B2414",
+  "#9A938A": "#7A5A3C",
+  "#0B0B0D": "#A85A24",
+}
+/** Espelho, para `style` inline, dos valores da pele `.fl-hood` (globals.css). */
+const HOOD_INLINE: Record<string, string> = {
+  "#15120E": "#0E3A63",
+  "#1D1810": "#154B7D",
+  "#F5F1E8": "#F0F8FF",
+  "#9A938A": "#B9DAF3",
+  "#0B0B0D": "#0B3358",
+}
+/** Espelho, para `style` inline, dos valores da pele `.fl-condo` (globals.css). */
+const CONDO_INLINE: Record<string, string> = {
+  "#15120E": "#FAFAFA",
+  "#1D1810": "#D4D4D8",
+  "#F5F1E8": "#18181B",
+  "#9A938A": "#52525B",
+  "#0B0B0D": "#A1A1AA",
+}
+const CommentsPanel = dynamic(
+  () => import("@/components/comments/comments-panel").then((m) => m.CommentsPanel),
+  { ssr: false }
+)
+const MediaComposer = dynamic(
+  () => import("@/components/composer/MediaComposer").then((m) => m.MediaComposer),
+  { ssr: false }
+)
+// Condomínio (migs 205/206) NÃO tem mais tela própria: todas as comunidades
+// usam esta casca. O que é do prédio — planta, portaria, família × disputa,
+// veredito do síndico — entra como SEÇÃO, carregada só quando é o caso.
+const CondoResidence = dynamic(
+  () => import("./_components/condo-residence").then((m) => m.CondoResidence),
+  { ssr: false }
+)
+/**
+ * As abas da comunidade.
+ *
+ * ⚠️ ERAM TRÊS: "shelf" (a estante da Steam, mig 220) saiu com a plataforma de
+ * games (2026-09-09), e o componente dela foi APAGADO junto quando o frontend
+ * daquele ambiente foi retirado inteiro.
+ */
+/**
+ * ⚠️ AS DUAS VITRINES ENTRARAM (2026-09-16) e só existem em condomínio e
+ * bairro. Elas já existiam desde a mig 198 — mas escondidas dentro do bloco de
+ * extras do condomínio, três níveis abaixo do que é o produto do lugar: o que o
+ * vizinho vende e o que ele faz. Aqui viram abas de primeira classe, e o bairro
+ * (que não tinha vitrine nenhuma) passa a ter as mesmas duas.
+ */
+// ⚠️ "members" SAIU DA UNIÃO (2026-09-23). Ele virou aba DENTRO do painel do
+// pill Comunidade (`PanelTab`), e nada mais chama `setTab("members")`. Um
+// membro de união que ninguém produz é uma porta que só espera alguém religá-la
+// — e aí a página teria duas listas de membros de novo.
+type CommunityTab = "feed" | "services" | "products" | "shop" | "agenda" | "jobs" | "debts"
+// "Meu Site" (mig 212) NÃO mora mais aqui: o construtor virou a página
+// `/comunidades/<id>/site`. Ele monta uma página inteira, e encaixá-la numa
+// aba embaixo do feed mostrava um site diferente do que ia ao ar. As duas
+// portas daqui — o item "Meu Site" do menu "+" e a aba "Site" — LEVAM até lá.
+// Avisos, anúncios internos, enquetes e lista de vizinhos (migs 197-199).
+// Continuam existindo — o que morreu foi a TELA separada, não as features.
+const CondoExtras = dynamic(
+  () => import("./_components/condo-extras").then((m) => m.CondoExtras),
+  { ssr: false }
+)
+
+// As duas VITRINES territoriais (mig 198), agora como abas. Carregadas sob
+// demanda: quem abre uma comunidade comum — a maioria — nunca baixa este chunk.
+// A2 + A4 (mig 338): abas Empregos e Dívidas em toda comunidade.
+const CommunityJobs = dynamic(() => import("@/components/vitrines/vitrine-lists").then((m) => m.CommunityJobs), { ssr: false })
+const CommunityDebts = dynamic(() => import("@/components/vitrines/vitrine-lists").then((m) => m.CommunityDebts), { ssr: false })
+const CommunityListings = dynamic(
+  () => import("./_components/community-listings").then((m) => m.CommunityListings),
+  { ssr: false }
+)
+
+// Campos do editor de assunto: mesma pele reta dos outros controles da página.
+const selectCls =
+  "h-10 w-full border-2 border-[#0B0B0D] bg-[#1D1810] px-3 text-sm text-[#F5F1E8] outline-none focus:border-[#F2B705]"
+
+type Theme = { primary?: string; background?: string; text?: string; accent?: string }
+type Community = {
+  id_profile: string
+  id_leader_user: string | null
+  display_name: string
+  bio: string | null
+  avatar_url: string | null
+  /** A foto de perfil do líder (tb_user.avatar) — é ela que o headcard mostra. */
+  leader_avatar?: string | null
+  /** Perfil-conta do líder: é a LOJA dele que a aba Produtos do negócio mostra. */
+  leader_store_profile_id?: string | null
+  banner_url: string | null
+  enxame_name: string | null
+  // O enxame da comunidade comum agora é EDITÁVEL na página (mig 219), então o
+  // id — e não só o nome — precisa chegar aqui para pré-selecionar o campo.
+  id_machine?: number | null
+  community_theme: Theme | null
+  // Opcionais: o backend recorta contadores por tier do viewer — comunidade
+  // privada e condomínio não os devolvem para quem está de fora.
+  xp_total?: number
+  xp_level?: number
+  member_count?: number
+  privacy?: "public" | "private"
+  monthly_cents?: number | null
+  viewer_is_member?: boolean
+  viewer_sub_status?: string | null
+  // As três portas do Plano Negócio (mig 234), lidas do LÍDER — só na
+  // modalidade `common`. `members_enabled` decide se o visitante vê "Entrar"
+  // e se o aviãozinho do líder está trancado; `site_share_enabled` é a
+  // publicação do site (o construtor usa a própria leitura).
+  business_plan?: { members_enabled: boolean; site_share_enabled: boolean; ai_enabled: boolean }
+  // Modalidade (migs 196/205/210). Todas as modalidades renderizam nesta MESMA
+  // casca; o que muda é quais seções aparecem e quem pode escrever.
+  //
+  // ⚠️ "games" e "finance" NÃO estão na lista, e isso é decisão. As duas são
+  // PLATAFORMAS, não comunidades: o Financeiro tem casca própria em `/wallet`,
+  // e o frontend de games foi retirado inteiro (2026-09-09). A linha de games
+  // continua no banco, então quem abrir a URL antiga cai aqui pelo caminho
+  // GENÉRICO — uma comunidade sem líder e sem membros, que é o que ela é.
+  kind?: "common" | "academy" | "condo" | "neighborhood" | "pet" | "car"
+  // Assunto das modalidades da mig 210: a raça do pet, o modelo do carro. É o
+  // que dá identidade à página — sem ele o cabeçalho do "Rex" não diz que Rex
+  // é um vira-lata.
+  subject?: {
+    kind: "pet" | "car"
+    species?: string | null
+    breed_label?: string | null
+    is_mixed?: boolean
+    birth_year?: number | null
+    brand_code?: string | null
+    model_code?: string | null
+    brand_label?: string | null
+    model_label?: string | null
+  } | null
+  // Endereço do condomínio. SENSÍVEL: o backend só devolve rua/número/CEP
+  // para morador confirmado ou administração (CondoRules é a fonte única) —
+  // aqui os campos são opcionais porque para visitante eles simplesmente NÃO
+  // EXISTEM na resposta, e não porque venham vazios.
+  address?: {
+    street?: string | null
+    number?: string | null
+    complement?: string | null
+    neighborhood?: string | null
+    cep?: string | null
+    municipio?: string | null
+    estado?: string | null
+  } | null
+  address_is_full?: boolean
+  // "Meu Site" (mig 212): existe site PUBLICADO? Vem no mesmo GET da comunidade
+  // para a aba Site não custar uma requisição a mais em toda visita.
+  has_site?: boolean
+  viewer_is_admin?: boolean
+  viewer_is_resident?: boolean
+  viewer_has_pending_claim?: boolean
+  viewer_units?: { id_unit: number; number: string; block_name: string | null }[]
+  viewer_parking?: { id_spot: number; code: string }[]
+}
+type CommunityBee = {
+  id_story: string
+  video_url: string | null
+  thumbnail_url: string | null
+  caption: string | null
+  profile_name: string | null
+  profile_avatar: string | null
+  author_username: string | null
+  created_at: string
+}
+type MembershipSummary = {
+  active_subs: number
+  past_due_subs: number
+  waiting_cents: number
+  available_cents: number
+  paid_cents: number
+  total_net_cents: number
+  payments_count: number
+}
+type Member = {
+  id_user: string
+  role: "leader" | "vice" | "member"
+  user_name: string | null
+  user_username: string | null
+  top_profile_avatar: string | null
+  top_profile_name: string | null
+  top_profile_level: number | null
+  top_profile_xp: number
+}
+type GoalRankRow = { id_user: string; name: string | null; username: string | null; avatar_url: string | null; xp_level: number | null; score: number; posts?: number; eng?: number }
+type Goal = {
+  id: number; title: string; metric: string; target_value: number | null
+  prize_polens: number; status: string; starts_at: string; ends_at: string | null; closed_at: string | null
+  progress: number; percent: number | null; winner_user_id: string | null
+  winner: { id_user: string; name: string | null; avatar_url: string | null; score: number } | null
+  ranking: GoalRankRow[]
+}
+type Announcement = { id: number; body: string; is_pinned: boolean; created_at: string; author_username: string | null; author_name: string | null }
+type Benchmark = { position: number; total: number; percentile: number | null; enxame_name: string | null }
+
+function fmtBRL(cents: number): string {
+  return (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+}
+
+const FEED_FILTERS: FeedFilters = { id_machine: null, id_category: null, estado: null, municipio: null, level_min: null }
+
+/**
+ * A comunidade EMBUTIDA em outro ambiente (Minha cidade, 2026-11-24): a aba
+ * "Meu bairro"/"Meu condomínio" É esta casca, com o mural, os pills, as
+ * vitrines, o delivery e a administração de sempre — nenhuma segunda máquina.
+ *
+ * O que muda embutida: o "Voltar" do topo dá lugar ao `header` do ambiente (as
+ * abas de Minha cidade), e a página não troca a URL para `/minha-cidade` (é
+ * ela que já está lá). Tudo o mais — inclusive QUEM pode o quê — é o mesmo.
+ */
+export type CommunityEmbed = { header: ReactNode }
+
+/**
+ * ⚠️ MOROU NO `page.tsx` ATÉ 2026-11-24. Saiu para cá para servir as DUAS
+ * portas: `/comunidades/<id>` (a página, que só passa o id) e a aba de Minha
+ * cidade (`embed`). Mexer aqui é mexer nas duas.
+ */
+export function CommunityDetail({ id, embed }: { id: string; embed?: CommunityEmbed }) {
+  const t = useTranslations("Community")
+  const tPlan = useTranslations("BusinessPlan")
+  const tx = useTaxonomy()
+
+  const [community, setCommunity] = useState<Community | null>(null)
+  const [members, setMembers] = useState<Member[]>([])
+  const [goal, setGoal] = useState<Goal | null>(null)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [benchmark, setBenchmark] = useState<Benchmark | null>(null)
+  const [tab, setTab] = useState<CommunityTab>("feed")
+  const router = useRouter()
+  const sitePath = id ? `/comunidades/${id}/site` : "/account"
+  // O menu do "+" mora no HEADCARD e a aba fica MUITO abaixo (privacidade,
+  // enxame, perfil...). Trocar a aba dali sozinho não muda nada na parte da
+  // tela que a pessoa está olhando — parece botão quebrado. Por isso o item
+  // do menu troca a aba E leva a pessoa até ela.
+  const tabsRef = useRef<HTMLDivElement | null>(null)
+  const goToTab = useCallback((key: CommunityTab) => {
+    setTab(key)
+    // Depois da pintura: a aba só existe no DOM no quadro seguinte.
+    requestAnimationFrame(() => {
+      tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }, [])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actionMsg, setActionMsg] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  // O modal do Plano Negócio (mig 234).
+  const [planOpen, setPlanOpen] = useState(false)
+
+  // Feed estilo grupo
+  const [posts, setPosts] = useState<FeedPost[]>([])
+  // Faixa de bees do mural (mig 208): os bees publicados AQUI. Vivem pela
+  // mesma regra do resto do site — 24h + 1h por ponto de engajamento, teto de
+  // 7 dias —, então a faixa esvazia sozinha, sem job e sem "arquivar".
+  const [bees, setBees] = useState<CommunityBee[]>([])
+  const [postsCursor, setPostsCursor] = useState<string | null>(null)
+  const [postsHasMore, setPostsHasMore] = useState(false)
+  // FEED DE CARROS (mig 259): na página de um carro o feed junta os posts de
+  // TODOS os carros do site, ou só os de quem tem o mesmo modelo que um dos
+  // seus. Quem recorta é o backend (`scope`); aqui só se escolhe e se lê o
+  // aviso de quando não há "meu modelo" para comparar.
+  // PET (mig 262) usa o MESMO recorte com a raça: "same" vira `same_model` no
+  // carro e `same_breed` no pet. Um estado só, porque a página é de um ou do
+  // outro — nunca dos dois.
+  const [subjectScope, setSubjectScope] = useState<"all" | "same">("all")
+  const [needsSubjectMatch, setNeedsSubjectMatch] = useState(false)
+  const [loadingPosts, setLoadingPosts] = useState(true)
+  const [loadingMorePosts, setLoadingMorePosts] = useState(false)
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null)
+  const [composerOpen, setComposerOpen] = useState(false)
+  // "post" = foto/texto · "bee" = Curto (vídeo permanente) · "story" = Bee
+  // (o vídeo que dura mais quanto mais engajamento recebe). Os nomes internos
+  // são os do Bees v2 — renomeá-los aqui quebraria o MediaComposer.
+  const [composerKind, setComposerKind] = useState<"post" | "bee" | "story">("post")
+
+  // Recado (nota só-texto, até 2000 chars)
+  const [recadoOpen, setRecadoOpen] = useState(false)
+  const [recadoBody, setRecadoBody] = useState("")
+  const [postingRecado, setPostingRecado] = useState(false)
+
+  // Edição (líder)
+  const [edit, setEdit] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [autoSave, setAutoSave] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [nameDraft, setNameDraft] = useState("")
+  const [bioDraft, setBioDraft] = useState("")
+  // Assunto das modalidades da mig 210 (raça do pet, modelo do carro, jogo).
+  // Editado AQUI, no modo de edição da própria comunidade — não há modal de
+  // cadastro: a comunidade nasce vazia e é batizada dentro de si mesma.
+  const [petDraft, setPetDraft] = useState({ species: "", breed_slug: "", breed_label: "", birth_year: "" })
+  const [carDraft, setCarDraft] = useState({ brand_code: "", model_code: "" })
+  const [breeds, setBreeds] = useState<{ id_breed: number; slug: string; label: string }[]>([])
+  const [carBrands, setCarBrands] = useState<{ code: string; label: string }[]>([])
+  const [carModels, setCarModels] = useState<{ code: string; label: string }[]>([])
+  const [accentDraft, setAccentDraft] = useState("gold")
+  // A COR DO FUNDO da plataforma de negócio (pedido do Alex, 2026-09-09: "hoje
+  // só dá pra mudar a cor dos detalhes, eu queria poder mudar até a cor do
+  // fundo"). Mora no MESMO `community_theme` do accent — é a mesma pergunta
+  // ("com que cara esta comunidade aparece"), e um lugar novo para guardá-la
+  // faria a tela pedir duas gravações para uma edição só.
+  const [bgDraft, setBgDraft] = useState("black")
+  // Enxame (mig 219): a comunidade comum nasce sem ele e o líder escolhe aqui.
+  const [machineDraft, setMachineDraft] = useState("")
+  const [enxames, setEnxames] = useState<{ id_machine: number; name: string }[]>([])
+  const [uploading, setUploading] = useState<"banner" | "avatar" | null>(null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [photoResetting, setPhotoResetting] = useState(false)
+  const seeded = useRef(false)
+  const autoEdited = useRef(false)
+
+  // Privacidade (comunidade privada com mensalidade)
+  const [privacyDraft, setPrivacyDraft] = useState<"public" | "private">("public")
+  const [monthlyDraft, setMonthlyDraft] = useState("") // em reais, ex.: "19,90"
+  const [savingPrivacy, setSavingPrivacy] = useState(false)
+  const [membershipSummary, setMembershipSummary] = useState<MembershipSummary | null>(null)
+
+  // Meta + mural
+  const [goalFormOpen, setGoalFormOpen] = useState(false)
+  const [goalTitle, setGoalTitle] = useState("")
+  const [goalMetric, setGoalMetric] = useState("xp")
+  const [goalDays, setGoalDays] = useState(30)
+  const [savingGoal, setSavingGoal] = useState(false)
+  const [annBody, setAnnBody] = useState("")
+  const [annPin, setAnnPin] = useState(false)
+  const [postingAnn, setPostingAnn] = useState(false)
+
+  // Qual painel dos botões retráteis está aberto — UM POR VEZ, como os próprios
+  // pills. O que a comunidade É (perfil: enxame, privacidade, temporada e o
+  // texto do líder) e o que ela ANUNCIA (o mural) saíram dos blocos empilhados
+  // no meio da página: quem visita lia caixas de configuração antes de chegar
+  // no feed, e a maioria delas nem aparecia para ele. Agora todo mundo abre os
+  // mesmos painéis; o que muda é que o líder EDITA e o visitante LÊ.
+  //
+  // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
+  // são a mesma decisão, e separá-los deixaria um botão sem painel.
+  //
+  // ⚠️ ERAM TRÊS: o painel `game` saiu com o frontend da plataforma de games
+  // (2026-09-09), e com ele o único painel que não falava de um GRUPO.
+  //
+  // ⚠️ ELES VIRARAM UM SÓ (pedido do Alex, 2026-09-23): *"esses 3 pills viram
+  // um pill só (...) os 3 viram um pill comunidade"*. Perfil, Mural e Ranking
+  // eram três botões respondendo à MESMA pergunta — "o que é este grupo" — e
+  // ocupavam três das quatro vagas da pilha, sem deixar espaço para o que é
+  // ferramenta de trabalho (Leads). Agora existe UM painel com abas dentro:
+  // Perfil · Mural · Membros · Números.
+  //
+  // Painel novo entra AQUI (no tipo) e na lista de pills abaixo — os dois lados
+  // são a mesma decisão, e separá-los deixaria um botão sem painel.
+  //
+  // O ASSUNTO (pet/carro) virou o SEGUNDO painel em 2026-09-24 (pedido do
+  // Alex: "o carro, o pet, tudo isso vira pill em sua comunidade, laranja").
+  type CommunityPanel = "community" | "subject"
+  /** Qual aba do painel único está aberta. */
+  type PanelTab = "profile" | "mural" | "members" | "stats"
+  const [panel, setPanel] = useState<CommunityPanel | null>(null)
+  const [panelTab, setPanelTab] = useState<PanelTab>("profile")
+
+  const storedUser = getStoredUser()
+  const currentUserId = storedUser?.id_user ?? null
+
+  const isLeader = !!community && !!currentUserId && community.id_leader_user === currentUserId
+
+  // ─── QUEM MANDA AQUI É O LÍDER ──────────────────────────────────────────────
+  //
+  // ⚠️ ESTA TELA NÃO SERVE MAIS NENHUMA PLATAFORMA, e por isso o predicado é
+  // um só. Havia um segundo (`isPlatformSpace`) porque games (mig 232) e o
+  // Financeiro (mig 229) não são comunidades de ninguém: ninguém entra,
+  // ninguém lidera (`id_leader_user` é NULL de propósito) e quem editava nome,
+  // foto e cores era o ADMIN DA PLATAFORMA. O Financeiro nunca passou por esta
+  // rota (ele tem casca própria em `/wallet`) e o frontend de games foi
+  // retirado inteiro (2026-09-09) — o ramo virou código que nada alcança, e
+  // código que nada alcança é o que apodrece sem ninguém ver.
+  //
+  // ⚠️ O ESPELHO ERRA PARA MENOS. Quem manda é o backend
+  // (`CommunityService._assertCommunityAdmin`); aqui só se evita OFERECER o
+  // que ele recusaria.
+  const canAdminister = isLeader
+  const myMembership = useMemo(
+    () => members.find((m) => m.id_user === currentUserId) || null,
+    [members, currentUserId]
+  )
+  const isMember = isLeader || !!myMembership || !!community?.viewer_is_member
+
+  // Condomínio: MEMBRO não basta para escrever. Quem publica, vota e vê
+  // vizinhos é o MORADOR — titular reconhecido de um apartamento (migs
+  // 205/206). Quem entrou e ainda não confirmou lê e não escreve.
+  const isCondo = community?.kind === "condo"
+  /**
+   * TERRITORIAL = condomínio ou bairro: os dois lugares onde MORAR, e não "ter
+   * entrado", é o que dá direito de escrever.
+   *
+   * ⚠️ O predicado é UM SÓ e é lido pelas abas de vitrine, pelo pill de
+   * Delivery e pelo gate de quem publica. Escrito solto em cada ponto, o que
+   * esquecesse do bairro deixaria a feature meio entregue — a vitrine abrindo
+   * no condomínio e faltando na rua, sem erro nenhum. É o espelho do
+   * `TERRITORIAL_KINDS` do backend (utils/territorialCommunity.js).
+   */
+  const isTerritorial = isCondo || community?.kind === "neighborhood"
+  /**
+   * O ASSUNTO EDITÁVEL da comunidade (mig 210).
+   *
+   * ⚠️ ERAM TRÊS — `games` saiu quando a plataforma foi retirada do ar
+   * (2026-09-09). Com ele fora, esta casca voltou a servir só comunidades DE
+   * VERDADE: as que têm membros, líder e porta de entrada. Todo o tratamento
+   * especial que games exigia aqui (a aba Membros que sumia, o botão Entrar
+   * que não existia, o painel do jogo, o contexto `?de=` e a pilha própria de
+   * pills) saiu junto — era a única modalidade que não era um grupo.
+   */
+  const subjectKind =
+    community?.kind === "pet" || community?.kind === "car" ? community.kind : null
+
+  // Rótulo do assunto (mig 210). Carro mostra a marca junto porque "Civic LX"
+  // sozinho não diz de quem é.
+  const subjectChip = (() => {
+    const sub = community?.subject
+    if (!sub) return null
+    if (sub.kind === "pet") return sub.breed_label || t("kindPet", "Pet")
+    if (sub.kind === "car") {
+      return [sub.brand_label, sub.model_label].filter(Boolean).join(" ") || t("kindCar", "Carro")
+    }
+    return null
+  })()
+  // ⚠️ O ASSUNTO SAIU DO MODO DE EDIÇÃO e foi para o pill laranja (Meu carro
+  // / Meu pet). Quem edita é o DONO com o painel aberto — as listas de marca,
+  // modelo e raça só são baixadas nesse momento: um visitante não precisa de
+  // 300 modelos de carro para ler o mural.
+  const editingSubject = isLeader && panel === "subject" && !!subjectKind
+  const [savingSubject, setSavingSubject] = useState(false)
+  const isResident = !!community?.viewer_is_resident
+  // Quem publica é MEMBRO — no condomínio, MORADOR. O ramo de plataforma
+  // (publicar por estar logado) saiu junto com games: aqui só restam
+  // comunidades de verdade, e nelas a membresia é a porta.
+  const canPost = isCondo ? isLeader || isResident : isMember
+
+  /**
+   * Quem ANUNCIA na vitrine e quem CHAMA um delivery é o MORADOR — nas duas
+   * modalidades territoriais.
+   *
+   * ⚠️ NÃO É O `canPost` ACIMA, e a diferença não é preciosismo: no bairro
+   * `canPost` é a membresia (entrou na comunidade), enquanto o backend da
+   * vitrine e do delivery exige o vínculo RECONHECIDO pelos vizinhos. Reusar
+   * `canPost` aqui desenharia o formulário de anúncio para quem o servidor
+   * recusaria com 403 — a porta pintada de sempre, descoberta só depois de a
+   * pessoa escrever o anúncio inteiro.
+   *
+   * Este é o ESPELHO do guard `require: "resident"` do
+   * `utils/territorialCommunity.js`. Errar para menos aqui esconde um botão;
+   * errar para mais promete uma porta que não abre.
+   */
+  // A4 (mig 338): a vitrine vale em TODA comunidade. Territorial pede morador;
+  // as de plataforma aberta (pet, carro, games, Financeiro, Fitness) aceitam
+  // qualquer conta; as outras pedem ser membro. Espelho de `vitrineContext`
+  // (utils/vitrineCommunity.js) — o servidor é quem decide.
+  const openVitrine = ["pet", "car", "games", "finance", "fitness"].includes(String(community?.kind || ""))
+  const canPublishListing = isTerritorial
+    ? isLeader || isResident
+    : !!currentUserId && (openVitrine || isMember || !!community?.viewer_is_admin)
+
+  // ─── "Meu Site" (mig 212) ───────────────────────────────────────────────────
+  // A flag `comunidade_site` é kill-switch de CONSTRUÇÃO: desligada, o líder
+  // perde a entrada do menu e a aba, mas um site JÁ publicado continua abrindo
+  // para quem visita — desligar o interruptor segura o que ainda não nasceu,
+  // não derruba o que está no ar. (Mesma regra do GET /me/spaces.)
+  const siteEnabled = useFeature("comunidade_site")
+
+  // ⚠️ O kill-switch da VENDA na vitrine (mig 249). Ele esconde o botão
+  // "Comprar"; os pedidos em andamento continuam podendo ser concluídos, porque
+  // o gate do backend só barra COMPRAR — desligar o interruptor não pode
+  // prender dinheiro que já entrou.
+  //
+  // `useFeature` falha ABERTO (`!== false`): erro de rede na leitura das flags
+  // não pode esconder uma feature ligada.
+  const sellEnabled = useFeature("vitrine_venda")
+
+  // ⚠️ O kill-switch do DELIVERY (mig 248). A descrição da própria flag promete
+  // que "desligar esconde a aba" — e sem esta leitura ela não escondia NADA: o
+  // pill continuava na pilha, o quadro abria, e só o backend recusava, com a
+  // tela parecendo quebrada em vez de desligada.
+  //
+  // Ele barra ABRIR CHAMADO, nunca CONCLUIR: chamado que já está no ar segue
+  // podendo ser aceito e confirmado — desligar o interruptor não pode prender
+  // dinheiro que já entrou.
+  const deliveryEnabled = useFeature("delivery_vizinho")
+  // Kill-switch da prospecção (mig 254). Desligada, o pill some e as rotas
+  // fecham — as listas já salvas continuam no banco.
+  const prospectEnabled = useFeature("prospeccao")
+
+  // ─── MINHA CIDADE (2026-11-24) ─────────────────────────────────────────────
+  // Bairro e condomínio moram dentro de `/minha-cidade` para quem é DE LÁ
+  // (membro). Os links antigos — notificação, convite, link salvo, o "Voltar"
+  // das telas de serviço — continuam apontando para `/comunidades/<id>`; aqui a
+  // URL é trocada levando a query inteira (`?aba=`, `?painel=`…), e a página
+  // embutida lê os mesmos parâmetros lá.
+  //
+  // ⚠️ Visitante NÃO é redirecionado: quem ainda não é do condomínio precisa da
+  // página para pedir o apartamento, e a aba de Minha cidade só mostra o que já
+  // é da pessoa. Com a flag da modalidade desligada também não: o ambiente
+  // esconderia a aba e a pessoa perderia o caminho até um pedido em aberto.
+  const cityHoodOn = useFeature("bairro")
+  const cityCondoOn = useFeature("condominio")
+  const cityLugar =
+    community?.kind === "neighborhood" ? "bairro" : community?.kind === "condo" ? "condominio" : null
+  const goesToCity =
+    !embed && !!id && !!cityLugar && isMember && (cityLugar === "bairro" ? cityHoodOn : cityCondoOn)
+  useEffect(() => {
+    if (!goesToCity || !cityLugar || !id) return
+    const sp = new URLSearchParams(window.location.search)
+    sp.set("lugar", cityLugar)
+    sp.set("c", String(id))
+    router.replace(`/minha-cidade?${sp.toString()}`)
+  }, [goesToCity, cityLugar, id, router])
+
+  // ⚠️ E SÓ A COMUNIDADE DE NEGÓCIO TEM SITE (decisão do Alex, 2026-09-07):
+  // "só meus negócios tem site, o restante não tem, nenhuma comunidade mais".
+  // Isso e as outras duas metades da régua (ser o líder e a flag) moram em
+  // `canBuildCommunitySite`, no `community-ui.ts`, porque a tela de ranking
+  // também precisa da resposta para desenhar o globo do dock.
+  // ⚠️ O predicado LÊ `community?.kind`, e NÃO `subjectKind`: aquele só carrega
+  // pet e carro (é o ASSUNTO editável da comunidade) e vale `null` para comum,
+  // condomínio e bairro. Com ele, condomínio e bairro cairiam no default
+  // "common" e ficariam com a aba Site de pé.
+
+  // ⚠️ SÓ O LÍDER VÊ A ENTRADA DO SITE (pedido do Alex, 2026-09-08).
+  //
+  // Antes, quem visitava também via a aba quando havia site publicado — e isso
+  // era porta pintada: a aba é LINK para o CONSTRUTOR (`/comunidades/<id>/site`),
+  // não para o site publicado, e o construtor recusa quem não é líder. Ou seja,
+  // ela prometia ao visitante uma tela que só falharia depois do clique.
+  //
+  // O site publicado não perdeu nada: ele continua no ar em `/c/<slug>` e no
+  // domínio próprio, que são os endereços por onde o mundo chega nele. O que
+  // sumiu foi o atalho de dentro da comunidade, que nunca levava até ele.
+  //
+  // ⚠️ O PREDICADO É UM SÓ e a aba e o item "Meu Site" do menu "+" LEEM O MESMO:
+  // escritos separados, o dia em que um mudasse deixaria o outro oferecendo uma
+  // porta que a outra metade já fechou.
+  const canBuildSite = canBuildCommunitySite({ kind: community?.kind, isLeader, siteEnabled })
+
+  // ⚠️ E "VER COMO PÚBLICO" ESCONDE AS TRÊS PORTAS (pedido do Alex, 2026-09-09).
+  //
+  // O botão do topo alterna entre EDITAR e ver a comunidade como ela chega a
+  // quem visita. A aba Site, o item "Meu Site" do menu "+" e o globo do dock
+  // são exatamente o que o visitante NÃO vê — deixá-los de pé no preview faria
+  // ele mentir justamente sobre o que existe para mostrar. O líder volta a elas
+  // num toque, apertando "Editar", então nada fica trancado.
+  //
+  // A régua de PERMISSÃO continua sendo `canBuildSite` (modalidade + papel +
+  // flag, no `community-ui.ts`, compartilhada com a tela de ranking); isto aqui
+  // é só o que a tela mostra AGORA — e é um valor só para as três portas, pela
+  // mesma razão de sempre: separados, o preview esconderia uma e ofereceria as
+  // outras duas.
+  // Site externo (lib/external-sites.ts) não tem construtor: a entrada só mostra
+  // o site pronto, que é público, então vale para quem visita também.
+  const hasExternalSite = !!externalSitePath(id)
+  const showSiteEntry = hasExternalSite || (canBuildSite && edit)
+
+  // Qual AMBIENTE esta página é (o dock lê isto pelo beacon lá embaixo).
+  // `null` = comunidade comum-mas-não-negócio (condomínio, bairro, pet, carro):
+  // ali a barra da Freelandoo continua como está, porque não há um conjunto de
+  // controles próprio a colocar no lugar dela.
+  // ⚠️ UM PREDICADO SÓ para "isto é a plataforma de negócio": ele decide o
+  // ambiente do dock, a pele (`.fl-business`), a textura de fundo e o seletor de
+  // cor de fundo. Escrito de novo em cada um, o dia em que a régua mudasse
+  // deixaria a página com a pele de um ambiente e a barra de outro.
+  const isBusinessPlatform = (community?.kind ?? null) === "common"
+  // MEU PET — pele fixa BEGE E LARANJA com patinhas e ossos no fundo (Alex,
+  // 2026-09-24). Mesma mecânica das plataformas (classe no container +
+  // TechBackdrop + sombra de brilho), mas NÃO troca o dock: pet continua sendo
+  // uma comunidade, e a barra da Freelandoo fica. ⚠️ É a ÚNICA pele CLARA —
+  // ela inverte a tinta (claro → marrom); ver `.fl-pet` em globals.css.
+  const isPetPlatform = (community?.kind ?? null) === "pet"
+  // MEU CARRO — pele fixa VERMELHO ESCURO E PRETO com rodas no fundo (Alex,
+  // 2026-09-24). Escura, como games/fitness: não precisa do `skinHex`.
+  const isCarPlatform = (community?.kind ?? null) === "car"
+  // ⚠️ PLATAFORMA DE ASSUNTO (decisão do Alex, 2026-09-25): pet e carro NÃO
+  // são comunidade — o feed é público de todo mundo e não há membro. Este é o
+  // predicado ÚNICO do que some por isso (aba Membros, Números, temporada,
+  // privacidade, mural do líder e o botão Entrar). Espalhado como
+  // `kind === "pet"`, o lugar que esquecesse voltaria a oferecer a porta — e o
+  // backend a recusa com 409 desde a mig 262.
+  const isSubjectPlatform = isPetPlatform || isCarPlatform
+  // Numa plataforma de assunto o painel tem UMA aba (Perfil). Links antigos
+  // (`?aba=membros`, `?painel=mural`) e o dock caem nela em vez de abrir uma
+  // aba que a tela não desenha.
+  const shownTab: PanelTab = isSubjectPlatform ? "profile" : panelTab
+  // CONDOMÍNIO — a pele de games em CINZA CLARO (Alex, 2026-09-24: "deixe como
+  // o games mas cinza claro"). ⚠️ Pele CLARA como a do pet: passa pelo
+  // `skinHex` (CONDO_INLINE). Não troca o dock.
+  const isCondoSkin = isCondo
+  // BAIRRO — o ESTILO GAMES nos tons de azul do anexo (Alex, 2026-09-24):
+  // tinta clara sobre fundo azul, cor travada. As cores inline passam pelo
+  // `skinHex` (HOOD_INLINE). Não troca o dock.
+  const isHoodSkin = (community?.kind ?? null) === "neighborhood"
+  const isSkinned = isBusinessPlatform || isPetPlatform || isCarPlatform || isCondoSkin || isHoodSkin
+
+  // INDICADORES (mig 235): leads, funil do site e faturamento — só do LÍDER do
+  // negócio. Predicado PRÓPRIO e não `canBuildSite`: aquele embute a flag
+  // `comunidade_site`, e desligar o construtor não pode apagar o painel de
+  // dinheiro do dono. Segue o "ver como público" pela mesma razão do Site: ali
+  // a tela simula quem chega de fora, e quem chega de fora não vê isto.
+  const showIndicators = isBusinessPlatform && isLeader && edit
+  // LEADS (mig 254) — ferramenta comercial do dono do negócio.
+  //
+  // ⚠️ PREDICADO PRÓPRIO, e não reuso do `showIndicators`: aquele exige o modo
+  // de EDIÇÃO (`edit`) porque os Indicadores mostram faturamento e o "ver como
+  // público" simula quem chega de fora. A prospecção não é sobre a comunidade,
+  // é sobre o mercado — escondê-la no preview faria o líder perder a porta de
+  // trabalho ao conferir como a página aparece para os outros.
+  //
+  // ⚠️ É ESPELHO do `_assertBusiness` do backend: só `common`, só o líder, e a
+  // flag por cima. Errar aqui esconde um botão; errar lá abre a porta.
+  const showLeads = isBusinessPlatform && isLeader && prospectEnabled
+  // O Plano Negócio do LÍDER (mig 234). Fora do negócio (condomínio, bairro,
+  // pet, carro) não há plano nenhum a cobrar, e as portas ficam abertas.
+  const planActive = !!community?.business_plan?.members_enabled
+  const membersEnabled = !isBusinessPlatform || planActive
+
+  const shellKind: "business" | null = isBusinessPlatform
+      ? "business"
+      : null
+
+  // A pele da plataforma de negócio é a MESMA lista de classes das outras duas
+  // (em globals.css), só que lendo variáveis — porque aqui a cor é escolhida
+  // pelo líder. Quem escreve as variáveis é este `style`; sem elas as classes
+  // caem no marrom tabloide de sempre, que é a degradação desejada.
+  const skinVars = useMemo(
+    () => (isBusinessPlatform ? platformSkinVars(bgDraft) : undefined),
+    [isBusinessPlatform, bgDraft]
+  )
+  const bizTint = useMemo(() => backdropTint(bgDraft), [bgDraft])
+
+  const siteExtras = useMemo(
+    () =>
+      showSiteEntry ? [{ id: "site", label: t("mySite", "Meu Site"), icon: Globe }] : [],
+    [showSiteEntry, t]
+  )
+
+  // ⚠️ A ABA "ESTANTE" (mig 220) SAIU DAQUI (2026-09-09). Ela só existia na
+  // modalidade games e mostrava a biblioteca conectada da Steam; o componente
+  // dela foi apagado junto com o resto do frontend daquele ambiente.
+  // A4 (mig 338, decisão do Alex): TODA comunidade tem as quatro abas —
+  // Produtos, Serviços, Empregos e Dívidas —, grátis no começo. A comunidade de
+  // NEGÓCIO já tem "Produtos" (a Loja do dono, `shop`), então nela a vitrine
+  // entre membros entra só como Serviços (duas abas "Produtos" confundiriam).
+  const showBusinessAgenda = isBusinessPlatform && isLeader && !!community?.leader_store_profile_id
+  const communityTabs = useMemo(
+    () =>
+      [
+        ["feed", t("tabFeed", "Feed")],
+        ...(isBusinessPlatform
+          ? ([["services", t("tabServices", "Serviços")]] as [CommunityTab, string][])
+          : ([
+              ["services", t("tabServices", "Serviços")],
+              ["products", t("tabProducts", "Produtos")],
+            ] as [CommunityTab, string][])),
+        // A LOJA DO DONO (2026-09-27): só a comunidade de NEGÓCIO tem, e só o
+        // líder vende nela — são os produtos do perfil-conta dele, o mesmo
+        // catálogo do site. `shop` e não `products`: aquela é a vitrine
+        // mensal entre vizinhos, com outra regra de quem publica.
+        ...(isBusinessPlatform
+          ? ([["shop", t("tabProducts", "Produtos")]] as [CommunityTab, string][])
+          : []),
+        // A AGENDA DO NEGÓCIO (2026-10-31): só o LÍDER vê — são os horários
+        // e o WhatsApp de quem marcou com ele. Mora no perfil-conta (o mesmo
+        // da Loja), então sem ele não há agenda para mostrar.
+        ...(showBusinessAgenda
+          ? ([["agenda", t("tabAgenda", "Agenda")]] as [CommunityTab, string][])
+          : []),
+        ["jobs", t("tabJobs", "Empregos")],
+        ["debts", t("tabDebts", "Dívidas")],
+        // ⚠️ "Membros" SAIU DAQUI (2026-09-23): virou aba DENTRO do painel do
+        // pill Comunidade, junto de Perfil, Mural e Números. Deixá-la nos dois
+        // lugares daria duas telas listando os mesmos membros.
+      ] as [CommunityTab, string][],
+    [t, isBusinessPlatform, showBusinessAgenda]
+  )
+
+  // ─── DEEP-LINK DO DOCK ──────────────────────────────────────────────────────
+  //
+  // "Estante" e "Jogo atual" na barra de baixo apontam para esta MESMA página,
+  // com um parâmetro dizendo o que abrir — não são telas próprias. Rodam uma
+  // vez, depois que a comunidade chegou: antes disso não dá para saber se a
+  // Estante existe (ela depende da flag), e abrir uma aba que a fila de abas
+  // não tem deixaria a tela mostrando algo que ninguém consegue fechar.
+  //
+  // Lido do WINDOW e não por `useSearchParams`: o hook obriga Suspense e tira a
+  // rota do pré-render — o build já quebrou exatamente assim com `?tipo=condo`.
+  const deepLinkDone = useRef(false)
+  useEffect(() => {
+    if (!community || deepLinkDone.current) return
+    deepLinkDone.current = true
+    const sp = new URLSearchParams(window.location.search)
+    const aba = sp.get("aba")
+    const painel = sp.get("painel")
+    // ⚠️ `?aba=membros` CONTINUA VALENDO, e agora abre o PAINEL. O endereço
+    // está em links salvos e em notificações antigas; mudá-lo para um `?painel=`
+    // novo deixaria todos eles caindo numa aba que não existe mais.
+    if (aba === "membros") {
+      setPanel("community")
+      setPanelTab("members")
+    }
+    // As vitrines só podem ser abertas por link onde elas existem: numa
+    // comunidade comum a aba não está na fila, e abrir uma aba que a fila não
+    // tem deixaria a tela mostrando algo que ninguém consegue fechar.
+    if (aba === "servicos") setTab("services")
+    if (aba === "produtos" && !isBusinessPlatform) setTab("products")
+    if (aba === "empregos") setTab("jobs")
+    if (aba === "dividas") setTab("debts")
+    if (aba === "produtos" && isBusinessPlatform) setTab("shop")
+    if (aba === "agenda" && showBusinessAgenda) setTab("agenda")
+    if (painel === "perfil") {
+      setPanel("community")
+      setPanelTab("profile")
+    }
+    if (painel === "mural") {
+      setPanel("community")
+      setPanelTab("mural")
+    }
+  }, [community, isTerritorial, isBusinessPlatform, showBusinessAgenda])
+
+  // ─── O DOCK PEDINDO A VISTA (sem navegar) ───────────────────────────────────
+  //
+  // O deep-link acima roda UMA vez, no primeiro render depois que a comunidade
+  // chega — e tem que ser assim, senão ele reabriria a Estante toda vez que a
+  // pessoa trocasse de aba com a URL ainda dizendo `?aba=estante`.
+  //
+  // Só que "Estante" e "Jogo atual" no dock apontam para ESTA página. Já
+  // estando nela, o clique trocava a querystring de uma rota que não remonta:
+  // a URL mudava e a tela ficava igual. Agora o dock ANUNCIA o que foi pedido e
+  // quem obedece é aqui, o mesmo lugar que já decide aba e painel — dois donos
+  // dessa decisão seria a tela abrindo a Estante e fechando o painel ao mesmo
+  // tempo.
+  useEffect(() => {
+    return onCommunityView((view) => {
+      // ⚠️ "Membros" VIROU ABA DO PAINEL. O item do dock continua se chamando
+      // `members` de propósito: renomeá-lo obrigaria a mexer no
+      // `community-shell` e no `ProfileSidebar` para trocar um rótulo interno
+      // que ninguém lê — e um dos dois ficaria para trás.
+      if (view === "members") {
+        setPanel("community")
+        setPanelTab("members")
+        return
+      }
+      // Os dois PAINÉIS dos pills. Abrir (e não alternar): o pill alterna porque
+      // o dedo está em cima dele; no dock, "Perfil" que às vezes fecha o Perfil
+      // seria um botão com dois significados.
+      if (view === "profile") {
+        setPanel("community")
+        setPanelTab("profile")
+        return
+      }
+      if (view === "mural") {
+        setPanel("community")
+        setPanelTab("mural")
+        return
+      }
+      // "Feed" é a volta: fecha o painel aberto E devolve a aba. Fechar só um
+      // dos dois deixaria a pessoa apertando o mesmo botão sem sair do lugar.
+      setPanel(null)
+      setTab("feed")
+    })
+  }, [])
+
+  const accent = accentHex(accentDraft)
+
+  // A SOMBRA DURA é a assinatura do tabloide — o deslocamento de 8px que faz o
+  // card parecer papel recortado. Dentro do ambiente de negócio ela vira brilho
+  // de painel: mesma cor, sem o deslocamento. É o único lugar onde a pele precisa
+  // do JavaScript, porque estas duas sombras são `style` inline e CSS só as
+  // alcançaria com !important sobre um seletor de atributo — frágil demais para
+  // uma coisa que muda de valor a cada troca de paleta do líder.
+  const surfaceShadow = useCallback(
+    (color: string, px: number) =>
+      isSkinned
+        ? `0 0 0 1px ${color}66, 0 18px 48px -18px ${color}`
+        : `${px}px ${px}px 0 0 ${color}`,
+    [isSkinned]
+  )
+  // As poucas cores escritas em `style` inline (a pele de classe não as
+  // alcança). No pet, as superfícies escuras viram bege e a tinta, marrom —
+  // os MESMOS valores de `.fl-pet`. Tinta sobre o accent NÃO passa por aqui.
+  const skinHex = useCallback(
+    (hex: string) =>
+      isPetPlatform
+        ? PET_INLINE[hex] ?? hex
+        : isCondoSkin
+          ? CONDO_INLINE[hex] ?? hex
+          : isHoodSkin
+            ? HOOD_INLINE[hex] ?? hex
+            : hex,
+    [isPetPlatform, isCondoSkin, isHoodSkin]
+  )
+
+  const showAsLeaderEdit = canAdminister && edit
+  const isPrivate = community?.privacy === "private"
+  const feedLocked = isPrivate && !isMember
+  const monthlyCents = Number(community?.monthly_cents || 0)
+
+  // Os tipos que esta superfície publica, num lugar só: o "+" do headcard, o
+  // convite do feed vazio e a faixa acima da lista abrem O MESMO menu. Escrever
+  // a lista em cada um deles é como um tipo novo (ou uma permissão nova)
+  // entraria em dois dos três, em silêncio.
+  const publishItems: PublishItem[] = useMemo(
+    () => [
+      { kind: "post", label: t("postLabel", "Post") },
+      { kind: "bee", label: t("curtoLabel", "Curto") },
+      { kind: "story", label: t("beeLabel", "Bee") },
+      { kind: "recado", label: t("recadoLabel", "Recado") },
+    ],
+    [t]
+  )
+  const publishBlockedMessage = isCondo
+    ? t("residentToPost", "Confirme seu apartamento para publicar.")
+    : t("joinToPost", "Entre na comunidade para publicar.")
+
+  // A pilha atrás da foto: Perfil (azul), Mural (laranja) e Ranking (roxo).
+  // A peça, a animação e a conta da altura são as mesmas das outras superfícies
+  // que montam `PillStack` — é isso que impede uma delas de perder um
+  // comportamento em silêncio.
+  //
+  // É de propósito que os pills de PAINEL não sejam blocos na página: o painel
+  // é o mesmo para quem lê e para quem edita, então não há duas telas dizendo o
+  // que a comunidade é, nem dois lugares mostrando o mesmo recado ou o mesmo
+  // jogo atual.
+  //
+  // A cor é FIXA, e não a `accent`: o accent é editável pelo líder e pode cair
+  // justamente no tom do botão, que sumiria dentro do próprio card. O pill é
+  // peça de chrome, não conteúdo pintável.
+  /**
+   * ⚠️ ABRIR O PAINEL É TRANSIÇÃO, e é aqui que mora a diferença entre esta
+   * tela e as outras duas que usam a MESMA pilha.
+   *
+   * No perfil principal e no Financeiro os pills NAVEGAM — o clique entrega a
+   * tela ao roteador e ninguém espera nada. Aqui ele muda o ESTADO DESTA
+   * PÁGINA, que é um componente único de milhares de linhas: o `setPanel` de um
+   * clique é atualização urgente, então o React reconstrói a árvore inteira de
+   * forma SÍNCRONA e bloqueia a thread — exatamente no quadro em que o spring
+   * do pill está começando.
+   *
+   * Passam por aqui o Perfil e o Mural — os dois abrem painel do mesmo jeito.
+   * O Ranking não precisa disto: ele NAVEGA, e quem espera lá é o roteador,
+   * não esta árvore.
+   *
+   * `startTransition` marca a abertura como não-urgente: o React fatia esse
+   * render e devolve a thread ao navegador entre os pedaços, então a animação
+   * do pill continua correndo e o painel chega alguns milissegundos depois —
+   * que é a ordem certa, porque o painel nasce fora da vista, abaixo do
+   * headcard, e o que a pessoa está olhando é o botão.
+   *
+   * ⚠️ SÓ VALE PARA ESTADO. Não envolver navegação, `fetch` ou nada assíncrono
+   * aqui: o preset do headcard (`HeadcardPills`) tem `onOpen` que faz
+   * requisição e acende um "indo...", e adiar aquilo esconderia o retorno do
+   * clique em vez de suavizá-lo.
+   */
+  /**
+   * Abre o painel numa aba. Apertar a MESMA aba que já está aberta fecha — é o
+   * gesto que o pill tinha quando eram três botões, e tirá-lo faria o único
+   * pill virar um botão que só abre.
+   */
+  const openPanel = useCallback((tab: PanelTab) => {
+    startTransition(() => {
+      setPanel((p) => (p === "community" && panelTab === tab ? null : "community"))
+      setPanelTab(tab)
+    })
+  }, [panelTab])
+
+  const communityPills: PillSpec[] = useMemo(() => {
+    return [
+      // ─── COMUNIDADE ────────────────────────────────────────────────────────
+      //
+      // ⚠️ ERAM TRÊS PILLS (Perfil azul, Mural laranja, Ranking roxo) e viraram
+      // UM (decisão do Alex, 2026-09-23). Os três respondiam à mesma pergunta —
+      // "o que é este grupo e quem está nele" — e ocupavam três das quatro vagas
+      // da pilha. A vaga que sobrou é a que o LEADS ocupa: a pilha passou a ter
+      // uma porta para o que a comunidade É e outra para o que ela FAZ.
+      //
+      // ⚠️ O RANKING VIROU ABA, MAS A PÁGINA CHEIA CONTINUA EXISTINDO. Dentro
+      // de "Números" ficam os cinco primeiros e o link para `/ranking` — o
+      // pódio com foto grande e a lista inteira nunca couberam embaixo do
+      // headcard, e foi para tirar caixa do meio da página que os painéis
+      // nasceram.
+      //
+      // ⚠️ A ABA MEMBROS VEIO DO CORPO DA PÁGINA, e com ela a fila de abas
+      // perdeu um item. Manter as duas portas (a aba lá embaixo e a aba aqui)
+      // seria duas telas listando os mesmos membros — e é assim que uma delas
+      // deixa de acompanhar a outra.
+      //
+      // ⚠️ A BOLINHA NÃO É ENFEITE. No CONDOMÍNIO este pill é a porta do
+      // PRÉDIO (portaria, planta, disputas, avisos, enquetes, moradores): quem
+      // chega e ainda não confirmou apartamento não vê NADA na página dizendo
+      // que há o que fazer — e sem confirmar ele não publica, não vota e não vê
+      // os vizinhos. O sinal sai do que a página JÁ carregou
+      // (`viewer_is_resident`): zero requisição nova por um quadrado de 8px.
+      {
+        key: "community",
+        icon: Users,
+        label: isSubjectPlatform ? t("profilePill", "Perfil") : t("communityPill", "Comunidade"),
+        ariaLabel: isSubjectPlatform
+          ? t("subjectProfilePillAria", "O perfil: nome e texto sobre ele")
+          : isCondo
+          ? t("condoPillAria", "O prédio: portaria, planta, avisos, enquetes e moradores")
+          : t(
+              "communityPillAria",
+              "A comunidade: perfil, mural do líder, membros e números"
+            ),
+        // ⚠️ Os pills são COLORIDOS em todas as comunidades — nunca na cor da
+        // pele (Alex, 2026-09-24). Cada cor identifica o botão, não o lugar.
+        bg: "#1D4ED8",
+        bgHover: "#1E3A8A",
+        onOpen: () => openPanel("profile"),
+        active: panel === "community",
+        ...(isCondo && !isResident
+          ? {
+              dot: true,
+              dotLabel: t("condoPillDot", "Confirme seu apartamento"),
+            }
+          : {}),
+      },
+      // ─── MEU CARRO / MEU PET (2026-09-24) ──────────────────────────────────
+      //
+      // O assunto da comunidade era um bloco no corpo da página, só no modo de
+      // edição. Virou pill LARANJA: o painel dele lê o assunto para quem visita
+      // e o edita para o dono. Nunca coexiste com Leads/Indicadores/Site
+      // (negócio) nem com Delivery (territorial): a pilha de pet e carro fica
+      // em DOIS — 2 × 36 + 6 = 78px contra a foto de 192px.
+      ...(subjectKind
+        ? ([
+            {
+              key: "subject",
+              icon: subjectKind === "car" ? Car : PawPrint,
+              label:
+                subjectKind === "car"
+                  ? isLeader ? t("subjectPillMyCar", "Meu carro") : t("subjectPillCar", "O carro")
+                  : isLeader ? t("subjectPillMyPet", "Meu pet") : t("subjectPillPet", "O pet"),
+              ariaLabel:
+                subjectKind === "car"
+                  ? t("subjectPillCarAria", "Abrir a marca e o modelo do carro")
+                  : t("subjectPillPetAria", "Abrir a espécie e a raça do pet"),
+              bg: "#C2410C",
+              bgHover: "#9A3412",
+              onOpen: () => setPanel((p) => (p === "subject" ? null : "subject")),
+              active: panel === "subject",
+            },
+          ] as PillSpec[])
+        : []),
+      // ─── LEADS (mig 254) ───────────────────────────────────────────────────
+      //
+      // A prospecção. NAVEGA em vez de abrir painel, pela mesma régua dos
+      // Indicadores: busca, filtros, grade de resultados, listas salvas e a
+      // ficha da empresa não cabem embaixo do headcard.
+      //
+      // ⚠️ SÓ NA COMUNIDADE DE NEGÓCIO E SÓ PARA O LÍDER — é o ESPELHO do
+      // `_assertBusiness` do backend (a rota recusa o resto com 403). Errar
+      // deste lado esconde um botão; errar do outro abriria a porta. A
+      // comunidade do cachorro, a do modelo de carro, a da rua e a do prédio
+      // não vendem para ninguém: um pill "Leads" ali seria porta pintada.
+      //
+      // Verde-esmeralda porque a pilha já tem azul e teal: o accent está fora
+      // de questão (é editável pelo líder e pode cair no tom do próprio botão).
+      ...(showLeads
+        ? ([
+            {
+              key: "leads",
+              icon: Building2,
+              label: t("leadsPill", "Leads"),
+              ariaLabel: t(
+                "leadsPillAria",
+                "Encontrar clientes: empresas por categoria e cidade"
+              ),
+              bg: "#047857",
+              bgHover: "#065F46",
+              href: `/comunidades/${id}/leads`,
+            },
+          ] as PillSpec[])
+        : []),
+      // O terceiro é INDICADORES, e ele também NAVEGA — leads do WhatsApp e da
+      // O.S., funil do site e faturamento são quatro blocos de números e uma
+      // série de 90 dias.
+      //
+      // ⚠️ SÓ PARA O LÍDER DO NEGÓCIO, e ele some no "ver como público" (é a
+      // MESMA condição do Site, `showSiteEntry`): a tela mostra quanto o
+      // negócio faturou. Aparecer para quem visita seria porta pintada — a
+      // rota recusa com 403.
+      ...(showIndicators
+        ? ([
+            {
+              key: "indicators",
+              icon: BarChart3,
+              label: t("indPill", "Indicadores"),
+              ariaLabel: t(
+                "indPillAria",
+                "Abrir os indicadores do negócio: leads, site e faturamento"
+              ),
+              bg: "#0D9488",
+              bgHover: "#0F766E",
+              href: `/comunidades/${id}/indicadores`,
+            },
+          ] as PillSpec[])
+        : []),
+      // ─── SITE ──────────────────────────────────────────────────────────────
+      //
+      // Era uma ABA na fila do feed e virou pill (pedido do Alex, 2026-09-24).
+      // Já era LINK e não aba de verdade — levava ao construtor, que é uma
+      // página inteira —, então a fila mostrava uma "aba" que tirava a pessoa
+      // da tela. Aqui ela fica junto das outras portas de trabalho do dono.
+      //
+      // ⚠️ MESMA CONDIÇÃO DE ANTES (`showSiteEntry`): só o líder, só onde há
+      // site (negócio) e some no "ver como público". A aba SAIU da fila —
+      // manter as duas seriam duas portas para o mesmo construtor.
+      //
+      // ⚠️ A PILHA DO NEGÓCIO CHEGA A QUATRO: 4 × 36 + 3 × 6 = 162px contra a
+      // foto de 192px. Cabe, mas um QUINTO (198px) já escaparia.
+      ...(showSiteEntry
+        ? ([
+            {
+              key: "site",
+              icon: Globe,
+              label: t("tabSite", "Site"),
+              ariaLabel: hasExternalSite
+                ? t("sitePillViewAria", "Ver o site do negócio")
+                : t("sitePillAria", "Abrir o construtor do site do negócio"),
+              bg: "#DB2777",
+              bgHover: "#BE185D",
+              href: sitePath,
+            },
+          ] as PillSpec[])
+        : []),
+      // DELIVERY (mig 248) — só em comunidade TERRITORIAL, e ele NAVEGA.
+      //
+      // ⚠️ A CONTA DA PILHA CONTINUA FECHANDO, E FOI REFEITA COM O MERGE. Os
+      // pills são `h-9` (36px) com `gap-1.5` (6px), e a foto do headcard tem
+      // **192px** (w-32, proporção 2/3). Hoje o máximo que coexiste são
+      // QUATRO: no negócio, Comunidade + Leads + Indicadores = 3 × 36 + 2 × 6 =
+      // **120px**; no territorial, Comunidade + Delivery = **78px**. Um QUINTO
+      // daria 198px e escaparia por cima e por baixo em vez de só pela direita.
+      // **Pill novo aqui? Refaça esta conta antes.**
+      //
+      // Delivery não disputa espaço com Leads nem com Indicadores: aqueles dois
+      // são exclusivos da comunidade de NEGÓCIO (`common`), que nunca é
+      // territorial — as listas nunca coexistem.
+      ...(isTerritorial && deliveryEnabled
+        ? ([
+            {
+              key: "delivery",
+              icon: Bike,
+              label: t("delPill", "Delivery"),
+              ariaLabel: t(
+                "delPillAria",
+                "Abrir o delivery entre vizinhos: chamados de entrega da comunidade"
+              ),
+              bg: "#B91C1C",
+              bgHover: "#991B1B",
+              href: `/comunidades/${id}/delivery`,
+            },
+          ] as PillSpec[])
+        : []),
+    ]
+  }, [t, panel, id, openPanel, showIndicators, showLeads, showSiteEntry, hasExternalSite, sitePath, isTerritorial, deliveryEnabled, isCondo, isResident, subjectKind, isLeader, isSubjectPlatform])
+
+  const ranked = useMemo(
+    () => [...members].sort((a, b) => Number(b.top_profile_xp || 0) - Number(a.top_profile_xp || 0)),
+    [members]
+  )
+
+  const metricLabel = useCallback(
+    (m: string) => m === "posts" ? t("metricPosts", "Publicações") : m === "shares" ? t("metricShares", "Compartilhamentos") : t("metricXp", "XP coletivo"),
+    [t]
+  )
+  const scoreLabel = useCallback((m: string, r: { score: number; posts?: number; eng?: number }) => {
+    if (m === "posts") return `${r.posts ?? 0}/${r.eng ?? 0}`
+    if (m === "xp") return `${compact(r.score)} XP`
+    return compact(r.score)
+  }, [])
+  const daysLeft = useCallback((ends: string | null) => {
+    if (!ends) return null
+    return Math.max(0, Math.ceil((new Date(ends).getTime() - Date.now()) / 86400000))
+  }, [])
+
+  const fetchGoal = useCallback(async () => {
+    // /goal exige tier mínimo desde a blindagem de privacidade: em comunidade
+    // privada e condomínio ele devolve 403 sem token.
+    const token = getToken()
+    const r = await fetch(`/api/communities/${id}/goal`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    const d = await r.json().catch(() => ({}))
+    setGoal(d.goal || null)
+  }, [id])
+  const fetchAnnouncements = useCallback(async () => {
+    const token = getToken()
+    const r = await fetch(`/api/communities/${id}/announcements`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    const d = await r.json().catch(() => ({}))
+    setAnnouncements(Array.isArray(d.announcements) ? d.announcements : [])
+  }, [id])
+
+  const fetchBees = useCallback(async () => {
+    try {
+      const token = getToken()
+      if (!token) return
+      const res = await fetch(`/api/communities/${id}/bees`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      setBees(Array.isArray(data.bees) ? data.bees : [])
+    } catch {
+      /* silencioso: a faixa some, o mural continua */
+    }
+  }, [id])
+
+  const fetchPosts = useCallback(async (reset: boolean, cursor?: string | null) => {
+    if (!id) return
+    if (reset) setLoadingPosts(true); else setLoadingMorePosts(true)
+    try {
+      const sp = new URLSearchParams({ limit: "10" })
+      if (!reset && cursor) sp.set("cursor", cursor)
+      // Fora do carro o backend ignora o parâmetro — mandá-lo só no "mesmo
+      // modelo" mantém a URL das outras modalidades idêntica à de sempre.
+      if (subjectScope === "same" && community?.kind === "car") sp.set("scope", "same_model")
+      if (subjectScope === "same" && community?.kind === "pet") sp.set("scope", "same_breed")
+      const token = getToken()
+      const r = await fetch(`/api/communities/${id}/feed-posts?${sp.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: "no-store",
+      })
+      const d = await r.json().catch(() => ({}))
+      const items: FeedPost[] = Array.isArray(d.items) ? d.items : []
+      setPosts((prev) => (reset ? items : [...prev, ...items]))
+      setPostsCursor(d.next_cursor || null)
+      setPostsHasMore(!!d.has_more)
+      setNeedsSubjectMatch(!!d.needs_car_model || !!d.needs_pet_breed)
+    } finally {
+      if (reset) setLoadingPosts(false); else setLoadingMorePosts(false)
+    }
+  }, [id, subjectScope, community?.kind])
+
+  const loadAll = useCallback(async () => {
+    if (!id) return
+    setLoading(true)
+    setError(null)
+    try {
+      const tk = getToken()
+      const authHeaders = tk ? { Authorization: `Bearer ${tk}` } : undefined
+      const [cRes, mRes, gRes, aRes, bmRes] = await Promise.all([
+        // Todas com token: desde a blindagem de privacidade, members/goal/
+        // benchmark exigem tier mínimo em comunidade privada e condomínio.
+        fetch(`/api/communities/${id}`, authHeaders ? { headers: authHeaders } : undefined),
+        fetch(`/api/communities/${id}/members`, authHeaders ? { headers: authHeaders } : undefined),
+        fetch(`/api/communities/${id}/goal`, authHeaders ? { headers: authHeaders } : undefined),
+        fetch(`/api/communities/${id}/announcements`, authHeaders ? { headers: authHeaders } : undefined),
+        fetch(`/api/communities/${id}/benchmark`, authHeaders ? { headers: authHeaders } : undefined),
+      ])
+      const cData = await cRes.json()
+      if (!cRes.ok) throw new Error(cData.error || t("notFound", "Comunidade não encontrada."))
+      const c: Community = cData.community
+      setCommunity(c)
+      if (!seeded.current) {
+        setNameDraft(c.display_name)
+        setBioDraft(c.bio || "")
+        // Sem cor escolhida, cada modalidade nasce na cor da pele dela.
+        // Cor TRAVADA (pet) vence o que estiver salvo: ali não há seletor.
+        setAccentDraft(lockedAccentFor(c.kind) || c.community_theme?.accent || defaultAccentFor(c.kind))
+        // Ausente = preto, que é o padrão da plataforma de negócio. Comunidade
+        // que nunca escolheu nasce preta, e não com a cor da última que passou.
+        setBgDraft(c.community_theme?.background || "black")
+        seeded.current = true
+      }
+      setPrivacyDraft(c.privacy === "private" ? "private" : "public")
+      if (c.monthly_cents) setMonthlyDraft((Number(c.monthly_cents) / 100).toFixed(2).replace(".", ","))
+      const mData = await mRes.json(); setMembers(Array.isArray(mData.members) ? mData.members : [])
+      const gData = await gRes.json(); setGoal(gData.goal || null)
+      const aData = await aRes.json(); setAnnouncements(Array.isArray(aData.announcements) ? aData.announcements : [])
+      const bmData = await bmRes.json(); setBenchmark(bmData.benchmark || null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("notFound", "Comunidade não encontrada."))
+    } finally {
+      setLoading(false)
+    }
+  }, [id, t])
+
+  useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => { fetchPosts(true) }, [fetchPosts])
+  useEffect(() => { fetchBees() }, [fetchBees])
+  useEffect(() => {
+    // ⚠️ SÓ O LÍDER CAI DIRETO NA EDIÇÃO — o admin da plataforma, não. A
+    // comunidade é do líder e ele entra nela para cuidar dela; a plataforma o
+    // admin abre como qualquer um, e liga a edição quando quer mexer.
+    if (isLeader && !autoEdited.current) { setEdit(true); autoEdited.current = true }
+  }, [isLeader])
+
+  // ─── O DONO ENTRA DIRETO NA AGENDA (pedido do Alex, 2026-10-31) ────────────
+  // Quem atende abre o negócio para ver quem marcou: a página já cai na aba
+  // Agenda e rola até ela. Só quando há serviço AGENDÁVEL (sem ele a agenda
+  // nasce vazia para sempre e a pessoa perderia o feed à toa) e só se o
+  // endereço não pediu outra coisa (`?aba=`/`?painel=` vencem). Uma vez.
+  const autoAgenda = useRef(false)
+  useEffect(() => {
+    if (!showBusinessAgenda || autoAgenda.current || !community?.leader_store_profile_id) return
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get("aba") || sp.get("painel")) { autoAgenda.current = true; return }
+    let cancelled = false
+    fetch(`/api/public/profile/${community.leader_store_profile_id}/services`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (cancelled || !d) return
+        autoAgenda.current = true
+        const list = (d.services || []) as { is_active?: boolean; price_on_request?: boolean }[]
+        if (list.some((x) => x.is_active !== false && x.price_on_request !== true)) goToTab("agenda")
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [showBusinessAgenda, community?.leader_store_profile_id, goToTab])
+
+  // Enxame atual da comunidade comum, para o select nascer no que já vale.
+  useEffect(() => {
+    setMachineDraft(community?.id_machine ? String(community.id_machine) : "")
+  }, [community?.id_machine])
+
+  // A lista de enxames só desce para quem ESTÁ editando uma comunidade comum:
+  // visitante não precisa dos 15 enxames para ler o mural, e as modalidades da
+  // mig 210 (pet/carro) e as territoriais não têm enxame nenhum.
+  useEffect(() => {
+    if (!showAsLeaderEdit || (community?.kind ?? "common") !== "common") return
+    if (enxames.length) return
+    fetch("/api/enxames")
+      .then((r) => r.json())
+      .then((d) => setEnxames(Array.isArray(d?.enxames) ? d.enxames : []))
+      .catch(() => setEnxames([]))
+  }, [showAsLeaderEdit, community?.kind, enxames.length])
+
+  // ─── Assunto: carrega o que já está escolhido e as listas de escolha ──────
+  // Só para o líder em edição: um visitante não precisa baixar 300 modelos de
+  // carro para ler o mural.
+  useEffect(() => {
+    const sub = community?.subject
+    if (!sub) return
+    if (sub.kind === "pet") {
+      setPetDraft({
+        species: sub.species || "",
+        breed_slug: "",
+        breed_label: sub.breed_label || "",
+        birth_year: sub.birth_year ? String(sub.birth_year) : "",
+      })
+    } else if (sub.kind === "car") {
+      setCarDraft({ brand_code: sub.brand_code || "", model_code: sub.model_code || "" })
+    }
+  }, [community?.subject])
+
+  /**
+   * ⚠️ QUEM É O DONO DO RECORTE — lido do WINDOW, UMA vez.
+   *
+   * `useSearchParams` obriga Suspense e tira a rota do pré-render (o build já
+   * quebrou exatamente assim com `?tipo=condo`), e reler a cada render faria a
+   * página voltar ao contexto de origem sempre que qualquer estado mudasse.
+   *
+   * Uma requisição resolve as três coisas de que a tela precisa: quem é a
+   * pessoa (para o cabeçalho), o que ela joga, e o `id_user` — que é o que a
+   * estante e a vitrine de posts usam depois. Endereçado por @username porque
+   * é o que cabe numa URL que alguém manda por mensagem.
+   *
+   * Falhou (perfil apagado, @ trocado, flag desligada)? Fica em `null` e a
+   * plataforma abre no recorte de quem olha. Uma tela de erro aqui trocaria um
+   * contexto perdido por uma parede — e a plataforma continua inteira sem ele.
+   */
+  useEffect(() => {
+    if (!editingSubject || subjectKind !== "pet") return
+    const token = getToken()
+    if (!token) return
+    const species = petDraft.species || "dog"
+    fetch(`/api/pets/breeds?species=${species}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setBreeds(Array.isArray(d.breeds) ? d.breeds : []))
+      .catch(() => setBreeds([]))
+  }, [editingSubject, subjectKind, petDraft.species])
+
+  useEffect(() => {
+    if (!editingSubject || subjectKind !== "car") return
+    const token = getToken()
+    if (!token) return
+    fetch("/api/cars/brands", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setCarBrands(Array.isArray(d.brands) ? d.brands : []))
+      .catch(() => setCarBrands([]))
+  }, [editingSubject, subjectKind])
+
+  useEffect(() => {
+    if (!editingSubject || subjectKind !== "car" || !carDraft.brand_code) {
+      setCarModels([])
+      return
+    }
+    const token = getToken()
+    if (!token) return
+    fetch(`/api/cars/brands/${encodeURIComponent(carDraft.brand_code)}/models`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => setCarModels(Array.isArray(d.models) ? d.models : []))
+      .catch(() => setCarModels([]))
+  }, [editingSubject, subjectKind, carDraft.brand_code])
+
+  // Comunidade privada: cria o checkout da assinatura mensal e redireciona.
+  const startMembershipCheckout = useCallback(async () => {
+    const token = getToken()
+    if (!token) { setActionMsg(t("loginToJoin", "Entre para participar")); return }
+    setBusy(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/membership/checkout`, {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok || !data.checkout_url) throw new Error(data.error || t("subscribeError", "Não foi possível iniciar a assinatura."))
+      window.location.href = data.checkout_url
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("subscribeError", "Não foi possível iniciar a assinatura."))
+      setBusy(false)
+    }
+  }, [id, t])
+
+  const joinOrLeave = async (action: "join" | "leave") => {
+    const token = getToken()
+    if (!token) { setActionMsg(t("loginToJoin", "Entre para participar")); return }
+    setBusy(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/${action}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+      const data = await res.json()
+      // Comunidade privada: o join devolve requires_payment → vai pro checkout.
+      if (action === "join" && data?.requires_payment) {
+        await startMembershipCheckout()
+        return
+      }
+      if (!res.ok) throw new Error(data.error || t("joinError", "Não foi possível entrar."))
+      setActionMsg(action === "join" ? t("joinSuccess", "Você entrou na comunidade!") : t("leaveSuccess", "Você saiu da comunidade."))
+      await loadAll()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("joinError", "Não foi possível entrar."))
+    } finally { setBusy(false) }
+  }
+
+  // Volta do checkout do PLANO NEGÓCIO (?plano=sucesso|cancelado, mig 234).
+  // O webhook do Stripe pode chegar segundos depois do redirect: recarrega a
+  // comunidade de novo dali a pouco para as portas abrirem sem F5.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const sp = new URLSearchParams(window.location.search)
+    const st = sp.get("plano")
+    if (!st) return
+    if (st === "sucesso") {
+      toast.success(tPlan("successToastSite", "Plano Site ativo! O seu site já pode ser publicado."))
+      const timer = setTimeout(() => { void loadAll() }, 4000)
+      window.history.replaceState({}, "", window.location.pathname)
+      return () => clearTimeout(timer)
+    }
+    if (st === "cancelado") toast.error(tPlan("canceledToast", "Pagamento cancelado — você não foi cobrado."))
+    window.history.replaceState({}, "", window.location.pathname)
+  }, [tPlan, loadAll])
+
+  // O líder do negócio SEM plano vê a explicação uma vez por dia — o aviso
+  // permanente é o botão dourado do trilho e o cadeado do aviãozinho. Modal em
+  // toda entrada vira a caixa que se fecha sem ler.
+  useEffect(() => {
+    if (!isLeader || !isBusinessPlatform || !community || planActive) return
+    if (typeof window === "undefined") return
+    try {
+      const key = `fl_business_plan_seen:${currentUserId ?? "anon"}`
+      const today = new Date().toISOString().slice(0, 10)
+      if (localStorage.getItem(key) === today) return
+      localStorage.setItem(key, today)
+    } catch {
+      /* sem storage: mostra mesmo assim */
+    }
+    setPlanOpen(true)
+  }, [isLeader, isBusinessPlatform, community, planActive, currentUserId])
+
+  // Volta do checkout da assinatura (?assinatura=sucesso).
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const sp = new URLSearchParams(window.location.search)
+    const st = sp.get("assinatura")
+    if (!st) return
+    if (st === "sucesso") setActionMsg(t("subscribeSuccess", "Assinatura confirmada! Bem-vindo(a) à comunidade."))
+    else if (st === "cancelada") setActionMsg(t("subscribeCanceled", "Assinatura cancelada — você não foi cobrado."))
+    window.history.replaceState({}, "", window.location.pathname)
+  }, [t])
+
+  // Privacidade (líder): salvar público/privado + mensalidade.
+  const savePrivacy = async () => {
+    const token = getToken()
+    if (!token) return
+    let monthly_cents: number | undefined
+    if (privacyDraft === "private") {
+      monthly_cents = Math.round(Number(monthlyDraft.replace(/\./g, "").replace(",", ".")) * 100)
+      if (!Number.isFinite(monthly_cents) || monthly_cents <= 0) {
+        setActionMsg(t("privacyPriceInvalid", "Informe o valor da mensalidade."))
+        return
+      }
+    }
+    setSavingPrivacy(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/privacy`, {
+        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ privacy: privacyDraft, ...(monthly_cents ? { monthly_cents } : {}) }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
+      setActionMsg(privacyDraft === "private" ? t("privacySavedPrivate", "Comunidade agora é privada.") : t("privacySavedPublic", "Comunidade agora é pública."))
+      await loadAll()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSavingPrivacy(false) }
+  }
+
+  // Resumo das mensalidades (líder de comunidade privada).
+  useEffect(() => {
+    if (!isLeader || !isPrivate || !id) { setMembershipSummary(null); return }
+    const token = getToken()
+    if (!token) return
+    fetch(`/api/communities/${id}/membership/summary`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setMembershipSummary(d.summary || null))
+      .catch(() => setMembershipSummary(null))
+  }, [isLeader, isPrivate, id])
+
+  const uploadImage = async (kind: "banner" | "avatar", file: File) => {
+    const token = getToken()
+    if (!token) return
+    const localUrl = URL.createObjectURL(file)
+    if (kind === "banner") setBannerPreview(localUrl); else setAvatarPreview(localUrl)
+    setUploading(kind); setActionMsg(null)
+    try {
+      const fd = new FormData(); fd.append(kind, file)
+      const res = await fetch(`/api/communities/${id}/${kind}`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("uploadError", "Não foi possível enviar a imagem."))
+      await loadAll()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("uploadError", "Não foi possível enviar a imagem."))
+    } finally {
+      setUploading(null)
+      if (kind === "banner") setBannerPreview(null); else setAvatarPreview(null)
+      URL.revokeObjectURL(localUrl)
+    }
+  }
+
+  /** Volta a herdar a foto de perfil do dono (apaga só a foto desta comunidade). */
+  const resetAvatar = async () => {
+    const token = getToken()
+    if (!token || photoResetting) return
+    setPhotoResetting(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/avatar`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || t("photoResetError", "Não foi possível voltar à foto do perfil."))
+      }
+      await loadAll()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("photoResetError", "Não foi possível voltar à foto do perfil."))
+    } finally {
+      setPhotoResetting(false)
+    }
+  }
+
+  // ⚠️ O "SALVAR" FIXO NO RODAPÉ SAIU (pedido do Alex, 2026-10-31): ele
+  // cobria a barra de navegação do celular. Nome, bio, enxame e cores agora
+  // salvam SOZINHOS ~1 s depois da última mudança (efeito abaixo), e o selo
+  // ao lado de "Ver como público" diz "Salvando…/Salvo".
+  //
+  // Não recarrega a página depois de salvar: a comunidade é atualizada na
+  // memória. Recarregar a cada letra refaria cinco requisições por pausa de
+  // digitação — os rascunhos já estão certos, só o "salvo" precisa andar.
+  const saveAll = async () => {
+    const token = getToken()
+    if (!token || !community) return
+    if (!nameDraft.trim()) return
+    setSaving(true); setAutoSave("saving")
+    try {
+      const pRes = await fetch(`/api/communities/${id}/profile`, {
+        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        // O enxame entra no mesmo PATCH: para quem edita, nome, bio e enxame
+        // são a mesma tarefa. Só vai quando a modalidade tem enxame — nas
+        // outras o backend recusa o campo de propósito (mig 219).
+        body: JSON.stringify({
+          display_name: nameDraft.trim(),
+          bio: bioDraft.trim() || null,
+          ...((community.kind ?? "common") === "common"
+            ? { id_machine: machineDraft ? Number(machineDraft) : null }
+            : {}),
+        }),
+      })
+      const pData = await pRes.json()
+      if (!pRes.ok) throw new Error(pData.error || t("saveError", "Não foi possível salvar."))
+      // ⚠️ AS DUAS CORES VÃO NO MESMO PATCH, e a condição pergunta pelas duas:
+      // separadas, mudar só o fundo não gravaria nada (a comparação era só do
+      // accent) e o líder veria a cor voltar sozinha no próximo F5.
+      const themeChanged =
+        (lockedAccentFor(community.kind) || community.community_theme?.accent || defaultAccentFor(community.kind)) !== accentDraft ||
+        (community.community_theme?.background || "black") !== bgDraft
+      if (themeChanged) {
+        const tRes = await fetch(`/api/communities/${id}/theme`, {
+          method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            theme: { ...(community.community_theme || {}), accent: accentDraft, background: bgDraft },
+          }),
+        })
+        const tData = await tRes.json()
+        if (!tRes.ok) throw new Error(tData.error || t("saveError", "Não foi possível salvar."))
+      }
+      const machineChanged =
+        (community.kind ?? "common") === "common" &&
+        String(community.id_machine ?? "") !== machineDraft
+      setCommunity((prev) =>
+        prev
+          ? {
+              ...prev,
+              display_name: nameDraft.trim(),
+              bio: bioDraft.trim() || null,
+              ...((prev.kind ?? "common") === "common"
+                ? { id_machine: machineDraft ? Number(machineDraft) : null }
+                : {}),
+              community_theme: { ...(prev.community_theme || {}), accent: accentDraft, background: bgDraft },
+            }
+          : prev
+      )
+      // O enxame muda o que a página mostra (nome do enxame, ranking): só
+      // nesse caso vale recarregar.
+      if (machineChanged) await loadAll()
+      setAutoSave("saved")
+    } catch (err) {
+      setAutoSave("error")
+      toast.error(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSaving(false) }
+  }
+  const saveAllRef = useRef(saveAll)
+  saveAllRef.current = saveAll
+
+  // O que está gravado × o que está na tela. Diferentes = há o que salvar.
+  const savedKey = community
+    ? JSON.stringify([
+        community.display_name,
+        (community.bio || "").trim(),
+        (community.kind ?? "common") === "common" ? String(community.id_machine ?? "") : "",
+        lockedAccentFor(community.kind) || community.community_theme?.accent || defaultAccentFor(community.kind),
+        community.community_theme?.background || "black",
+      ])
+    : null
+  const draftKey = JSON.stringify([
+    nameDraft.trim(),
+    bioDraft.trim(),
+    (community?.kind ?? "common") === "common" ? machineDraft : "",
+    accentDraft,
+    bgDraft,
+  ])
+  const dirty = !!savedKey && savedKey !== draftKey
+  useEffect(() => {
+    if (!showAsLeaderEdit || !dirty || !nameDraft.trim() || saving) return
+    const timer = setTimeout(() => { saveAllRef.current() }, 1100)
+    return () => clearTimeout(timer)
+  }, [showAsLeaderEdit, dirty, draftKey, nameDraft, saving])
+
+  // O ASSUNTO (pet/carro) tem Salvar PRÓPRIO desde que virou pill: o Salvar
+  // de cima é do modo de edição da página, e o painel abre fora dele.
+  const saveSubject = async () => {
+    if (!subjectKind) return
+    const token = getToken()
+    if (!token) return
+    setSavingSubject(true); setActionMsg(null)
+    try {
+      const base = subjectKind === "pet" ? "pets" : "cars"
+      const body =
+        subjectKind === "pet"
+          ? {
+              species: petDraft.species || null,
+              breed_slug: petDraft.breed_slug || null,
+              breed_label: petDraft.breed_label || null,
+              birth_year: petDraft.birth_year || null,
+            }
+          : {
+              brand_code: carDraft.brand_code || null,
+              brand_label: carBrands.find((b) => b.code === carDraft.brand_code)?.label || null,
+              model_code: carDraft.model_code || null,
+              model_label: carModels.find((m) => m.code === carDraft.model_code)?.label || null,
+            }
+      // Carro sem modelo escolhido: diz o que falta em vez de tomar 400.
+      if (subjectKind === "car" && (!carDraft.brand_code || !carDraft.model_code)) {
+        throw new Error(t("carPickModelFirst", "Escolha a marca e o modelo."))
+      }
+      const sRes = await fetch(`/api/${base}/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      })
+      const sData = await sRes.json()
+      if (!sRes.ok) {
+        // Desde a mig 259 o modelo do carro não colide mais com ninguém;
+        // `existing_community` fica para quem ainda devolver o apontamento.
+        throw new Error(
+          sData.existing_community
+            ? `${sData.error} (${sData.existing_community.display_name})`
+            : sData.error || t("saveError", "Não foi possível salvar."),
+        )
+      }
+      setActionMsg(t("profileSaved", "Alterações salvas!"))
+      await loadAll()
+      setTimeout(() => setActionMsg(null), 2500)
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSavingSubject(false) }
+  }
+
+  // Temporada (meta)
+  const openGoalForm = () => {
+    setGoalTitle(goal?.title || ""); setGoalMetric(goal?.metric || "xp")
+    setGoalDays(30); setGoalFormOpen(true)
+  }
+  const saveGoal = async () => {
+    const token = getToken()
+    if (!token) return
+    if (!goalTitle.trim()) { setActionMsg(t("goalInvalid", "Dê um nome para a temporada.")); return }
+    setSavingGoal(true); setActionMsg(null)
+    try {
+      const ends_at = new Date(Date.now() + goalDays * 86400000).toISOString()
+      const res = await fetch(`/api/communities/${id}/goal`, {
+        method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ title: goalTitle.trim(), metric: goalMetric, ends_at }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
+      setGoalFormOpen(false); await fetchGoal()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setSavingGoal(false) }
+  }
+  const removeGoal = async () => {
+    const token = getToken()
+    if (!token) return
+    await fetch(`/api/communities/${id}/goal`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    setGoalFormOpen(false); await fetchGoal()
+  }
+
+  // Mural
+  const postAnnouncement = async () => {
+    const token = getToken()
+    if (!token || !annBody.trim()) return
+    setPostingAnn(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/announcements`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ body: annBody.trim(), is_pinned: annPin }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("saveError", "Não foi possível salvar."))
+      setAnnBody(""); setAnnPin(false); await fetchAnnouncements()
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("saveError", "Não foi possível salvar."))
+    } finally { setPostingAnn(false) }
+  }
+  const deleteAnnouncement = async (annId: number) => {
+    const token = getToken()
+    if (!token) return
+    await fetch(`/api/communities/${id}/announcements/${annId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    await fetchAnnouncements()
+  }
+
+  // No condomínio quem escreve é o MORADOR, não o membro — por isso o guard é
+  // `canPost` e não `isMember`.
+  const denyPost = () => setActionMsg(isCondo
+    ? t("residentToPost", "Confirme seu apartamento para publicar.")
+    : t("joinToPost", "Entre na comunidade para publicar."))
+
+  const openComposer = (kind: "post" | "bee" | "story") => {
+    if (!canPost) { denyPost(); return }
+    setComposerKind(kind); setComposerOpen(true)
+  }
+  const openRecado = () => {
+    if (!canPost) { denyPost(); return }
+    setRecadoBody(""); setRecadoOpen(true)
+  }
+  const postRecado = async () => {
+    const token = getToken()
+    const text = recadoBody.trim()
+    if (!token || !text) return
+    setPostingRecado(true); setActionMsg(null)
+    try {
+      const res = await fetch(`/api/communities/${id}/recado`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ body: text }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || t("recadoError", "Não foi possível publicar o recado."))
+      setRecadoOpen(false); setRecadoBody(""); await fetchPosts(true)
+    } catch (err) {
+      setActionMsg(err instanceof Error ? err.message : t("recadoError", "Não foi possível publicar o recado."))
+    } finally { setPostingRecado(false) }
+  }
+  // ⚠️ OS TRÊS HANDLERS DO CARD DO FEED MORAM EM `useCallback`, e isso é
+  // requisito do `memo` do `PortfolioPostCard` — não é estilo. Escritos como
+  // arrow inline no JSX, eles nascem novos a cada render desta página e
+  // derrubam a comparação do memo sozinhos: cada clique num pill voltaria a
+  // reconstruir a lista inteira de posts, que é exatamente o engasgo que o
+  // memo existe para fechar. Prop de função nova para o card entra aqui.
+  const deleteRecado = useCallback(async (recadoId: number) => {
+    const token = getToken()
+    if (!token) return
+    setPosts((prev) => prev.filter((p) => !(p.is_recado && p.recado_id === recadoId)))
+    try {
+      await fetch(`/api/communities/${id}/recado/${recadoId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } })
+    } catch { /* já removido otimisticamente */ }
+  }, [id])
+
+  const openPostComments = useCallback((pid: string) => setOpenCommentsFor(pid), [])
+
+  const handleLikeChange = useCallback((pid: string, liked: boolean, likes_count: number | null) => {
+    setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, viewer_has_liked: liked, likes_count: likes_count ?? p.likes_count } : p))
+  }, [])
+
+  if (loading || goesToCity) {
+    return (
+      <div className="min-h-[100dvh] bg-[#0b0804]">
+        {embed?.header}
+        <div className={`flex items-center justify-center text-sm font-bold uppercase tracking-[0.14em] text-[#9A938A] ${embed ? "py-24" : "min-h-[100dvh]"}`}>
+          {t("pageTitle", "Comunidades")}…
+        </div>
+      </div>
+    )
+  }
+  if (error || !community) {
+    return (
+      <div className="min-h-[100dvh] bg-[#0b0804]">
+        {embed?.header}
+        <div className="mx-auto max-w-md px-5 py-24 text-center">
+          <p className="fl-display text-2xl text-[#F5F1E8]">{t("notFound", "Comunidade não encontrada.")}</p>
+          {!embed && (
+            <Link href="/account" className="mt-4 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-[#F2B705]">
+              <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+            </Link>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const bannerSrc = bannerPreview || community.banner_url
+  /**
+   * ⚠️ A FOTO DO HEADCARD HERDA A DO DONO (decisão do Alex, 2026-09-25): é
+   * `tb_user.avatar` do LÍDER (`leader_avatar`, vindo do getById) — a mesma do
+   * /account, fonte única da mig 215 —, e por isso é a MESMA para quem olha e
+   * para quem é dono. Antes o negócio sem logo caía na foto de QUEM OLHAVA: o
+   * visitante via a própria cara no negócio de outra pessoa.
+   *
+   * ⚠️ E A FOTO DA COMUNIDADE É OVERRIDE (2026-09-27): *"se não trocar
+   * permanece a do perfil principal, se trocar só troca na comunidade
+   * específica"*. `avatar_url` preenchido vence; NULL = herda. Voltar a herdar
+   * é APAGAR a foto própria (DELETE), nunca gravar a do dono por cima — senão
+   * trocar a foto de perfil depois deixaria esta comunidade para trás.
+   *
+   * O BANNER e as CORES continuam da comunidade.
+   */
+  const avatarSrc =
+    avatarPreview || community.avatar_url || community.leader_avatar || null
+
+  // Ranking exibido: o da temporada (por métrica) quando há meta; senão XP absoluto.
+  const seasonOn = !!goal
+  const rankRows = goal
+    ? goal.ranking.map((r) => ({ id_user: r.id_user, name: r.name, avatar_url: r.avatar_url, score: r.score, posts: r.posts, eng: r.eng }))
+    : ranked.map((m) => ({ id_user: m.id_user, name: m.top_profile_name || m.user_name, avatar_url: m.top_profile_avatar, score: Number(m.top_profile_xp || 0), posts: undefined as number | undefined, eng: undefined as number | undefined }))
+  const topRow = goal && goal.status === "closed" && goal.winner
+    ? { id_user: goal.winner.id_user, name: goal.winner.name, avatar_url: goal.winner.avatar_url, score: goal.winner.score, posts: undefined as number | undefined, eng: undefined as number | undefined }
+    : rankRows[0]
+  const rowScore = (row: { score: number; posts?: number; eng?: number }) =>
+    seasonOn && goal ? scoreLabel(goal.metric, row) : compact(row.score)
+
+  return (
+    // A pele é uma CLASSE no container (`fl-business`, em globals.css) e não
+    // uma troca de cores no arquivo: esta página é uma casca só para todas as
+    // modalidades, e mexer nas cores aqui pintaria todas elas.
+    // As variáveis do `style` só existem na de negócio, onde a cor é do líder.
+    <div
+      style={skinVars}
+      className={`relative min-h-[100dvh] overflow-hidden bg-[#0b0804] text-[#F5F1E8] ${isBusinessPlatform ? "fl-business" : ""} ${isPetPlatform ? "fl-pet" : ""} ${isCarPlatform ? "fl-car" : ""} ${isCondoSkin ? "fl-condo" : ""} ${isHoodSkin ? "fl-hood" : ""} pb-28 md:pb-20`}
+    >
+      {/* O fundo é o PRIMEIRO filho: sem z-index nenhum, tudo que vem depois no
+          DOM pinta por cima dele — a mesma ordem de pintura que faz a foto do
+          headcard cobrir a pilha de pills.
+          ⚠️ A variante `games` foi APAGADA (2026-09-09); o componente serve o
+          negócio e o Financeiro. */}
+      {/* O fundo do negócio, na cor que o líder escolheu —
+          e SEM símbolo nenhum por cima (o cifrão é do Financeiro; "meu
+          negócio" pode ser barbearia ou marcenaria, e um símbolo escolhido por
+          nós estaria errado para quase todos). */}
+      {isBusinessPlatform && <TechBackdrop variant="business" tint={bizTint} />}
+      {isPetPlatform && <TechBackdrop variant="pet" />}
+      {isCarPlatform && <TechBackdrop variant="car" />}
+      {isCondoSkin && <TechBackdrop variant="condo" />}
+      {isHoodSkin && <TechBackdrop variant="hood" />}
+      {isBusinessPlatform && (
+        <BusinessPlanModal
+          open={planOpen}
+          onClose={() => setPlanOpen(false)}
+          returnTo={`/comunidades/${community.id_profile}`}
+          accent={accent}
+        />
+      )}
+      {/* Declara o ambiente para o dock global (não desenha nada).
+          "Meus negócios" (a comunidade `common`) é o único ambiente que
+          sobrou: lá dentro a barra da Freelandoo dá lugar aos controles do
+          espaço, e a volta é a foto amarela.
+          ⚠️ O ambiente é do LUGAR, não de quem olha — quem visita também troca
+          de barra, e é por isso que a porta de saída existe. O que depende de
+          quem olha é só o item do Site (`showSiteEntry`, que some junto da
+          aba quando o líder aperta "Ver como público"). */}
+      {/* Peles CLARAS (pet, condomínio): o dock troca a tinta branca por
+          contorno e ícones pretos — senão ele some no fundo. */}
+      {(isPetPlatform || isCondoSkin) && <LightSurfaceBeacon />}
+      {shellKind && (
+        <CommunityShellBeacon
+          communityId={id}
+          kind={shellKind}
+          canBuildSite={showSiteEntry}
+          canSeeIndicators={showIndicators}
+        />
+      )}
+      {embed && <div className="relative z-10">{embed.header}</div>}
+      {/* Top bar */}
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-3 pt-6 md:px-10">
+        {/* ⚠️ VOLTA PARA O PERFIL, não para a vitrine (pedido do Alex,
+            2026-09-08): `/comunidades` ficou órfã, e um "Voltar" apontando para
+            uma página que já não tem porta de entrada seria a única forma de
+            chegar nela — o oposto de orfanar. A comunidade é uma sala DO
+            PERFIL, e é para ele que se volta. */}
+        {/* Embutida (Minha cidade), o "Voltar" é do AMBIENTE — mora no `header`
+            dele, acima das abas. Dois "Voltar" empilhados mandariam para
+            lugares diferentes. */}
+        {embed ? <span aria-hidden /> : (
+          <Link href="/account" className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#9A938A] transition hover:text-[#F5F1E8]">
+            <ArrowLeft className="h-4 w-4" /> {t("back", "Voltar")}
+          </Link>
+        )}
+        {canAdminister && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* O pet tem a cor TRAVADA (bege e marrom): sem seletor de Cores. */}
+            {edit && !lockedAccentFor(community.kind) && (
+              <div className="inline-flex flex-wrap items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-2.5 py-1.5">
+                <Palette className="h-4 w-4" style={{ color: accent }} />
+                <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">{t("colorsLabel", "Cores")}</span>
+                <span className="h-5 w-5 border-2 border-[#0B0B0D]" style={{ background: accent }} />
+                <select value={accentDraft} onChange={(e) => setAccentDraft(e.target.value)}
+                  className="border-l-2 border-[#F5F1E8]/15 bg-transparent pl-2 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] outline-none [&_option]:bg-[#15120E]">
+                  {ACCENTS.map((a) => <option key={a.key} value={a.key}>{t(a.labelKey, a.fallback)}</option>)}
+                </select>
+                {/* ⚠️ O FUNDO SÓ APARECE NA PLATAFORMA DE NEGÓCIO, que é a
+                    única com pele de cor variável: nas outras modalidades o
+                    seletor pediria uma escolha que a tela não sabe obedecer. */}
+                {isBusinessPlatform && (
+                  <>
+                    <span className="border-l-2 border-[#F5F1E8]/15 pl-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                      {t("bgLabel", "Fundo")}
+                    </span>
+                    <span className="h-5 w-5 border-2 border-[#0B0B0D]" style={{ background: bizTint.canvas, boxShadow: `inset 0 0 0 2px ${bizTint.glow}55` }} />
+                    <select value={bgDraft} onChange={(e) => setBgDraft(e.target.value)}
+                      className="bg-transparent text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] outline-none [&_option]:bg-[#15120E]">
+                      {BACKDROPS.map((b) => <option key={b.key} value={b.key}>{t(b.labelKey, b.fallback)}</option>)}
+                    </select>
+                  </>
+                )}
+              </div>
+            )}
+            {/* O Plano Negócio (mig 234): a porta que libera membros, o site
+                publicado e o atendente de IA. Aceso quando ativo; dourado com
+                cadeado quando não — é o mesmo modal nos dois casos (lá dentro
+                ele vira status + cancelar). */}
+            {isBusinessPlatform && (
+              <button type="button" onClick={() => setPlanOpen(true)}
+                className={`inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] ${planActive ? "bg-[#15120E] text-[#F5F1E8]" : "bg-[#F2B705] text-[#0B0B0D]"}`}>
+                <Crown className="h-4 w-4" style={planActive ? { color: "#22C55E" } : undefined} />
+                {planActive ? t("planActiveButton", "Plano ativo") : t("planButtonSite", "Plano Site")}
+              </button>
+            )}
+            {showAsLeaderEdit && (dirty || autoSave !== "idle") && (
+              <span
+                aria-live="polite"
+                className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]"
+              >
+                {autoSave === "error" ? (
+                  <span className="text-[#FCA5A5]">{t("autoSaveError", "Não salvou")}</span>
+                ) : dirty || autoSave === "saving" ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("autoSaving", "Salvando…")}</>
+                ) : (
+                  <><Check className="h-3.5 w-3.5 text-[#22C55E]" /> {t("autoSaved", "Salvo")}</>
+                )}
+              </span>
+            )}
+            <button type="button" onClick={() => setEdit((e) => !e)}
+              className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
+              {edit ? <><Eye className="h-4 w-4" /> {t("viewPublic", "Ver como público")}</> : <><ScrollText className="h-4 w-4" /> {t("edit", "Editar")}</>}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* HERO */}
+      <header className="relative mx-auto mt-4 max-w-5xl px-0 md:px-10">
+        {/* ⚠️ `z-0` NÃO é decoração: é o que TRANCA o banner debaixo da linha da
+            foto. Sem ele o banner é `relative` com z-index AUTO, e elemento
+            posicionado com z auto NÃO cria contexto de empilhamento — então o
+            `z-30` do overlay de "Trocar capa" (ImageDrop) subia para o contexto
+            do <header> e ganhava do `z-20` da linha da foto, pintando meio card
+            da foto e os pills de preto 50% (o `overflow-hidden` daqui é que
+            recortava a mancha na borda do banner, dando o efeito de "metade
+            escura"). Com o z-0 o banner vira contexto próprio: tudo que estiver
+            dentro dele — chip, gradiente, overlay de upload e o que vier depois
+            — fica abaixo da linha da foto por construção. */}
+        <div className="relative z-0 overflow-hidden border-2 border-[#0B0B0D]" style={{ boxShadow: surfaceShadow(accent, 8) }}>
+          <div className="relative h-44 md:h-56 bg-[#1D1810]">
+            {bannerSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={bannerSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+            )}
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent 40%, ${isPetPlatform ? "#F3E4C9cc" : isCondoSkin ? "#E4E4E7cc" : isHoodSkin ? "#2982CCcc" : "#0b0804cc"} 100%)` }} />
+            {/* O LETREIRO ACESO (repaginada do Business, N2): luz de vitrine na
+                cor do dono, só aqui no banner — nunca no fundo da página. */}
+            {isBusinessPlatform && <StorefrontShader accent={accent} className="z-10" />}
+            {showAsLeaderEdit && <ImageDrop label={t("changeBanner", "Trocar capa")} busy={uploading === "banner"} onFile={(f) => uploadImage("banner", f)} />}
+            {community.enxame_name && (
+              <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+                {tx.enxame(null, community.enxame_name)}
+              </span>
+            )}
+            {/* Pet e carro não têm enxame (mig 210): o chip do lugar dele é o
+                ASSUNTO — raça, modelo. */}
+            {subjectChip && (
+              <span className="absolute left-4 top-4 z-20 -rotate-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#0B0B0D]">
+                {subjectChip}
+              </span>
+            )}
+            {isPrivate && (
+              <span className="absolute left-4 top-12 z-20 inline-flex -rotate-2 items-center gap-1 border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#F5F1E8]">
+                <Lock className="h-3 w-3" style={{ color: accent }} /> {t("privateBadge", "Privada")}
+                {monthlyCents > 0 && <span style={{ color: accent }}>· {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}</span>}
+              </span>
+            )}
+            <span className="absolute right-4 top-4 z-20 flex h-14 min-w-14 flex-col items-center justify-center border-2 border-[#0B0B0D] bg-[#15120E] px-2">
+              <span className="text-[8px] font-bold uppercase text-[#9A938A]">{t("level", "Nível")}</span>
+              <span className="fl-display text-2xl leading-none" style={{ color: accent }}>{community.xp_level ?? "—"}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* ⚠️ O RECUO ACOMPANHOU A PROPORÇÃO. A foto era QUADRADA (128px) e
+            mordia o banner em 48px; agora ela é 2/3 como a do perfil (192px no
+            celular, 216px no md) e o recuo é ~METADE da altura dela, que é a
+            regra do headcard principal: metade sobre o banner, metade sobre o
+            papel. Mantido o -mt-12 antigo, os 64px a mais cairiam todos para
+            baixo — a foto desgrudaria do banner e empurraria o título e o "+"
+            junto com ela. */}
+        <div className="relative z-20 -mt-24 flex flex-wrap items-end gap-4 px-2 md:-mt-[108px] md:px-3">
+          {/* A COLUNA DA FOTO: a pilha é o PRIMEIRO filho e a foto vem depois
+              no DOM. Sem z-index em nenhum dos dois, quem pinta por último
+              cobre — é assim que a foto esconde o corpo do botão e só o ícone
+              escapa pela direita. (`-z-10` NÃO serve: aqui o contexto de
+              empilhamento mais próximo é esta linha `relative z-20`, e o botão
+              iria parar atrás do banner.)
+
+              A pilha fica FORA da caixa da foto porque aquela caixa é
+              `overflow-hidden` — lá dentro o botão seria recortado na borda.
+
+              `pl-32 md:pl-36` casa com a LARGURA DA FOTO (w-32 / md:w-36 —
+              a altura sai da proporção 2/3 e não entra nesta conta).
+              Mexeu no tamanho da foto? Ajustar o padding junto, senão o corpo
+              colorido nasce ao lado dela em vez de debaixo.
+
+              E a foto tem que ser MAIOR QUE A PILHA, senão o pill de cima e o
+              de baixo escapam por cima e por baixo em vez de só pela direita.
+              Com QUATRO pills (Perfil, Mural, Indicadores e Ranking — o
+              terceiro só aparece para o líder do negócio) a pilha mede
+              4 × 36 (h-9) + 3 × 6 (gap-1.5) = 162px. Com a proporção 2/3 a
+              foto tem 192px de altura (216 no md), então ainda sobra folga —
+              mas ela é de 30px agora, e um QUINTO pill (198px) já escaparia.
+              PILL NOVO AQUI? Refazer esta conta. */}
+          <div className="relative shrink-0">
+            {/* ⚠️ A PILHA VALE PARA TODAS AS MODALIDADES, e o que muda entre
+                elas é só a LISTA (ver `communityPills`), nunca a mecânica.
+
+                Não há gate de montagem aqui de propósito — `PillStack` já
+                devolve `null` com a lista vazia. Um `&&` neste ponto seria uma
+                SEGUNDA decisão sobre quais telas têm pilha, e a que ficasse
+                para trás apagaria botões que a lista continuou entregando.
+
+                ⚠️ O RANKING SÓ TEM ESTA PORTA no dock de negócios e aqui:
+                tirar o pill deixa `/comunidades/<id>/ranking` no ar e
+                inalcançável para as outras modalidades. */}
+            <PillStack
+              pills={communityPills}
+              avatarPadClass="pl-32 md:pl-36"
+              className="absolute left-0 top-1/2 -translate-y-1/2"
+            />
+            {/* ⚠️ PROPORÇÃO 2/3, A MESMA DO HEADCARD DO PERFIL (pedido do Alex:
+                "deixa todos os cards das fotos na mesma proporção do
+                principal"). A LARGURA não mudou (w-32/w-36), e é por isso que
+                o `pl-32 md:pl-36` da pilha continua valendo — o padding casa
+                com a largura, não com a altura. A altura subiu de 128 para
+                192px, o que só melhora a cobertura da pilha (120px). */}
+            <div className="relative aspect-[2/3] w-32 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810] md:w-36" style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}>
+              {/* A foto é da COMUNIDADE. Sem ela fica o boneco: aqui não há
+                  nome de pessoa para reduzir a duas letras — o rosto desta tela
+                  é o do assunto (o cachorro, o carro) ou a marca do negócio. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc || "/placeholder-user.jpg"} alt={community.display_name} className="h-full w-full object-cover" />
+              {uploading === "avatar" && (
+                <div className="absolute inset-0 grid place-items-center bg-black/50 text-white">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              )}
+            </div>
+            {/* FORA da caixa da foto, que é `overflow-hidden` e recortaria os
+                dois botões na borda. Só no modo de edição do dono: no "ver
+                como público" eles somem, como tudo que é de quem edita. */}
+            {showAsLeaderEdit && (
+              <PhotoOverrideBadge
+                hasOwnPhoto={!!community.avatar_url}
+                busy={uploading === "avatar" || photoResetting}
+                onFile={(f) => uploadImage("avatar", f)}
+                onReset={resetAvatar}
+                t={t}
+              />
+            )}
+            {/* PET E CARRO: o "+" na foto é a ÚNICA porta de adicionar outro
+                (decisão do Alex, 2026-09-27) e se comporta como o "+" do
+                perfil principal — abre "Meus pets" / "Meus carros" com os que
+                a pessoa já tem e o card de adicionar. */}
+            {showAsLeaderEdit && isLeader && subjectKind && (
+              <SubjectSwitcher kind={subjectKind} currentId={community.id_profile} fallbackAvatar={community.leader_avatar ?? null} />
+            )}
+          </div>
+          {/* ⚠️ NO CELULAR O NOME DESCE PARA BAIXO DA FOTO (pedido do Alex,
+              2026-09-10: "nada sobreponha os nomes no mobile"). Ao lado dela,
+              o rótulo do pill ABERTO deslizava por cima do nome — a folga de
+              44px cobre o ícone fechado, não o rótulo. O espaçador (só no
+              celular) empurra Publicar/Entrar para a direita da foto, e o
+              nome, com `order-last` + `basis-full`, ocupa a linha inteira
+              embaixo. No md o espaçador some e o nome volta para o lado, com a
+              folga passando do ícone do pill (~40px). MESMA peça nos headcards
+              de games e do Financeiro. */}
+          <div aria-hidden className="flex-1 md:hidden" />
+          <div className="order-last basis-full pl-1 pt-1 md:order-none md:basis-auto md:flex-1 md:pb-2 md:pl-12 md:pt-0">
+            {showAsLeaderEdit ? (
+              <input value={nameDraft} maxLength={80} onChange={(e) => setNameDraft(e.target.value)} placeholder={t("nameLabel", "Nome da comunidade")}
+                style={isBusinessPlatform ? neonText(accent, 0.6) : undefined}
+                className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-4xl leading-[0.85] text-[#F5F1E8] outline-none md:text-6xl" />
+            ) : (
+              <h1 style={isBusinessPlatform ? neonText(accent, 0.6) : undefined} className="fl-display text-4xl leading-[0.85] text-[#F5F1E8] sm:text-5xl md:text-6xl">
+                {community.display_name}
+              </h1>
+            )}
+          </div>
+          {/* Publicar: quadrado amarelo com "+" no PRÓPRIO headcard (não há
+              mais barra "Poste ou escreva aqui" no meio do feed). O menu abre
+              com os tipos empilhados. Feed trancado (privada sem assinar) não
+              mostra o botão: ali nem ler dá. */}
+          {/* CONVITE: o aviãozinho compartilha o link desta página para
+              prospectar membros (negócio, condomínio, bairro, pet, carro —
+              vale para toda modalidade por construção). Fica de pé mesmo com o
+              feed trancado: convidar é justamente como a comunidade privada
+              ganha assinante. */}
+          {/* ⚠️ SEM PLANO NEGÓCIO (mig 234) o negócio não aceita membro, e o
+              convite não teria para onde levar: para o LÍDER o aviãozinho fica
+              no lugar, TRANCADO, e abre o plano (é a porta de compra); para
+              os outros ele some — convite que termina num "Entrar" que não
+              existe seria porta pintada. */}
+          {(membersEnabled || isLeader) && (
+            <div className="pb-1">
+              <InviteShareButton
+                url={`/comunidades/${community.id_profile}`}
+                name={community.display_name}
+                accent={accent}
+                locked={!membersEnabled}
+                lockedLabel={t("inviteLockedAriaV2", "Convidar pessoas")}
+                onLockedClick={() => setPlanOpen(true)}
+              />
+            </div>
+          )}
+          {!feedLocked && (
+            <div className="pb-1">
+              <PublishMenuButton
+                accent={accent}
+                label={t("composeCta", "Publicar")}
+                canPost={canPost}
+                blockedMessage={publishBlockedMessage}
+                onBlocked={setActionMsg}
+                items={publishItems}
+                onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+                extras={siteExtras}
+                onPickExtra={(extraId) => {
+                  if (extraId === "site") router.push(sitePath)
+                }}
+              />
+            </div>
+          )}
+          {/* ⚠️ SAIR TEM QUE EXISTIR SEMPRE. Quem tem uma linha de membresia
+              precisa poder desfazê-la: porta de saída trancada é a única que
+              não pode existir (mesma regra do desconectar do WhatsApp). */}
+          {!isLeader && (
+            <div className="pb-1">
+              {myMembership ? (
+                myMembership.role !== "leader" ? (
+                  <button type="button" disabled={busy} onClick={() => joinOrLeave("leave")}
+                    className="border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] disabled:opacity-60">
+                    {busy ? t("leaving", "Saindo...") : t("leave", "Sair")}
+                  </button>
+                ) : null
+              ) : isSubjectPlatform ? (
+                // PLATAFORMA (pet/carro, mig 262): ninguém entra — o feed já é
+                // de todo mundo. O backend recusa o join com 409; um "Entrar"
+                // aqui só produziria a recusa. SAIR continua acima para quem
+                // tinha membresia de antes.
+                null
+              ) : isCondo ? (
+                // Condomínio não tem visitante: o backend recusa o join
+                // genérico (409). A porta é escolher o apartamento na planta,
+                // logo abaixo — mostrar "Entrar" aqui só produziria um erro.
+                <span className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {t("condoResidentsOnly", "Só moradores")}
+                </span>
+              ) : !membersEnabled ? (
+                // Negócio cujo líder não assina o Plano Negócio (mig 234): o
+                // backend recusa o join com 402. Mostrar "Entrar" só produziria
+                // a recusa depois do clique.
+                <span className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                  <Lock className="h-3.5 w-3.5" /> {t("membersLocked", "Ainda não aceita membros")}
+                </span>
+              ) : (
+                <button type="button" disabled={busy} onClick={() => (isPrivate ? startMembershipCheckout() : joinOrLeave("join"))}
+                  className="border-2 border-[#0B0B0D] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-60" style={{ background: accent }}>
+                  {busy
+                    ? t("joining", "Entrando...")
+                    : isPrivate
+                      ? `${t("subscribeJoin", "Assinar")} · ${fmtBRL(monthlyCents)}/${t("perMonthShort", "mês")}`
+                      : t("join", "Entrar")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* OS PAINÉIS DOS BOTÕES RETRÁTEIS — "Perfil" (o que a comunidade É:
+          enxame, privacidade, temporada e o texto do líder) e "Mural" (o que
+          ela ANUNCIA). Vêm logo abaixo do headcard porque é o que a pessoa
+          acabou de pedir ao abrir o botão, e a página começa direto no feed.
+
+          UM painel para os dois papéis, e não uma tela de configuração ao lado
+          de uma tela de leitura: o visitante lê exatamente os mesmos campos que
+          o líder edita. Duas telas para a mesma verdade é como uma delas para
+          de contar a mudança da outra.
+
+          A moldura é COMPARTILHADA e só a cor e o título mudam por painel — é o
+          que mantém os dois com a mesma cara conforme a lista de botões
+          crescer. */}
+      {panel === "community" && (
+        // No negócio o painel DESCE como papel (repaginada N7): sai do
+        // headcard em vez de surgir do nada. Só transform/opacity.
+        <motion.section
+          initial={isBusinessPlatform ? { opacity: 0, y: -10 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={isBusinessPlatform ? litBox(accent, 6) : { boxShadow: surfaceShadow("#1D4ED8", 6) }}>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
+              {/* AS QUATRO ABAS do painel único. Elas substituem os três pills
+                  que existiam antes — e por isso carregam os MESMOS ícones e as
+                  MESMAS cores que cada um deles tinha: quem já conhecia a
+                  pilha reconhece o que era o quê sem precisar reaprender.
+
+                  ⚠️ "Membros" só aparece onde ela DIZ algo: no condomínio a
+                  lista de vizinhos mora no próprio painel do prédio (com a
+                  regra de morador), e numa comunidade privada o backend recusa
+                  a lista para quem está de fora. */}
+              <div className="flex flex-wrap items-center gap-1">
+                {/* Plataforma de assunto (pet/carro): só o Perfil — sem membro
+                    não há Mural do líder, lista de Membros nem Números. */}
+                {isSubjectPlatform ? (
+                  <span className="inline-flex items-center gap-1.5 border-2 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
+                    style={{ background: skinHex("#15120E"), color: skinHex("#F5F1E8"), borderColor: "#60A5FA" }}>
+                    <UserRound className="h-3.5 w-3.5" style={{ color: "#60A5FA" }} /> {t("profilePill", "Perfil")}
+                  </span>
+                ) : ([
+                  ["profile", UserRound, "#60A5FA", t("profilePill", "Perfil")],
+                  ["mural", Megaphone, "#FB923C",
+                    isCondo ? t("condoPanelTitle", "O prédio") : t("muralPill", "Mural")],
+                  ...(isCondo ? [] : [["members", Users, "#F472B6", t("tabMembers", "Membros")] as const]),
+                  ["stats", BarChart3, "#A78BFA", t("panelStats", "Números")],
+                ] as [PanelTab, typeof UserRound, string, string][]).map(([key, Icon, color, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setPanelTab(key)}
+                    className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em]"
+                    style={{
+                      background: panelTab === key ? skinHex("#15120E") : "transparent",
+                      color: skinHex(panelTab === key ? "#F5F1E8" : "#9A938A"),
+                      borderColor: panelTab === key ? color : skinHex("#0B0B0D"),
+                    }}
+                  >
+                    <Icon className="h-3.5 w-3.5" style={{ color }} /> {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                {/* O líder abre o painel no modo em que a página está. Se ele
+                    estiver vendo como público, o atalho liga a edição aqui
+                    mesmo — mandá-lo procurar o botão lá em cima seria pedir
+                    para sair do painel que ele acabou de abrir. */}
+                {canAdminister && !edit && (
+                  <button type="button" onClick={() => setEdit(true)}
+                    className="inline-flex items-center gap-1.5 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D]">
+                    <ScrollText className="h-3.5 w-3.5" /> {t("edit", "Editar")}
+                  </button>
+                )}
+                <button type="button" onClick={() => setPanel(null)} aria-label={t("panelClose", "Fechar")}
+                  className="border-2 border-[#0B0B0D] bg-[#15120E] p-1 text-[#9A938A] transition hover:text-[#F5F1E8]">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* O PAINEL DO MURAL — e, no condomínio, o prédio inteiro. As duas
+                metades estão comentadas uma a uma lá dentro. */}
+            {shownTab === "mural" && (
+              <div className="space-y-6 p-4 md:p-5">
+                {/* O PRÉDIO (migs 205/206) — portaria, família × disputa,
+                    planta e veredito (CondoResidence), mais o quadro de
+                    avisos, as enquetes, os moradores e a administração
+                    (CondoExtras). Tudo isso morava no corpo da página, entre o
+                    headcard e o feed; agora o corpo começa direto nas abas e o
+                    prédio mora aqui dentro.
+
+                    ⚠️ NÃO PASSA PELO GUARD DE MEMBRESIA de baixo, e é isso
+                    que mantém a entrada do condomínio de pé: ninguém "entra"
+                    num prédio pelo botão de participar (o join recusa
+                    condomínio com 409) — entra escolhendo o apartamento na
+                    planta, que é justamente o que a portaria desenha. Sob o
+                    `!isMember` ela responderia "só quem é da comunidade lê o
+                    mural" para quem chegou para virar morador.
+
+                    Cada peça traz o próprio guard: o CondoExtras devolve
+                    `null` para quem não é morador nem síndico, e o
+                    CondoResidence escolhe entre portaria, disputa e "meu
+                    apartamento" pelo que o `/plant` responde. */}
+                {isCondo && (
+                  <>
+                    <CondoResidence communityId={id} onResidencyChange={loadAll} />
+                    <CondoExtras
+                      communityId={id}
+                      isAdmin={canAdminister || !!community.viewer_is_admin}
+                      isResident={isResident}
+                      onReload={loadAll}
+                    />
+                  </>
+                )}
+
+                {/* MURAL DO LÍDER — o recado da comunidade. Continua PRIVADO:
+                    só membro lê, só o líder escreve. A recusa é dita em voz
+                    alta em vez de o painel abrir vazio: botão que abre o nada
+                    parece quebrado.
+
+                    ⚠️ NO CONDOMÍNIO ELE VIRA HISTÓRICO e só aparece quando já
+                    existe recado. Quem manda ali é o quadro de AVISOS do
+                    prédio (a aba Mural do CondoExtras), que sabe endereçar um
+                    apartamento ou uma vaga, fixar e marcar lido. Dois murais
+                    VIVOS no mesmo painel seriam duas verdades sobre o mesmo
+                    recado — o síndico escreveria num e a vizinhança leria o
+                    outro. O que já foi publicado não some (e o síndico ainda
+                    apaga, em modo de edição); o que não existe não ganha um
+                    segundo compositor. */}
+                {!isCondo && !isMember ? (
+                  <p className="text-sm text-[#9A938A]">{t("muralMembersOnly", "Só quem é da comunidade lê o mural.")}</p>
+                ) : !isCondo || announcements.length > 0 ? (
+                  <div className={isCondo ? "border-t-2 border-[#F5F1E8]/10 pt-4" : ""}>
+                    {isCondo && (
+                      <p className="mb-3 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">
+                        <Megaphone className="h-3.5 w-3.5" /> {t("muralTitle", "Mural do líder")}
+                      </p>
+                    )}
+                    {showAsLeaderEdit && !isCondo && (
+                      <div className="mb-3 space-y-2 border-b border-[#F5F1E8]/10 pb-3">
+                        <textarea value={annBody} maxLength={1000} rows={2} onChange={(e) => setAnnBody(e.target.value)} placeholder={t("muralPlaceholder", "Escreva um recado para a comunidade...")}
+                          className="w-full bg-transparent text-sm text-[#F5F1E8] outline-none placeholder:text-[#9A938A]/70" />
+                        <div className="flex items-center gap-3">
+                          <label className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                            <input type="checkbox" checked={annPin} onChange={(e) => setAnnPin(e.target.checked)} /> <Pin className="h-3 w-3" /> {t("muralPin", "Fixar")}
+                          </label>
+                          <button type="button" disabled={postingAnn || !annBody.trim()} onClick={postAnnouncement}
+                            className="ml-auto inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                            {postingAnn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Megaphone className="h-4 w-4" />} {t("muralPost", "Publicar")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {announcements.length === 0 ? (
+                      <p className="text-sm text-[#9A938A]">{t("muralEmpty", "Nenhum recado ainda.")}</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {announcements.map((a) => (
+                          <div key={a.id} className="relative border border-[#F5F1E8]/10 bg-[#1D1810] px-4 py-3">
+                            {a.is_pinned && <span className="mb-1 inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}><Pin className="h-3 w-3" /> {t("pinned", "Fixado")}</span>}
+                            <p className="whitespace-pre-line text-sm text-[#F5F1E8]/90">{a.body}</p>
+                            <div className="mt-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">
+                              <span>{a.author_username ? `@${a.author_username}` : ""} · {new Date(a.created_at).toLocaleDateString()}</span>
+                              {showAsLeaderEdit && <button type="button" onClick={() => deleteAnnouncement(a.id)} className="text-[#ff7a6a]"><Trash2 className="h-3.5 w-3.5" /></button>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+
+            {shownTab === "profile" && (
+            <div className="space-y-4 p-4 md:p-5">
+              {/* ENXAME (mig 219). É este campo que substitui o formulário de
+                  criação: a comunidade comum nasce vazia e o assunto dela é
+                  escolhido aqui, do mesmo jeito que pet e carro escolhem raça
+                  e modelo desde a mig 211. Escolhido, ele aparece fixado —
+                  para o líder e para quem visita.
+
+                  Pet, carro, bairro e condomínio não têm enxame: o chip do
+                  lugar dele é o ASSUNTO, que continua no banner. */}
+              {(community.kind ?? "common") === "common" && (
+                <Block title={t("enxameTitle", "Enxame")} icon={<Hexagon className="h-4 w-4" />} accent={accent}>
+                  {showAsLeaderEdit ? (
+                    <>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">
+                          {t("enxameLabel", "Enxame da comunidade")}
+                        </span>
+                        <select value={machineDraft} onChange={(e) => setMachineDraft(e.target.value)} className={selectCls}>
+                          <option value="">{t("enxameNone", "— escolher depois")}</option>
+                          {enxames.map((e) => (
+                            <option key={e.id_machine} value={e.id_machine}>{tx.enxame(null, e.name)}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <p className="mt-2 text-xs text-[#9A938A]">
+                        {t("enxameHint", "É por ele que a comunidade aparece nos filtros da vitrine. Dá para escolher depois.")}
+                      </p>
+                    </>
+                  ) : community.enxame_name ? (
+                    <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#0B0B0D]">
+                      <Hexagon className="h-3.5 w-3.5" /> {tx.enxame(null, community.enxame_name)}
+                    </span>
+                  ) : (
+                    <p className="text-sm text-[#9A938A]">{t("enxameNotSet", "Ainda sem enxame escolhido.")}</p>
+                  )}
+                </Block>
+              )}
+
+              {/* PRIVACIDADE. Quem visita vê só o que vale para ele — se entra
+                  de graça ou se entrar custa assinatura —, nunca os controles
+                  nem o resumo financeiro do líder. */}
+              {/* Plataforma de assunto (pet/carro): sem privacidade paga nem
+                  temporada — as duas existem para quem tem MEMBROS. */}
+              {!isSubjectPlatform && (
+              <Block title={t("privacyTitle", "Privacidade")} icon={<Lock className="h-4 w-4" />} accent={accent}>
+                {showAsLeaderEdit ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {([
+                        ["public", t("privacyPublic", "Pública"), <Globe key="g" className="h-4 w-4" />],
+                        ["private", t("privacyPrivate", "Privada"), <Lock key="l" className="h-4 w-4" />],
+                      ] as const).map(([key, label, icon]) => (
+                        <button key={key} type="button" onClick={() => setPrivacyDraft(key)}
+                          className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
+                          style={privacyDraft === key ? { background: accent, color: "#0B0B0D" } : { background: skinHex("#1D1810"), color: skinHex("#9A938A") }}>
+                          {icon} {label}
+                        </button>
+                      ))}
+                      {privacyDraft === "private" && (
+                        <label className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5">
+                          <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("privacyPriceLabel", "Mensalidade R$")}</span>
+                          <input value={monthlyDraft} onChange={(e) => setMonthlyDraft(e.target.value)} inputMode="decimal" placeholder="19,90"
+                            className="w-20 bg-transparent text-sm font-bold text-[#F5F1E8] outline-none" />
+                          <span className="text-[10px] font-bold uppercase text-[#9A938A]">/{t("perMonthShort", "mês")}</span>
+                        </label>
+                      )}
+                      <button type="button" disabled={savingPrivacy} onClick={savePrivacy}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                        {savingPrivacy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("privacyApply", "Aplicar")}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                      {privacyDraft === "private"
+                        ? t("privacyPrivateHint", "Privada: os posts ficam só aqui dentro (não vão pro feed nem pros bees) e entrar exige assinatura mensal. Membros atuais continuam sem pagar.")
+                        : t("privacyPublicHint", "Pública: qualquer pessoa entra de graça e os posts também aparecem no feed. Assinaturas existentes param de cobrar no fim do ciclo.")}
+                    </p>
+                    {isPrivate && membershipSummary && (
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <MiniStat label={t("summarySubs", "Assinantes")} value={String(membershipSummary.active_subs)} accent={accent} />
+                        <MiniStat label={t("summaryWaiting", "Em liberação")} value={fmtBRL(Number(membershipSummary.waiting_cents))} accent={accent} />
+                        <MiniStat label={t("summaryAvailable", "Liberado")} value={fmtBRL(Number(membershipSummary.available_cents))} accent={accent} />
+                        <MiniStat label={t("summaryTotal", "Total líquido")} value={fmtBRL(Number(membershipSummary.total_net_cents))} accent={accent} />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]">
+                      {isPrivate
+                        ? <><Lock className="h-3.5 w-3.5" style={{ color: accent }} /> {t("privacyPrivate", "Privada")}{monthlyCents > 0 && <span style={{ color: accent }}>· {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}</span>}</>
+                        : <><Globe className="h-3.5 w-3.5" style={{ color: accent }} /> {t("privacyPublic", "Pública")}</>}
+                    </span>
+                    <p className="mt-2 text-xs text-[#9A938A]">
+                      {isPrivate
+                        ? t("privacyPrivateRead", "Entrar aqui exige assinatura mensal, e o que se publica fica só dentro da comunidade.")
+                        : t("privacyPublicRead", "Qualquer pessoa entra de graça, e os posts daqui também aparecem no feed.")}
+                    </p>
+                  </>
+                )}
+              </Block>
+
+              )}
+
+              {/* TEMPORADA (a meta com prazo, ranking e prêmio). Quem visita vê
+                  a que está valendo — ou que não há nenhuma; só o líder abre o
+                  formulário. */}
+              {!isSubjectPlatform && (
+              <Block title={t("goalTitle", "Temporada da comunidade")} icon={<Target className="h-4 w-4" />} accent={accent}>
+                {goalFormOpen && showAsLeaderEdit ? (
+                  <div className="space-y-2">
+                    <input value={goalTitle} maxLength={120} onChange={(e) => setGoalTitle(e.target.value)} placeholder={t("goalNamePlaceholder", "Ex.: Bora postar essa semana!")}
+                      className="w-full border-b-2 border-dashed border-[#F5F1E8]/30 bg-transparent fl-display text-xl text-[#F5F1E8] outline-none" />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <select value={goalMetric} onChange={(e) => setGoalMetric(e.target.value)} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs font-bold uppercase text-[#F5F1E8] [&_option]:bg-[#15120E]">
+                        <option value="xp">{t("metricXp", "XP coletivo")}</option>
+                        <option value="posts">{t("metricPosts", "Publicações")}</option>
+                        <option value="shares">{t("metricShares", "Compartilhamentos")}</option>
+                      </select>
+                      <select value={goalDays} onChange={(e) => setGoalDays(Number(e.target.value))} className="border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-1.5 text-xs font-bold uppercase text-[#F5F1E8] [&_option]:bg-[#15120E]">
+                        <option value={30}>{t("goalDays30", "30 dias")}</option>
+                        <option value={60}>{t("goalDays60", "60 dias")}</option>
+                        <option value={90}>{t("goalDays90", "90 dias")}</option>
+                      </select>
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                      🏆 {t("goalPrizeNote", "100 poléns pro 1º lugar")} · {t("goalMinMembers", "mín. 5 membros")} {(community.member_count ?? 0) < 5 ? `(${community.member_count ?? 0}/5)` : ""}
+                    </p>
+                    <div className="flex gap-2 pt-1">
+                      <button type="button" disabled={savingGoal || (community.member_count ?? 0) < 5} onClick={saveGoal} className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                        {savingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t("goalStart", "Iniciar temporada")}
+                      </button>
+                      {goal && <button type="button" onClick={removeGoal} className="inline-flex items-center gap-2 border-2 border-[#ff5a44]/60 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#ff7a6a]"><Trash2 className="h-4 w-4" /> {t("goalRemove", "Remover")}</button>}
+                      <button type="button" onClick={() => setGoalFormOpen(false)} className="border-2 border-[#F5F1E8]/20 px-4 py-1.5 text-xs font-bold uppercase text-[#9A938A]">{t("cancel", "Cancelar")}</button>
+                    </div>
+                  </div>
+                ) : goal ? (
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="fl-display text-xl leading-tight text-[#F5F1E8]">{goal.title}</span>
+                      <span className="inline-flex shrink-0 items-center gap-1 border-2 border-[#0B0B0D] bg-[#1D1810] px-2 py-0.5 text-[10px] font-extrabold uppercase" style={{ color: accent }}>
+                        <Sparkles className="h-3 w-3" /> {goal.prize_polens} {t("polensWord", "poléns")}
+                      </span>
+                    </div>
+                    {goal.status === "closed" ? (
+                      <div className="mt-3 border-2 border-[#0B0B0D] bg-[#1D1810] px-4 py-3">
+                        <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#9A938A]">{t("goalEnded", "Temporada encerrada")}</p>
+                        {goal.winner ? (
+                          <p className="mt-1 flex items-center gap-2 fl-display text-lg text-[#F5F1E8]">🏆 {goal.winner.name} <span className="text-xs font-bold text-[#9A938A]">· {t("goalWonPrize", "levou")} {goal.prize_polens} {t("polensWord", "poléns")}</span></p>
+                        ) : (
+                          <p className="mt-1 text-sm text-[#9A938A]">{t("goalNoWinner", "Sem vencedor (ninguém pontuou).")}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mt-2 flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                          <span className="inline-flex items-center gap-1"><Target className="h-3 w-3" style={{ color: accent }} /> {metricLabel(goal.metric)}</span>
+                          <span>· {t("goalDaysLeft", "faltam")} {daysLeft(goal.ends_at) ?? 0} {t("goalDaysWord", "dias")}</span>
+                        </div>
+                        {goal.percent != null && (
+                          <div className="mt-2 h-4 w-full overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
+                            <div className="h-full transition-[width] duration-500" style={{ width: `${goal.percent}%`, background: accent }} />
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {showAsLeaderEdit && (
+                      <button type="button" onClick={openGoalForm} className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[#F5F1E8] underline">
+                        {goal.status === "closed" ? t("goalNewSeason", "Nova temporada") : t("goalEdit", "Editar temporada")}
+                      </button>
+                    )}
+                  </div>
+                ) : showAsLeaderEdit ? (
+                  <button type="button" onClick={openGoalForm} className="inline-flex items-center gap-2 border-2 border-dashed border-[#F5F1E8]/25 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#9A938A] hover:border-[#F5F1E8]/60">
+                    <Plus className="h-4 w-4" /> {t("goalStart", "Iniciar temporada")}
+                  </button>
+                ) : (
+                  <p className="text-sm text-[#9A938A]">{t("goalNoneRead", "Nenhuma temporada em andamento.")}</p>
+                )}
+              </Block>
+
+              )}
+
+              {/* SOBRE A COMUNIDADE — o texto do líder. Quem visita lê; só o
+                  líder escreve, e no MESMO Salvar do nome e das cores. */}
+              <Block title={t("profileSection", "Perfil")} icon={<ScrollText className="h-4 w-4" />} accent={accent}>
+                {showAsLeaderEdit ? (
+                  <textarea value={bioDraft} maxLength={200} onChange={(e) => setBioDraft(e.target.value)} placeholder={t("bioPlaceholder", "Conte sobre a comunidade...")} rows={4}
+                    className="w-full bg-transparent text-sm leading-relaxed text-[#F5F1E8]/85 outline-none placeholder:text-[#9A938A]/70" />
+                ) : community.bio ? (
+                  <p className="whitespace-pre-line text-sm leading-relaxed text-[#F5F1E8]/85">{community.bio}</p>
+                ) : (
+                  <p className="text-sm text-[#9A938A]">{t("bioEmptyRead", "O líder ainda não escreveu sobre a comunidade.")}</p>
+                )}
+              </Block>
+            </div>
+            )}
+
+            {/* ─── MEMBROS ────────────────────────────────────────────────────
+                Veio da fila de abas do corpo da página. A lista de quem está
+                no grupo é uma resposta sobre O GRUPO — a mesma pergunta que
+                Perfil, Mural e Números respondem —, e por isso ela mora aqui e
+                não entre o feed e as vitrines.
+
+                ⚠️ A ORDEM É A MESMA DA ABA ANTIGA (`ranked`, por XP): trocar a
+                ordenação junto com a mudança de lugar faria parecer que o
+                merge mexeu em quem está na frente. */}
+            {shownTab === "members" && (
+              <div className="p-4 md:p-5">
+                {members.length === 0 ? <Empty text={t("membersEmpty", "Sem membros ainda.")} /> : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ranked.map((m, i) => (
+                      <div key={m.id_user} className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] p-3">
+                        <span className="fl-display text-xl leading-none text-[#F5F1E8]/30">{i + 1}</span>
+                        <div className="h-12 w-12 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={m.top_profile_avatar || "/placeholder-user.jpg"} alt={m.top_profile_name || m.user_name || ""} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate fl-display text-base leading-tight text-[#F5F1E8]">{m.top_profile_name || m.user_name}</p>
+                          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">
+                            {m.role === "leader" ? <><Crown className="h-3 w-3" style={{ color: accent }} /> {t("roleLeader", "Líder")}</> :
+                             m.role === "vice" ? <><Shield className="h-3 w-3" style={{ color: accent }} /> {t("roleVice", "Vice-líder")}</> :
+                             t("roleMember", "Membro")} · {compact(m.top_profile_xp)} XP
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── NÚMEROS ────────────────────────────────────────────────────
+                O conteúdo exato da gaveta retrátil que existia na borda
+                direita: KPIs, benchmark, destaque e os cinco primeiros do
+                ranking, com o link para o pódio inteiro.
+
+                ⚠️ O GUARD "ESTE ESPAÇO TEM GRUPO?" ERA DO ENVELOPE DA GAVETA e
+                continua sendo do envelope — agora é este `panelTab`. Por
+                dentro, o bloco novo que esquecesse da regra reacenderia a aba
+                sozinho. */}
+            {shownTab === "stats" && (
+              <div className="space-y-4 p-4 md:p-5">
+        <Kpi icon={<Users className="h-4 w-4" />} label={t("membersCount", "membros")} value={community.member_count != null ? compact(community.member_count) : "—"} accent={accent} />
+        <Kpi icon={<Trophy className="h-4 w-4" />} label={t("level", "Nível")} value={community.xp_level != null ? String(community.xp_level) : "—"} accent={accent} />
+        <Kpi icon={<Sparkles className="h-4 w-4" />} label="XP" value={community.xp_total != null ? compact(community.xp_total) : "—"} accent={accent} />
+        {benchmark && (
+          // A sombra dura saiu daqui quando o bloco entrou na coluna: quem
+          // carrega o accent é a barra que abre a coluna, e uma sombra de 6px
+          // no meio de blocos empilhados a 12px de distância faria só este
+          // parecer descolado da fila.
+          <div className="relative border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-5">
+            <div className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#9A938A]">
+              <BarChart3 className="h-4 w-4" /> {t("benchmarkTitle", "Benchmark")}
+            </div>
+            <div className="mt-1 fl-display text-5xl leading-none" style={{ color: accent }}>#{benchmark.position}</div>
+            <p className="mt-1 text-xs font-semibold text-[#9A938A]">
+              {t("benchmarkOf", "de")} {benchmark.total} · {benchmark.enxame_name ? tx.enxame(null, benchmark.enxame_name) : t("communitiesWord", "comunidades")}
+            </p>
+            {benchmark.percentile != null && benchmark.total > 1 && (
+              <span className="mt-2 inline-block border-2 border-[#F5F1E8]/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-[0.14em]" style={{ color: accent }}>
+                {t("benchmarkTop", "top")} {benchmark.percentile}%
+              </span>
+            )}
+          </div>
+        )}
+
+        {topRow && (
+          <Block title={t("spotlightTitle", "Destaque")} icon={<Star className="h-4 w-4" />} accent={accent}>
+            <div className="flex items-center gap-3">
+              <div className="h-14 w-14 shrink-0 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]" style={{ outline: `2px solid ${accent}`, outlineOffset: "1px" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={topRow.avatar_url || "/placeholder-user.jpg"} alt={topRow.name || ""} className="h-full w-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate fl-display text-lg leading-tight text-[#F5F1E8]">{topRow.name}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+                  {seasonOn && goal?.status === "closed" ? `🏆 ${t("spotlightWinner", "Vencedor")}` : seasonOn ? t("spotlightLeader", "Líder da temporada") : t("spotlightSub", "Membro destaque")} · {rowScore(topRow)}{seasonOn && goal?.metric === "posts" ? ` ${t("postsEng", "posts/eng")}` : ""}
+                </p>
+              </div>
+            </div>
+          </Block>
+        )}
+
+        {rankRows.length > 0 && (
+          <Block title={seasonOn ? t("rankingSeasonTitle", "Ranking da temporada") : t("rankingTitle", "Ranking dos membros")} icon={<Trophy className="h-4 w-4" />} accent={accent}>
+            <ol className="space-y-2">
+              {rankRows.slice(0, 5).map((row, i) => (
+                <li key={row.id_user} className="flex items-center gap-2">
+                  <span className="w-5 shrink-0 fl-display text-base text-[#F5F1E8]/40">{i + 1}</span>
+                  <div className="h-8 w-8 shrink-0 overflow-hidden border border-[#0B0B0D] bg-[#1D1810]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={row.avatar_url || "/placeholder-user.jpg"} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#F5F1E8]">{row.name}</span>
+                  <span className="shrink-0 text-[11px] font-extrabold" style={{ color: accent }}>{rowScore(row)}</span>
+                </li>
+              ))}
+            </ol>
+            {seasonOn && goal?.metric === "posts" && (
+              <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[#9A938A]/70">{t("postsEngHint", "posts / engajamento")}</p>
+            )}
+            {/* A gaveta é RESUMO: mostra cinco e diz onde estão os outros. Sem
+                esta linha, uma comunidade de trinta membros pareceria ter cinco
+                — e o pódio inteiro (com a temporada e a lista) mora na página
+                que o pill roxo do headcard abre. */}
+            <Link href={`/comunidades/${id}/ranking`}
+              className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <Trophy className="h-3.5 w-3.5" /> {t("rankingSeeAll", "Ver ranking completo")}
+            </Link>
+          </Block>
+        )}
+              </div>
+            )}
+          </div>
+        </motion.section>
+      )}
+
+      {/* O PAINEL DO ASSUNTO (pet/carro) — o pill laranja. Moldura igual à do
+          painel da comunidade, na cor do pill. O dono edita; quem visita lê. */}
+      {panel === "subject" && subjectKind && (
+        <section className="relative z-10 mx-auto mt-5 max-w-5xl px-0 md:px-10">
+          <div className="border-2 border-[#0B0B0D] bg-[#0F0C08]" style={{ boxShadow: surfaceShadow("#C2410C", 6) }}>
+            <div className="flex items-center justify-between gap-3 border-b-2 border-[#0B0B0D] bg-[#1D1810] px-5 py-3">
+              <span className="inline-flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8]">
+                {subjectKind === "car"
+                  ? <Car className="h-4 w-4" style={{ color: "#FB923C" }} />
+                  : <PawPrint className="h-4 w-4" style={{ color: "#FB923C" }} />}
+                {subjectKind === "car"
+                  ? isLeader ? t("subjectPillMyCar", "Meu carro") : t("subjectPillCar", "O carro")
+                  : isLeader ? t("subjectPillMyPet", "Meu pet") : t("subjectPillPet", "O pet")}
+              </span>
+              <button type="button" onClick={() => setPanel(null)} aria-label={t("panelClose", "Fechar")}
+                className="border-2 border-[#0B0B0D] bg-[#15120E] p-1 text-[#9A938A] transition hover:text-[#F5F1E8]">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-4 p-4 md:p-5">
+              {isLeader ? (
+                <>
+                  {subjectKind === "pet" ? (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {([
+                          ["dog", t("speciesDog", "Cachorro")],
+                          ["cat", t("speciesCat", "Gato")],
+                          ["other", t("speciesOther", "Outro animal")],
+                        ] as const).map(([key, label]) => (
+                          <button key={key} type="button"
+                            onClick={() => setPetDraft((d) => ({ ...d, species: key, breed_slug: "" }))}
+                            className="border-2 border-[#0B0B0D] px-4 py-2 text-xs font-extrabold uppercase tracking-[0.12em]"
+                            style={petDraft.species === key ? { background: accent, color: "#0B0B0D" } : { background: skinHex("#1D1810"), color: skinHex("#9A938A") }}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("breedLabel", "Raça")}</span>
+                        <select value={petDraft.breed_slug}
+                          onChange={(e) => {
+                            const slug = e.target.value
+                            const found = breeds.find((b) => b.slug === slug)
+                            setPetDraft((d) => ({ ...d, breed_slug: slug, breed_label: found ? found.label : d.breed_label }))
+                          }}
+                          className={selectCls}>
+                          <option value="">{petDraft.breed_label || t("breedUnknown", "Não sei / não informar")}</option>
+                          {breeds.map((b) => (
+                            <option key={b.id_breed} value={b.slug}>{b.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("birthYearLabel", "Ano de nascimento")}</span>
+                        <input value={petDraft.birth_year} inputMode="numeric" placeholder="2021"
+                          onChange={(e) => setPetDraft((d) => ({ ...d, birth_year: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                          className={selectCls} />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs leading-snug text-[#9A938A]">
+                        {t("carModelHint", "Escolha a marca e o modelo: é por eles que o filtro “Mesmo carro que o meu” encontra quem tem o mesmo carro.")}
+                      </p>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carBrandLabel", "Marca")}</span>
+                        <select value={carDraft.brand_code}
+                          onChange={(e) => setCarDraft({ brand_code: e.target.value, model_code: "" })}
+                          className={selectCls}>
+                          <option value="">—</option>
+                          {carBrands.map((b) => (
+                            <option key={b.code} value={b.code}>{b.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9A938A]">{t("carModelLabel", "Modelo")}</span>
+                        <select value={carDraft.model_code} disabled={!carDraft.brand_code}
+                          onChange={(e) => setCarDraft((d) => ({ ...d, model_code: e.target.value }))}
+                          className={selectCls}>
+                          <option value="">{carDraft.brand_code ? "—" : t("carPickBrandFirst", "Escolha a marca")}</option>
+                          {carModels.map((m) => (
+                            <option key={m.code} value={m.code}>{m.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  )}
+                  <button type="button" onClick={saveSubject} disabled={savingSubject}
+                    className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#0B0B0D] disabled:opacity-60"
+                    style={{ background: accent }}>
+                    {savingSubject ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t("subjectSave", "Salvar")}
+                  </button>
+                </>
+              ) : (
+                <p className="fl-display text-2xl leading-tight text-[#F5F1E8]">
+                  {subjectChip || t("subjectNotSet", "O dono ainda não informou.")}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {actionMsg && (
+        <div className="relative z-10 mx-auto mt-4 max-w-5xl px-0 md:px-10">
+          <p className="inline-block border-2 border-[#0B0B0D] bg-[#15120E] px-3 py-1.5 text-xs font-bold text-[#F5F1E8]">{actionMsg}</p>
+        </div>
+      )}
+
+      {/* ⚠️ A GAVETA DOS NÚMEROS SAIU DAQUI (2026-09-23).
+
+          Ela era um SIDEBAR com a pontinha da seta na borda direita, e
+          respondia exatamente o que a aba "Números" do painel responde agora:
+          membros, nível, XP, benchmark, destaque e os cinco primeiros do
+          ranking. Com o merge dos três pills num só, manter as duas seria duas
+          portas para os mesmos números — e é assim que uma delas deixa de
+          acompanhar a outra.
+
+          Bloco novo de número desta página entra na ABA `stats` do painel,
+          nunca solto entre o headcard e o feed. */}
+
+      {/* CONTEÚDO — uma coluna só: o que era a barra lateral (benchmark,
+          destaque, ranking) subiu para a coluna retrátil dos números, então o
+          feed ocupa a largura inteira. */}
+      <div className="relative z-10 mx-auto mt-8 max-w-5xl px-0 md:px-10">
+        <div className="space-y-6">
+          {/* ⚠️ O CONDOMÍNIO NÃO MORA MAIS AQUI. Portaria, planta, disputas,
+              avisos, enquetes, moradores e administração foram para dentro do
+              painel do pill MURAL, atrás da foto (decisão do Alex): o corpo da
+              página começa direto nas abas — feed e as duas vitrines —, que é
+              o que todo mundo vem ver. Ver `CondoResidence`/`CondoExtras` lá
+              em cima; montá-los aqui de novo daria duas telas desenhando a
+              mesma planta. */}
+          {/* O ASSUNTO da comunidade (mig 210/211): raça do pet, modelo do
+              carro, jogo. Fica aqui, no modo de edição, e não num modal de
+              cadastro — a comunidade nasce vazia e é batizada dentro de si
+              mesma (decisão do Alex: "já entra numa página pronta editável"). */}
+          {/* O ASSUNTO (raça do pet, modelo do carro) SAIU DAQUI em 2026-09-24:
+              virou o pill laranja do headcard ("Meu carro" / "Meu pet"). Não
+              recolocar — seriam duas portas para o mesmo formulário. */}
+
+          {/* Tabs */}
+          <div ref={tabsRef} className="scroll-mt-4">
+            <div className="flex gap-1 border-b-2 border-[#F5F1E8]/15">
+              {/* O MARCADOR DESLIZA de uma aba para a outra (layoutId) em vez
+                  de piscar — mesma barra de 4 px na cor do dono. */}
+              {communityTabs.map(([key, label]) => (
+                <button key={key} type="button" onClick={() => startTransition(() => setTab(key))} className="relative -mb-0.5 px-4 pb-3 pt-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#F5F1E8] transition-opacity"
+                  style={{ opacity: tab === key ? 1 : 0.5, ...(isBusinessPlatform && tab === key ? neonText(accent, 0.35) : {}) }}>
+                  {label}
+                  {tab === key && (
+                    <motion.span layoutId={`tabbar-${id}`} aria-hidden className="absolute inset-x-0 bottom-0 h-1"
+                      style={{ background: accent, boxShadow: isBusinessPlatform ? `0 0 14px ${accent}` : undefined }}
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }} />
+                  )}
+                </button>
+              ))}
+              {/* O "Site" SAIU DAQUI e virou o pill rosa do headcard (ver
+                  `communityPills`). Não recolocar: seriam duas portas para o
+                  mesmo construtor. */}
+            </div>
+
+            <motion.div
+              key={tab}
+              initial={isBusinessPlatform ? { opacity: 0, y: 12 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6">
+              {/* AS VITRINES (mig 198). Só em comunidade territorial — a fila
+                  de abas já garante isso, mas o guard aqui é o que impede a
+                  tela de tentar desenhá-las quando um deep-link antigo pedir
+                  uma aba que a modalidade não tem. Quem publica é o MORADOR
+                  (`canPost` já resolve as duas modalidades); quem não é, lê. */}
+              {tab === "jobs" ? (
+                <CommunityJobs communityId={id} accent={accent} />
+              ) : tab === "debts" ? (
+                <CommunityDebts communityId={id} accent={accent} />
+              ) : tab === "services" || (tab === "products" && !isBusinessPlatform) ? (
+                <>
+                  {/* ⚠️ A PORTA DE "MINHAS COMPRAS" MORA AQUI, e sem ela a
+                      venda não teria FIM: é naquela tela que quem comprou
+                      confirma o recebimento (ou contesta) e quem vendeu marca
+                      "entreguei". Sem um link, o dinheiro ficaria retido até o
+                      varredor concluir sozinho, e a disputa — que só vale
+                      enquanto o repasse está preso — expiraria sem que ninguém
+                      soubesse que ela existia. Página sem link é página que
+                      ninguém alcança.
+
+                      ⚠️ E A PORTA NÃO PASSA PELA FLAG, de propósito — só por
+                      ser morador. `vitrine_venda` barra COMPRAR, nunca
+                      CONCLUIR: gateando o link aqui, desligar o interruptor com
+                      pedidos em andamento tiraria de quem comprou o único
+                      caminho para confirmar o recebimento e para abrir
+                      contestação — ou seja, PRENDERIA dinheiro que já entrou,
+                      que é exatamente o que o kill-switch não pode fazer. A
+                      própria página também não tem gate, pela mesma razão. */}
+                  {canPublishListing && isTerritorial && (
+                    <div className="mb-4 flex justify-end">
+                      <Link
+                        href={`/comunidades/${id}/compras`}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8]"
+                      >
+                        <ShoppingBag className="h-3.5 w-3.5" />
+                        {t("myOrdersCta", "Minhas compras e vendas")}
+                      </Link>
+                    </div>
+                  )}
+                <CommunityListings
+                  communityId={id}
+                  kind={tab === "services" ? "service" : "product"}
+                  accent={accent}
+                  canPublish={canPublishListing}
+                  isAdmin={canAdminister || !!community.viewer_is_admin}
+                  currentUserId={currentUserId}
+                  // ⚠️ COMPRAR EXIGE SER MORADOR, como anunciar: o backend
+                  // recusa quem está de fora, e o botão precisa concordar com
+                  // ele — senão é porta pintada.
+                  canBuy={sellEnabled && canPublishListing}
+                />
+                </>
+              ) : showBusinessAgenda && tab === "agenda" ? (
+                <BusinessAgenda profileId={community.leader_store_profile_id!} accent={accent} />
+              ) : isBusinessPlatform && tab === "shop" ? (
+                // A VITRINE (repaginada N5): mesma lista de produtos do
+                // perfil-conta do líder, vestida de vitrine acesa. O líder
+                // GERENCIA, o resto COMPRA (retirada com o vendedor, mig 264).
+                <BusinessShop
+                  profileId={community.leader_store_profile_id ?? null}
+                  isLeader={isLeader}
+                  accent={accent}
+                />
+              ) : feedLocked ? (
+                <div className="border-2 border-[#0B0B0D] bg-[#15120E] px-6 py-14 text-center">
+                  <Lock className="mx-auto h-10 w-10" style={{ color: accent }} />
+                  <p className="mt-4 fl-display text-2xl text-[#F5F1E8]">{t("lockedTitle", "Comunidade privada")}</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-[#9A938A]">
+                    {t("lockedText", "O feed é exclusivo para membros. Assine para entrar e ver tudo que acontece aqui dentro.")}
+                  </p>
+                  <button type="button" disabled={busy} onClick={startMembershipCheckout}
+                    className="mt-5 inline-flex items-center gap-2 border-2 border-[#0B0B0D] px-6 py-2.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-60"
+                    style={{ background: accent }}>
+                    <Lock className="h-4 w-4" /> {t("subscribeJoin", "Assinar")} · {fmtBRL(monthlyCents)}/{t("perMonthShort", "mês")}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {bees.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto pb-1">
+                      {bees.map((b) => (
+                        <Link
+                          key={b.id_story}
+                          href={`/bees?bee=${encodeURIComponent(b.id_story)}`}
+                          className="group shrink-0"
+                          title={b.caption || undefined}
+                        >
+                          <span
+                            className="block h-28 w-20 overflow-hidden border-2 border-[#0B0B0D] bg-[#1D1810]"
+                            style={{ outline: `2px solid ${accent}`, outlineOffset: "2px" }}
+                          >
+                            {b.thumbnail_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={b.thumbnail_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="grid h-full w-full place-items-center">
+                                <Hexagon className="h-6 w-6" style={{ color: accent }} />
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-1 block max-w-20 truncate text-[10px] font-bold text-[#9A938A]">
+                            {b.profile_name || b.author_username || ""}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* O recorte do feed das plataformas de assunto (migs 259 e
+                      262) — carro por modelo, pet por raça. UM componente para
+                      os dois: só os rótulos mudam. */}
+                  {isSubjectPlatform && (
+                    <div role="group" aria-label={isCarPlatform ? t("carFeedScopeAria", "Filtrar o feed de carros") : t("petFeedScopeAria", "Filtrar o feed de pets")} className="flex flex-wrap gap-2">
+                      {(["all", "same"] as const).map((sc) => {
+                        const on = subjectScope === sc
+                        return (
+                          <button
+                            key={sc}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => setSubjectScope(sc)}
+                            className="border-2 border-[#0B0B0D] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em]"
+                            style={on ? { background: accent, color: "#0B0B0D" } : { background: "#15120E", color: "#F5F1E8" }}
+                          >
+                            {isCarPlatform
+                              ? sc === "all"
+                                ? t("carFeedAll", "Todos os carros")
+                                : t("carFeedSameModel", "Mesmo carro que o meu")
+                              : sc === "all"
+                                ? t("petFeedAll", "Todos os pets")
+                                : t("petFeedSameBreed", "Mesmo pet que o meu")}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Feed unificado (posts + bees + recados) — cards padrão do Freelandoo */}
+                  {loadingPosts ? (
+                    <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#9A938A]" /></div>
+                  ) : posts.length === 0 && isSubjectPlatform && needsSubjectMatch ? (
+                    // "O mesmo que o meu" sem nenhum carro com modelo / pet com
+                    // raça: a lista vazia tem conserto, e a tela diz qual é.
+                    <Empty text={isCarPlatform
+                      ? t("carFeedNeedsModel", "Escolha o modelo de um dos seus carros para ver quem tem o mesmo.")
+                      : t("petFeedNeedsBreed", "Escolha a raça de um dos seus pets (no botão Meu pet) para ver quem tem a mesma.")} />
+                  ) : posts.length === 0 ? (
+                    // FEED VAZIO: o convite ocupa o lugar da caixa "ainda não
+                    // há publicações" em vez de ficar ao lado dela — a caixa
+                    // dizia que faltava alguma coisa sem dar o que fazer, e o
+                    // "+" do headcard é pequeno demais para ser a resposta.
+                    // Quem não pode publicar continua vendo só o aviso: um
+                    // convite gigante que só devolve recusa é pior que nada.
+                    canPost ? (
+                      <PublishMenuButton
+                        variant="block"
+                        text={t("publishFeedCta", "Postar")}
+                        accent={accent}
+                        label={t("composeCta", "Publicar")}
+                        canPost={canPost}
+                        blockedMessage={publishBlockedMessage}
+                        onBlocked={setActionMsg}
+                        items={publishItems}
+                        onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+                      />
+                    ) : (
+                      <Empty text={t("feedEmptyGroup", "Ainda não há publicações. Seja o primeiro!")} />
+                    )
+                  ) : (
+                    <div className="space-y-3">
+                      {/* COM PUBLICAÇÕES: a mesma porta vira uma faixa fina no
+                          topo da lista. Ela não pode competir com o conteúdo
+                          que já está lá — quem chega aqui veio ler, não
+                          publicar. */}
+                      {canPost && (
+                        <PublishMenuButton
+                          variant="bar"
+                          text={t("publishFeedCta", "Postar")}
+                          accent={accent}
+                          label={t("composeCta", "Publicar")}
+                          canPost={canPost}
+                          blockedMessage={publishBlockedMessage}
+                          onBlocked={setActionMsg}
+                          items={publishItems}
+                          onPick={(kind) => (kind === "recado" ? openRecado() : openComposer(kind))}
+                        />
+                      )}
+                      <div className="overflow-hidden border-2 border-[#0B0B0D] bg-[#0b0804]">
+                      {posts.map((post) => (
+                        <PortfolioPostCard
+                          key={post.post_id}
+                          post={post}
+                          filters={FEED_FILTERS}
+                          commentsCount={post.comments_count ?? 0}
+                          hideCommunityLink
+                          onDeleteRecado={deleteRecado}
+                          canDeleteRecado={canAdminister || (!!currentUserId && post.author_user_id === currentUserId)}
+                          shareUrlOverride={
+                            isMember && currentUserId && typeof window !== "undefined"
+                              ? `${window.location.origin}/cs/${id}/${currentUserId}/${post.post_id}`
+                              : undefined
+                          }
+                          onOpenComments={openPostComments}
+                          onLikeChange={handleLikeChange}
+                        />
+                      ))}
+                      </div>
+                    </div>
+                  )}
+                  {postsHasMore && (
+                    <div className="flex justify-center">
+                      <button type="button" disabled={loadingMorePosts} onClick={() => fetchPosts(false, postsCursor)}
+                        className="inline-flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#15120E] px-5 py-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#F5F1E8] disabled:opacity-60">
+                        {loadingMorePosts ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {t("loadMore", "Ver mais")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Recado (nota só-texto, até 2000 chars) */}
+      {recadoOpen && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4" onClick={() => !postingRecado && setRecadoOpen(false)}>
+          <div className="w-full max-w-md border-2 border-[#0B0B0D] bg-[#15120E]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b-2 border-[#F5F1E8]/12 px-4 py-3">
+              <span className="inline-flex items-center gap-2 fl-display text-lg text-[#F2B705]"><MessageSquare className="h-4 w-4" /> {t("recadoTitle", "Novo recado")}</span>
+              <button type="button" onClick={() => setRecadoOpen(false)} aria-label={t("cancel", "Cancelar")} className="grid h-8 w-8 place-items-center text-[#9A938A] hover:text-[#F5F1E8]"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="px-4 py-4">
+              <textarea value={recadoBody} maxLength={2000} rows={6} autoFocus onChange={(e) => setRecadoBody(e.target.value.slice(0, 2000))}
+                placeholder={t("recadoPlaceholder", "Escreva um recado para a comunidade...")}
+                className="w-full resize-none border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2.5 text-sm leading-relaxed text-[#F5F1E8] outline-none placeholder:text-[#9A938A]/70" />
+              <div className="mt-1 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9A938A]">{t("recadoOnlyHere", "Fica só na comunidade")}</span>
+                <span className="text-[10px] tabular-nums text-[#9A938A]/70">{recadoBody.length}/2000</span>
+              </div>
+              <button type="button" disabled={postingRecado || !recadoBody.trim()} onClick={postRecado}
+                className="mt-3 flex w-full items-center justify-center gap-2 border-2 border-[#0B0B0D] bg-[#F2B705] px-4 py-2.5 text-sm font-extrabold uppercase tracking-[0.12em] text-[#0B0B0D] disabled:opacity-50">
+                {postingRecado ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />} {t("recadoPublish", "Postar recado")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Painel de comentários + composer */}
+      <CommentsPanel
+        postId={openCommentsFor}
+        open={!!openCommentsFor}
+        onClose={() => setOpenCommentsFor(null)}
+        loginNextPath={`/comunidades/${id}`}
+        onCountChange={(pid, delta) => setPosts((prev) => prev.map((p) => p.post_id === pid ? { ...p, comments_count: Math.max(0, (p.comments_count ?? 0) + delta) } : p))}
+      />
+      {composerOpen && (
+        <MediaComposer
+          open
+          mode={composerKind}
+          communityId={id}
+          communityName={community.display_name}
+          // ESPELHO de `CommunityPolicy.contentIsExclusive` (backend): privada,
+          // condomínio e bairro guardam o que se publica lá dentro. Aqui o
+          // espelho serve só para NÃO OFERECER uma escolha que o backend
+          // recusaria — quem decide continua sendo o backend, então errar para
+          // mais neste lado esconde uma opção, nunca abre uma porta.
+          communityExclusiveOnly={isPrivate || isCondo || community.kind === "neighborhood"}
+          // ⚠️ SEM PADRÃO EXCLUSIVO (mig 232). Ele existia porque o
+          // espaço era de UMA pessoa: guardar ali dentro era o esperado. Numa
+          // plataforma pública de todos, começar marcado em "só na comunidade"
+          // tiraria do feed geral, sem ninguém pedir, tudo que se publica no
+          // maior ambiente do site. O Financeiro — a outra plataforma — nunca
+          // teve esse padrão, e a régua da casa desde 2026-09-06 é comunidade
+          // + feed geral.
+          onClose={() => setComposerOpen(false)}
+          onPosted={() => {
+            setComposerOpen(false)
+            // O bee não entra no feed de portfólio — ele vive na faixa. Por
+            // isso as duas recargas: sem a segunda, publicar um bee pareceria
+            // não ter feito nada.
+            fetchPosts(true)
+            fetchBees()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * A câmera embaixo da foto da comunidade (pedido do Alex, 2026-09-27): troca a
+ * foto SÓ desta comunidade. Sem foto própria, o clique abre o seletor direto;
+ * com foto própria, abre as duas saídas — trocar de novo ou voltar a herdar a
+ * foto de perfil. Mesmo desenho do badge da foto nas plataformas.
+ */
+function PhotoOverrideBadge({
+  hasOwnPhoto, busy, onFile, onReset, t,
+}: {
+  hasOwnPhoto: boolean
+  busy: boolean
+  onFile: (f: File) => void
+  onReset: () => void
+  t: (key: string, fallback: string) => string
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  const [open, setOpen] = useState(false)
+  const label = t("changePhotoHere", "Trocar a foto só nesta comunidade")
+  return (
+    <>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => (hasOwnPhoto ? setOpen((v) => !v) : ref.current?.click())}
+        aria-label={label}
+        title={label}
+        className="absolute -bottom-2 -right-2 z-20 inline-flex h-8 w-8 items-center justify-center border-2 border-[#0B0B0D] bg-[#F1EDE2] text-[#0B0B0D] shadow-[2px_2px_0_0_#0B0B0D] transition hover:bg-[#F2B705] disabled:opacity-60"
+      >
+        <Camera className="h-4 w-4" />
+      </button>
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = "" }} />
+      {open && (
+        <>
+          <div aria-hidden className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div role="menu" className="absolute left-full top-full z-50 -mt-6 ml-2 flex w-56 max-w-[calc(100vw-10rem)] flex-col border-2 border-[#0B0B0D] bg-[#15120E] p-2" style={{ boxShadow: "4px 4px 0 0 #0B0B0D" }}>
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); ref.current?.click() }}
+              className="mb-1 flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <Camera className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("changePhotoAgain", "Trocar foto")}
+            </button>
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onReset() }}
+              className="flex items-center gap-2 border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2 text-left text-[11px] font-extrabold uppercase tracking-[0.1em] text-[#F5F1E8] hover:bg-[#241d12]">
+              <UserRound className="h-4 w-4 shrink-0 text-[#F2B705]" /> {t("usePhotoOfProfile", "Usar a foto do meu perfil")}
+            </button>
+            <p className="px-1 pt-2 text-[10px] font-semibold leading-snug text-[#9A938A]">
+              {t("photoOnlyHereHint", "A troca vale só aqui. Nas outras comunidades continua a foto do seu perfil.")}
+            </p>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
+function ImageDrop({ onFile, label, small, busy }: { onFile: (f: File) => void; label: string; small?: boolean; busy?: boolean }) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) onFile(f) }}
+      onClick={() => ref.current?.click()}
+      className={`absolute inset-0 z-30 flex cursor-pointer flex-col items-center justify-center gap-1 bg-black/50 text-white transition-opacity hover:opacity-100 ${busy ? "opacity-100" : "opacity-0"} ${small ? "text-[10px]" : "text-xs"}`}
+    >
+      {busy ? <Loader2 className={small ? "h-5 w-5 animate-spin" : "h-7 w-7 animate-spin"} /> : <ImagePlus className={small ? "h-5 w-5" : "h-7 w-7"} />}
+      <span className="font-bold uppercase tracking-wide">{label}</span>
+      <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = "" }} />
+    </div>
+  )
+}
+
+/**
+ * Um número da comunidade. Nasceu numa fita de três colunas e hoje é uma LINHA
+ * da coluna retrátil: rótulo à esquerda, número à direita. Empilhados, os três
+ * viram a fila que o desenho pede — membros, nível e XP, um em cima do outro.
+ */
+function Kpi({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: string }) {
+  return (
+    <div className="flex items-center gap-3 border-2 border-[#0B0B0D] bg-[#15120E] px-4 py-3">
+      <span className="shrink-0" style={{ color: accent }}>{icon}</span>
+      <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#9A938A]">{label}</span>
+      <span className="fl-display text-2xl leading-none text-[#F5F1E8]">{value}</span>
+    </div>
+  )
+}
+
+function Block({ title, icon, accent, children }: { title: string; icon: React.ReactNode; accent: string; children: React.ReactNode }) {
+  return (
+    <div className="relative border-2 border-[#0B0B0D] bg-[#15120E] p-5">
+      <div className="mb-3 flex items-center gap-2 border-b border-[#F5F1E8]/10 pb-2">
+        <span className="flex flex-1 items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#F5F1E8]"><span style={{ color: accent }}>{icon}</span>{title}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function MiniStat({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div className="border-2 border-[#0B0B0D] bg-[#1D1810] px-3 py-2">
+      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#9A938A]">{label}</p>
+      <p className="mt-0.5 truncate text-sm font-extrabold" style={{ color: accent }}>{value}</p>
+    </div>
+  )
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="border-2 border-dashed border-[#F5F1E8]/20 bg-[#15120E]/40 py-16 text-center text-xs font-bold uppercase tracking-[0.12em] text-[#9A938A]">
+      {text}
+    </div>
+  )
+}

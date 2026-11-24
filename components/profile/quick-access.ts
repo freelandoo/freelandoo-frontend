@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useState } from "react"
 import {
   Baby,
-  Building2,
   Car,
   DollarSign,
   Dumbbell,
   Gamepad2,
+  MapPin,
   PawPrint,
-  Signpost,
   Star,
   type LucideIcon,
 } from "lucide-react"
@@ -38,8 +37,10 @@ export type QuickKey =
   | "games"
   | "pet"
   | "car"
-  | "condo"
-  | "neighborhood"
+  // Minha cidade (2026-11-24): UM pill para bairro e condomínio. As chaves
+  // antigas `condo`/`neighborhood` gravadas antes viram `city` ao ler
+  // (`LEGACY_ALIAS`, espelho do backend) — nunca dois pills para o mesmo lugar.
+  | "city"
   | "children"
 
 export type QuickEntry = {
@@ -69,18 +70,20 @@ export const QUICK_ENTRIES: Record<QuickKey, QuickEntry> = {
   pet: { key: "pet", icon: PawPrint, labelKey: "myPet", fallback: "Meu pet", bg: "#EAD7B7", bgHover: "#DDC49C", fg: "#4A3320" },
   // O vermelho da pele `.fl-car`.
   car: { key: "car", icon: Car, labelKey: "myCar", fallback: "Meu carro", bg: "#B91C1C", bgHover: "#991B1B", fg: CREAM },
-  // Cinza clarinho — a MESMA cor da linha "Meu condomínio" no menu da foto.
-  condo: { key: "condo", icon: Building2, labelKey: "myCondo", fallback: "Meu condomínio", bg: "#E4E4E7", bgHover: "#D4D4D8", fg: INK },
-  // O azul do anexo do bairro (`.fl-hood`).
-  neighborhood: { key: "neighborhood", icon: Signpost, labelKey: "myStreet", fallback: "Meu bairro", bg: "#2982CC", bgHover: "#1F6DB0", fg: CREAM },
+  // Minha cidade: o azul do bairro (`.fl-hood`), que era a linha "Meu bairro"
+  // — o cinza do condomínio sumia no creme do menu.
+  city: { key: "city", icon: MapPin, labelKey: "myCity", fallback: "Minha cidade", bg: "#2982CC", bgHover: "#1F6DB0", fg: CREAM },
   // O verde-petróleo do painel parental.
   children: { key: "children", icon: Baby, labelKey: "myChildren", fallback: "Meus filhos", bg: "#0E6B72", bgHover: "#0B5359", fg: CREAM },
 }
 
 /** Ordem de exibição no gerenciador. */
 export const QUICK_ORDER: QuickKey[] = [
-  "business", "wallet", "fitness", "games", "pet", "car", "condo", "neighborhood", "children",
+  "business", "wallet", "fitness", "games", "pet", "car", "city", "children",
 ]
+
+/** Chaves gravadas antes de Minha cidade que hoje abrem outro pill. */
+const LEGACY_ALIAS: Record<string, QuickKey> = { condo: "city", neighborhood: "city" }
 
 /**
  * A pilha de quem NUNCA escolheu — a que existia antes do gerenciador. Sem ela,
@@ -125,8 +128,7 @@ export function useQuickAvailability(): Record<QuickKey, boolean> {
     games: gamesFlag,
     pet: petFlag,
     car: carFlag,
-    condo: condoFlag,
-    neighborhood: hoodFlag,
+    city: condoFlag || hoodFlag,
     children: true,
   }
 }
@@ -167,8 +169,9 @@ function sanitizePublic(v: unknown): QuickKey[] {
 function sanitize(v: unknown): QuickKey[] | null {
   if (!Array.isArray(v)) return null
   const out: QuickKey[] = []
-  for (const k of v) {
-    if (QUICK_ORDER.includes(k as QuickKey) && !out.includes(k as QuickKey)) out.push(k as QuickKey)
+  for (const raw of v) {
+    const k = (LEGACY_ALIAS[String(raw)] ?? raw) as QuickKey
+    if (QUICK_ORDER.includes(k) && !out.includes(k)) out.push(k)
     if (out.length >= QUICK_PILL_MAX) break
   }
   return out

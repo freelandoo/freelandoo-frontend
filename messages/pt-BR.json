@@ -6053,7 +6053,14 @@
     "myVoteContested": "Você não reconheceu",
     "emptyTitle": "Você ainda não declarou onde mora",
     "genericError": "Algo deu errado. Tente de novo.",
-    "privacyNote": "Seu endereço nunca aparece para outros moradores — eles veem só o bairro."
+    "privacyNote": "Seu endereço nunca aparece para outros moradores — eles veem só o bairro.",
+    "loadFailedTitle": "Não deu para ler seus vínculos agora.",
+    "loadFailedBody": "Nada foi perdido. Confira a conexão e tente de novo.",
+    "retryCta": "Tentar de novo",
+    "cepChecking": "Conferindo o CEP…",
+    "cepNeighborhood": "bairro",
+    "cepNotFound": "CEP não encontrado. Confira os números.",
+    "cepUnavailable": "Não deu para conferir o CEP agora. Você pode declarar mesmo assim; o bairro é confirmado depois."
   },
   "MediaCrop": {
     "orientationGroup": "Orientação do post",
@@ -6144,7 +6151,8 @@
     "pillPublicOnAria": "{pill} aparece para quem visita. Esconder",
     "pillPublicOffAria": "{pill} está escondido de quem visita. Mostrar",
     "visitorFitness": "Esportes",
-    "visitorFitnessAria": "Abrir a academia de {who}"
+    "visitorFitnessAria": "Abrir a academia de {who}",
+    "myCity": "Minha cidade"
   },
   "CommunitySite": {
     "modeEditing": "Editando",
@@ -16153,5 +16161,44 @@
     "saveAndContinue": "Salvar e continuar",
     "retry": "Tentar de novo",
     "loadFail": "Não foi possível falar com a Freelandoo. Tente de novo."
+  },
+  "City": {
+    "title": "Minha cidade",
+    "tabsAria": "Seções de Minha cidade",
+    "tabHood": "Meu bairro",
+    "tabCondo": "Meu condomínio",
+    "chipsAria": "Qual comunidade abrir",
+    "livesInHouse": "Moro em casa",
+    "livesInCondo": "Moro em condomínio",
+    "chooseHousing": "Escolher moradia",
+    "switchCta": "Trocar",
+    "switchNote": "Trocar só muda a aba que abre primeiro. Sua residência, seu condomínio e seus pedidos continuam onde estão.",
+    "pickTitle": "Onde você mora?",
+    "pickSubtitle": "Escolha uma vez. Dá para trocar depois sem perder nada.",
+    "houseTitle": "Moro em casa",
+    "houseDesc": "Informe sua rua e número. Você entra no seu bairro: vizinhos, mural, vitrine, delivery e ajuda com mudança.",
+    "condoTitle": "Moro em condomínio",
+    "condoDesc": "Encontre ou cadastre seu condomínio e escolha seu apartamento. Avisos, enquetes, vagas, vitrine e delivery do prédio.",
+    "myResidence": "Minha residência e vizinhos",
+    "needsAttention": "pendente",
+    "previewNote": "Você está vendo um condomínio da busca. Para entrar, escolha seu apartamento na planta.",
+    "backToSearch": "Voltar à busca",
+    "findCondoTitle": "Encontre seu condomínio",
+    "findCondoHelp": "Busque pelo nome do condomínio, pelo bairro ou pela cidade.",
+    "findCondoLabel": "Nome, bairro ou cidade do condomínio",
+    "findCondoPlaceholder": "Ex.: Residencial Jardins",
+    "findCondoError": "A busca falhou. Confira a conexão e tente de novo.",
+    "findCondoEmpty": "Nenhum condomínio com esse nome ainda.",
+    "noCondoTitle": "Seu condomínio não está aqui?",
+    "noCondoBody": "Cadastre o prédio: nome e endereço. Bairro e cidade aparecem na busca; rua e número só para moradores confirmados.",
+    "createCondoCta": "Cadastrar meu condomínio",
+    "saveError": "Não deu para salvar agora. Tente de novo.",
+    "anonTitle": "Entre na sua conta",
+    "anonBody": "Minha cidade reúne seu bairro e seu condomínio. Entre para ver os seus.",
+    "loginCta": "Entrar",
+    "loadErrorTitle": "Não deu para abrir Minha cidade agora.",
+    "loadErrorBody": "Seu bairro e seu condomínio continuam guardados. Confira a conexão e tente de novo.",
+    "retryCta": "Tentar de novo",
+    "disabledTitle": "Recurso indisponível no momento."
   }
 }

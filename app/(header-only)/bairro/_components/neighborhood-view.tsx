@@ -65,7 +65,22 @@ function authHeaders(): HeadersInit {
     : { "Content-Type": "application/json" }
 }
 
-export function NeighborhoodView() {
+/**
+ * `embedded` (Minha cidade, 2026-11-24): a mesma tela DENTRO da aba Meu
+ * bairro — sem casca de página nem título (o ambiente já tem os dois), e sem
+ * mandar para `/comunidades/<id>` ao entrar/criar: quem abre a comunidade é a
+ * própria aba (`onOpen`). `onChanged` avisa o ambiente que os vínculos
+ * mudaram (declarou, saiu, entrou, criou) para ele reler `/me/city`.
+ */
+export function NeighborhoodView({
+  embedded = false,
+  onChanged,
+  onOpen,
+}: {
+  embedded?: boolean
+  onChanged?: () => void
+  onOpen?: (id_profile: string) => void
+} = {}) {
   const t = useTranslations("Neighborhood")
   const router = useRouter()
   const enabled = useFeature("bairro")
@@ -75,10 +90,44 @@ export function NeighborhoodView() {
   const [residences, setResidences] = useState<MyResidence[]>([])
   const [pending, setPending] = useState<PendingNeighbor[]>([])
   const [busy, setBusy] = useState<string | null>(null)
+  // Falha ao LER não é "não tenho residência": sem isto a tela oferecia
+  // declarar de novo a quem já mora — e a segunda declaração entraria como
+  // pendente na mesma unidade.
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const [cep, setCep] = useState("")
   const [numero, setNumero] = useState("")
   const [complemento, setComplemento] = useState("")
+  // PRÉVIA DO CEP (Minha cidade, 2026-11-24): a rua, o bairro e a cidade
+  // aparecem ANTES de declarar — a mesma consulta que a declaração faz, então o
+  // bairro mostrado é o bairro em que a pessoa vai cair. ViaCEP fora: a tela
+  // diz que não deu para conferir e deixa declarar (o servidor já trata), sem
+  // inventar bairro.
+  type CepPreview = { logradouro: string | null; bairro: string; municipio: string | null; uf: string | null }
+  const [cepPreview, setCepPreview] = useState<
+    { state: "idle" } | { state: "loading" } | { state: "ok"; data: CepPreview } | { state: "notfound" } | { state: "unavailable" }
+  >({ state: "idle" })
+  const cepDigits = cep.replace(/\D/g, "")
+  useEffect(() => {
+    if (cepDigits.length !== 8) {
+      setCepPreview({ state: "idle" })
+      return
+    }
+    let cancelled = false
+    setCepPreview({ state: "loading" })
+    fetch(`/api/residences/cep/${cepDigits}`, { headers: authHeaders() })
+      .then(async (r) => {
+        const d = await r.json().catch(() => null)
+        if (cancelled) return
+        if (r.status === 404) return setCepPreview({ state: "notfound" })
+        if (!r.ok || !d?.preview) return setCepPreview({ state: "unavailable" })
+        setCepPreview({ state: "ok", data: d.preview })
+      })
+      .catch(() => !cancelled && setCepPreview({ state: "unavailable" }))
+    return () => {
+      cancelled = true
+    }
+  }, [cepDigits])
 
   const load = useCallback(async () => {
     try {
@@ -87,6 +136,11 @@ export function NeighborhoodView() {
         fetch("/api/residences/mine", { headers: authHeaders() }),
         fetch("/api/residences/pending", { headers: authHeaders() }),
       ])
+      if (!n.ok || !r.ok || !p.ok) {
+        setLoadFailed(true)
+        return
+      }
+      setLoadFailed(false)
       const nj = await n.json().catch(() => ({}))
       const rj = await r.json().catch(() => ({}))
       const pj = await p.json().catch(() => ({}))
@@ -94,11 +148,11 @@ export function NeighborhoodView() {
       setResidences(Array.isArray(rj?.residences) ? rj.residences : [])
       setPending(Array.isArray(pj?.pending) ? pj.pending : [])
     } catch {
-      toast.error(t("genericError", "Algo deu errado. Tente de novo."))
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
-  }, [t])
+  }, [])
 
   useEffect(() => {
     void load()
@@ -135,6 +189,7 @@ export function NeighborhoodView() {
       setNumero("")
       setComplemento("")
       await load()
+      onChanged?.()
     } finally {
       setBusy(null)
     }
@@ -177,6 +232,11 @@ export function NeighborhoodView() {
         return
       }
       const id = data?.community?.id_profile
+      if (embedded) {
+        onChanged?.()
+        if (id) onOpen?.(id)
+        return
+      }
       if (id) router.push(`/comunidades/${id}`)
     } finally {
       setBusy(null)
@@ -195,6 +255,11 @@ export function NeighborhoodView() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         toast.error(data?.error || t("genericError", "Algo deu errado. Tente de novo."))
+        return
+      }
+      if (embedded) {
+        onChanged?.()
+        onOpen?.(row.id_profile)
         return
       }
       router.push(`/comunidades/${row.id_profile}`)
@@ -216,6 +281,7 @@ export function NeighborhoodView() {
         return
       }
       await load()
+      onChanged?.()
     } finally {
       setBusy(null)
     }
@@ -262,20 +328,39 @@ export function NeighborhoodView() {
   }
 
   return (
-    <div className="fl-sharp min-h-[100dvh] bg-[#0b0804] text-[#F5F1E8]">
-      <div className="mx-auto w-full max-w-3xl px-4 py-8 space-y-6">
-        <header className="space-y-2">
-          <PageBackLink href="/account" className="mb-3" />
-          <h1 className="fl-display text-3xl font-black uppercase tracking-tight">
-            {t("title", "Meu bairro")}
-          </h1>
-          <p className="text-sm text-[#F5F1E8]/70">
-            {t("subtitle", "A comunidade de quem mora perto de você.")}
-          </p>
-        </header>
+    <div className={embedded ? "text-[#F5F1E8]" : "fl-sharp min-h-[100dvh] bg-[#0b0804] text-[#F5F1E8]"}>
+      <div className={embedded ? "space-y-4" : "mx-auto w-full max-w-3xl px-4 py-8 space-y-6"}>
+        {!embedded && (
+          <header className="space-y-2">
+            <PageBackLink href="/account" className="mb-3" />
+            <h1 className="fl-display text-3xl font-black uppercase tracking-tight">
+              {t("title", "Meu bairro")}
+            </h1>
+            <p className="text-sm text-[#F5F1E8]/70">
+              {t("subtitle", "A comunidade de quem mora perto de você.")}
+            </p>
+          </header>
+        )}
 
         {loading ? (
           <p className="text-sm text-[#F5F1E8]/60">{t("loading", "Carregando…")}</p>
+        ) : loadFailed ? (
+          <section className="border-2 border-[#0B0B0D] bg-[#15120E] p-4">
+            <p className="text-sm font-bold">{t("loadFailedTitle", "Não deu para ler seus vínculos agora.")}</p>
+            <p className="mt-1 text-xs text-[#F5F1E8]/60">
+              {t("loadFailedBody", "Nada foi perdido. Confira a conexão e tente de novo.")}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true)
+                void load()
+              }}
+              className="mt-3 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-xs font-black uppercase text-[#0b0804]"
+            >
+              {t("retryCta", "Tentar de novo")}
+            </button>
+          </section>
         ) : (
           <>
             {/* ─── meus vínculos ─────────────────────────────────────────── */}
@@ -335,7 +420,15 @@ export function NeighborhoodView() {
                         </p>
                       ) : null}
                     </div>
-                    {row.is_member ? (
+                    {row.is_member && embedded && onOpen ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpen(row.id_profile as string)}
+                        className="shrink-0 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-xs font-black uppercase text-[#0b0804]"
+                      >
+                        {t("openCta", "Abrir")}
+                      </button>
+                    ) : row.is_member ? (
                       <a
                         href={`/comunidades/${row.id_profile}`}
                         className="shrink-0 border-2 border-[#0B0B0D] bg-[#F2B705] px-3 py-1.5 text-xs font-black uppercase text-[#0b0804]"
@@ -432,6 +525,27 @@ export function NeighborhoodView() {
                     className="w-full border-2 border-[#0B0B0D] bg-[#0b0804] px-2 py-1.5 text-sm text-[#F5F1E8] outline-none focus:border-[#F2B705]"
                   />
                 </label>
+                {cepPreview.state !== "idle" && (
+                  <p className="sm:col-span-3 flex items-start gap-2 text-xs" aria-live="polite">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#F2B705]" aria-hidden />
+                    {cepPreview.state === "loading" ? (
+                      <span className="text-[#F5F1E8]/60">{t("cepChecking", "Conferindo o CEP…")}</span>
+                    ) : cepPreview.state === "ok" ? (
+                      <span>
+                        {cepPreview.data.logradouro ? <strong>{cepPreview.data.logradouro}</strong> : null}
+                        {cepPreview.data.logradouro ? " — " : ""}
+                        {t("cepNeighborhood", "bairro")} <strong>{cepPreview.data.bairro}</strong>,{" "}
+                        {cepPreview.data.municipio}/{cepPreview.data.uf}
+                      </span>
+                    ) : cepPreview.state === "notfound" ? (
+                      <span className="text-[#ec4899]">{t("cepNotFound", "CEP não encontrado. Confira os números.")}</span>
+                    ) : (
+                      <span className="text-[#F5F1E8]/60">
+                        {t("cepUnavailable", "Não deu para conferir o CEP agora. Você pode declarar mesmo assim; o bairro é confirmado depois.")}
+                      </span>
+                    )}
+                  </p>
+                )}
                 <div className="sm:col-span-3">
                   <button
                     type="submit"

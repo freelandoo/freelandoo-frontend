@@ -329,9 +329,6 @@ export function HeadcardPills({
           router.push(`/comunidades/${mine}`)
           return
         }
-        // Condomínio e bairro se cadastram por tela própria (endereço, CEP).
-        if (key === "condo") return router.push("/comunidades/criar?tipo=condo")
-        if (key === "neighborhood") return router.push("/bairro")
         const createPath = key === "pet" ? "/api/pets" : key === "car" ? "/api/cars" : "/api/communities"
         const created = await fetch(createPath, {
           method: "POST",
@@ -380,6 +377,7 @@ export function HeadcardPills({
     wallet: "/wallet",
     fitness: "/esportes",
     games: "/games",
+    city: "/minha-cidade",
     children: "/account/parental",
   }
 

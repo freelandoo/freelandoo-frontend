@@ -6639,7 +6639,14 @@
     "myVoteContested": "You didn't recognize",
     "emptyTitle": "You haven't told us where you live yet",
     "genericError": "Something went wrong. Try again.",
-    "privacyNote": "Your address is never shown to other residents — they only see the neighborhood."
+    "privacyNote": "Your address is never shown to other residents — they only see the neighborhood.",
+    "loadFailedTitle": "Couldn't load your links right now.",
+    "loadFailedBody": "Nothing was lost. Check your connection and try again.",
+    "retryCta": "Try again",
+    "cepChecking": "Checking the ZIP code…",
+    "cepNeighborhood": "neighborhood",
+    "cepNotFound": "ZIP code not found. Check the digits.",
+    "cepUnavailable": "Couldn't check the ZIP code right now. You can still declare; the neighborhood is confirmed later."
   },
   "MediaCrop": {
     "orientationGroup": "Post orientation",
@@ -6730,7 +6737,8 @@
     "pillPublicOnAria": "{pill} is shown to visitors. Hide",
     "pillPublicOffAria": "{pill} is hidden from visitors. Show",
     "visitorFitness": "Sports",
-    "visitorFitnessAria": "Open {who}'s gym"
+    "visitorFitnessAria": "Open {who}'s gym",
+    "myCity": "My city"
   },
   "CommunitySite": {
     "modeEditing": "Editing",
@@ -16739,5 +16747,44 @@
     "saveAndContinue": "Save and continue",
     "retry": "Try again",
     "loadFail": "Couldn't reach Freelandoo. Please try again."
+  },
+  "City": {
+    "title": "My city",
+    "tabsAria": "My city sections",
+    "tabHood": "My neighborhood",
+    "tabCondo": "My condo",
+    "chipsAria": "Which community to open",
+    "livesInHouse": "I live in a house",
+    "livesInCondo": "I live in a condo",
+    "chooseHousing": "Choose where you live",
+    "switchCta": "Change",
+    "switchNote": "Changing only sets which tab opens first. Your residence, your condo and your orders stay where they are.",
+    "pickTitle": "Where do you live?",
+    "pickSubtitle": "Choose once. You can change it later without losing anything.",
+    "houseTitle": "I live in a house",
+    "houseDesc": "Enter your street and number. You join your neighborhood: neighbors, wall, showcase, delivery and moving help.",
+    "condoTitle": "I live in a condo",
+    "condoDesc": "Find or register your condo and pick your apartment. Notices, polls, parking, showcase and delivery for the building.",
+    "myResidence": "My residence and neighbors",
+    "needsAttention": "pending",
+    "previewNote": "You're viewing a condo from search. To join, pick your apartment on the floor plan.",
+    "backToSearch": "Back to search",
+    "findCondoTitle": "Find your condo",
+    "findCondoHelp": "Search by condo name, neighborhood or city.",
+    "findCondoLabel": "Condo name, neighborhood or city",
+    "findCondoPlaceholder": "E.g.: Residencial Jardins",
+    "findCondoError": "Search failed. Check your connection and try again.",
+    "findCondoEmpty": "No condo with that name yet.",
+    "noCondoTitle": "Your condo isn't here?",
+    "noCondoBody": "Register the building: name and address. Neighborhood and city show in search; street and number only to confirmed residents.",
+    "createCondoCta": "Register my condo",
+    "saveError": "Couldn't save right now. Try again.",
+    "anonTitle": "Sign in to your account",
+    "anonBody": "My city brings together your neighborhood and your condo. Sign in to see yours.",
+    "loginCta": "Sign in",
+    "loadErrorTitle": "Couldn't open My city right now.",
+    "loadErrorBody": "Your neighborhood and condo are still saved. Check your connection and try again.",
+    "retryCta": "Try again",
+    "disabledTitle": "Feature unavailable right now."
   }
 }

@@ -264,20 +264,18 @@ export function SpacesMenu({
     business: "common",
     pet: "pet",
     car: "car",
-    condo: "condo",
-    neighborhood: "neighborhood",
   }
   const HREF: Partial<Record<QuickKey, string>> = {
     wallet: "/wallet",
     fitness: "/esportes",
     games: "/games",
+    // Minha cidade (2026-11-24): bairro e condomínio têm URL fixa agora — o
+    // ambiente é que descobre o que a pessoa já tem (`GET /me/city`).
+    city: "/minha-cidade",
     children: "/account/parental",
   }
   const createOf = (k: QuickKey) => {
     if (k === "pet" || k === "car" || k === "business") return createAndOpen(k)
-    // Condomínio e bairro se cadastram por tela própria (endereço, CEP).
-    if (k === "condo") return go("/comunidades/criar?tipo=condo")
-    if (k === "neighborhood") return go("/bairro")
   }
 
   const menuKeys = QUICK_ORDER.filter(
