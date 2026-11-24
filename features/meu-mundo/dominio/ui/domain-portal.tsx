@@ -27,6 +27,8 @@ import { SP } from "../../ui/kit/steam/steam-tokens"
 import { TAP, TX, TYPE } from "../../ui/kit/type-scale"
 import { anton } from "../../ui/hud/fight-plate"
 import { archivo } from "../../ui/status/evo-skin"
+import { PORTRAIT } from "../../ui/portraits"
+import type { BodyId } from "../../types"
 
 type Tr = (key: string, fallback: string) => string
 
@@ -168,6 +170,8 @@ export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnte
   const [error, setError] = useState<string | null>(null)
   const [cur, setCur] = useState<DomainId | null>(null)
   const [pick, setPick] = useState<Pick | null>(null)
+  /** Admin abre nos cards dos deuses; "Mapa completo" mostra a trilha de sempre. */
+  const [fullMap, setFullMap] = useState(false)
   const load = useCallback(async () => {
     const token = getToken()
     if (!token) return
@@ -226,6 +230,16 @@ export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnte
             <Loader2 className="h-6 w-6 animate-spin" aria-label={t("domEntering", "Entrando…")} />
           )}
         </div>
+      ) : state.bypass && !fullMap ? (
+        <AdminGodCards
+          domains={state.domains}
+          t={t}
+          onEnter={(id, scene) => onEnter(id, { scene, sector: 0 })}
+          onMap={(d) => {
+            choose(d)
+            setFullMap(true)
+          }}
+        />
       ) : (
         <>
           <ChapterRail domains={state.domains} cur={dom.id} t={t} onPick={choose} />
@@ -240,7 +254,7 @@ export function DomainPortal({ onClose, onEnter }: { onClose: () => void; onEnte
               t={t}
               start={resumePoint(dom, pick, state.bypass)}
               onEnter={() => onEnter(dom.id, resumePoint(dom, pick, state.bypass))}
-              onJump={state.bypass ? (scene) => onEnter(dom.id, { scene, sector: 0 }) : undefined}
+              admin={state.bypass}
             />
           )}
         </>
@@ -521,28 +535,96 @@ function LootRows({ loot, tint, t }: { loot: DomainSectorLoot; tint: string; t: 
 }
 
 /** O painel da fase (Anexo A §7.3): objetivos · recomendado · ambiente · prêmios · entrar. */
-/** Só admin: escolhe o Domínio na fileira de cima e entra direto em qualquer parte dele. */
-function AdminJump({ d, t, onJump }: { d: DomainInfo; t: Tr; onJump: (scene: number) => void }) {
+/**
+ * Só admin (bypass do servidor): um card de cada deus com o Domínio dele e as partes
+ * (estágios) — toque numa parte e entra direto na entrada dela. Pedido do Alex (24/11).
+ */
+function AdminGodCards({
+  domains,
+  t,
+  onEnter,
+  onMap,
+}: {
+  domains: DomainInfo[]
+  t: Tr
+  onEnter: (id: DomainId, scene: number) => void
+  onMap: (d: DomainInfo) => void
+}) {
   return (
-    <div className="mt-3 pt-2.5" style={{ borderTop: `1px solid ${SP.goldDeep}` }}>
-      <p className={`${TX.label} font-bold uppercase tracking-[0.14em]`} style={{ color: SP.cyan }}>
-        {t("domAdminJump", "Admin · entrar direto em {name}").replace("{name}", domainName(t, d.id))}
+    <div className="relative flex-1 overflow-y-auto px-3 pb-6 pt-3" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
+      <p className={`${TX.label} mx-auto max-w-[1100px] font-bold uppercase tracking-[0.16em]`} style={{ color: SP.cyan }}>
+        {t("domAdminPick", "Admin · escolha o deus e o estágio")}
       </p>
-      <div className="mt-1.5 flex gap-1.5">
-        {(d.scenes ?? []).map((sc) => (
-          <button
-            key={sc.n}
-            type="button"
-            onClick={() => onJump(sc.n)}
-            className={`${TX.label} flex flex-1 flex-col items-center justify-center font-bold uppercase tracking-[0.08em] transition-transform duration-100 active:scale-[0.96]`}
-            style={{ minHeight: TAP, background: "rgba(10,13,17,0.6)", color: SP.text, border: `1px solid ${SP.cyan}` }}
-          >
-            <span>{t("domAdminPart", "Parte {n}").replace("{n}", String(sc.n))}</span>
-            <span className="tabular-nums" style={{ color: SP.muted }}>
-              {t("domAdminSectors", "Setores {a}–{b}").replace("{a}", String(sc.sectors[0])).replace("{b}", String(sc.sectors[sc.sectors.length - 1]))}
-            </span>
-          </button>
-        ))}
+      <div className="mx-auto mt-2 grid max-w-[1100px] grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+        {domains.map((d, i) => {
+          const tint = TINT[d.id]
+          const src = PORTRAIT[d.god as BodyId]
+          const scenes = d.scenes ?? []
+          return (
+            <article key={d.id} className="mmdp-in flex flex-col" style={{ background: SP.plate, borderTop: `3px solid ${tint}`, boxShadow: "0 6px 0 rgba(0,0,0,0.35)" }}>
+              <div className="relative aspect-[4/5] w-full overflow-hidden" style={{ background: "#0A0D11" }}>
+                {src && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt={godName(t, d.god)} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                )}
+                <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, rgba(8,10,13,0) 45%, rgba(8,10,13,0.92) 100%)` }} />
+                <span className={`${anton.className} absolute left-2 top-1.5`} style={{ fontFamily: anton.style.fontFamily, fontSize: TYPE.title, color: tint, textShadow: "0 2px 0 rgba(0,0,0,0.6)" }}>
+                  {ROMAN[i]}
+                </span>
+                {d.crossed && <Check className="absolute right-2 top-2 h-4 w-4" style={{ color: tint }} aria-label={t("domCrossed", "Atravessado")} />}
+                <div className="absolute inset-x-2 bottom-1.5">
+                  <h3 className={`${anton.className} uppercase leading-none`} style={{ fontFamily: anton.style.fontFamily, fontSize: TYPE.number, color: SP.text }}>
+                    {godName(t, d.god)}
+                  </h3>
+                  <p className={`${TX.label} mt-0.5 font-bold uppercase tracking-[0.1em]`} style={{ color: tint }}>
+                    {domainName(t, d.id)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5 p-2">
+                {scenes.length ? (
+                  scenes.map((sc) => {
+                    const stage = d.sectors[sc.sectors[0] - 1]?.stage ?? "entrada"
+                    return (
+                      <button
+                        key={sc.n}
+                        type="button"
+                        onClick={() => onEnter(d.id, sc.n)}
+                        className={`${TX.label} flex flex-col items-start justify-center px-2.5 py-1 text-left font-bold uppercase tracking-[0.06em] transition-transform duration-100 active:scale-[0.97]`}
+                        style={{ minHeight: TAP, background: "rgba(10,13,17,0.7)", color: SP.text, borderLeft: `3px solid ${tint}` }}
+                      >
+                        <span className="whitespace-nowrap">
+                          {t("domAdminPart", "Parte {n}").replace("{n}", String(sc.n))} · {t(`domStage_${stage}`, STAGE_PT[stage])}
+                        </span>
+                        <span className="tabular-nums" style={{ color: SP.muted }}>
+                          {t("domAdminSectors", "Setores {a}–{b}").replace("{a}", String(sc.sectors[0])).replace("{b}", String(sc.sectors[sc.sectors.length - 1]))}
+                        </span>
+                      </button>
+                    )
+                  })
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onEnter(d.id, 1)}
+                    className={`${TX.label} px-2.5 font-bold uppercase tracking-[0.06em]`}
+                    style={{ minHeight: TAP, background: "rgba(10,13,17,0.7)", color: SP.text, borderLeft: `3px solid ${tint}` }}
+                  >
+                    {t("domEnter", "Entrar")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onMap(d)}
+                  className={`${TX.label} flex items-center justify-center gap-1 font-bold uppercase tracking-[0.08em]`}
+                  style={{ minHeight: TAP, color: SP.muted }}
+                >
+                  {t("domAdminMap", "Mapa dos setores")}
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            </article>
+          )
+        })}
       </div>
     </div>
   )
@@ -556,7 +638,7 @@ function PhasePanel({
   t,
   start,
   onEnter,
-  onJump,
+  admin,
 }: {
   d: DomainInfo
   pick: Pick
@@ -565,8 +647,8 @@ function PhasePanel({
   t: Tr
   start: DomainStart
   onEnter: () => void
-  /** Só admin: entra direto na entrada da parte escolhida do Domínio. */
-  onJump?: (scene: number) => void
+  /** Admin: a placa escolhida é onde se nasce (rótulo próprio). */
+  admin?: boolean
 }) {
   const lock = lockText(t, d)
   const dn = domainName(t, d.id)
@@ -658,7 +740,7 @@ function PhasePanel({
               style={{ height: 52, background: SP.goldPlate, color: SP.ink, fontFamily: anton.style.fontFamily, fontSize: TYPE.title }}
             >
               <Swords className="h-5 w-5" aria-hidden />
-              {onJump && start.sector > 0
+              {admin && start.sector > 0
                 ? t("domAdminEnterSector", "Entrar no setor {n}").replace("{n}", String(start.sector))
                 : start.sector > 0
                 ? t("domContinue", "Continuar no setor {n}").replace("{n}", String(start.sector))
@@ -667,13 +749,12 @@ function PhasePanel({
                   : t("domEnter", "Entrar")}
             </button>
             <p className={`${TX.label} mt-1.5 text-center`} style={{ color: SP.muted }}>
-              {onJump && start.sector > 0
+              {admin && start.sector > 0
                 ? t("domAdminSectorNote", "Admin: nasce na parte {p}, na frente do setor {n}.").replace("{p}", String(start.scene)).replace("{n}", String(start.sector))
                 : start.sector > 0
                 ? t("domResumeNote", "Você volta para onde parou: parte {p}, perto do setor {n}.").replace("{p}", String(start.scene)).replace("{n}", String(start.sector))
                 : t("domStartNote", "A travessia começa na entrada; os setores ficam em ordem no caminho.")}
             </p>
-            {onJump && (d.scenes ?? []).length > 0 && <AdminJump d={d} t={t} onJump={onJump} />}
           </>
         )}
       </div>

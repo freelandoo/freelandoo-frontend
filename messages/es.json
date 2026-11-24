@@ -15689,7 +15689,9 @@
     "domAdminPart": "Parte {n}",
     "domAdminSectors": "Sectores {a}–{b}",
     "domAdminEnterSector": "Entrar en el sector {n}",
-    "domAdminSectorNote": "Admin: apareces en la parte {p}, frente al sector {n}."
+    "domAdminSectorNote": "Admin: apareces en la parte {p}, frente al sector {n}.",
+    "domAdminPick": "Admin · elige el dios y la etapa",
+    "domAdminMap": "Mapa de sectores"
   },
   "Sports": {
     "eyebrow": "Deportes",

@@ -1,4 +1,5 @@
-// Meu Mundo 3D — admin escolhe o Domínio e a parte no portão (24/11, pedido do Alex).
+// Meu Mundo 3D — admin escolhe o Domínio e a parte no portão (24/11, pedido do Alex):
+// um card de cada deus com os estágios (partes) do Domínio dele.
 // Namespace "MeuMundo". Idempotente: preenche o que falta; OVERRIDE troca valor que mudou.
 // Rodar: node scripts/i18n-mm-dominio-admin-merge.js
 const fs = require("fs")
@@ -7,6 +8,8 @@ const path = require("path")
 const dir = path.join(__dirname, "..", "messages")
 
 const KEYS = {
+  domAdminPick: ["Admin · escolha o deus e o estágio", "Admin · pick the god and the stage", "Admin · elige el dios y la etapa"],
+  domAdminMap: ["Mapa dos setores", "Sector map", "Mapa de sectores"],
   domAdminJump: ["Admin · entrar direto em {name}", "Admin · jump straight into {name}", "Admin · entrar directo en {name}"],
   domAdminPart: ["Parte {n}", "Part {n}", "Parte {n}"],
   domAdminSectors: ["Setores {a}–{b}", "Sectors {a}–{b}", "Sectores {a}–{b}"],

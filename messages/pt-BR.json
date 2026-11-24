@@ -15123,7 +15123,9 @@
     "domAdminPart": "Parte {n}",
     "domAdminSectors": "Setores {a}–{b}",
     "domAdminEnterSector": "Entrar no setor {n}",
-    "domAdminSectorNote": "Admin: nasce na parte {p}, na frente do setor {n}."
+    "domAdminSectorNote": "Admin: nasce na parte {p}, na frente do setor {n}.",
+    "domAdminPick": "Admin · escolha o deus e o estágio",
+    "domAdminMap": "Mapa dos setores"
   },
   "Sports": {
     "eyebrow": "Esportes",

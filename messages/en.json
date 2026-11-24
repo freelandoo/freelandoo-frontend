@@ -15709,7 +15709,9 @@
     "domAdminPart": "Part {n}",
     "domAdminSectors": "Sectors {a}–{b}",
     "domAdminEnterSector": "Enter at sector {n}",
-    "domAdminSectorNote": "Admin: you spawn in part {p}, in front of sector {n}."
+    "domAdminSectorNote": "Admin: you spawn in part {p}, in front of sector {n}.",
+    "domAdminPick": "Admin · pick the god and the stage",
+    "domAdminMap": "Sector map"
   },
   "Sports": {
     "eyebrow": "Sports",
