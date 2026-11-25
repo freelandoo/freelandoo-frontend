@@ -9,7 +9,7 @@
 // pipeline/build_portraits_2d.py); os avisos falam com a expressão certa.
 
 import type { BodyId } from "../types"
-import { byTall, isTall, YOUNG_BODIES } from "../gods"
+import { byTall, byYoung, isTall, YOUNG_BODIES } from "../gods"
 import { byClanBody, isClanBody } from "../classes"
 import { byNpcBody, NPC_KIN, type NpcBody } from "../npc-bodies"
 
@@ -152,6 +152,9 @@ const EMOTION_ART: Partial<Record<BodyId, Emotion[]>> = {
   raposa_f: ALL12,
   raposa_adulto: ALL12,
   raposa_adulta: ALL12,
+  // 25/11: o Varkos adulto e os 11 JOVENS (ChatGPT + Gemini, uma por emoção; arte/expressoes-jovens-gpt)
+  varkos: ALL12,
+  ...byYoung(() => ALL12),
 }
 
 /** A expressão antiga (folha de 12) mais perto de cada emoção. */
