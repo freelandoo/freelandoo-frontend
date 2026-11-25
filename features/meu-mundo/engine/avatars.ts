@@ -42,7 +42,7 @@ import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
 import { byTall, isGod, isTall } from "../gods"
 import { byNpcBody } from "../npc-bodies"
-import { ARCHER_SKINS, byClanBody, clanOfBody, GUN_SKINS, isClanBody, CLAN_ANIMS, HAMMER_SKINS, type Clan } from "../classes"
+import { ARCHER_BODIES, byClanBody, clanOfBody, GUN_BODIES, isClanBody, CLAN_ANIMS, HAMMER_BODIES, type Clan } from "../classes"
 
 export const AVATAR_ASSET_VERSION = "v3"
 const BASE = `/meu-mundo/avatares/${AVATAR_ASSET_VERSION}/`
@@ -101,7 +101,7 @@ const ASSETS = {
     // -h402 ombreiras e placas soltas do ombro andam como bloco (`rigid_pieces`) — esticavam na corrida;
     // -h403 botas para a frente (`feet_fwd`, estavam 32° para fora), como o vampiro adulto.
     // 2026-11-07 -h404: ombro, pulso, pescoço, cabeça e joelho onde o Alex marcou na silhueta (`sh_joint`, `knee_x`);
-    // -h405: 2,7 m (era 4 m), skin e monstro.
+    // -h405: 2,7 m (era 4 m), personagem e monstro.
     ciborgue: "avatar-ciborgue-h405.glb",
     brutamontes: "avatar-brutamontes-x400.glb",
     // Alturas (regra do Alex, 2026-11-01): jovem 1,70 m (menino) / 1,65 m
@@ -353,7 +353,7 @@ const BRUTE_FILE = "anim-brutamontes-sergio-m62.glb"
 const ARCHER_FILE = "anim-arqueiro-sergio-m69.glb"
 /** Ciborgue e Noctis (mm3d-70): pacote de fuzil do Alex; clipes Fg*. O Ciborgue também é monstro na mesma luta, por isso este conjunto soma com o do Brutamontes. */
 const GUN_FILE = "anim-atirador-sergio-m70.glb"
-/** A Dama das Garras (2026-11-06): golpes calculados em pipeline/laminas/build_garras_anim.py. Skin e monstro. */
+/** A Dama das Garras (2026-11-06): golpes calculados em pipeline/laminas/build_garras_anim.py. Personagem e monstro. */
 const GARRAS_FILE = "anim-garras-sergio-m71.glb"
 /** A textura do Golem com os cristais verdes acesos (pipeline/armas/build_golem_luz.py). */
 const GOLEM_LIGHT = "avatar-golem-luz-1024.jpg"
@@ -481,7 +481,7 @@ export class AvatarLibrary {
    */
   skinMax: 512 | 1024 = 1024
   /**
-   * Lore v2 D2: biblioteca dos MONSTROS — uma skin que aparece lutando com os golpes de um
+   * Lore v2 D2: biblioteca dos MONSTROS — um personagem que aparece lutando com os golpes de um
    * tipo (Selene de espada, Noctis de arma de fogo) baixa os clipes da classe e os de arma.
    */
   foeRig = false
@@ -508,7 +508,7 @@ export class AvatarLibrary {
     private readonly withGincana = false,
     /** Na Arena das Lâminas (mm3d-58): os golpes da classe de quem tem corpo de classe. */
     private readonly withClan = false,
-    /** Ticket de luta: o kit mecânico prevalece sobre a skin vestida. */
+    /** Ticket de luta: o kit mecânico prevalece sobre o personagem ativo. */
     private readonly combatClan: Clan | null = null,
   ) {
     ensureLoaders()
@@ -733,9 +733,9 @@ export class AvatarLibrary {
     const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") || (this.foeRig && isClanBody(id)) || foeGod ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
-    // quem aparece como monstro (2026-11-06) tem os clipes da skin mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
-    const bruteP = this.withClan && ARCHER_SKINS.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || foeGod || (this.withClan && HAMMER_SKINS.includes(id)) || (this.foeRig && (GUN_SKINS.includes(id) || HAMMER_SKINS.includes(id))) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
-    const gunP = id === "ciborgue" || foeGod || ((this.withClan || this.foeRig) && GUN_SKINS.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
+    // quem aparece como monstro (2026-11-06) tem os clipes do personagem mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
+    const bruteP = this.withClan && ARCHER_BODIES.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || foeGod || (this.withClan && HAMMER_BODIES.includes(id)) || (this.foeRig && (GUN_BODIES.includes(id) || HAMMER_BODIES.includes(id))) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const gunP = id === "ciborgue" || foeGod || ((this.withClan || this.foeRig) && GUN_BODIES.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
     const clawP = id === "garras" && this.withBoxe ? this.clawSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC, clawC] = await Promise.all([
       this.body(id),

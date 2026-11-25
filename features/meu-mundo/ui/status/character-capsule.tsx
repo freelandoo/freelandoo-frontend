@@ -1,7 +1,7 @@
 "use client"
 
 // features/meu-mundo/ui/status/character-capsule.tsx — B3 (mig 340): PERSONAGENS.
-// Substitui o vestuário de skins (mm3d-16): as skins viraram ESPÉCIES de personagem.
+// A cápsula dos PERSONAGENS: cada um é um ser com certidão, vida e personalidade próprias.
 //
 //   • um personagem ATIVO por vez; os outros ficam na CÁPSULA (5 vagas), congelados:
 //     não envelhecem, não perdem atributo, não têm fome. "Usar" guarda o ativo e tira

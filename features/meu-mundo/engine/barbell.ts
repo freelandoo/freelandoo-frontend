@@ -11,7 +11,7 @@
 //  - as MÃOS vão até ela por IK de dois ossos (ombro → cotovelo → mão, cotovelo
 //    para baixo e para trás), por cima da animação, a cada quadro.
 // Medidas pela largura dos ombros de quem agacha: vale para o personagem
-// pequeno, as skins de 2 m e as classes.
+// pequeno, as personagens de 2 m e as classes.
 import type { Scene } from "@babylonjs/core/scene"
 import { Color3 } from "@babylonjs/core/Maths/math.color"
 import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector"

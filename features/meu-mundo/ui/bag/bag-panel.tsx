@@ -130,7 +130,7 @@ export default function BagPanel({
     }
     for (const s of slots) {
       const tb: Tab = s.group === "food" || s.group === "health" ? "food" : "things"
-      out[tb].push({ key: "s:" + s.key, name: slotName(s, t), qty: s.qty, rarity: s.item?.rank ?? null, equipped: !!s.skin?.equipped, fresh: s.fresh, slot: s })
+      out[tb].push({ key: "s:" + s.key, name: slotName(s, t), qty: s.qty, rarity: s.item?.rank ?? null, equipped: false, fresh: s.fresh, slot: s })
     }
     return out
   }, [catalog, bag, slots, t, onlySlot])
@@ -366,8 +366,8 @@ function Detail({
   }
   if (cell.slot)
     return (
-      <ItemDetailModal art={{ src: cell.slot.thumb, category: cell.slot.skin ? "skin" : "material" }} name={cell.name} t={t} onClose={onClose}>
-        <SlotDetail slot={cell.slot} t={t} busy={busy} onEquip={() => {}} />
+      <ItemDetailModal art={{ src: cell.slot.thumb, category: "material" }} name={cell.name} t={t} onClose={onClose}>
+        <SlotDetail slot={cell.slot} t={t} />
       </ItemDetailModal>
     )
   const item = cell.gear!

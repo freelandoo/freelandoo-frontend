@@ -3,7 +3,7 @@
 // features/meu-mundo/ui/status/equip-page.tsx — a página EQUIPAMENTOS do STATUS (2026-11-12,
 // pedido do Alex): como a Ficha, com o personagem 3D no palco, mas para EQUIPAR. As 8 casas
 // ficam em volta do corpo; tocar uma casa lista as peças que cabem nela; equipar ou tirar:
-//   • brilho no personagem (SkinStage.flash: anel nos pés, feixe subindo, corpo clareia);
+//   • brilho no personagem (CharacterStage.flash: anel nos pés, feixe subindo, corpo clareia);
 //   • o número de cada atributo que mudou sobe (ou desce) contando, com o nome do atributo;
 //   • som: a peça encaixando (ui-equipar), o brilho (ui-equip-brilho) e os estalos da contagem
 //     (ui-equip-numero, com o tom subindo); tirou = ui-tirar + ui-equip-baixa.
@@ -18,7 +18,7 @@ import { type ApiResult, type GearBag, type GearCatalog, type GearInstance, type
 import { WeaponStars } from "../gear/weapon-marks"
 import type { GearBonus } from "../../laminas/sim/fight"
 import type { BodyId } from "../../types"
-import type { SkinStage } from "../../engine/skin-stage"
+import type { CharacterStage } from "../../engine/character-stage"
 import { playSample, preloadSamples, uiSound } from "../../engine/audio"
 import { ItemImage, type ItemCategory } from "../kit/item-image"
 import { RANK, RANK_ORDER, rankOf } from "../kit/aether-tokens"
@@ -140,7 +140,7 @@ export function EquipPage({
 }) {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const stageRef = useRef<SkinStage | null>(null)
+  const stageRef = useRef<CharacterStage | null>(null)
   const [visible, setVisible] = useState(false)
   const [flat, setFlat] = useState(false)
   const [slot, setSlot] = useState<GearSlot | null>(null)
@@ -166,11 +166,11 @@ export function EquipPage({
     const canvas = canvasRef.current
     if (!canvas) return
     let alive = true
-    let stage: SkinStage | null = null
-    void import("../../engine/skin-stage")
-      .then(({ SkinStage }) => {
+    let stage: CharacterStage | null = null
+    void import("../../engine/character-stage")
+      .then(({ CharacterStage }) => {
         if (!alive) return
-        stage = new SkinStage(canvas, reducedMotion(), FRAME)
+        stage = new CharacterStage(canvas, reducedMotion(), FRAME)
         stageRef.current = stage
         void stage.show({ body, holo: false, color: "#FFD68A", accent: "#FFFFFF", look: "" }).catch(() => {})
       })

@@ -29,7 +29,7 @@ const ATTRS = ["strength", "speed", "dexterity", "intelligence", "accuracy"] as 
 const ORIGIN: Record<string, [string, string]> = {
   hospede: ["cdOriginGuest", "Hóspede da casa"],
   heir: ["cdOriginHeir", "Herdeiro"],
-  skin: ["cdOriginSkin", "Conversão de skin"],
+  skin: ["cdOriginFounder", "Personagem fundador"],
   fusion: ["cdOriginFusion", "Mistura no laboratório"],
   prize: ["cdOriginPrize", "Prêmio"],
   market: ["cdOriginMarket", "Mercado"],

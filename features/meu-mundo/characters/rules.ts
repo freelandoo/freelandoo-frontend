@@ -1,4 +1,4 @@
-// features/meu-mundo/characters/rules.ts — B3 (2026-11-08): PERSONAGENS no lugar das skins.
+// features/meu-mundo/characters/rules.ts — B3 (2026-11-08): PERSONAGENS (cada um nasce com certidão própria).
 //
 // Fonte ÚNICA da regra dos personagens individuais; o servidor roda a cópia GERADA
 // (freelandoo-backend/src/utils/meuMundoCharacters.js, scripts/build-characters-sim.js).
@@ -7,7 +7,7 @@
 // Decisões do Alex (08/11):
 //  • vários personagens por jogador, UM ativo; os outros ficam na CÁPSULA, congelados
 //    (5 vagas: CAPSULE.SLOTS);
-//  • as skins viraram ESPÉCIES (SPECIES): quem tinha uma ganhou um personagem dela;
+//  • o visual antigo virou ESPÉCIE (SPECIES): quem tinha um ganhou um personagem dele;
 //  • todos nascem com 1,00 m e crescem em linha até a altura de jovem em 30 dias de vida
 //    ativa; viram adultos pela regra GROWTH da vida e crescem até a altura final da espécie
 //    em mais 30 dias;
@@ -269,13 +269,13 @@ export function accelerated(growth: GrowthLike | null | undefined, t: number): G
 /** Número de série visível: MM-000123. */
 export const serialText = (n: number | string | null | undefined): string => `MM-${String(Number(n) || 0).padStart(6, "0")}`
 
-// ═══ SKINS → ESPÉCIES (conversão da mig 340) ═══
+// ═══ IDS ANTIGOS → ESPÉCIES (conversão da mig 340) ═══
 /**
- * A skin que a pessoa tinha (tb_mm_skin_owned) → espécie e sexo do personagem que ela ganha.
- * "feminina" era a versão feminina do padrão (não é espécie) e fica de fora; as skins de
+ * O visual que a pessoa tinha antes dos personagens (tabela antiga da mig 300) → espécie e sexo do personagem que ela ganha.
+ * "feminina" era a versão feminina do padrão (não é espécie) e fica de fora; os visuais de
  * teste das classes viram a espécie da classe com o sexo do corpo.
  */
-export const SKIN_SPECIES: Readonly<Record<string, { species: string; sex: "m" | "f" }>> = Object.freeze({
+export const LEGACY_SPECIES: Readonly<Record<string, { species: string; sex: "m" | "f" }>> = Object.freeze({
   sergio: { species: "sergio", sex: "m" },
   ekaterina: { species: "ekaterina", sex: "f" },
   aurion: { species: "aurion", sex: "m" },

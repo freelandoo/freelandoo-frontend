@@ -114,11 +114,11 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
   const [compact, setCompact] = useState(false)
   const [scale, setScale] = useState(0.6)
   // Vestuário (mm3d-16) por cima do STATUS; o retrato segue o que está vestido.
-  const [wardrobe, setWardrobe] = useState(false)
-  const wardrobeOpen = useRef(false)
+  const [capsuleOn, setCapsuleOn] = useState(false)
+  const capsuleOpen = useRef(false)
   useEffect(() => {
-    wardrobeOpen.current = wardrobe
-  }, [wardrobe])
+    capsuleOpen.current = capsuleOn
+  }, [capsuleOn])
   const [avatar, setAvatar] = useState<BodyId>(body)
 
   // ── dados ────────────────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       buy: (item) => void run((tk) => postLifeBuy(tk, item), t("mkStored", "Guardado na geladeira")),
       canBuy: shopping,
       newcomer: () => void run((tk) => postLifeNewcomer(tk)),
-      openSkins: () => setWardrobe(true),
+      openCharacters: () => setCapsuleOn(true),
       openPolens: onOpenPolens,
       openBag: onOpenBag,
       equip: async (slot, item, instance) => {
@@ -322,7 +322,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Com o vestuário aberto, as teclas são dele.
-      if (wardrobeOpen.current) return
+      if (capsuleOpen.current) return
       const k = e.key
       let handled = true
       if (k === "Escape") close()
@@ -382,13 +382,13 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
 
   const portrait = PORTRAIT[avatar] ?? PORTRAIT.sergio
   // Irmão (não filho) das telas: arrastar no palco não troca o card do STATUS.
-  // B3 (mig 340): o botão embaixo da foto abre os PERSONAGENS (o vestuário de skins saiu).
+  // B3 (mig 340): o botão embaixo da foto abre os PERSONAGENS (a cápsula).
   // "Ganhar de teste" aparece para todos porque hoje só administrador joga (o servidor confere).
-  const skins = wardrobe && (
+  const capsule = capsuleOn && (
     <CharacterCapsule
       t={t}
       admin
-      onClose={() => setWardrobe(false)}
+      onClose={() => setCapsuleOn(false)}
       onChanged={(r) => {
         if (r.avatar) setAvatar(r.avatar)
         // o nível é de cada personagem (mig 435): trocou, relê
@@ -453,7 +453,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
         </div>
         {notice && <Notice text={notice} small />}
       </div>
-      {skins}
+      {capsule}
       </>
     )
   }
@@ -552,7 +552,7 @@ export default function StatusScreen({ name, body, onClose, lifeTick = 0, onOpen
       </div>
       {notice && <Notice text={notice} />}
     </div>
-    {skins}
+    {capsule}
     </>
   )
 }

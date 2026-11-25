@@ -2,7 +2,7 @@
 
 // features/meu-mundo/laminas/ui/hall-of-fame.tsx — o HALL DA FAMA da Arena das Lâminas
 // (2026-11-08, pedido do Alex). A Arena abre aqui: um PÓDIO com o top 3 renderizado no palco
-// antigo do vestuário (SkinStage no coliseu), um por vez, com setas para o lado; ao lado, o
+// antigo do vestuário (CharacterStage no coliseu), um por vez, com setas para o lado; ao lado, o
 // painel do 4º ao 10º. Dá para desafiar qualquer um, até o 1º, mesmo com pouco Poder — a ficha
 // congelada dele luta por ele (B8, re-simulado no servidor). Cadeira vazia aparece preenchida
 // pelo próximo do top do Poder: vencer essa pessoa dá aquela cadeira (mig 425). Sem ninguém =
@@ -15,7 +15,7 @@ import { BackToCity } from "../../ui/kit/back-to-city"
 import { getToken } from "@/lib/auth"
 import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
 import { getHallBoard, postHallChallenge, type FightTicket, type HallBoard, type HallRank } from "../../data"
-import { SkinStage } from "../../engine/skin-stage"
+import { CharacterStage } from "../../engine/character-stage"
 import { MM } from "../../ui/hud/tokens"
 import { EvoButton } from "../../ui/hud/hud-kit"
 import { archivo, teko } from "../../ui/status/evo-skin"
@@ -26,8 +26,8 @@ import type { BodyId } from "../../types"
 
 type Tr = (key: string, fallback: string) => string
 
-const STAGE_IMG = "/meu-mundo/skins/v1/coliseu.webp"
-const STAGE_SMALL = "/meu-mundo/skins/v1/coliseu-1024.webp"
+const STAGE_IMG = "/meu-mundo/palcos/v1/coliseu.webp"
+const STAGE_SMALL = "/meu-mundo/palcos/v1/coliseu-1024.webp"
 /** Ouro, prata e bronze do pódio. */
 const MEDAL = ["#F2B705", "#C9D1DA", "#C98A45"] as const
 
@@ -66,7 +66,7 @@ export function HallOfFame({ onExit, onFight }: { onExit: () => void; onFight: (
     cardOpen.current = !!card
   }, [card])
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const stageRef = useRef<SkinStage | null>(null)
+  const stageRef = useRef<CharacterStage | null>(null)
 
   const load = useCallback(async () => {
     const token = getToken()
@@ -85,7 +85,7 @@ export function HallOfFame({ onExit, onFight }: { onExit: () => void; onFight: (
     const canvas = canvasRef.current
     if (!canvas) return
     const reduced = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    const stage = new SkinStage(canvas, reduced)
+    const stage = new CharacterStage(canvas, reduced)
     stageRef.current = stage
     return () => {
       stageRef.current = null

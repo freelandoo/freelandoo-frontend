@@ -7,7 +7,7 @@
 //
 // 2026-11-03: cada card é a NOTIFICAÇÃO EMOCIONAL (emotion-frame.tsx, moldura
 // da referência do Alex) com o personagem na emoção do aviso (6 emoções).
-// Cada card: retrato (expressão do personagem padrão, retrato da skin, ou a
+// Cada card: retrato (expressão do personagem padrão, retrato do personagem, ou a
 // identidade da plataforma em comunicados), mensagem, ação e fechar. Entra
 // descendo, fica 3 s (a barra encolhe; pausa com o ponteiro em cima ou foco
 // dentro), sai subindo. No máximo 1 card no celular e 2 no computador; o

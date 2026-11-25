@@ -10,7 +10,7 @@
 //
 // 2026-10-29 (Alex): modelos de verdade — Soldado de Pedra = Golem de Pedra
 // (níveis 1 e 2), Golem de Sucata = Ciborgue, Harpia = Dama das Garras (os três
-// são as skins de 2 m, rigadas com as animações do Sergio: andam e golpeiam com
+// são os personagens de 2 m, rigadas com as animações do Sergio: andam e golpeiam com
 // os clipes do boxe, como o jogador na arena) e o Lobo = a fera de 4 patas
 // (mm3d-54: GLB com esqueleto e clipes próprios — Idle/Walk/Run/Bite/Pounce/
 // Dodge pelo pipeline/laminas/build_lobo_anim.py; 2026-11-03: Hit/Die/Howl e os
@@ -54,10 +54,10 @@ import { FloatStones } from "./float-stones"
 import "@babylonjs/core/Rendering/outlineRenderer"
 
 /**
- * Monstros com corpo de gente: a skin rigada e a escala. Tamanhos do Alex
+ * Monstros com corpo de gente: o personagem rigado e a escala. Tamanhos do Alex
  * (2026-11-03), iguais na luta e na rua: Golem de Pedra, Ciborgue e
  * Brutamontes 4 m (o tamanho do corpo), lobos 2,5 m de altura (WOLF_SCALE).
- * Regra do Alex (2026-11-06): quem aparece como monstro é igual à skin em altura, arma e
+ * Regra do Alex (2026-11-06): quem aparece como monstro é igual ao personagem em altura, arma e
  * golpes: Golem de Pedra e Brutamontes de machado, Ciborgue com a arma de fogo.
  */
 const RIGGED: Partial<Record<MobKind, { body: BodyId; scale: number }>> = {
@@ -91,7 +91,7 @@ const BRUTE: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover:
 }
 const BRUTE_HIT: BoxeClip[] = ["XHitG", "XHitL", "XHitR"]
 /**
- * O CIBORGUE atira como a skin (GUN_MOVES): braços baixos parado (2026-11-03, Alex: "nem dá
+ * O CIBORGUE atira como o personagem (GUN_MOVES): braços baixos parado (2026-11-03, Alex: "nem dá
  * pra saber quando ele vai atacar"), ergue a arma no aviso e dispara no golpe da regra.
  */
 const CIBORG: Record<string, { clip: BoxeClip; windup: Seg; strike: Seg; recover: Seg }[]> = {
@@ -174,7 +174,7 @@ const LOOK: Partial<Record<MobKind, { table: Record<string, Move[]>; idle: BoxeB
   brute: { table: BRUTE, idle: "XIdle", walk: "XWalk", run: "XRun", hit: BRUTE_HIT, fall: "BFall", roar: ["XTaunt", 1.6, 0, 0.9], hop: 0 },
   garras: { table: CLAW, idle: "GaIdle", walk: null, run: null, hit: ["GaHit"], fall: "BFall", roar: ["GaRoar", 1.6, 0, 1], hop: 1.7 },
 }
-/** Boca da arma de fogo no eixo da pegada (o mesmo ponto da skin). */
+/** Boca da arma de fogo no eixo da pegada (o mesmo ponto do personagem). */
 const MUZZLE = new Vector3(0.6, 0.1, 0)
 /** Quem luta com arma na mão, nos golpes do Brutamontes ou no tiro do Ciborgue. */
 const ARMED: Partial<Record<MobKind, string>> = { brute: AXE_URL, ciborgue: godGun("ciborgue")?.file, cavaleiro: CLAN_WEAPON.vampiro }
@@ -390,7 +390,7 @@ export class MonsterModel {
   private readonly flash: StandardMaterial
   private walk = 0
   private gone = false
-  /** Corpo de gente (skin rigada) no lugar das formas. */
+  /** Corpo de gente (personagem rigado) no lugar das formas. */
   private char: Character | null = null
   private fix: PoseFix | null = null
   private last: MobState | null = null
@@ -437,7 +437,7 @@ export class MonsterModel {
      * de Sombra = Vampira adulta de espada (regra do Cavaleiro), Noctis = o deus de arma de
      * fogo (regra do Ciborgue, com a arma dele). Só para tipo rigado.
      */
-    skin?: BodyId,
+    asBody?: BodyId,
   ) {
     const id = ++seq
     this.root = new TransformNode(`mm-mob-${kind}-${id}`, scene)
@@ -461,11 +461,11 @@ export class MonsterModel {
       if (!human.bare) this.gloves = new BoxingGloves(scene, this.char, "brown", size)
     } else if (rig) {
       const k = rigKit(scene)
-      const rigBody = skin ?? rig.body
+      const rigBody = asBody ?? rig.body
       this.char = new Character(scene, k.lib, { fallback: k.fallback, shadow: k.shadow }, rigBody, null, false)
-      this.char.holder.scaling.setAll(skin ? scale : rig.scale * scale)
+      this.char.holder.scaling.setAll(asBody ? scale : rig.scale * scale)
       // a arma de fogo é a do corpo (Noctis tem a dele); espada e machado seguem os do tipo
-      const weapon = kind === "ciborgue" && skin ? (godGun(skin)?.file ?? ARMED[kind]) : ARMED[kind]
+      const weapon = kind === "ciborgue" && asBody ? (godGun(asBody)?.file ?? ARMED[kind]) : ARMED[kind]
       this.char.setBoxe(LOOK[kind]?.idle ?? "BGuard")
       if (kind === "stone") this.stones = new FloatStones(scene, this.char, addGlow)
       if (weapon) {
@@ -481,7 +481,7 @@ export class MonsterModel {
             shineWeapon(this.axe)
             for (const m of this.axe.getChildMeshes(false)) {
               m.isPickable = false
-              // sem mapa de ambiente, metal puro sai preto (a mesma conta da arma da skin)
+              // sem mapa de ambiente, metal puro sai preto (a mesma conta da arma do personagem)
               if (kind === "ciborgue" && m.material instanceof PBRMaterial) m.material.metallic = 0.25
             }
             this.axe.setEnabled(false)
@@ -651,7 +651,7 @@ export class MonsterModel {
     if (p.state === "dead" && p.t > 1.6) this.setVisible(false)
   }
 
-  /** Skin rigada: anda pela locomoção e golpeia com os clipes do boxe (a mesma troca do jogador). */
+  /** Personagem rigado: anda pela locomoção e golpeia com os clipes do boxe (a mesma troca do jogador). */
   private updateRigged(dt: number, p: MobPose) {
     const c = this.char!
     c.place(p.x, p.z, p.facing, p.y, 0)

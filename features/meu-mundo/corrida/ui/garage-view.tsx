@@ -2,7 +2,7 @@
 
 // features/meu-mundo/corrida/ui/garage-view.tsx — CORRIDA (mm3d-49): a GARAGEM.
 //
-// Primeira tela do Antigravidade (pedido do Alex: "como na loja de skin,
+// Primeira tela do Antigravidade (pedido do Alex: "como na loja de personagem,
 // aparecendo o holograma primeiro"). O hangar "Air Race" ao fundo e a nave em
 // 3D flutuando no círculo do chão (engine/garage-stage.ts): cada nave entra
 // como holograma e se materializa. Setas (ou ← →) trocam; arrastar gira. O

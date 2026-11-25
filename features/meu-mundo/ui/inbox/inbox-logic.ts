@@ -143,9 +143,6 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
           title: t("ntJailed", "Fui preso: {n} minutos na delegacia.").replace("{n}", String(n.data.minutes ?? 0)),
           line: n.data.reason === "atropelamento" ? t("ntJailedHit", "Atropelei alguém com o carro.") : t("ntJailedPlaza", "Dirigi na praça de novo no mesmo dia."),
         }
-      // mm3d-36: aviso único (uma vez por conta) de que as cores existem.
-      if (n.code === "colors_hint")
-        return { title: t("ntColorsTitle", "Você pode mudar as cores do seu personagem"), line: t("ntColorsLine", "No STATUS → SKIN → Cores: camiseta, calça, pele e cabelo.") }
       // mm3d-72: o que ele quer (pela personalidade) e se o dono atendeu
       if (n.code === "wish" && n.data.wish) return { title: wishLine(n.data.wish as WishId, t), line: t("ntWishLine", "Se você fizer, ele vai gostar mais de você.") }
       if (n.code === "wish_ok") return { title: t("ntWishOk", "Você fez o que eu queria! Valeu!"), line: t("ntWishOkLine", "Ele gostou mais de você.") }

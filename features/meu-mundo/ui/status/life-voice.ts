@@ -5,7 +5,7 @@
 // exausto, doente, lesao); o NOME e a explicação saem da classe, pela lore (historia/v2):
 //  • Raposa mágica: povo do Sol, uma chama por dentro; a Cinza transforma as Raposas que sofrem.
 //  • Vampiro: trocou o pelo, o rabo e o sol pela vida eterna; vive do sangue, coração quase parado.
-// Sem classe (deus, skin de admin) = frase neutra. Variante por classe é CHAVE separada
+// Sem classe (deus, personagem de teste) = frase neutra. Variante por classe é CHAVE separada
 // (`_raposa` / `_vampiro`), nunca texto escolhido por `if` dentro do componente.
 // Plano: MEU MUNDO 3D/planos/2026-11-14-vida-steampunk.md §5.
 import type { Clan } from "../../classes"

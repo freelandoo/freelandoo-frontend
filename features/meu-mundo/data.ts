@@ -897,7 +897,7 @@ export const getBuildings = (token: string) => call<BuildingsState>(token, "GET"
 
 // ═══ Lore v2 D1 (mig 444): os Domínios — o servidor manda tudo pronto ═══════
 export type DomainId = "floresta" | "canion" | "gelo" | "fabrica" | "vulcao" | "orbital" | "vermelha"
-/** D2: quem o monstro do setor É (lore) e o corpo que o desenha (skin que existe). */
+/** D2: quem o monstro do setor É (lore) e o corpo que o desenha (corpo que existe). */
 export interface DomainFoe {
   id: string
   body: BodyId | null
@@ -1045,7 +1045,7 @@ export const postLifeNickname = (token: string, nickname: string) => call<LifeSu
 export const postLifePetName = (token: string, name: string) => call<LifeSummary>(token, "POST", "/life/pet-name", { name })
 
 // ═══ B3 (mig 340): personagens — o ativo e a cápsula, trocar, fundir, certificado ═══
-// (o vestuário de skins da mm3d-16 saiu: as skins viraram espécies de personagem)
+// (não existe vestuário: cada personagem é um ser próprio)
 export const getCharacters = (token: string) => call<CharactersResult>(token, "GET", "/characters")
 /**
  * O personagem ativo mudou (troca pela cápsula ou mistura): o nível de aventura é POR

@@ -2,17 +2,16 @@
 
 // features/meu-mundo/ui/items/items-panel.tsx — a aba ITENS (mm3d-30): uma
 // vitrine em slots com o que a pessoa TEM, lida das fontes reais (GET
-// /inventory): geladeira, vestuário, veículos e casa. Não há estoque próprio
+// /inventory): geladeira, veículos e casa. Não há estoque próprio
 // desta tela — a unidade que a geladeira come é a mesma que aparece aqui.
 //
 // Slots: miniatura estática (nunca 3D), quantidade nos empilháveis, selo
-// "Novo" no que chegou de presente, "Vestida" na skin em uso. Tocar abre a
-// ficha com as ações que o jogo já permite: vestir (skins); comida/remédio
+// "Novo" no que chegou de presente. Tocar abre a ficha: comida/remédio
 // se consome na geladeira de casa (a sala confere onde a pessoa está) — aqui
 // só se diz onde. Sem vender, transferir nem descartar (não está nas regras).
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Gift, Home, Loader2, PackageOpen, RefreshCw, Search, Shirt } from "lucide-react"
+import { Gift, Home, PackageOpen, RefreshCw, Search, Shirt } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getInventory } from "../../data"
@@ -27,15 +26,13 @@ import { GROUP_LABEL, buildSlots, groupsOf, slotName, type ItemGroup, type Slot 
 
 type Tr = (key: string, fallback: string) => string
 
-export default function ItemsPanel({ onClose, onChanged }: { onClose: () => void; /** vestir mudou o avatar */ onChanged: () => void }) {
+export default function ItemsPanel({ onClose }: { onClose: () => void; onChanged?: () => void }) {
   const t = useTranslations("MeuMundo")
   const [data, setData] = useState<InventoryResult | null>(null)
   const [error, setError] = useState(false)
   const [group, setGroup] = useState<ItemGroup | "all" | "new">("all")
   const [query, setQuery] = useState("")
   const [pick, setPick] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     const token = getToken()
@@ -57,12 +54,6 @@ export default function ItemsPanel({ onClose, onChanged }: { onClose: () => void
     (s) => (group === "all" || (group === "new" ? s.fresh : s.group === group)) && (!q || slotName(s, t).toLowerCase().includes(q)),
   )
   const selected = slots.find((s) => s.key === pick) ?? null
-
-  // B3 (mig 340): o vestuário saiu — as skins viraram personagens (STATUS → Personagens).
-  // Só um servidor antigo ainda manda skins; aí "Vestir" só avisa onde elas foram parar.
-  const equip = async (_id: string) => {
-    setNotice(t("itSkinsMoved", "As skins viraram personagens: veja em STATUS → Personagens."))
-  }
 
   return (
     <EvoDialog fixed z="z-[78]" labelId="mm-items" eyebrow={t("itEyebrow", "Seus bens")} title={t("itTitle", "Itens")} onClose={onClose} width="max-w-2xl">
@@ -119,12 +110,7 @@ export default function ItemsPanel({ onClose, onChanged }: { onClose: () => void
             </ul>
           )}
 
-          {selected && <SlotDetail slot={selected} t={t} busy={busy} onEquip={(id) => void equip(id)} />}
-          {notice && (
-            <p className="mt-2 text-[12px] font-semibold" style={{ color: MM.danger }} role="alert">
-              {notice}
-            </p>
-          )}
+          {selected && <SlotDetail slot={selected} t={t} />}
           <p className="mt-3 text-[12px]" style={{ color: MM.muted }}>
             {t("itWallet", "Moedas do jogo: {n}").replace("{n}", String(data.wallet.coins))}
           </p>
@@ -155,7 +141,7 @@ export function SlotThumb({ slot, big = false }: { slot: Slot; big?: boolean }) 
   if (slot.thumb)
     return (
       // eslint-disable-next-line @next/next/no-img-element -- miniatura estática local (mesmo arquivo da geladeira/retrato, em cache)
-      <img src={slot.thumb} alt="" loading="lazy" decoding="async" draggable={false} className={`${cls} object-cover ${slot.skin ? "rounded-full" : "rounded-none"}`} />
+      <img src={slot.thumb} alt="" loading="lazy" decoding="async" draggable={false} className={`${cls} object-cover rounded-none`} />
     )
   const icon = slot.vehicle ? <VehicleIcon kind={slot.vehicle.kind} className="h-8 w-8" /> : slot.house ? <Home className="h-8 w-8" /> : <Shirt className="h-8 w-8" />
   return (
@@ -192,35 +178,18 @@ function SlotButton({ slot, t, active, onClick }: { slot: Slot; t: Tr; active: b
           {t("itNewBadge", "Novo")}
         </span>
       )}
-      {slot.skin?.equipped && (
-        <span className="absolute left-1 top-1 rounded-full px-1.5 text-[10px] font-bold uppercase leading-4" style={{ background: MM.gold, color: "#1a1408" }}>
-          {t("itWearing", "Vestida")}
-        </span>
-      )}
     </button>
   )
 }
 
-export function SlotDetail({ slot, t, busy, onEquip }: { slot: Slot; t: Tr; busy: boolean; onEquip: (id: string) => void }) {
+export function SlotDetail({ slot, t }: { slot: Slot; t: Tr }) {
   const name = slotName(slot, t)
   let lines: string[] = []
-  let action: React.ReactNode = null
   if (slot.item) {
     lines = [
       t("itInFridge", "{n} na sua geladeira").replace("{n}", String(slot.qty ?? 0)),
       t("itEatHint", "Para comer ou tomar, abra a geladeira dentro de casa."),
     ]
-  } else if (slot.skin) {
-    lines = [t("itSkinOwned", "Skin sua, para sempre.")]
-    action = slot.skin.equipped ? (
-      <span className="text-[13px] font-semibold" style={{ color: MM.gold }}>
-        {t("itWearingNow", "Você está usando")}
-      </span>
-    ) : (
-      <EvoButton variant="primary" size="sm" loading={busy} icon={<Shirt className="h-4 w-4" />} onClick={() => onEquip(slot.skin!.id)}>
-        {t("itWear", "Vestir")}
-      </EvoButton>
-    )
   } else if (slot.vehicle) {
     const w = slot.vehicle.where
     lines = [w === "spot" ? t("itAtSpot", "Na vaga da sua casa.") : w === "house" ? t("itInHouse", "Guardado dentro de casa.") : t("itOnStreet", "Ficou na rua do bairro, onde você deixou.")]
@@ -251,8 +220,6 @@ export function SlotDetail({ slot, t, busy, onEquip }: { slot: Slot; t: Tr; busy
             ))}
           </ul>
         )}
-        {action && <div className="mt-1">{action}</div>}
-        {busy && !action && <Loader2 className="h-4 w-4 animate-spin" />}
       </div>
     </section>
   )

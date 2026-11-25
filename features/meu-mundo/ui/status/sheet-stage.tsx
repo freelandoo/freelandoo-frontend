@@ -2,7 +2,7 @@
 
 // features/meu-mundo/ui/status/sheet-stage.tsx — o PALCO da Ficha (apresentação 14,
 // Anexo A §7.1): no lugar do retrato, o personagem 3D de pé num palco escuro, com o
-// facho de luz e o pedestal do SkinStage (o mesmo da Criogenia e do Hall). À esquerda
+// facho de luz e o pedestal do CharacterStage (o mesmo da Criogenia e do Hall). À esquerda
 // do corpo: o temperamento, o nome e o Poder (o maior número da tela). As abas do
 // palco TROCAM o que está nele: Corpo = o personagem; Alma = o mesmo corpo em
 // holograma na cor da alma.
@@ -16,7 +16,7 @@ import { anton } from "../hud/fight-plate"
 import { TYPE } from "../kit/type-scale"
 import { archivo } from "./evo-skin"
 import type { BodyId } from "../../types"
-import type { SkinStage } from "../../engine/skin-stage"
+import type { CharacterStage } from "../../engine/character-stage"
 
 type Tr = (k: string, fb: string) => string
 type Tab = "body" | "soul"
@@ -56,7 +56,7 @@ export function SheetStage({
 }) {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const stageRef = useRef<SkinStage | null>(null)
+  const stageRef = useRef<CharacterStage | null>(null)
   const [tab, setTab] = useState<Tab>("body")
   const tabRef = useRef<Tab>("body")
   const [visible, setVisible] = useState(false)
@@ -77,12 +77,12 @@ export function SheetStage({
     const canvas = canvasRef.current
     if (!canvas) return
     let alive = true
-    let stage: SkinStage | null = null
-    void import("../../engine/skin-stage")
-      .then(({ SkinStage }) => {
+    let stage: CharacterStage | null = null
+    void import("../../engine/character-stage")
+      .then(({ CharacterStage }) => {
         if (!alive) return
         const reduced = !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-        stage = new SkinStage(canvas, reduced, FRAME)
+        stage = new CharacterStage(canvas, reduced, FRAME)
         stageRef.current = stage
         void stage.show({ body, ...LOOK[tabRef.current], look: "" }).catch(() => {})
       })

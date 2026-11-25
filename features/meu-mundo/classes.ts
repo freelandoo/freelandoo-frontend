@@ -35,7 +35,7 @@ export function setMyClan(c: Clan | null) {
 export const dietOfClan = (c: Clan | null | undefined): "carne" | "sangue" | null => (c === "vampiro" ? "sangue" : c === "raposa" ? "carne" : null)
 export const canEatItem = (it: { diet?: string | null }, diet: string | null) => !it.diet || !diet || it.diet === diet
 
-/** Classe de um corpo de classe (null = deuses, padrão, skins). */
+/** Classe de um corpo de classe (null = deuses e os outros personagens). */
 export const clanOfBody = (b: string | null | undefined): Clan | null => (!b || !isClanBody(b) ? null : b.startsWith("raposa") ? "raposa" : "vampiro")
 
 /**
@@ -55,17 +55,17 @@ export const CLAN_ANIMS: Record<Clan, string> = {
   vampiro: "anim-vampiro-sergio-m58.glb",
 }
 
-/** Skins que usam espada além dos vampiros (espelho de SWORD_SKINS em meuMundoClans.js). */
-export const SWORD_SKINS: readonly string[] = ["aurion", "morkhan", "zephyra"]
+/** Personagens que usam espada além dos vampiros (espelho de SWORD_BODIES em meuMundoClans.js). */
+export const SWORD_BODIES: readonly string[] = ["aurion", "morkhan", "zephyra"]
 
-/** Skins dos golpes do Brutamontes (espelho de HAMMER_SKINS em meuMundoClans.js). */
-export const HAMMER_SKINS: readonly string[] = ["golem", "maru", "kragor", "brutamontes"]
+/** Personagens com os golpes do Brutamontes (espelho de HAMMER_BODIES em meuMundoClans.js). */
+export const HAMMER_BODIES: readonly string[] = ["golem", "maru", "kragor", "brutamontes"]
 
-/** As arqueiras (espelho de ARCHER_SKINS em meuMundoClans.js). */
-export const ARCHER_SKINS: readonly string[] = ["iris", "aeryn"]
+/** As arqueiras (espelho de ARCHER_BODIES em meuMundoClans.js). */
+export const ARCHER_BODIES: readonly string[] = ["iris", "aeryn"]
 
-/** Quem usa arma de fogo (espelho de GUN_SKINS em meuMundoClans.js). */
-export const GUN_SKINS: readonly string[] = ["ciborgue", "noctis"]
+/** Quem usa arma de fogo (espelho de GUN_BODIES em meuMundoClans.js). */
+export const GUN_BODIES: readonly string[] = ["ciborgue", "noctis"]
 
 type Tr = (key: string, fallback: string) => string
 
@@ -78,19 +78,3 @@ export function clanBodyName(b: ClanBody, t: Tr): string {
 /** Nomes de todos os corpos de classe (para os mapas Record<BodyId, string>). */
 export const clanBodyNames = (t: Tr) => byClanBody((b) => clanBodyName(b, t))
 
-/**
- * Os 8 personagens como SKIN SÓ DE ADMINISTRADOR (testes, pedido do Alex).
- * Id de skin com hífen (CHECK do banco); espelho de CLAN_SKINS em
- * src/utils/meuMundoSkins.js do backend.
- */
-export const CLAN_SKINS = [
-  { id: "raposa", body: "raposa", name: "Raposa" },
-  { id: "raposa-f", body: "raposa_f", name: "Raposa (menina)" },
-  { id: "raposa-adulto", body: "raposa_adulto", name: "Raposa adulto" },
-  { id: "raposa-adulta", body: "raposa_adulta", name: "Raposa adulta" },
-  { id: "vampiro", body: "vampiro", name: "Vampiro" },
-  { id: "vampira", body: "vampira", name: "Vampira" },
-  { id: "vampiro-adulto", body: "vampiro_adulto", name: "Vampiro adulto" },
-  { id: "vampira-adulta", body: "vampira_adulta", name: "Vampira adulta" },
-] as const satisfies readonly { id: string; body: ClanBody; name: string }[]
-export type ClanSkinId = (typeof CLAN_SKINS)[number]["id"]

@@ -588,9 +588,9 @@ function MailDetail({ id, t, onBack, onCounts, onClaimed }: { id: string; t: Tr;
 
 function claimedWhere(m: MMMail, t: Tr) {
   const r = m.claimResult
-  if (r?.alreadyOwned) return t("ibGiftOwned", "Você já tinha — continua no seu vestuário.")
+  if (r?.alreadyOwned) return t("ibGiftOwned", "Você já tinha.")
   if (r?.where === "fridge") return t("ibGiftFridge", "Recebido · está na sua geladeira (aba Itens).")
-  if (r?.where === "wardrobe") return t("ibGiftWardrobe", "Recebido · está no seu vestuário (aba Itens).")
+  if (r?.where === "wardrobe" || r?.where === "capsule") return t("ibGiftCapsule", "Recebido · personagem novo na sua cápsula (STATUS → Personagens).")
   if (r?.where === "wallet") return t("ibGiftWallet", "Recebido · moedas na sua carteira do jogo.")
   return t("ibClaimed", "Resgatado")
 }

@@ -175,7 +175,7 @@ export default function ShopPanel({
           render: () => (
             <ShopCard
               img={MOB_PORTRAIT[m.kind]}
-              category="skin"
+              category="character"
               rarity={m.kind === "brute" ? "legendary" : m.kind === "ciborgue" || m.kind === "garras" ? "epic" : "rare"}
               portrait
               dim={!won}
@@ -214,7 +214,7 @@ export default function ShopPanel({
             render: () => (
               <ShopCard
                 img={PORTRAIT[speciesBody(sp)]}
-                category="skin"
+                category="character"
                 rarity={sp.kind === "god" ? "legendary" : sp.kind === "special" ? "epic" : "rare"}
                 portrait
                 dim={!n}

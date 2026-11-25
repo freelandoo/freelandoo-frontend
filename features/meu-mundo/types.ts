@@ -205,12 +205,12 @@ export interface StreetSign {
   radius: number
 }
 
-// 2026-11-14: o personagem padrão (normal/slim/fat/strong, pintável) e a feminina saíram; "ekaterina" = skin "ekaterina".
-// mm3d-50: os deuses (gods.ts) — corpo e skin com o mesmo id.
+// 2026-11-14: o personagem padrão (normal/slim/fat/strong, pintável) e a feminina saíram; "ekaterina" = a personagem Ekaterina.
+// mm3d-50: os deuses (gods.ts) — corpo e personagem com o mesmo id.
 // mm3d-58: os corpos das classes (classes.ts) — a sala manda; nunca se escolhem direto.
 /**
  * Monstros com corpo de avatar (2026-11-02: o Brutamontes, minotauro do Alex com o
- * machado). Também é skin de teste de administrador, então está em BODY_IDS.
+ * machado). Também é personagem de teste de administrador, então está em BODY_IDS.
  */
 export type MobBody = "brutamontes"
 /** 22/11: + os NPCs (npc-bodies.ts) — corpo para desenhar, nunca de jogador (fora de BODY_IDS). */
@@ -425,31 +425,10 @@ export interface LifeSummary {
   character: LifeCharacter
   /** Moedas do jogo; `polens` (mm3d-30) = Poléns da carteira oficial, null = indisponível agora. */
   wallet: { coins: number; polens?: number | null }
-  /** O que a sala desenha: a skin vestida ou a condição física (mm3d-16). */
+  /** O que a sala desenha: o corpo do personagem ativo. */
   avatar?: BodyId
 }
 
-/** Vestuário (mm3d-16): GET /meu-mundo/admin/skins e as ações. */
-export interface WardrobeSkin {
-  id: string
-  kind: "standard" | "skin"
-  name: string
-  price: number
-  /** Moeda do preço (mm3d-30): "polens" = exclusiva de Poléns. */
-  currency?: Currency
-  /** quanto ESTA pessoa paga (administrador: 0 em moedas; em Poléns todos pagam) */
-  cost: number
-  owned: boolean
-  equipped: boolean
-}
-
-export interface WardrobeResult extends LifeSummary {
-  /** Cores de cada skin colorível (mm3d-36): código look. */
-  /** clanBody (mm3d-58): o corpo da classe — o "Padrão" mostra ele; null sem classe. */
-  wardrobe: { condition: BodyId; clanBody?: BodyId | null; admin: boolean; skins: WardrobeSkin[]; colors?: Record<string, string> }
-  look?: string
-  bought?: boolean
-}
 
 export type LifeItemKind = "food" | "drink" | "supplement" | "medicine" | "stimulant" | "anabolic"
 
@@ -986,7 +965,7 @@ export type Currency = "coins" | "polens"
 export type NoticeKind = "need" | "life" | "gift" | "official" | "promo" | "purchase" | "dm"
 
 export interface MailGift {
-  /** B3: "character" = personagem na cápsula (o "skin" de antes chega como character). */
+  /** "character" = personagem novo na cápsula. "skin" = valor de carta antiga (antes dos personagens): o servidor entrega como character. */
   type: "item" | "skin" | "coins" | "character"
   id: string
   qty: number
@@ -1037,8 +1016,6 @@ export interface InventoryResult extends LifeSummary {
   /** catálogo da vida (nomes, tipo, efeitos) para os slots da geladeira */
   items: LifeItem[]
   inventory: {
-    /** Saiu no B3 (skins viraram espécies de personagem); servidor antigo ainda manda. */
-    wardrobe?: { condition: BodyId; admin: boolean; skins: WardrobeSkin[] }
     vehicles: { kind: VehicleKind; where: "spot" | "street" | "house" }[]
     house: { level: number; lot: number; neighborhood: string } | null
     recentGifts: { gift: MailGift; claimedAt: string }[]
@@ -1090,7 +1067,7 @@ export interface PlayerProfile {
   power?: number | null
 }
 
-// ═══ B3 (mig 340): PERSONAGENS no lugar das skins ═══════════════════════════
+// ═══ B3 (mig 340): PERSONAGENS (cada um com certidão e vida próprias) ═══════════════════════════
 export type CharacterStatus = "alive" | "capsule" | "dead" | "fused"
 
 /** Um personagem (o ativo ou um da cápsula), como GET /characters devolve. */

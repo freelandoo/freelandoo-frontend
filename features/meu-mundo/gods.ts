@@ -1,9 +1,9 @@
 // features/meu-mundo/gods.ts — os deuses de Lúmen (mm3d-50).
 //
-// Lore v2: MEU MUNDO 3D/historia/v2/. Cada um é uma SKIN
+// Lore v2: MEU MUNDO 3D/historia/v2/. Cada um é um PERSONAGEM
 // (pipeline/build_deuses.py) que usa todas as animações do Sergio, e uma
-// estátua de pedra nas praças (pipeline/build_estatuas.py). O corpo e a skin
-// têm o mesmo id; o backend espelha a lista em src/utils/meuMundoCharacters.js (SKIN_SPECIES) e
+// estátua de pedra nas praças (pipeline/build_estatuas.py). O corpo e o personagem
+// têm o mesmo id; o backend espelha a lista em src/utils/meuMundoCharacters.js (LEGACY_SPECIES) e
 // no CHECK chk_mm_avatar_body (mig 313).
 
 // Lore v2 (F1, 2026-11-10; MEU MUNDO 3D/historia/v2/00-classificacao.md): DEUSES são só os 8.
@@ -12,7 +12,7 @@
 // (build_deuses.py, arquivos avatar-<id>.glb e retratos deus-<id>.webp): para arquivo, rig e
 // retrato vale TALL_BODIES; para o que é história (quem é deus) vale GOD_BODIES.
 // 22/11: + VARKOS, o Leão da Guerra (lado de Aurion; lore em arte/historias/pagina/lore.html). Tripo do
-// Alex, pipeline/npcs + build_deuses.py (3,20 m, todas as animações do Sergio). Skin de deus jogável.
+// Alex, pipeline/npcs + build_deuses.py (3,20 m, todas as animações do Sergio). Deus jogável.
 export const GOD_BODIES = ["aurion", "morkhan", "kragor", "zephyra", "maru", "iris", "noctis", "aeryn", "varkos"] as const
 export type GodBody = (typeof GOD_BODIES)[number]
 export const MONSTER_BODIES = ["ciborgue", "cavaleiro", "golem", "garras"] as const

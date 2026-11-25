@@ -1,4 +1,4 @@
-// features/meu-mundo/engine/skin-stage.ts — o PALCO do vestuário (mm3d-16).
+// features/meu-mundo/engine/character-stage.ts — o PALCO do personagem (STATUS, Criogenia, Hall).
 //
 // Um canvas transparente por cima da imagem do palco (object-fit: cover), com
 // o personagem de pé no pedestal, respirando (Idle) e girando quando se
@@ -6,14 +6,14 @@
 // os pés ficam no pedestal em qualquer proporção de tela — porte do
 // PedestalViewer da RA da Casa Views (three.js) para o Babylon do jogo.
 //
-// Skin que a pessoa NÃO tem aparece como HOLOGRAMA (o mesmo esquema do Sergio
-// rosa da Casa Views: fresnel, scanlines, varredura, tremida, base e feixe).
-// Comprou: uma linha sobe pelo corpo e, abaixo dela, o holograma vira o
-// personagem de verdade (materialize). O holograma é um plugin de material
+// O HOLOGRAMA (embrião da Criogenia, a alma no STATUS) é o mesmo esquema do Sergio
+// rosa da Casa Views: fresnel, scanlines, varredura, tremida, base e feixe.
+// materialize: uma linha sobe pelo corpo e, abaixo dela, o holograma vira o
+// personagem de verdade. O holograma é um plugin de material
 // sobre o material do avatar — assim ele segue o esqueleto animado.
 //
 // O corpo vem do AvatarLibrary do jogo (mesmos arquivos, mesmas animações).
-// Este palco tem motor e cena próprios: fechar o vestuário descarta tudo.
+// Este palco tem motor e cena próprios: fechar a tela descarta tudo.
 
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
@@ -33,7 +33,9 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { AvatarLibrary, type AvatarRig } from "./avatars"
-import { STAGE } from "../skins"
+
+/** Medidas do palco, em pixels da imagem: pés no topo do pedestal e altura da figura. */
+export const STAGE = { w: 1672, h: 941, feetX: 836, feetY: 548, figure: 380 } as const
 import type { BodyId } from "../types"
 
 const FOV = (24 * Math.PI) / 180
@@ -133,7 +135,7 @@ export class HoloPlugin extends MaterialPluginBase {
 // ═══ peças do holograma: base com anéis e feixe ════════════════════════════
 export function ringTexture(scene: Scene) {
   const S = 256
-  const tex = new DynamicTexture("mm-skin-ring", { width: S, height: S }, scene, true)
+  const tex = new DynamicTexture("mm-stage-ring", { width: S, height: S }, scene, true)
   tex.hasAlpha = true
   const ctx = tex.getContext() as unknown as CanvasRenderingContext2D
   ctx.clearRect(0, 0, S, S)
@@ -164,7 +166,7 @@ export function ringTexture(scene: Scene) {
 }
 
 export function beamTexture(scene: Scene) {
-  const tex = new DynamicTexture("mm-skin-beam", { width: 128, height: 128 }, scene, true)
+  const tex = new DynamicTexture("mm-stage-beam", { width: 128, height: 128 }, scene, true)
   tex.hasAlpha = true
   const ctx = tex.getContext() as unknown as CanvasRenderingContext2D
   ctx.clearRect(0, 0, 128, 128)
@@ -181,7 +183,7 @@ export function beamTexture(scene: Scene) {
 }
 
 export function shadowTexture(scene: Scene) {
-  const tex = new DynamicTexture("mm-skin-shadow", { width: 64, height: 64 }, scene, false)
+  const tex = new DynamicTexture("mm-stage-shadow", { width: 64, height: 64 }, scene, false)
   tex.hasAlpha = true
   const ctx = tex.getContext() as unknown as CanvasRenderingContext2D
   const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32)
@@ -199,7 +201,7 @@ const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
 
 export interface StageLook {
   body: BodyId
-  /** true = holograma (skin que a pessoa ainda não tem) */
+  /** true = holograma (embrião, alma) */
   holo: boolean
   color: string
   accent: string
@@ -221,7 +223,7 @@ export interface StageFrame {
   face?: number
 }
 
-export class SkinStage {
+export class CharacterStage {
   private readonly engine: Engine
   private readonly scene: Scene
   private readonly camera: TargetCamera
@@ -274,57 +276,57 @@ export class SkinStage {
     scene.skipPointerMovePicking = true
     scene.skipPointerDownPicking = true
     scene.skipPointerUpPicking = true
-    this.camera = new TargetCamera("mm-skin-cam", new Vector3(0, 0, -10), scene)
+    this.camera = new TargetCamera("mm-stage-cam", new Vector3(0, 0, -10), scene)
     this.camera.fov = FOV
     this.camera.minZ = 0.05
     this.camera.setTarget(Vector3.Zero())
 
-    const hemi = new HemisphericLight("mm-skin-hemi", new Vector3(0.2, 1, -0.4), scene)
+    const hemi = new HemisphericLight("mm-stage-hemi", new Vector3(0.2, 1, -0.4), scene)
     hemi.intensity = 0.85
     hemi.groundColor = new Color3(0.35, 0.18, 0.24)
     // o neon do palco banha o personagem por trás
-    const rim = new DirectionalLight("mm-skin-rim", new Vector3(0.6, -0.3, 1), scene)
+    const rim = new DirectionalLight("mm-stage-rim", new Vector3(0.6, -0.3, 1), scene)
     rim.intensity = 0.55
     rim.diffuse = new Color3(1, 0.2, 0.4)
 
-    this.pivot = new TransformNode("mm-skin-pivot", scene)
-    this.spin = new TransformNode("mm-skin-spin", scene)
+    this.pivot = new TransformNode("mm-stage-pivot", scene)
+    this.spin = new TransformNode("mm-stage-spin", scene)
     this.spin.parent = this.pivot
-    this.holder = new TransformNode("mm-skin-holder", scene)
+    this.holder = new TransformNode("mm-stage-holder", scene)
     this.holder.parent = this.spin
     this.lib = new AvatarLibrary(scene)
 
     // sombra de contato (personagem sólido)
-    const sm = new StandardMaterial("mm-skin-shadow", scene)
+    const sm = new StandardMaterial("mm-stage-shadow", scene)
     sm.diffuseTexture = shadowTexture(scene)
     sm.useAlphaFromDiffuseTexture = true
     sm.disableLighting = true
     sm.emissiveColor = Color3.Black()
-    this.shadow = MeshBuilder.CreateGround("mm-skin-shadow", { width: 0.7, height: 0.5 }, scene)
+    this.shadow = MeshBuilder.CreateGround("mm-stage-shadow", { width: 0.7, height: 0.5 }, scene)
     this.shadow.material = sm
     this.shadow.parent = this.pivot
     this.shadow.position.y = 0.004
 
     // base com anéis e feixe (holograma)
-    this.baseMat = new StandardMaterial("mm-skin-base", scene)
+    this.baseMat = new StandardMaterial("mm-stage-base", scene)
     this.baseMat.diffuseTexture = ringTexture(scene)
     this.baseMat.opacityTexture = this.baseMat.diffuseTexture
     this.baseMat.disableLighting = true
     this.baseMat.alphaMode = Constants.ALPHA_ADD
     this.baseMat.backFaceCulling = false
-    this.base = MeshBuilder.CreateGround("mm-skin-base", { width: 0.9, height: 0.9 }, scene)
+    this.base = MeshBuilder.CreateGround("mm-stage-base", { width: 0.9, height: 0.9 }, scene)
     this.base.material = this.baseMat
     this.base.parent = this.pivot
     this.base.position.y = 0.006
 
-    this.beamMat = new StandardMaterial("mm-skin-beam", scene)
+    this.beamMat = new StandardMaterial("mm-stage-beam", scene)
     this.beamMat.diffuseTexture = beamTexture(scene)
     this.beamMat.opacityTexture = this.beamMat.diffuseTexture
     this.beamMat.disableLighting = true
     this.beamMat.alphaMode = Constants.ALPHA_ADD
     this.beamMat.backFaceCulling = false
     this.beamMat.disableDepthWrite = true
-    this.beam = MeshBuilder.CreateCylinder("mm-skin-beam", { diameterTop: 0.92, diameterBottom: 0.8, height: 1.3, tessellation: 48, cap: 0 }, scene)
+    this.beam = MeshBuilder.CreateCylinder("mm-stage-beam", { diameterTop: 0.92, diameterBottom: 0.8, height: 1.3, tessellation: 48, cap: 0 }, scene)
     this.beam.material = this.beamMat
     this.beam.parent = this.pivot
     this.beam.position.y = 0.65

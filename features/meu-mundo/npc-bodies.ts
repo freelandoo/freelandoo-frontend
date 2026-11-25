@@ -5,7 +5,7 @@
 // pipeline/npcs: prep_npcs.py + npc_list.py, a fonte única de quem é quem). Usam
 // todas as animações do Sergio; no jogo só ficam parados respirando
 // (engine/npc-idle.ts). NÃO são corpo de jogador: ficam fora de BODY_IDS, do
-// CHECK chk_mm_avatar_body e das skins — o servidor só manda o id para desenhar.
+// CHECK chk_mm_avatar_body e dos personagens — o servidor só manda o id para desenhar.
 
 export const NPC_BODIES = [
   "npc_acougueiro", "npc_quirino", "npc_aluna", "npc_cliente_raposa", "npc_juca", "npc_ronaldo", "npc_leitor", "npc_aluno",

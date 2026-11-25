@@ -94,7 +94,7 @@ const BOW_COLORS: Record<string, [string, string]> = {
   dragao: ["#FF2B4A", "#FFC0CA"],
   rubro: ["#FF3048", "#FFB8C2"],
 }
-/** Arco próprio da deusa (não está à venda): a skin atira com ele sem arco de loja. */
+/** Arco próprio da deusa (não está à venda): o personagem atira com ele sem arco de loja. */
 const GOD_BOWS: Record<string, [string, string]> = {
   iris: ["#FF4FD8", "#7DE8FF"],
   aeryn: ["#FFC23D", "#FFF2C0"],
@@ -151,7 +151,7 @@ const GUN_COLORS: Record<string, [string, string]> = {
   assalto: ["#FF8A1F", "#FFDCB4"],
   sombra: ["#A99CFF", "#E4DEFF"],
 }
-/** Arma própria da skin (não está à venda): atira com ela sem arma de loja. */
+/** Arma própria do personagem (não está à venda): atira com ela sem arma de loja. */
 const GOD_GUNS: Record<string, [string, string]> = {
   ciborgue: ["#FF8A1F", "#FFE0B8"],
   noctis: ["#2FC2FF", "#CFEFFF"],
@@ -201,7 +201,7 @@ export function shopHeavy(id: string | null | undefined): ShopSword | null {
   return c ? { file: `${DIR}/pesada-${k}-m67k.glb`, thumb: `${THUMB}/${k}.webp`, main: c[0], edge: c[1] } : null
 }
 
-/** Arma própria do deus (não está à venda): a skin luta com ela sem arma de loja equipada. */
+/** Arma própria do deus (não está à venda): o personagem luta com ela sem arma de loja equipada. */
 const GOD_HEAVY: Record<string, [string, string]> = {
   maru: ["#2FC8F0", "#FFB4C4"],
   kragor: ["#FF6A1F", "#FFC48A"],

@@ -1,10 +1,10 @@
-// features/meu-mundo/ui/portraits.ts — o retrato de cada corpo/skin. Imagem
+// features/meu-mundo/ui/portraits.ts — o retrato de cada corpo/personagem. Imagem
 // pequena e estática (sem 3D): STATUS, notificações e cards usam a mesma.
 //
 // mm3d-30: o personagem PADRÃO (as quatro condições físicas — o corpo muda no
 // 3D, o rosto é o mesmo) ganhou a ilustração do Alex, em dois recortes:
 // 4:5 para cards retangulares e o ROSTO para círculos (a piscadinha no meio).
-// Cada skin tem o retrato e a folha de 12 expressões dela (fontes em
+// Cada personagem tem o retrato e a folha de 12 expressões dele (fontes em
 // PERSONAGENS/STANDARD/<personagem>, recortadas por
 // pipeline/build_portraits_2d.py); os avisos falam com a expressão certa.
 
@@ -44,7 +44,7 @@ export const PORTRAIT: Record<BodyId, string> = {
   // mm3d-58: classes — retrato PROVISÓRIO renderizado do modelo (como os deuses).
   // 2026-11-01: refeitos (modelos novos, rosto e cabelo com mais detalhe).
   ...byClanBody((b) => `${V2}/classe-${b}_m58e.webp`),
-  // brutamontes (monstro e skin de admin): a foto nova vem no v3
+  // brutamontes (monstro e personagem de teste): a foto nova vem no v3
   ...v3Portraits,
   // 22/11: os NPCs — retrato próprio no v3; quem ainda não tem usa o do povo dele
   ...byNpcBody((b) => (NPC_V3.has(b) ? `${V3}/${b}.webp` : v3Portraits[KIN_BODY[NPC_KIN[b]]])),
@@ -124,7 +124,7 @@ export const BASE_OF: Record<Emotion, BaseEmotion> = {
 }
 
 const ALL6: Emotion[] = BASE_EMOTIONS
-/** As 12 (2026-11-15: as 6 novas chegaram; pipeline/build_emotions_single.py). 2026-11-17: deuses e skins
+/** As 12 (2026-11-15: as 6 novas chegaram; pipeline/build_emotions_single.py). 2026-11-17: deuses e personagens
  * (Aurion, Golem e Cavaleiro sem boca); falta a Íris inteira e 3 do Morkhan. */
 const ALL12: Emotion[] = EMOTIONS
 /** Quais lâminas existem (o mesmo que retratos/v3/emo/manifest.json). */

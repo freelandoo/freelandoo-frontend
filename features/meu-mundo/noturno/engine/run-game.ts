@@ -4,7 +4,7 @@
 //
 // Cena própria (como a Corrida e o Paint): motor Babylon, a rua de noite
 // (street-view), os obstáculos e as moedas (props-view) e o jogador — o
-// AVATAR dele (corpo, skin e cores) montado no veículo que escolheu, com as
+// AVATAR dele (corpo e cores) montado no veículo que escolheu, com as
 // mesmas peças da rua do bairro: AvatarLibrary com as poses de bike/skate/
 // patins, CarFleet desenhando o veículo e placeRider juntando os dois.
 //

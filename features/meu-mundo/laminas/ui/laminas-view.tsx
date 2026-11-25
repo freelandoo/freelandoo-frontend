@@ -646,7 +646,7 @@ function LaminasScreen({
       {status === "ready" && started && result === null && hud && (
         <div data-fight-hud="" style={hudFade}>
           <MinigameBanter running={!hud.over} />
-          {isTouch && <Joystick gameRef={gameRef} skin="gold" />}
+          {isTouch && <Joystick gameRef={gameRef} variant="gold" />}
           <SkillHud
             kit={abilityKit(body, stage)}
             casting={hud.casting}

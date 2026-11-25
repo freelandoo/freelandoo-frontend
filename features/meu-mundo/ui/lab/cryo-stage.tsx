@@ -2,7 +2,7 @@
 
 // features/meu-mundo/ui/lab/cryo-stage.tsx — a CRIOGENIA do laboratório (pedido do Alex, 09/11).
 //
-// O palco do antigo vestuário (SkinStage, o mesmo do Hall da Fama): todos os personagens da
+// O palco do antigo vestuário (CharacterStage, o mesmo do Hall da Fama): todos os personagens da
 // pessoa, um por vez, com setas. Os da cápsula aparecem CONGELADOS (holograma de gelo) e
 // têm "Descongelar": o ativo congela e o escolhido descongela na frente da pessoa (a linha
 // sobe e o gelo vira o personagem). Daqui também:
@@ -25,7 +25,7 @@ import type { BodyId, CharacterGene, CharacterSummary, CharactersResult } from "
 import { FUSION, mixInherit, mixSpecies, speciesBody } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { temperLabel, type Temper } from "../../soul"
-import { SkinStage } from "../../engine/skin-stage"
+import { CharacterStage } from "../../engine/character-stage"
 import { PORTRAIT } from "../portraits"
 import { EvoButton, EvoToast } from "../hud/hud-kit"
 import { EVO, archivo, teko } from "../status/evo-skin"
@@ -37,8 +37,8 @@ type Tr = (key: string, fallback: string) => string
 export type CryoPanel = "mix" | "genes"
 
 /** Fundo do palco: PROVISÓRIO (o do vestuário/Hall); o Alex manda um de gelo. */
-const CRYO_BG = "/meu-mundo/skins/v1/coliseu.webp"
-const CRYO_BG_SMALL = "/meu-mundo/skins/v1/coliseu-1024.webp"
+const CRYO_BG = "/meu-mundo/palcos/v1/coliseu.webp"
+const CRYO_BG_SMALL = "/meu-mundo/palcos/v1/coliseu-1024.webp"
 
 const ATTRS = ["strength", "speed", "dexterity", "intelligence", "accuracy"] as const
 
@@ -57,7 +57,7 @@ export default function CryoStage({ t, initial = null, onClose }: { t: Tr; initi
   const [certOf, setCertOf] = useState<string | null>(null)
   const [focus, setFocus] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const stageRef = useRef<SkinStage | null>(null)
+  const stageRef = useRef<CharacterStage | null>(null)
   /** O que o palco mostra agora (não refaz o personagem quando nada mudou). */
   const shown = useRef<{ id: string; holo: boolean } | null>(null)
 
@@ -85,7 +85,7 @@ export default function CryoStage({ t, initial = null, onClose }: { t: Tr; initi
     const canvas = canvasRef.current
     if (!canvas) return
     const reduced = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    const stage = new SkinStage(canvas, reduced)
+    const stage = new CharacterStage(canvas, reduced)
     stageRef.current = stage
     return () => {
       stageRef.current = null

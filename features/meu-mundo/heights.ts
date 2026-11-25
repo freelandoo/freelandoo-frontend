@@ -24,7 +24,7 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
   noctis: 3.2,
   aeryn: 3.2,
   varkos: 3.2,
-  ciborgue: 2.7, // 2026-11-07 (Alex): todos os ciborgues, skin e monstro
+  ciborgue: 2.7, // 2026-11-07 (Alex): todos os ciborgues, personagem e monstro
   cavaleiro: 2.0,
   golem: 4.0,
   garras: 2.0,
@@ -36,7 +36,7 @@ const HEIGHT: Partial<Record<BodyId, number>> = {
 /** Altura de referência das velocidades a pé (os avatares do bairro). */
 const BASE_HEIGHT = 1.8
 
-/** Altura do MODELO em metros (o GLB nasce assim; os avatares do bairro e as skins antigas ≈ 1,8). */
+/** Altura do MODELO em metros (o GLB nasce assim; os avatares do bairro e os corpos antigos ≈ 1,8). */
 export const bodyHeight = (b: BodyId): number => HEIGHT[b] ?? BASE_HEIGHT
 
 /**

@@ -8,7 +8,7 @@
 //                    cápsula com 1 m, congelado); preço em Esmeralda, admin não paga;
 //   • "accelerate" — o acelerador: leva um personagem que ainda não chegou aos 15 anos
 //                    direto para a fase de jovem completa.
-// As cápsulas congeladas (a tela que era das skins) são o CharacterCapsule com `frozen`.
+// As cápsulas congeladas (a tela da cápsula) são o CharacterCapsule com `frozen`.
 // Só apresentação: preço, vagas e quem aceita o acelerador vêm do servidor
 // (MeuMundoCharacterService.buyEmbryo/accelerate, regra em characters/rules.ts LAB).
 

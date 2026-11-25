@@ -1,6 +1,6 @@
 // features/meu-mundo/corrida/engine/garage-stage.ts — CORRIDA (mm3d-49): o PALCO da garagem.
 //
-// Como o palco do vestuário (engine/skin-stage.ts): um canvas transparente
+// Como o palco do personagem (engine/character-stage.ts): um canvas transparente
 // por cima da imagem do hangar ("Air Race", do Alex), com a nave flutuando
 // sobre o círculo do chão. A imagem e o canvas usam o MESMO enquadramento
 // (`garageLayout`): a nave fica no círculo em qualquer proporção de tela; no
@@ -29,7 +29,7 @@ import type { Mesh } from "@babylonjs/core/Meshes/mesh"
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh"
 import { Constants } from "@babylonjs/core/Engines/constants"
 import { ensureLoaders } from "../../engine/avatars"
-import { HoloPlugin, beamTexture, ringTexture, shadowTexture } from "../../engine/skin-stage"
+import { HoloPlugin, beamTexture, ringTexture, shadowTexture } from "../../engine/character-stage"
 import { makeGlass, makeShipPaint } from "./car-view"
 import { SHIP_ASSETS, shipArt } from "./ship-art"
 

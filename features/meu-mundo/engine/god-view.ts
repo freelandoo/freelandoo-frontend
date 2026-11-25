@@ -5,7 +5,7 @@
 // corpo do deus (Aurion/Morkhan, 3,20 m) com os golpes do tipo da regra (GOD_KINDS:
 // espada e escudo do Cavaleiro / a força do Brutamontes), uma luz no chão na cor
 // dele e o nome em cima, sempre virado para a câmera. Sem peça nova: o corpo do deus
-// já existe (estátuas, skins). Quem decide onde ele está é a sala ou a cena.
+// já existe (estátuas, personagens). Quem decide onde ele está é a sala ou a cena.
 
 import type { Scene } from "@babylonjs/core/scene"
 import type { Mesh } from "@babylonjs/core/Meshes/mesh"

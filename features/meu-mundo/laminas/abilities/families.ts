@@ -1,18 +1,18 @@
-// features/meu-mundo/laminas/abilities/families.ts — a família do golpe de cada skin (lv2-B1, 2026-11-11).
+// features/meu-mundo/laminas/abilities/families.ts — a família do golpe de cada personagem (lv2-B1, 2026-11-11).
 //
 // Corte, Investida e Escudo são a MESMA regra para todo mundo (sim/fight.ts). A família só
 // muda o desenho: lâmina corta com a lua, maga solta um selo girando, martelo rola uma onda
 // pesada com lascas, arco dispara uma flecha de luz reta, arma de fogo um traçante reto,
 // garras rasgam em três, pedra arremessa as pedras do Golem com o raio entre elas.
 //
-// Regra do Alex: golpe vem da SKIN, nunca da arma (a arma muda modelo, rastro e bônus).
+// Regra do Alex: golpe vem do PERSONAGEM, nunca da arma (a arma muda modelo, rastro e bônus).
 // Sem Babylon de propósito.
 
 export type StrikeStyle = "blade" | "mage" | "hammer" | "bow" | "gun" | "claws" | "stone"
 
 export const STRIKE_STYLES: readonly StrikeStyle[] = ["blade", "mage", "hammer", "bow", "gun", "claws", "stone"]
 
-/** O que a luta já sabe da skin (os mesmos sinais que escolhem os golpes do corpo). */
+/** O que a luta já sabe do personagem (os mesmos sinais que escolhem os golpes do corpo). */
 export interface StyleFlags {
   ring: boolean
   claws: boolean

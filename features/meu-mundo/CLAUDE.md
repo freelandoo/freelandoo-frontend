@@ -24,13 +24,14 @@ Carrega só quando se abre arquivo desta pasta. **Teto 8 KB.** Histórico de cad
 
 ## Regras do Alex (decisões de produto — valem até ele mudar)
 
+- **Não existe skin (25/11).** Cada personagem é um ser: certidão, vida e personalidade próprias; trocar de personagem = outro ser, tudo novo. Não criar vestuário/skin nem usar a palavra em texto, código novo ou comentário (sobra só o valor `"skin"` gravado no banco: carta antiga e origem da mig 340).
 - Mexeu num personagem = muda em todo lugar onde aparece, inclusive como monstro (altura, rig, arma, poderes).
 - Alturas (`heights.ts` ↔ `meuMundoHeights.js`): jovem 1,70/1,65, adulto 2,70, deuses 3,20, Ciborgue 2,7, Golem de Pedra/Brutamontes 4, lobos 2,5, Cavaleiro/Garras 2. Iguais na luta e na rua.
 - Status e nível sem teto. Poder = soma dos atributos + HP do nível + equipamento (só o permanente).
 - Força se chama ACURACIDADE na tela (chave `strength`); acurácia é outro atributo. Ataque = força do golpe, defesa amortece, dano por razão pura sem piso.
-- Brutamontes nv. 15 = 506/575/503/431/323; todas as raças nessa dificuldade. Quem aparece como monstro é igual à skin.
+- Brutamontes nv. 15 = 506/575/503/431/323; todas as raças nessa dificuldade. Quem aparece como monstro é igual ao personagem.
 - Toda luta abre na tela de versus e só começa no botão. Todo personagem tem as mesmas 4 habilidades na regra; identidade é só apresentação.
-- Golpes vêm da SKIN, nunca da arma; a arma muda modelo, rastro e bônus. Ciborgue/Noctis = armas de fogo; Íris/Aeryn = arqueiras com flechas de luz; escudo para quem usa espada.
+- Golpes vêm do PERSONAGEM, nunca da arma; a arma muda modelo, rastro e bônus. Ciborgue/Noctis = armas de fogo; Íris/Aeryn = arqueiras com flechas de luz; escudo para quem usa espada.
 - Todo tiro é reto. Ciborgue carrega a arma na cintura, cotovelo em L; anda com braços a 20° do corpo.
 - Golem: duas pedras atrás dos ombros com raio verde. Dama das Garras não voa e não fecha a guarda. Lobos: raio roxo pela boca.
 - Pose de descanso de todos: braço aberto 22° do corpo.

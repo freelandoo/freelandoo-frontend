@@ -19,7 +19,6 @@ import {
   HeartPulse,
   Hospital,
   Lock,
-  Shirt,
   Skull,
   Sparkles,
   Square,
@@ -36,7 +35,6 @@ import { SheetStage } from "./sheet-stage"
 import { Bar, Chamfer, CountUp, EVO, Plate, Ring, archivo, cinzel, teko, toneFor } from "./evo-skin"
 import { MM } from "../hud/tokens"
 import { faceForPortrait } from "../portraits"
-import { TALL_NAMES, isTall, type TallBody } from "../../gods"
 import { clanBodyNames, clanOfBody, type Clan } from "../../classes"
 import { ailmentWords, collapseWords, exhaustCauseWords, exhaustedQuoteWords, hospitalStayWords } from "./life-voice"
 import { heroLevelScale, heroSheet } from "../../laminas/sim/fight"
@@ -69,8 +67,8 @@ export interface PageActions {
   /** Está no supermercado (mm3d-37c): fora dele o Mercado só mostra. */
   canBuy: boolean
   newcomer: () => void
-  /** Abre os PERSONAGENS (B3; antes o vestuário de skins, mm3d-16). */
-  openSkins: () => void
+  /** Abre os PERSONAGENS (a cápsula). */
+  openCharacters: () => void
   /** Adquirir Poléns pelo checkout oficial (mm3d-30). */
   openPolens?: () => void
   /** E6: abre a mochila filtrada por um slot (tocar o slot no Equipado). */
@@ -355,10 +353,7 @@ function eventText(kind: string, data: Record<string, unknown>, t: Tr, items: Ma
       return t("evHeartAttack", "O coração cedeu ao Desgaste.")
     case "adult":
       return t("evAdult", "Virou adulto: +20% em inteligência, força e velocidade; saúde 100.")
-    case "skin_bought":
-      return (Number(data.price) > 0 ? t("evSkinAcquired", "Adquiriu a skin {skin} ({n} moedas).") : t("evSkinAcquiredFree", "Adquiriu a skin {skin}."))
-        .replace("{skin}", data.skin === "sergio" ? "Sergio" : data.skin === "ekaterina" ? "Ekaterina" : isTall(String(data.skin)) ? TALL_NAMES[data.skin as TallBody] : String(data.skin ?? ""))
-        .replace("{n}", String(data.price ?? ""))
+    // "skin_bought" (antes dos personagens) não aparece: cada personagem tem só a vida dele
     case "death":
       return t("evDeath", "Morreu: {cause}.").replace("{cause}", causeLabel(String(data.cause ?? ""), t, clan))
     // apresentação 03: a linha do tempo mostrava a chave crua ("fight", "wish"…)
@@ -393,7 +388,6 @@ function eventIcon(kind: string) {
   if (kind === "heart_attack") return <HeartPulse className="h-5 w-5" />
   if (kind === "death") return <Skull className="h-5 w-5" />
   if (kind === "collapse") return <Zap className="h-5 w-5" />
-  if (kind === "skin_bought") return <Shirt className="h-5 w-5" />
   if (kind === "boxe") return <Swords className="h-5 w-5" />
   return <Clock className="h-5 w-5" />
 }
@@ -974,7 +968,7 @@ function NowBlock({ life, portrait, t, act, body }: PageProps) {
       {!body && (
         <div className="flex flex-col items-center gap-1">
           <Portrait src={portrait} size={112} />
-          <MiniButton onClick={act.openSkins} active h={28} className="w-full">
+          <MiniButton onClick={act.openCharacters} active h={28} className="w-full">
             <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
           </MiniButton>
         </div>
@@ -1153,7 +1147,7 @@ function SheetPage(props: PageProps) {
     <>
       {props.body && (
         <SheetStage body={props.body} portrait={props.portrait} name={props.name} temper={characterTemper(c, t)} power={c.power ?? null} level={adv?.level ?? null} height={compact ? 300 : 340} t={t}>
-          <MiniButton onClick={props.act.openSkins} active h={28}>
+          <MiniButton onClick={props.act.openCharacters} active h={28}>
             <Users className="h-3.5 w-3.5" /> {t("stCharacters", "Personagens")}
           </MiniButton>
         </SheetStage>

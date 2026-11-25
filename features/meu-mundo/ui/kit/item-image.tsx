@@ -23,7 +23,7 @@ export type ItemCategory =
   | "recipe"
   | "quest"
   | "cosmetic"
-  | "skin"
+  | "character"
   | "vehicle"
   | "house"
   /** mm3d-60k: moedas do jogo (drop de luta/minijogo). */
@@ -93,7 +93,7 @@ const ART: Record<ItemCategory, ReactNode> = {
       <path d="M38 26c4-10 12-14 16-12-2 4-6 12-10 18" />
     </>
   ),
-  skin: (
+  character: (
     <>
       <circle cx="32" cy="18" r="9" />
       <path d="M14 56c2-14 10-22 18-22s16 8 18 22" />

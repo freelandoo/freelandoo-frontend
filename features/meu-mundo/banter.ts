@@ -84,7 +84,7 @@ export const placeTopic = (id: string): BanterTopic | null => (Object.prototype.
 /**
  * Assuntos de comida: a fala muda pela CLASSE (2026-11-15, plano das expressões novas §5) — o Vampiro vive de
  * sangue (Banco de Sangue, presas), a Raposa caça (Açougue, carne). Chave `bt_<assunto>_<p>_<classe>_<n>`;
- * sem classe (deus, skin) = as falas de sempre.
+ * sem classe (deus, outros personagens) = as falas de sempre.
  */
 const CLAN_TOPICS = new Set<BanterTopic>(["place_food", "fridge"])
 

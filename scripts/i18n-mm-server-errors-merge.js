@@ -85,8 +85,6 @@ const ROWS = [
   ["Quantidade de horas inválida", "Invalid number of hours", "Cantidad de horas no válida"],
   ["Para deitar ou dormir, vá até uma cama", "To lie down or sleep, go to a bed", "Para acostarte o dormir, ve a una cama"],
   ["Com estimulante no corpo ele não consegue dormir", "With stimulants in the body your resident can't sleep", "Con estimulantes en el cuerpo tu huésped no puede dormir"],
-  ["Skin não encontrada", "Skin not found", "Skin no encontrada"],
-  ["Você ainda não tem essa skin", "You don't have that skin yet", "Aún no tienes esa skin"],
   ["Este personagem tem visual próprio", "This character has its own look", "Este personaje tiene aspecto propio"],
   ["Seu hóspede está vivo", "Your resident is alive", "Tu huésped está vivo"],
   ["Acabou na geladeira", "That ran out in the fridge", "Se acabó en la nevera"],
