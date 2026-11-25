@@ -16,9 +16,11 @@ import { gearThumb, nameOf, type GearTr } from "./gear-card"
 import { ForgeCard } from "./forge-card"
 import { useWorkshop } from "./use-workshop"
 import { WeaponWorkshop } from "./weapon-forge"
+import { useGearShelf } from "../shop/gear-shelf"
 
-/** B5: comprar saiu para a Loja única. "bag" (legado) abre a forja. */
-export type GearTab = "bag" | "forge" | "refine"
+/** B5: comprar saiu para a Loja única. "bag" (legado) abre a forja. 24/11/2026: o Forjador também VENDE as proteções ("shop"). */
+export type GearTab = "bag" | "shop" | "forge" | "refine"
+type Tab = "shop" | "refine" | "forge"
 type ForgeMode = "assemble" | "stars" | "recipes"
 
 export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: {
@@ -26,15 +28,18 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
 }) {
   const t = useTranslations("MeuMundo") as GearTr
   const { catalog, bag, busy, message, setMessage, error, load, act } = useWorkshop(t, onReceipt)
-  const [tab, setTab] = useState<"forge" | "refine">(initialTab === "refine" ? "refine" : "forge")
+  const [tab, setTab] = useState<Tab>(initialTab === "refine" ? "refine" : initialTab === "shop" ? "shop" : "forge")
   const [mode, setMode] = useState<ForgeMode>("assemble")
   const byId = useMemo(() => new Map((catalog?.items || []).map(item => [item.id, item])), [catalog])
-  const title = tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : t("refineTitle", "Bancada de refinamento")
-  const changeTab = (next: "forge" | "refine") => { setTab(next); setMessage(null) }
+  const title = tab === "forge" ? t("centerPlace_forja", "Forja das Engrenagens") : tab === "shop" ? t("forgeShopTitle", "Venda de proteções") : t("refineTitle", "Bancada de refinamento")
+  const changeTab = (next: Tab) => { setTab(next); setMessage(null) }
+  const shopItems = useGearShelf({ catalog, bag, shelf: "armory", busy: !!busy, act, t, on: tab === "shop" })
 
   let body: React.ReactNode
   if (!catalog || !bag) {
     body = <div className="grid min-h-48 place-items-center" style={{ color: AE.muted }}>{error ? <AetherButton onClick={() => void load()}>{t("forgeReload", "Tentar abrir novamente")}</AetherButton> : <Loader2 className="h-6 w-6 animate-spin" aria-label={t("gearLoading", "Carregando…")} />}</div>
+  } else if (tab === "shop") {
+    body = <AetherCarousel key="shop" title={t("forgeShopTab", "Proteções")} items={shopItems} cardWidth={250} cardHeight={375} empty={t("gearNothing", "Nada por aqui ainda.")} />
   } else if (tab === "refine") {
     body = <WeaponWorkshop mode="refine" catalog={catalog} bag={bag} byId={byId} t={t} busy={!!busy} act={act} />
   } else if (mode !== "recipes") {
@@ -52,8 +57,9 @@ export default function GearPanel({ onClose, initialTab = "forge", onReceipt }: 
   return (
     <AetherModal title={title} eyebrow={bag ? t("gearHeader", "Nível {lv} · {c} moedas").replace("{lv}", String(bag.level)).replace("{c}", String(bag.coins)) : undefined} onClose={onClose} width={680}>
       <AetherTabs label={t("gearTitle", "Equipamento")} value={tab} onChange={changeTab} tabs={[
-        { id: "forge" as const, label: t("gearTabForge", "Forja") },
+        { id: "shop" as const, label: t("forgeShopTab", "Proteções") },
         { id: "refine" as const, label: t("refineTab", "Refinar") },
+        { id: "forge" as const, label: t("gearTabForge", "Forja") },
       ]} />
       {tab === "forge" && <AetherTabs<ForgeMode> label={t("forgeKinds", "Bancadas da forja")} value={mode} onChange={(m) => { setMode(m); setMessage(null) }} tabs={[
         { id: "assemble", label: t("wfAssembleTitle", "Montar arma") },

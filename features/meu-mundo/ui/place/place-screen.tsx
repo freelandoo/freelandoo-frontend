@@ -94,7 +94,9 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
   const [menuOpen, setMenuOpen] = useState(false)
   const [sellerOpen, setSellerOpen] = useState(false)
   const [gearTab, setGearTab] = useState<GearTab | null>(null)
-  const [shelf, setShelf] = useState<"armory" | "weapons" | null>(null)
+  // 24/11/2026 (Alex): no Arsenal cada vendedor vende UMA coisa, sem abas — Davi (balcão "weapons") só cajados,
+  // Dora, a vampira (balcão "armory"), só espadas. As proteções ficam com o Forjador.
+  const [shelf, setShelf] = useState<"staffs" | "weapons" | null>(null)
   // B12: Laboratório de Criogenia (conversa, embriões, acelerador e as cápsulas congeladas)
   const [lab, setLab] = useState<LabMode | "cryo" | "mix" | "genes" | null>(null)
   // B10: aparelho/curso e nível escolhidos no diálogo (null = servidor antigo, treino de sempre)
@@ -190,7 +192,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
     // B5: os balcões do Arsenal abrem a Loja única (aba Equipamento)
     if (use === "armory" || use === "weapons") {
       stop()
-      setShelf(use)
+      setShelf(use === "weapons" ? "staffs" : "weapons")
       return
     }
     if (use === "train" || use === "study" || use === "pray") {
@@ -266,7 +268,7 @@ export function PlaceScreen({ placeId, placeName, interior, body, look = "", onE
         }
       />
       {gearTab && <GearPanel initialTab={gearTab} onClose={() => setGearTab(null)} />}
-      {shelf && <ShopPanel initialTab="gear" initialShelf={shelf} onClose={() => setShelf(null)} />}
+      {shelf && <ShopPanel only={shelf} onClose={() => setShelf(null)} />}
       {(lab === "cryo" || lab === "mix" || lab === "genes") && <CryoStage t={t} initial={lab === "cryo" ? null : lab} onClose={() => setLab(null)} />}
       {(lab === "talk" || lab === "embryo" || lab === "accelerate" || lab === "capsule") && <LabPanel t={t} mode={lab} onMode={setLab} onClose={() => setLab(null)} />}
       {toast && (

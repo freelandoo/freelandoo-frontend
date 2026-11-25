@@ -56,9 +56,11 @@ function actionOf(use: PlaceUse, t: Tr): { label: string; icon: ReactNode } {
     case "refine":
       return { label: t("pvRefine", "Refinar equipamento"), icon: <Sparkles className="h-5 w-5" /> }
     case "armory":
-      return { label: t("pvArmory", "Comprar equipamentos"), icon: <Swords className="h-5 w-5" /> }
+      // balcão da Dora (vampira): só espadas (24/11/2026)
+      return { label: t("pvBuySwords", "Comprar espadas"), icon: <Swords className="h-5 w-5" /> }
     case "weapons":
-      return { label: t("pvWeapons", "Comprar armas"), icon: <Swords className="h-5 w-5" /> }
+      // balcão do Davi: só cajados (24/11/2026)
+      return { label: t("pvBuyStaffs", "Comprar cajados"), icon: <Swords className="h-5 w-5" /> }
     case "train":
       return { label: t("pvTrain", "Treinar"), icon: <Dumbbell className="h-5 w-5" /> }
     case "study":

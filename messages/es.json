@@ -16183,7 +16183,11 @@
     "invPick": "Elige el personaje (ronda {r}):",
     "centerFountain": "Fuente del Éter",
     "centerFountainUse": "Fuente del Éter · Convocar",
-    "gaSeeSummary": "Ver resumen"
+    "gaSeeSummary": "Ver resumen",
+    "pvBuySwords": "Comprar espadas",
+    "pvBuyStaffs": "Comprar bastones",
+    "forgeShopTab": "Protecciones",
+    "forgeShopTitle": "Venta de protecciones"
   },
   "Sports": {
     "eyebrow": "Deportes",

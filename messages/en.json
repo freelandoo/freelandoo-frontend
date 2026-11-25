@@ -16203,7 +16203,11 @@
     "invPick": "Choose the character (round {r}):",
     "centerFountain": "Aether Fountain",
     "centerFountainUse": "Aether Fountain · Summon",
-    "gaSeeSummary": "See summary"
+    "gaSeeSummary": "See summary",
+    "pvBuySwords": "Buy swords",
+    "pvBuyStaffs": "Buy staffs",
+    "forgeShopTab": "Protections",
+    "forgeShopTitle": "Protections for sale"
   },
   "Sports": {
     "eyebrow": "Sports",

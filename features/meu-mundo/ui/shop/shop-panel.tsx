@@ -18,14 +18,13 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Loader2 } from "lucide-react"
 import { getToken } from "@/lib/auth"
 import { useTranslations } from "@/components/i18n/I18nProvider"
-import { buyGear, getCharacters, getLife, getMonsters, postLifeBuy, type GearItem, type MonsterTrophy, type Receipt, type TrophyKind } from "../../data"
+import { getCharacters, getLife, getMonsters, postLifeBuy, type GearItem, type MonsterTrophy, type Receipt, type TrophyKind } from "../../data"
 import type { BodyId, CharactersResult, LifeFull, LifeItem } from "../../types"
 import { AetherButton, AetherModal } from "../kit/aether-modal"
 import { AetherCarousel, AetherTabs, type CarouselItem } from "../kit/aether-carousel"
 import { AE, rankOf } from "../kit/aether-tokens"
 import type { ItemCategory } from "../kit/item-image"
-import { gearLock, gearThumb, nameOf, type GearTr } from "../gear/gear-card"
-import { ItemFacts } from "../gear/item-facts"
+import { type GearTr } from "../gear/gear-card"
 import { useWorkshop } from "../gear/use-workshop"
 import { effectText } from "../fridge/shelf"
 import { effectsOf, thumbOf } from "../fridge/fridge-logic"
@@ -36,16 +35,10 @@ import { SPECIES, type SpeciesDef } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { ShopCard, type ShopLine } from "./shop-card"
 import { ExchangePanel } from "./exchange-panel"
-import { uiSound } from "../../engine/audio"
-
-/** Som da compra (áudio P1: `ui-compra` estava no manifesto sem chamada) ou do erro; devolve o resultado. */
-function buySound<R extends { ok: boolean }>(r: R): R {
-  uiSound(r.ok ? "buy" : "error", r.ok ? 1 : 0.7)
-  return r
-}
+import { buySound, useGearShelf, type GearShelf } from "./gear-shelf"
 
 export type ShopTab = "gear" | "monsters" | "characters" | "food" | "exchange"
-export type GearShelf = "armory" | "weapons" | "staffs" | "hammers" | "bows" | "guns" | "shields"
+export type { GearShelf } from "./gear-shelf"
 type FoodGroup = "healthy" | "junk" | "supplement" | "medicine" | "stimulant" | "anabolic"
 
 const MOB_PORTRAIT: Record<TrophyKind, string> = {
@@ -90,8 +83,11 @@ export default function ShopPanel({
   onReceipt,
   onChanged,
   onOpenWorkshop,
+  only,
 }: {
   onClose: () => void
+  /** Balcão de uma prateleira só (Arsenal: Davi = cajados, Dora = espadas): sem abas, só essa prateleira. */
+  only?: GearShelf
   /** Apresentação 04: Forja e Refinar moram dentro da Loja (abrem a bancada). */
   onOpenWorkshop?: (tab: "forge" | "refine") => void
   initialTab?: ShopTab
@@ -103,8 +99,8 @@ export default function ShopPanel({
   onChanged?: () => void
 }) {
   const t = useTranslations("MeuMundo") as GearTr
-  const [tab, setTab] = useState<ShopTab>(initialTab)
-  const [shelf, setShelf] = useState<GearShelf>(initialShelf)
+  const [tab, setTab] = useState<ShopTab>(only ? "gear" : initialTab)
+  const [shelf, setShelf] = useState<GearShelf>(only ?? initialShelf)
   const [food, setFood] = useState<FoodGroup>("healthy")
   const [confirm, setConfirm] = useState<string | null>(null)
   const { catalog, bag, busy, message, setMessage, error, load: loadGear, act } = useWorkshop(t, onReceipt)
@@ -159,63 +155,9 @@ export default function ShopPanel({
     setFoodBusy(false)
   }
 
+  const gearItems = useGearShelf({ catalog, bag, shelf, busy: !!busy, act, t, on: tab === "gear" })
   const items: CarouselItem[] = useMemo(() => {
-    if (tab === "gear") {
-      if (!catalog || !bag) return []
-      return catalog.items
-        .filter((item) => item.price != null && (shelf === "armory" ? !item.shop : item.shop === shelf))
-        // armas novas do Tripo (22/11/2026) entram no fim do catálogo: a prateleira ordena pelo preço (estável)
-        .sort((a, b) => (a.price ?? 0) - (b.price ?? 0))
-        .map((item: GearItem) => {
-          const lock = gearLock(item, bag, t)
-          const owned = !item.stack && !!bag.owned[item.id]
-          const price = item.price || 0
-          const poor = bag.coins < price
-          const rank = rankOf(item)
-          return {
-            key: item.id,
-            label: nameOf(item, t),
-            thumb: gearThumb(item),
-            render: () => (
-              <ShopCard
-                img={gearThumb(item)}
-                art
-                category={(item.category === "shield" ? "armor" : item.category) as ItemCategory}
-                rarity={rank}
-                rank={rank}
-                t={t}
-                title={nameOf(item, t)}
-                badge={t("gearPrice", "{p} moedas").replace("{p}", String(price))}
-                subtitle={item.level > 1 ? t("shopFromLevel", "A partir do nível {n}").replace("{n}", String(item.level)) : undefined}
-                details={<ItemFacts item={item} t={t} bag={bag} />}
-                note={lock ?? undefined}
-              >
-                {owned ? (
-                  <p className="text-[13px] font-semibold" style={{ color: AE.good }}>
-                    {t("gearOwned", "Já é seu")}
-                  </p>
-                ) : lock ? null : confirm === item.id ? (
-                  <>
-                    <p className="text-[12px]" style={{ color: AE.goldSoft }}>
-                      {t("forgeBuyConfirm", "Confirmar compra por {n} moedas?").replace("{n}", String(price))}
-                    </p>
-                    <AetherButton disabled={poor} busy={!!busy} onClick={() => void act("buy-" + item.id, (tk, key) => buyGear(tk, item.id, key).then(buySound), t("gearBought", "Comprado! Está na mochila."))}>
-                      {t("gearConfirm", "Confirmar")}
-                    </AetherButton>
-                    <AetherButton tone="secondary" disabled={!!busy} onClick={() => setConfirm(null)}>
-                      {t("gearCancel", "Voltar")}
-                    </AetherButton>
-                  </>
-                ) : (
-                  <AetherButton disabled={!!busy || poor} onClick={() => setConfirm(item.id)}>
-                    {poor ? t("gearPoor", "Moedas insuficientes") : t("gearBuy", "Comprar")}
-                  </AetherButton>
-                )}
-              </ShopCard>
-            ),
-          }
-        })
-    }
+    if (tab === "gear") return gearItems
     if (tab === "monsters") {
       if (!monsters) return []
       return monsters.map((m) => {
@@ -334,7 +276,7 @@ export default function ShopPanel({
       })
     // buyFood muda a cada render, mas só lê estado já listado aqui
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, catalog, bag, shelf, confirm, busy, monsters, chars, life, food, atMarket, foodBusy, t, act])
+  }, [tab, gearItems, confirm, monsters, chars, life, food, atMarket, foodBusy, t])
 
   const tabs = [
     { id: "gear" as const, label: t("shopTabGear", "Equipamento") },
@@ -355,15 +297,25 @@ export default function ShopPanel({
   const empty =
     tab === "monsters" ? t("shopMobEmpty", "Nenhum monstro por aqui.") : tab === "gear" ? t("gearNothing", "Nada por aqui ainda.") : t("gearNothing", "Nada por aqui ainda.")
 
+  const shelfTabs: { id: GearShelf; label: string }[] = [
+    { id: "armory", label: t("gearTabArmory", "Armeiro") },
+    { id: "weapons", label: t("shopSwords", "Espadas") },
+    { id: "staffs", label: t("shopStaffs", "Cajados") },
+    { id: "hammers", label: t("shopHammers", "Hammers") },
+    { id: "bows", label: t("shopBows", "Arcos") },
+    { id: "guns", label: t("shopGuns", "Guns") },
+    { id: "shields", label: t("shopShields", "Escudos") },
+  ]
+  const onlyLabel = only ? shelfTabs.find((x) => x.id === only)?.label : undefined
   return (
     <AetherModal
-      title={t("shopTitle", "Loja")}
+      title={onlyLabel ?? t("shopTitle", "Loja")}
       eyebrow={coins != null ? t("stCoins", "{n} moedas").replace("{n}", String(coins)) : undefined}
       onClose={onClose}
       width={720}
     >
-      <AetherTabs label={t("shopTitle", "Loja")} tabs={tabs} value={tab} onChange={changeTab} />
-      {tab === "gear" && (
+      {!only && <AetherTabs label={t("shopTitle", "Loja")} tabs={tabs} value={tab} onChange={changeTab} />}
+      {tab === "gear" && !only && (
         <AetherTabs<GearShelf>
           label={t("weaponsShopTitle", "Loja de Armas")}
           value={shelf}
@@ -371,15 +323,7 @@ export default function ShopPanel({
             setShelf(s)
             setConfirm(null)
           }}
-          tabs={[
-            { id: "armory", label: t("gearTabArmory", "Armeiro") },
-            { id: "weapons", label: t("shopSwords", "Espadas") },
-            { id: "staffs", label: t("shopStaffs", "Cajados") },
-            { id: "hammers", label: t("shopHammers", "Hammers") },
-            { id: "bows", label: t("shopBows", "Arcos") },
-            { id: "guns", label: t("shopGuns", "Guns") },
-            { id: "shields", label: t("shopShields", "Escudos") },
-          ]}
+          tabs={shelfTabs}
         />
       )}
       {tab === "food" && (
@@ -416,7 +360,7 @@ export default function ShopPanel({
       ) : tab === "exchange" && catalog && bag ? (
         <ExchangePanel catalog={catalog} bag={bag} t={t} act={act} busy={!!busy} />
       ) : (
-        <AetherCarousel key={tab + "-" + shelf + "-" + food} title={tabs.find((x) => x.id === tab)?.label} items={items} cardWidth={tab === "gear" || tab === "food" ? 250 : 340} cardHeight={tab === "gear" || tab === "food" ? 375 : 500} empty={empty} />
+        <AetherCarousel key={tab + "-" + shelf + "-" + food} title={onlyLabel ?? tabs.find((x) => x.id === tab)?.label} items={items} cardWidth={tab === "gear" || tab === "food" ? 250 : 340} cardHeight={tab === "gear" || tab === "food" ? 375 : 500} empty={empty} />
       )}
       {message && (
         <p role="status" className="mt-3 text-center text-[13px]" style={{ color: AE.goldSoft }}>
