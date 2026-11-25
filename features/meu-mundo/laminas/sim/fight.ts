@@ -914,6 +914,15 @@ export function strike(atk: number, def: number) {
   return STRIKE_FLOOR * a + (d > 0 ? (1 - STRIKE_FLOOR) * d : 0)
 }
 /**
+ * 25/11/2026 (Alex: "se tá batendo 13, o S tem que ser no máximo 50"): o PESO do golpe (golpe ÷ golpe médio)
+ * multiplica o dano JÁ passado pela defesa. Antes multiplicava o ataque e depois tirava a defesa: com ataque
+ * perto da defesa o golpe normal caía no piso (13) e o Poder/habilidade passava longe dela (106, 393).
+ * Agora o golpe forte vale sempre peso × o golpe normal (Poder ≈ 2,3×, combo 0,75×–1,4×); a média do combo não muda.
+ */
+export function strikeWeighted(atk: number, def: number, weight: number) {
+  return strike(atk, def) * Math.max(0, weight)
+}
+/**
  * (SEM USO desde a decisão do Alex de manter os monstros como estavam; fica para comparar.)
  * Kit do monstro na luta nova: uma arma (espada) e um escudo da classe do nível dele (chefão de Domínio =
  * Lendária), na média da classe. Assim o monstro do seu nível tem o mesmo orçamento de quem está equipado.
@@ -1742,7 +1751,7 @@ export class Fight {
     const guard = m.shieldUntil > this.time ? 1 - MOB_SHIELD.cut : 1
     // R2: o golpe vale ataque × (golpe ÷ golpe médio); passa ataque − defesa, com piso de 10%
     const dmg = this.v2
-      ? Math.max(1, Math.round(strike((this.rate.atk * base * opening * guard) / (this.comboMean * this.fx.dmg), m.rate.def) * this.dmgK))
+      ? Math.max(1, Math.round(strikeWeighted(this.rate.atk * opening * guard, m.rate.def, base / (this.comboMean * this.fx.dmg)) * this.dmgK))
       : Math.max(1, Math.round(base * opening * guard * (this.rated ? damageRatio(this.rate.atk, m.rate.def) : 1)))
     m.hp = Math.max(0, m.hp - dmg)
     const dead = m.hp <= 0
@@ -2036,7 +2045,7 @@ export class Fight {
     const shield = p.shieldUntil > this.time
     const cut = this.rated ? damageRatio(m.rate.atk, this.rate.def) : 1 - this.def
     const dmg = this.v2
-      ? Math.max(1, Math.round(strike((m.rate.atk * a.dmg) / this.mobSwingRef, this.rate.def) * this.foeDmgK * (shield ? 1 - SKILLS.shield.cut : 1)))
+      ? Math.max(1, Math.round(strikeWeighted(m.rate.atk, this.rate.def, a.dmg / this.mobSwingRef) * this.foeDmgK * (shield ? 1 - SKILLS.shield.cut : 1)))
       : Math.max(1, Math.round(a.dmg * m.dmgMul * cut * (shield ? 1 - SKILLS.shield.cut : 1)))
     p.hp = Math.max(0, p.hp - dmg)
     const heavy = !!a.heavy
