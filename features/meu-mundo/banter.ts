@@ -42,7 +42,7 @@ export const LIFE_TOPICS = ["see_npc", "house_mine", "house_other", "fridge", "r
  * comenta o JEITO de quem joga: bateu, caiu, tá parado, tá ruim de controle.
  */
 export const MINIGAME_TOPICS = ["mg_start", "mg_crash", "mg_fall", "mg_careful", "mg_good", "mg_boost", "mg_fuel", "mg_hurt", "mg_cat", "mg_bad", "mg_idle", "mg_win", "mg_lose"] as const
-export const BANTER_TOPICS = ["see_god", "see_monster_skin", "see_rival", "see_kin", "see_crowd", ...MOB_TOPICS, "fight_win", "fight_lose", ...PLACE_TOPICS, ...LIFE_TOPICS, ...MINIGAME_TOPICS] as const
+export const BANTER_TOPICS = ["see_god", "see_monster_char", "see_rival", "see_kin", "see_crowd", ...MOB_TOPICS, "fight_win", "fight_lose", ...PLACE_TOPICS, ...LIFE_TOPICS, ...MINIGAME_TOPICS] as const
 export type BanterTopic = (typeof BANTER_TOPICS)[number]
 
 export interface BanterEvent {
@@ -118,11 +118,11 @@ export function banterEmotion(topic: BanterTopic, temper: Temper): Emotion {
       // regra do Alex: cara de raiva quase sempre, só ri quando ganha — o deboche é a raiva de quem zoa
       if (win) return "laughing"
       if (food) return "hungry"
-      if (is("see_god", "see_monster_skin", "see_rival", "see_crowd", "place_police", "place_church", "place_study", "ride_crash", "mg_idle", "mg_bad", "mg_careful")) return "smug"
+      if (is("see_god", "see_monster_char", "see_rival", "see_crowd", "place_police", "place_church", "place_study", "ride_crash", "mg_idle", "mg_bad", "mg_careful")) return "smug"
       return "angry"
     case "covarde":
       if (shock) return "surprised"
-      if (mob || is("see_god", "see_monster_skin", "see_crowd", "place_hospital", "place_police", "place_arena", "mg_start")) return "scared"
+      if (mob || is("see_god", "see_monster_char", "see_crowd", "place_hospital", "place_police", "place_arena", "mg_start")) return "scared"
       if (win || is("see_kin", "place_church", "place_study", "place_food", "mg_good", "house_mine", "fridge", "see_npc", "mg_cat")) return "happy"
       return "sad"
     case "comilao":
@@ -350,7 +350,7 @@ export function sightEvents(myBody: string, players: SeenPlayer[], mobs: SeenMob
   const god = near.find((p) => gods.includes(p.body))
   if (god) out.push({ topic: "see_god", god: names[god.body] ?? god.body, target: `p:${god.sid}` })
   const monster = near.find((p) => monsters.includes(p.body))
-  if (monster) out.push({ topic: "see_monster_skin", god: names[monster.body] ?? monster.body, target: `p:${monster.sid}` })
+  if (monster) out.push({ topic: "see_monster_char", god: names[monster.body] ?? monster.body, target: `p:${monster.sid}` })
   if (near.length >= SIGHT.crowd) out.push({ topic: "see_crowd" })
   const mine = clanOf(myBody)
   if (mine) {

@@ -71,6 +71,22 @@ const CLAN_BODY: Record<string, Record<"m" | "f", { young: string; adult: string
   vampiro: { m: { young: "vampiro", adult: "vampiro_adulto" }, f: { young: "vampira", adult: "vampira_adulta" } },
 }
 
+/**
+ * 25/11 (Alex: "não tem skin — todos ficam adultos, assim como a raposa e o vampiro"): espécies de
+ * corpo único que têm o modelo JOVEM. Até virar adulto (GROWTH da vida) a cena desenha
+ * `<espécie>_jovem`; na virada troca para o adulto, a mesma transição das classes. Os deuses e os
+ * dois monstros que eram Raposas (Ciborgue, Dama das Garras). Quem não está aqui tem um corpo só.
+ */
+export const YOUNG_SUFFIX = "_jovem"
+export const YOUNG_SPECIES: readonly string[] = Object.freeze(["aurion", "morkhan", "kragor", "zephyra", "maru", "iris", "noctis", "aeryn", "varkos", "ciborgue", "garras"])
+/** Corpo jovem → o corpo adulto da espécie (o resto volta igual). Fichas de luta, armas e golpes valem pelo adulto. */
+export function adultBody(body: string | null | undefined): string {
+  const b = body || ""
+  if (b.length <= YOUNG_SUFFIX.length || b.slice(-YOUNG_SUFFIX.length) !== YOUNG_SUFFIX) return b
+  const base = b.slice(0, -YOUNG_SUFFIX.length)
+  return YOUNG_SPECIES.includes(base) ? base : b
+}
+
 /** Sexo que vale para a espécie (a espécie de sexo fixo manda; senão o do personagem; padrão m). */
 export function speciesSex(species: string | null | undefined, sex: string | null | undefined): "m" | "f" {
   const d = speciesById(species)
@@ -83,6 +99,7 @@ export function speciesBody(species: string | null | undefined, sex: string | nu
   const d = speciesById(species)
   if (!d) return null
   if (d.kind === "clan") return CLAN_BODY[d.id][speciesSex(d.id, sex)][stage === "adult" ? "adult" : "young"]
+  if (stage !== "adult" && YOUNG_SPECIES.includes(d.id)) return d.id + YOUNG_SUFFIX
   return d.id
 }
 

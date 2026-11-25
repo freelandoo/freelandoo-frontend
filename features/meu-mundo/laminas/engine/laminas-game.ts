@@ -12,6 +12,7 @@
 //    WASD são relativos a ela;
 //  - dano saltando (DOM sobre o canvas), faíscas, tranco de câmera, plateia.
 
+import { adultBody } from "../../characters/rules"
 import { Engine } from "@babylonjs/core/Engines/engine"
 import { Scene } from "@babylonjs/core/scene"
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight"
@@ -442,6 +443,8 @@ const BOSS_PHASE_PT: Record<BossId, [string, string]> = {
 }
 
 export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
+  // 25/11: o corpo jovem (`<espécie>_jovem`) desenha o modelo jovem, mas luta com o kit, a arma e os golpes do adulto
+  const kitBody = adultBody(opts.body) as BodyId
   const { canvas } = opts
   // loseContextOnDispose: a memória de vídeo volta na hora; sem isso a luta seguinte
   // abria com a anterior ainda presa e a aba do celular caía (em dev o StrictMode recria no mesmo canvas)
@@ -507,11 +510,11 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   // a raposa luta como MAGA (bolas de fogo); o resto corta (mm3d-58)
   // mm3d-59: com ticket o kit é da CLASSE (vem do servidor); o personagem dá a aparência.
   // mm3d-69: a arqueira usa a regra do tiro da maga; o desenho é outro (ARCHER_MOVES, arco, flecha de luz)
-  const bow = !ring && (opts.kit ? opts.kit === "bow" : ARCHER_BODIES.includes(opts.body))
+  const bow = !ring && (opts.kit ? opts.kit === "bow" : ARCHER_BODIES.includes(kitBody))
   // mm3d-70: quem usa arma de fogo também (GUN_MOVES)
-  const gun = !ring && (opts.kit ? opts.kit === "gun" : GUN_BODIES.includes(opts.body))
+  const gun = !ring && (opts.kit ? opts.kit === "gun" : GUN_BODIES.includes(kitBody))
   const ranged = bow || gun
-  const mage = ranged || (!ring && (opts.kit ? opts.kit === "mage" : clanOfBody(opts.body) === "raposa"))
+  const mage = ranged || (!ring && (opts.kit ? opts.kit === "mage" : clanOfBody(kitBody) === "raposa"))
   // com ticket a semente vem do servidor; sem ticket (treino) ela é sorteada aqui para poder ser refeita
   const seed = opts.setup.seed ?? (Date.now() & 0x7fffffff)
   const fight = new Fight({ ...opts.setup, seed, style: mage ? "mage" : undefined })
@@ -633,15 +636,15 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
 
   // ── o jogador e a espada ─────────────────────────────────────────────────
   // Corpo de classe (fora do ringue do Boxe): golpes e arma da classe.
-  const clan = ring || opts.kit === "hammer" ? null : ranged ? "raposa" : opts.kit ? (opts.kit === "mage" ? "raposa" : "vampiro") : clanOfBody(opts.body)
+  const clan = ring || opts.kit === "hammer" ? null : ranged ? "raposa" : opts.kit ? (opts.kit === "mage" ? "raposa" : "vampiro") : clanOfBody(kitBody)
   const lib = new AvatarLibrary(scene, false, false, 30, false, false, true, false, true, opts.kit || ranged ? clan : null)
   // o personagem Brutamontes: machado e golpes de machado (fora do ringue)
   // mm3d-67: Soldado de Pedra, Marú e Kragor também; o servidor manda o kit
-  const brute = !ring && (opts.kit ? opts.kit === "hammer" : opts.body === "brutamontes" || opts.body === "golem")
+  const brute = !ring && (opts.kit ? opts.kit === "hammer" : kitBody === "brutamontes" || kitBody === "golem")
   // o Ciborgue não fica de arma erguida: parado, a pose pesada de braços baixos; ergue para atirar
-  const claws = !ring && !mage && opts.body === "garras"
-  const stoneHero = brute && opts.body === "golem" && !shopHeavy(opts.appearance?.weaponId)
-  const moves = claws ? GARRAS_MOVES : stoneHero ? GOLEM_MOVES : bow ? ARCHER_MOVES : gun ? (opts.body === "ciborgue" ? { ...GUN_MOVES, guard: "XIdle" as const } : GUN_MOVES) : clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
+  const claws = !ring && !mage && kitBody === "garras"
+  const stoneHero = brute && kitBody === "golem" && !shopHeavy(opts.appearance?.weaponId)
+  const moves = claws ? GARRAS_MOVES : stoneHero ? GOLEM_MOVES : bow ? ARCHER_MOVES : gun ? (kitBody === "ciborgue" ? { ...GUN_MOVES, guard: "XIdle" as const } : GUN_MOVES) : clan ? CLAN_MOVES[clan] : brute ? BRUTE_MOVES : null
   const GUARD: BoxeBase = moves ? moves.guard : "BGuard"
   const fallbackMat = new StandardMaterial("laminas-character", scene)
   fallbackMat.diffuseColor = new Color3(1, 1, 1)
@@ -659,14 +662,14 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const vfx = createVfx(scene, low)
   const fxColor = claws ? VFX_COLORS.brutamontes : stoneHero ? VFX_COLORS.golem : clan ? VFX_COLORS[clan] : brute ? VFX_COLORS.brutamontes : VFX_COLORS.lamina
   const weaponProfile = clan && !ranged && opts.appearance ? weaponAppearanceProfile(clan, opts.appearance) : null
-  const heavy = stoneHero ? null : brute ? (shopHeavy(opts.appearance?.weaponId) ?? godHeavy(opts.body)) : bow ? (shopBow(opts.appearance?.weaponId) ?? godBow(opts.body)) : gun ? (shopGun(opts.appearance?.weaponId) ?? godGun(opts.body)) : null
+  const heavy = stoneHero ? null : brute ? (shopHeavy(opts.appearance?.weaponId) ?? godHeavy(kitBody)) : bow ? (shopBow(opts.appearance?.weaponId) ?? godBow(kitBody)) : gun ? (shopGun(opts.appearance?.weaponId) ?? godGun(kitBody)) : null
   const weaponColor = heavy ? { main: Color3.FromHexString(heavy.main), edge: Color3.FromHexString(heavy.edge) } : weaponProfile && (weaponProfile.model || weaponProfile.paint || weaponProfile.trail || weaponProfile.tier === "ether" || weaponProfile.tier === "solar") ? weaponProfile.color : fxColor
   // espíritos de luz do poder: lobo (cabeça) para quem não é vampiro, morcego para o vampiro
   const spirits = new Spirits(scene, (m) => vfx.addGlow(m))
   // habilidades (2026-11-03): lâmina de luz, investida, escudo, poder máximo; a cor é a do personagem
-  const sig = abilityKit(opts.body, opts.stage).sig
+  const sig = abilityKit(kitBody, opts.stage).sig
   // lv2-B1: a família do golpe sai do personagem (os mesmos sinais que escolhem os golpes do corpo)
-  const strike = strikeStyle({ ring, claws, bow, gun, brute, mage, body: opts.body })
+  const strike = strikeStyle({ ring, claws, bow, gun, brute, mage, body: kitBody })
   // áudio S1: os arquivos aprovados por cima do sintetizador (sem arquivo = toca o de antes)
   const smp = fightSamples({ sig: sig?.id ?? null, family: sig?.family ?? null, kinds: [opts.setup.kind], boss: fight.boss, ring: !!ring })
   // áudio S2: a faixa da luta (Boxe, chefe, deus solto ou a luta de sempre), acima da música da cena
@@ -683,10 +686,10 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     return [new Vector3(p.x, 0.25, p.z), new Vector3(p.x, hero.height * 0.95, p.z)]
   }, () => hero.height, skillColors, strike)
   // Aurion, Morkhan e Zéphyra lutam de espada (mm3d-66), mas morcego é só de vampiro
-  const bat = clanOfBody(opts.body) === "vampiro"
+  const bat = clanOfBody(kitBody) === "vampiro"
   if (!bat && ring) spirits.preload()
   // adultos: mais brilho e mais desenho (pedido do Alex)
-  const adult = /adult/.test(opts.body)
+  const adult = /adult/.test(kitBody)
   const adultK = adult ? 1.3 : 1
   let hitStop = 0
   const heroFix = new PoseFix(scene, (n) => hero.bone(n), ring || clan || brute ? null : (BULKY_GUARD[opts.body] ?? null))
@@ -770,7 +773,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       const index = hero.bone(SHIELD_BONES.index)
       const thumb = hero.bone(SHIELD_BONES.thumb)
       if (arm && hand && index && thumb) {
-        shieldGrip = new ShieldGrip(scene, { arm, hand, index, thumb }, shieldRoot, adult || SWORD_BODIES.includes(opts.body) ? 1.7 : 1.05)
+        shieldGrip = new ShieldGrip(scene, { arm, hand, index, thumb }, shieldRoot, adult || SWORD_BODIES.includes(kitBody) ? 1.7 : 1.05)
         shieldRoot.setEnabled(true)
       }
     }
@@ -785,7 +788,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
       // Tamanho das armas (regra do Alex, 2026-11-01): espada e cajado 3 m no
       // adulto / 1,8 m no jovem. A escala vai na raiz da pegada, então o arco da
       // lâmina e a pedra do cajado acompanham.
-      if (clan === "vampiro") grip.root.scaling.setAll((adult || SWORD_BODIES.includes(opts.body) ? 3 : 1.8) / SWORD_LEN)
+      if (clan === "vampiro") grip.root.scaling.setAll((adult || SWORD_BODIES.includes(kitBody) ? 3 : 1.8) / SWORD_LEN)
       else if (gun) {
         // pedido do Alex: quanto mais alto o personagem, maior a arma; já grande para os menores
         grip.root.scaling.setAll(gunSize(hero.height))
@@ -849,7 +852,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
   const heroGloves = ring ? new BoxingGloves(scene, hero, "black") : null
   const placeSword = () => {
     // a Dama luta com as garras, como quando aparece como monstro
-    const hand = ring || clan || brute || opts.body === "garras" ? null : hero.bone(HAND)
+    const hand = ring || clan || brute || kitBody === "garras" ? null : hero.bone(HAND)
     if (!hand) {
       sword.setEnabled(false)
       return
@@ -1747,7 +1750,7 @@ export function createLaminasGame(opts: LaminasGameOptions): LaminasGameHandle {
     heroFix.staffWant = still && !ranged && clan === "raposa" && base === GUARD && sp < 0.3 ? 1 : 0
     if (grip) grip.upright = heroFix.staffW
     // o personagem Ciborgue carrega a arma como o monstro: cintura, cotovelo em L
-    if (gun && opts.body === "ciborgue") {
+    if (gun && kitBody === "ciborgue") {
       heroFix.gunWant = p.hp > 0 && p.state !== "win" && p.state !== "hurt" && p.state !== "down" && p.state !== "dodge" ? 1 : 0
       heroFix.gunYaw = p.facing
       if (grip) {

@@ -50,3 +50,23 @@ export const isTall = (id: string | null | undefined): id is TallBody => (TALL_B
 
 /** Mapa por corpo alto a partir de uma função (para os Record<BodyId, …> dos outros arquivos). */
 export const byTall = <T>(f: (g: TallBody) => T) => Object.fromEntries(TALL_BODIES.map((g) => [g, f(g)])) as Record<TallBody, T>
+
+// 25/11 (Alex: "não tem skin — todos ficam adultos, assim como a raposa e o vampiro"): o corpo
+// JOVEM dos 9 deuses e dos dois monstros que eram Raposas. Até a virada (GROWTH) o servidor manda
+// `<espécie>_jovem` (characters/rules.ts speciesBody); luta, arma, golpes e nome são os do adulto
+// (adultBody). Arquivos avatar-<id>.glb pela receita dos deuses (pipeline/npcs YOUNG).
+export const YOUNG_BODIES = [
+  "aurion_jovem", "morkhan_jovem", "kragor_jovem", "zephyra_jovem", "maru_jovem", "iris_jovem", "noctis_jovem", "aeryn_jovem", "varkos_jovem",
+  "ciborgue_jovem", "garras_jovem",
+] as const
+export type YoungBody = (typeof YOUNG_BODIES)[number]
+/** O adulto de cada jovem (a mesma regra de adultBody, tipada). */
+export const ADULT_OF: Record<YoungBody, TallBody> = {
+  aurion_jovem: "aurion", morkhan_jovem: "morkhan", kragor_jovem: "kragor", zephyra_jovem: "zephyra", maru_jovem: "maru", iris_jovem: "iris",
+  noctis_jovem: "noctis", aeryn_jovem: "aeryn", varkos_jovem: "varkos", ciborgue_jovem: "ciborgue", garras_jovem: "garras",
+}
+export const isYoungBody = (id: string | null | undefined): id is YoungBody => (YOUNG_BODIES as readonly string[]).includes(id ?? "")
+/** Mapa por corpo jovem a partir de uma função (para os Record<BodyId, …>). */
+export const byYoung = <T>(f: (b: YoungBody) => T) => Object.fromEntries(YOUNG_BODIES.map((b) => [b, f(b)])) as Record<YoungBody, T>
+/** Mapa por corpo jovem copiando o valor do adulto de um mapa por corpo alto. */
+export const youngLike = <T>(byAdult: Record<TallBody, T>) => byYoung((b) => byAdult[ADULT_OF[b]])

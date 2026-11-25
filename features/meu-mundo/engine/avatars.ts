@@ -40,7 +40,8 @@ import type { Scene } from "@babylonjs/core/scene"
 import type { Plane } from "@babylonjs/core/Maths/math.plane"
 import { ANIM_NATURAL_SPEED, type MoveState } from "./motion"
 import type { BodyId } from "../types"
-import { byTall, isGod, isTall } from "../gods"
+import { byTall, byYoung, isGod, isTall, isYoungBody } from "../gods"
+import { adultBody } from "../characters/rules"
 import { byNpcBody } from "../npc-bodies"
 import { ARCHER_BODIES, byClanBody, clanOfBody, GUN_BODIES, isClanBody, CLAN_ANIMS, HAMMER_BODIES, type Clan } from "../classes"
 
@@ -68,6 +69,8 @@ const ASSETS = {
     ...byClanBody((b) => `avatar-${b}-m58e-basecolor-1024.jpg`),
     // 22/11: os NPCs do Tripo (pipeline/npcs + build_deuses.py), mesma receita das classes.
     ...byNpcBody((b) => `avatar-${b}-basecolor-1024.jpg`),
+    // 25/11: os JOVENS dos deuses, do Ciborgue e da Dama das Garras (pipeline/npcs YOUNG + build_deuses.py)
+    ...byYoung((b) => `avatar-${b}-basecolor-1024.jpg`),
   } satisfies Record<BodyId, string>,
   bodies: {
     // mm3d-22: pesos do ombro suavizados (pipeline/fix_sergio_shoulder.py) —
@@ -116,6 +119,9 @@ const ASSETS = {
     // na silhueta (`sh_joint` + `el`/`wr` no build_deuses.py; na adulta também o tornozelo, dentro da bota).
     ...byClanBody((b) => (b === "raposa_adulto" || b === "raposa_f" ? `avatar-${b}-m58l.glb` : b === "raposa_adulta" ? `avatar-${b}-m58k.glb` : b === "vampiro" || b === "vampira_adulta" ? `avatar-${b}-m58j.glb` : b === "vampira" || b === "raposa" ? `avatar-${b}-m58i.glb` : `avatar-${b}-m58h.glb`)),
     ...byNpcBody((b) => `avatar-${b}.glb`),
+    // 25/11 (Alex: "todos ficam adultos, como a raposa e o vampiro"): o corpo jovem até a virada
+    // (characters/rules.ts speciesBody); mesma receita dos deuses, altura de jovem da espécie.
+    ...byYoung((b) => `avatar-${b}.glb`),
   } satisfies Record<BodyId, string>,
   // Malha leve de cada corpo (mm3d-19, `pipeline/build_avatar_lod.js`):
   // ~1,5 mil triângulos, MESMOS ossos na mesma ordem — usa o esqueleto do
@@ -320,7 +326,7 @@ export const ANKLE_REST: Record<keyof typeof ASSETS.ride, number> = { sergio: 0.
 type AnimSet = keyof typeof ASSETS.anims
 // mm3d-50: os deuses usam TODAS as animações do Sergio (build_deuses.py: mesmo
 // repouso de rotação, quadril na mesma altura; os 2 m vêm da escala do nó raiz).
-const ANIM_SET: Record<BodyId, AnimSet> = { sergio: "sergio", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), ...byNpcBody((): AnimSet => "sergio"), brutamontes: "sergio" }
+const ANIM_SET: Record<BodyId, AnimSet> = { sergio: "sergio", ekaterina: "ekaterina", ...byTall((): AnimSet => "sergio"), ...byClanBody((): AnimSet => "sergio"), ...byNpcBody((): AnimSet => "sergio"), ...byYoung((): AnimSet => "sergio"), brutamontes: "sergio" }
 const CLIPS = ["Idle", "Walk", "SlowRun"] as const
 
 /** Arquivos de um corpo, para quem desenha o avatar fora do Babylon (o jetpack, mm3d-20). */
@@ -623,7 +629,8 @@ export class AvatarLibrary {
   private clanSet(id: BodyId) {
     // F1: o Cavaleiro Dourado como monstro luta de espada (os cortes dos Vampiros)
     // o deus como monstro de espada usa os mesmos cortes (Marú, Íris, Zéphyra pela regra do Cavaleiro)
-    const clan = this.combatClan ?? clanOfBody(id) ?? (id === "cavaleiro" || (this.foeRig && isGod(id)) ? "vampiro" : null)
+    const kit = adultBody(id)
+    const clan = this.combatClan ?? clanOfBody(kit) ?? (kit === "cavaleiro" || (this.foeRig && isGod(kit)) ? "vampiro" : null)
     if (!clan) return Promise.resolve(null)
     let p = this.clans.get(clan)
     if (!p) {
@@ -729,14 +736,16 @@ export class AvatarLibrary {
     // Deus como MONSTRO (chefe do Domínio, luta, deus caçado na cidade): a regra dele é a de um tipo
     // (espada do Cavaleiro, machado do Brutamontes, tiro do Ciborgue) — carrega os três pacotes; sem isso
     // o corpo caía no "Idle" de 2 quadros e ficava parado (Kragor no Vulcão, 15/11).
-    const foeGod = this.foeRig && isGod(id)
-    const clanP = this.withClan || (this.withBoxe && id === "cavaleiro") || (this.foeRig && isClanBody(id)) || foeGod ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
+    // 25/11: o corpo jovem (`<espécie>_jovem`) usa os clipes e o kit do adulto; só o arquivo do corpo é outro
+    const kit = adultBody(id) as BodyId
+    const foeGod = this.foeRig && isGod(kit)
+    const clanP = this.withClan || (this.withBoxe && kit === "cavaleiro") || (this.foeRig && isClanBody(kit)) || foeGod ? this.clanSet(id).catch(() => null) : Promise.resolve(null)
     // Andar/correr novos (m60): se falhar, ficam os do conjunto de sempre.
     const locoP = this.locoSet(id).catch(() => null)
     // quem aparece como monstro (2026-11-06) tem os clipes do personagem mesmo sem kit: Golem e Brutamontes de machado, Ciborgue também atira
-    const bruteP = this.withClan && ARCHER_BODIES.includes(id) ? this.archerSet().catch(() => null) : id === "brutamontes" || id === "ciborgue" || id === "golem" || foeGod || (this.withClan && HAMMER_BODIES.includes(id)) || (this.foeRig && (GUN_BODIES.includes(id) || HAMMER_BODIES.includes(id))) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
-    const gunP = id === "ciborgue" || foeGod || ((this.withClan || this.foeRig) && GUN_BODIES.includes(id)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
-    const clawP = id === "garras" && this.withBoxe ? this.clawSet().catch(() => null) : Promise.resolve(null)
+    const bruteP = this.withClan && ARCHER_BODIES.includes(kit) ? this.archerSet().catch(() => null) : kit === "brutamontes" || kit === "ciborgue" || kit === "golem" || foeGod || (this.withClan && HAMMER_BODIES.includes(kit)) || (this.foeRig && (GUN_BODIES.includes(kit) || HAMMER_BODIES.includes(kit))) ? this.bruteSet().catch(() => null) : Promise.resolve(null)
+    const gunP = kit === "ciborgue" || foeGod || ((this.withClan || this.foeRig) && GUN_BODIES.includes(kit)) ? this.gunSet().catch(() => null) : Promise.resolve(null)
+    const clawP = kit === "garras" && this.withBoxe ? this.clawSet().catch(() => null) : Promise.resolve(null)
     const [container, anims, sit, rest, ride, lodC, paint, place, boxe, gincana, clanC, loco, bruteC, gunC, clawC] = await Promise.all([
       this.body(id),
       this.animSet(id),
@@ -783,7 +792,7 @@ export class AvatarLibrary {
       natural = { walk: l.walk, run: l.run }
       gaitOffset = GAIT_OFFSET.loco[ANIM_SET[id]]
     }
-    if (isClanBody(id) || isTall(id) || id === "brutamontes") {
+    if (isClanBody(id) || isTall(id) || isYoungBody(id) || id === "brutamontes") {
       const k = Math.abs((byName.get("mixamorig:Hips")?.parent as TransformNode | null)?.scaling.y ?? 1)
       if (k > 0.5 && k < 5) natural = { walk: natural.walk * k, run: natural.run * k }
     }

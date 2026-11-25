@@ -323,4 +323,5 @@ const OF_BODY: Record<string, string> = {
 }
 
 /** Corpo → assinatura. Quem não tem a sua (normal, magro, gordo, forte, feminina) é o aventureiro. */
-export const signatureOf = (body: string | null | undefined): Signature => SIGNATURES[OF_BODY[body ?? ""] ?? "aventura"]
+// 25/11: o corpo jovem (`<espécie>_jovem`) tem a assinatura do adulto
+export const signatureOf = (body: string | null | undefined): Signature => SIGNATURES[OF_BODY[body ?? ""] ?? OF_BODY[String(body ?? "").replace(/_jovem$/, "")] ?? "aventura"]

@@ -7,7 +7,7 @@
 // ruas e casas são desenhadas pelo cliente a partir do layout.
 
 import type { LifeSoul } from "./soul"
-import { TALL_BODIES, type TallBody } from "./gods"
+import { TALL_BODIES, YOUNG_BODIES, type TallBody, type YoungBody } from "./gods"
 import { CLAN_BODIES, type ClanBody } from "./classes"
 import type { NpcBody } from "./npc-bodies"
 
@@ -214,8 +214,9 @@ export interface StreetSign {
  */
 export type MobBody = "brutamontes"
 /** 22/11: + os NPCs (npc-bodies.ts) — corpo para desenhar, nunca de jogador (fora de BODY_IDS). */
-export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody | NpcBody
-export const BODY_IDS: BodyId[] = ["sergio", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes"]
+/** 25/11: + os corpos JOVENS (gods.ts YOUNG_BODIES) — o servidor manda até a virada para adulto. */
+export type BodyId = "sergio" | "ekaterina" | TallBody | ClanBody | MobBody | NpcBody | YoungBody
+export const BODY_IDS: BodyId[] = ["sergio", "ekaterina", ...TALL_BODIES, ...CLAN_BODIES, "brutamontes", ...YOUNG_BODIES]
 
 export interface SeatReservation {
   name: string

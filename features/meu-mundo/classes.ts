@@ -5,6 +5,8 @@
 // GROWTH na vida) — o servidor decide; aqui só a lista para desenhar.
 // Espelho de src/utils/meuMundoClans.js do backend.
 
+import { YOUNG_SPECIES, YOUNG_SUFFIX } from "./characters/rules"
+
 export const CLANS = ["raposa", "vampiro"] as const
 export type Clan = (typeof CLANS)[number]
 export type Sex = "m" | "f"
@@ -55,17 +57,20 @@ export const CLAN_ANIMS: Record<Clan, string> = {
   vampiro: "anim-vampiro-sergio-m58.glb",
 }
 
+/** 25/11: o corpo JOVEM (`<espécie>_jovem`) luta e usa as armas do adulto — cada lista leva os jovens junto. */
+const withYoung = (list: string[]): readonly string[] => [...list, ...list.filter((b) => YOUNG_SPECIES.includes(b)).map((b) => b + YOUNG_SUFFIX)]
+
 /** Personagens que usam espada além dos vampiros (espelho de SWORD_BODIES em meuMundoClans.js). */
-export const SWORD_BODIES: readonly string[] = ["aurion", "morkhan", "zephyra"]
+export const SWORD_BODIES: readonly string[] = withYoung(["aurion", "morkhan", "zephyra"])
 
 /** Personagens com os golpes do Brutamontes (espelho de HAMMER_BODIES em meuMundoClans.js). */
-export const HAMMER_BODIES: readonly string[] = ["golem", "maru", "kragor", "brutamontes"]
+export const HAMMER_BODIES: readonly string[] = withYoung(["golem", "maru", "kragor", "brutamontes"])
 
 /** As arqueiras (espelho de ARCHER_BODIES em meuMundoClans.js). */
-export const ARCHER_BODIES: readonly string[] = ["iris", "aeryn"]
+export const ARCHER_BODIES: readonly string[] = withYoung(["iris", "aeryn"])
 
 /** Quem usa arma de fogo (espelho de GUN_BODIES em meuMundoClans.js). */
-export const GUN_BODIES: readonly string[] = ["ciborgue", "noctis"]
+export const GUN_BODIES: readonly string[] = withYoung(["ciborgue", "noctis"])
 
 type Tr = (key: string, fallback: string) => string
 

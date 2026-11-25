@@ -9,7 +9,7 @@
 // pipeline/build_portraits_2d.py); os avisos falam com a expressão certa.
 
 import type { BodyId } from "../types"
-import { byTall, isTall } from "../gods"
+import { byTall, isTall, YOUNG_BODIES } from "../gods"
 import { byClanBody, isClanBody } from "../classes"
 import { byNpcBody, NPC_KIN, type NpcBody } from "../npc-bodies"
 
@@ -20,7 +20,8 @@ const V2 = "/meu-mundo/retratos/v2"
  * o retrato (STATUS, placa de luta, HUD, escolha da classe) e o rosto.
  */
 const V3 = "/meu-mundo/retratos/v3"
-const V3_BODIES = ["garras", "raposa_f", "vampiro_adulto", "cavaleiro", "vampira", "vampira_adulta", "maru", "morkhan", "zephyra", "golem", "iris", "vampiro", "kragor", "aeryn", "varkos", "brutamontes", "aurion", "noctis", "raposa_adulta", "raposa", "raposa_adulto", "ciborgue"] as const
+// 25/11: + os JOVENS (recortados da arte do Alex, Downloads/jovens) — antes da virada para adulto
+const V3_BODIES = ["garras", "raposa_f", "vampiro_adulto", "cavaleiro", "vampira", "vampira_adulta", "maru", "morkhan", "zephyra", "golem", "iris", "vampiro", "kragor", "aeryn", "varkos", "brutamontes", "aurion", "noctis", "raposa_adulta", "raposa", "raposa_adulto", "ciborgue", ...YOUNG_BODIES] as const
 const v3Portraits = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}.webp`])) as Record<(typeof V3_BODIES)[number], string>
 const v3Faces = Object.fromEntries(V3_BODIES.map((b) => [b, `${V3}/${b}-rosto.webp`])) as Record<(typeof V3_BODIES)[number], string>
 /** 22/11: NPCs com retrato próprio publicado em v3 (`<body>.webp` + `-rosto`). */

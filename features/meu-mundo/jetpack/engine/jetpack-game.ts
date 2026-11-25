@@ -2,7 +2,7 @@
 //
 // Motor Babylon próprio (como o Paint e o Rolê): o túnel (tunnel-view), as
 // prensas e os galões (obstacles-view) e o jogador — o AVATAR dele (corpo,
-// skin e cores) com o jetpack de latão nas costas (pack-view), inclinado para
+// o personagem que ele joga) com o jetpack de latão nas costas (pack-view), inclinado para
 // a frente como quem voa, deitando para o lado da curva.
 //
 // A regra é sim/flight.ts em passos de 1/120 s; o desenho interpola o jogador
