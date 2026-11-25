@@ -17,7 +17,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
-import { Brain, Crosshair, Feather, Heart, Shield, Swords, Target, Zap } from "lucide-react"
+import { Brain, Crosshair, Feather, Heart, Shield, Sprout, Swords, Target, Zap } from "lucide-react"
 import type { LifeFull } from "../../types"
 import type { GearBag } from "../../data"
 import { useLocale } from "@/components/i18n/I18nProvider"
@@ -85,14 +85,14 @@ function SlantBar({ f, color, h, ticks = 11 }: { f: number; color: string; h: nu
 }
 
 /** "720 / 1000" em itálico (Anton). */
-function Value({ v, max, size }: { v: number; max: number; size: number }) {
+function Value({ v, max, size, pct = false }: { v: number; max: number; size: number; pct?: boolean }) {
   return (
     <span
       className={`${anton.className} inline-block shrink-0 whitespace-nowrap tabular-nums leading-none`}
       style={{ fontFamily: anton.style.fontFamily, fontSize: size, color: "#f5f1ed", transform: "skewX(-9deg)", textShadow: "0 2px 0 #000" }}
     >
       {v}
-      <span style={{ fontSize: size * 0.78, color: "#d9dce4" }}> / {max}</span>
+      {pct ? "%" : <span style={{ fontSize: size * 0.78, color: "#d9dce4" }}> / {max}</span>}
     </span>
   )
 }
@@ -104,10 +104,12 @@ export interface StatRow {
   value: number
   /** O valor de verdade quando não é ponto (o % da defesa/ataque). */
   note?: string
+  /** Barra de 0 a 100 mostrada em % (a fertilidade), no lugar das faixas de 1000. */
+  pct?: boolean
 }
 
-// hp = o rosa da barra de vida da luta (fight-plate)
-const COLORS = { hp: "#FF168A", def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
+// hp = o rosa da barra de vida da luta (fight-plate); fert = rosa-claro da fertilidade
+const COLORS = { hp: "#FF168A", fert: "#FF6FB0", def: "#2F8BFF", atk: "#FF2E55", str: "#FF9A1F", int: "#B04DFF", dex: "#2EE85A", spd: "#FFD21F" } as const
 
 /**
  * Status FINAL da ficha, o mesmo que a luta nova usa (2026-11-17): (personagem + nível + número das peças)
@@ -124,6 +126,8 @@ export function useStatRows(life: LifeFull, level: number | undefined, t: Tr, ba
   return [
     // pedido do Alex (11/11): o HP mora aqui, com defesa e ataque (saiu do cabeçalho)
     { key: "hp", icon: <Heart />, label: t("stHp", "HP"), value: Math.round(h.hp) },
+    // pedido do Alex (25/11): a fertilidade saiu da página Alma e virou barra, logo abaixo do HP
+    { key: "fert", icon: <Sprout />, label: t("atFertility", "Fertilidade"), value: Math.round(at.fertility ?? 0), pct: true },
     { key: "def", icon: <Shield />, label: t("stDefense", "Defesa"), value: Math.round(h.def) },
     // nomes iguais aos das armas (Alex, 2026-11-17): Força, Acerto, Esquiva
     { key: "atk", icon: <Swords />, label: t("gearStatAtk", "Força"), value: Math.round(h.atk) },
@@ -146,7 +150,7 @@ function Glyph({ color, size, children }: { color: string; size: number; childre
 /** Uma linha do desenho do Alex: moldura, ícone, nome, barra e "N / 1000". */
 function StatLine({ row, small }: { row: StatRow; small: boolean }) {
   const v = Math.round(Math.max(0, row.value))
-  const top = statTop(v)
+  const top = row.pct ? 100 : statTop(v)
   const color = COLORS[row.key]
   return (
     <div
@@ -176,10 +180,10 @@ function StatLine({ row, small }: { row: StatRow; small: boolean }) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <SlantBar f={v / top} color={color} h={small ? 15 : 24} ticks={small ? 7 : 11} />
+        <SlantBar f={Math.min(v, top) / top} color={color} h={small ? 15 : 24} ticks={small ? 7 : 11} />
       </div>
       <div className="flex shrink-0 justify-end" style={{ width: small ? 70 : 118 }}>
-        <Value v={v} max={top} size={small ? 16 : 26} />
+        <Value v={v} max={top} size={small ? 16 : 26} pct={row.pct} />
       </div>
     </div>
   )
@@ -206,6 +210,8 @@ export function StatBars({ life, level, t, small = false, onPick, bag }: { life:
 /** Onde vale e como sobe, por atributo (o texto que antes ficava todo no fim da Visão geral). */
 export function statGuideText(k: StatRow["key"], t: Tr): { where: string; how: string } {
   switch (k) {
+    case "fert":
+      return { where: t("sgFertWhere", "A chance de ter um filho: é ela que decide se a próxima geração vem."), how: t("atFertilityText", "Cai com anabolizante, obesidade, estresse, doença e toxicidade.") }
     case "hp":
       return { where: t("sgHpWhere", "É a vida na luta: cada golpe que passa pela defesa tira daqui. Zerou, a luta acaba."), how: t("sgHpHow", "Começa no valor do personagem e sobe a cada nível de aventura.") }
     case "def":

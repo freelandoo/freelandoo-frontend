@@ -16128,7 +16128,8 @@
     "ntLegendWeek": "1st place of the week in {game}! You won {n} Legendary fragments.",
     "ntLegendWeekLine": "They are in your backpack. Collect 180 to build a Legendary weapon at the Forge.",
     "cdOriginFounder": "Founding character",
-    "ibGiftCapsule": "Received · a new character in your capsule (STATUS → Characters)."
+    "ibGiftCapsule": "Received · a new character in your capsule (STATUS → Characters).",
+    "sgFertWhere": "The chance of having a child: it decides whether the next generation comes."
   },
   "Sports": {
     "eyebrow": "Sports",

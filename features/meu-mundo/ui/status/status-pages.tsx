@@ -39,7 +39,7 @@ import { clanBodyNames, clanOfBody, type Clan } from "../../classes"
 import { ailmentWords, collapseWords, exhaustCauseWords, exhaustedQuoteWords, hospitalStayWords } from "./life-voice"
 import { heroLevelScale, heroSheet } from "../../laminas/sim/fight"
 import { LevelBadge, PowerPlate, StatBars, StatCard, useStatRows, type StatRow } from "./stat-bars"
-import { SoulPanel } from "./soul-panel"
+import { SoulLine } from "./soul-panel"
 import { temperLabel } from "../../soul"
 import { Active, Equipped, shownEffects, type LoadoutData } from "./loadout-page"
 import { CertificateDoc } from "./certificate-doc"
@@ -56,7 +56,8 @@ type Tr = (key: string, fallback: string) => string
  * archive) saem da navegação; o código delas sai numa limpeza à parte.
  */
 /** 2026-11-12: + "equip" = Equipamentos (o personagem no palco com as 8 casas; equipar com brilho, número e som). */
-export const PAGES = ["sheet", "equip", "soul", "routine", "record"] as const
+/** 2026-11-25 (pedido do Alex): a página Alma sumiu — a fertilidade virou barra da Ficha e o gosta/odeia foi para o cabeçalho. */
+export const PAGES = ["sheet", "equip", "routine", "record"] as const
 export type PageId = (typeof PAGES)[number]
 
 export interface PageActions {
@@ -225,16 +226,6 @@ function afterlifeLines(c: LifeCharacter, coins: number, t: Tr): { funeral: stri
 }
 
 const TRAITS = ["discipline", "anxiety", "optimism", "appetite", "resilience", "metabolism"] as const
-function traitName(k: (typeof TRAITS)[number], t: Tr) {
-  return {
-    discipline: t("trDiscipline", "Disciplina"),
-    anxiety: t("trAnxiety", "Ansiedade"),
-    optimism: t("trOptimism", "Otimismo"),
-    appetite: t("trAppetite", "Apetite"),
-    resilience: t("trResilience", "Resistência"),
-    metabolism: t("trMetabolism", "Metabolismo"),
-  }[k]
-}
 /** mm3d-72: a personalidade nova (psicopata, covarde…); servidor antigo cai no jeito pelos traços. */
 export function characterTemper(c: LifeCharacter, t: Tr) {
   return c.soul ? temperLabel(c.soul.temper, t) : personalityLabel(c.personality, t)
@@ -408,7 +399,6 @@ function timeOf(iso: string, offsetMin: number) {
 const SUBTITLE: Record<PageId, [string, string]> = {
   sheet: ["stPageSheet", "Ficha"],
   equip: ["stPageEquip", "Equipamentos"],
-  soul: ["stPageSoul", "Alma"],
   routine: ["stPageRoutine2", "Rotina"],
   record: ["stPageRecord", "Registro"],
 }
@@ -494,6 +484,7 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
           </div>
           {adv && <XpLine adv={adv} t={t} small />}
           {adv?.trainer && <TrainerLine tr={adv.trainer} t={t} small />}
+          {c.soul && <SoulLine soul={c.soul} t={t} small clan={clanOfBody(life.avatar)} />}
         </div>
       </div>
     )
@@ -547,6 +538,12 @@ function Header({ life, name, portrait, page, compact, t, adv }: Omit<PageProps,
                     <TrainerLine tr={adv.trainer} t={t} />
                   </div>
                 )}
+              </div>
+            )}
+            {/* pedido do Alex (25/11): o gosta/odeia saiu da página Alma e mora aqui, embaixo do nível */}
+            {c.soul && (
+              <div className="mt-1.5" style={{ width: 410 }}>
+                <SoulLine soul={c.soul} t={t} clan={clanOfBody(life.avatar)} />
               </div>
             )}
           </div>
@@ -1099,6 +1096,8 @@ function statOrigin(key: StatRow["key"], life: LifeFull, adv: AdvXp | null | und
   const lv = heroSheet(life.avatar, level, stats, undefined, undefined, none)
   const full = heroSheet(life.avatar, level, stats, bag?.bonus, undefined, bag?.classGear ?? none)
   const sign = (n: number) => (Math.round(n) > 0 ? `+${Math.round(n)}` : Math.round(n) < 0 ? String(Math.round(n)) : "—")
+  // fertilidade não tem parcelas (é um % da vida)
+  if (key === "fert") return []
   if (key === "hp") {
     return [
       [t("lkBase", "Personagem"), String(Math.round(base.hp))],
@@ -1193,52 +1192,6 @@ function EquipStatusPage(props: PageProps) {
   if (c.status === "dead") return <SheetPage {...props} />
   return (
     <EquipPage body={props.body} portrait={props.portrait} name={props.name} temper={characterTemper(c, props.t)} power={c.power ?? null} data={props.loadout ?? NO_LOADOUT} compact={props.compact} busy={props.act.busy} onEquip={props.act.equip} onGearOp={props.act.gearOp} t={props.t} />
-  )
-}
-
-/** Alma: personalidade, quanto gosta de você, fertilidade (a metade "alma" da antiga pág. 3). */
-function SoulPage({ life, t, compact }: PageProps) {
-  const c = life.character
-  const fert = c.attributes.fertility
-  return (
-    <div className={`flex flex-col gap-2 pb-3 ${compact ? "" : "mx-auto h-full w-full max-w-[640px] overflow-y-auto pr-1"}`}>
-      <MiniPlate
-        title={t("stPersonality", "Personalidade")}
-        aside={
-          <span className={`${archivo.className} truncate text-[11px] font-semibold uppercase`} style={{ color: EVO.douradoClaro }}>
-            {characterTemper(c, t)}
-          </span>
-        }
-      >
-        {c.soul ? (
-          <SoulPanel soul={c.soul} t={t} compact clan={clanOfBody(life.avatar)} />
-        ) : (
-          <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
-            {TRAITS.map((k) => (
-              <div key={k} className="min-w-0">
-                <div className={`${archivo.className} flex justify-between gap-1 text-[11px] uppercase`} style={{ color: EVO.branco }}>
-                  <span className="truncate">{traitName(k, t)}</span>
-                  <span className="font-semibold" style={{ color: EVO.douradoClaro }}>
-                    {r0(c.personality[k] * 100)}
-                  </span>
-                </div>
-                <Bar value={c.personality[k] * 100} color={`linear-gradient(90deg, ${EVO.ritual}, ${EVO.magenta})`} height={4} />
-              </div>
-            ))}
-          </div>
-        )}
-      </MiniPlate>
-      <MiniPlate title={t("atFertility", "Fertilidade")}>
-        <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <Bar value={fert} color={EVO.rosa} height={6} />
-          </div>
-          <span className={`${teko.className} text-[24px] font-bold leading-none tabular-nums`} style={{ color: EVO.branco }}>
-            {r0(fert)}%
-          </span>
-        </div>
-      </MiniPlate>
-    </div>
   )
 }
 
@@ -1341,7 +1294,7 @@ function RecordPage(props: PageProps) {
 }
 
 export function StatusPage(props: PageProps) {
-  const P = { sheet: SheetPage, equip: EquipStatusPage, soul: SoulPage, routine: RoutinePage, record: RecordPage }[props.page]
+  const P = { sheet: SheetPage, equip: EquipStatusPage, routine: RoutinePage, record: RecordPage }[props.page]
   // Celular: a página rola dentro do card; computador: cada página cuida da altura.
   return (
     <div className={`${archivo.className} flex h-full flex-col gap-2`}>

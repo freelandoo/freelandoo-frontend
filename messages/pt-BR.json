@@ -15542,7 +15542,8 @@
     "ntLegendWeek": "1º lugar da semana no {game}! Você ganhou {n} fragmentos Lendários.",
     "ntLegendWeekLine": "Estão na mochila. Juntando 180, você monta uma arma Lendária na Forja.",
     "cdOriginFounder": "Personagem fundador",
-    "ibGiftCapsule": "Recebido · personagem novo na sua cápsula (STATUS → Personagens)."
+    "ibGiftCapsule": "Recebido · personagem novo na sua cápsula (STATUS → Personagens).",
+    "sgFertWhere": "A chance de ter um filho: é ela que decide se a próxima geração vem."
   },
   "Sports": {
     "eyebrow": "Esportes",
