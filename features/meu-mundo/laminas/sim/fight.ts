@@ -180,6 +180,8 @@ export interface PlayerBody {
   /** Pediu o próximo golpe durante este. */
   queued: boolean
   dodgeX: number
+  /** 25/11: esta esquiva foi a sozinha (pela razão), não a do botão — não dá a janela de 90% do botão. */
+  autoDodged?: boolean
   dodgeZ: number
   /** Ritmo do ataque (velocidade da vida). */
   rate: number
@@ -1009,8 +1011,16 @@ export interface FightRate {
   def: number
 }
 export const DODGE_MAX = 0.9
+/**
+ * 25/11/2026 (Alex: "com o mesmo status meu personagem desviava sozinho de todos; isso deveria acontecer se eu
+ * tivesse 3× mais, o dobro ainda seria 50%"): o desvio SOZINHO pela razão esquiva ÷ acerto — igual ou menos = 0%,
+ * o dobro = 50%, o triplo ou mais = desvia de todos (linear no meio). Antes: 1 − acerto ÷ esquiva (3× = 67%).
+ */
+export function autoDodgeChance(acc: number, spd: number) {
+  return clamp((Math.max(0, spd) / Math.max(1, acc) - 1) / 2, 0, 1)
+}
 export function hitChance(acc: number, spd: number) {
-  return clamp(acc / Math.max(1, spd), 0, 1)
+  return 1 - autoDodgeChance(acc, spd)
 }
 export function dodgeChance(acc: number, spd: number) {
   return Math.max(1 - hitChance(acc, spd), Math.min(DODGE_MAX, spd / Math.max(1, acc)))
@@ -1519,6 +1529,7 @@ export class Fight {
       const l = Math.hypot(dx, dz) || 1
       p.dodgeX = dx / l
       p.dodgeZ = dz / l
+      p.autoDodged = false
       this.setPlayer("dodge")
       this.events.push({ t: "dodge" })
     }
@@ -2003,6 +2014,7 @@ export class Fight {
     p.dodgeX = ex
     p.dodgeZ = ez
     p.queued = false
+    p.autoDodged = true
     this.setPlayer("dodge")
     this.events.push({ t: "dodge" })
   }
@@ -2033,7 +2045,10 @@ export class Fight {
     m.struck = true
     if (this.rated) {
       const chance = hitChance(m.rate.acc, this.rate.spd)
-      const evaded = (chance < 0.5 && m.landed) || this.R() < (dodging ? dodgeChance(m.rate.acc, this.rate.spd) : 1 - chance)
+      // 25/11: só a esquiva do BOTÃO usa a chance do botão; a sozinha (autoDodge) segue a regra sozinha — antes um
+      // desvio de sorte abria a janela de 90% e os golpes seguintes (a matilha, a 2ª mordida) caíam em corrente
+      const manual = dodging && !p.autoDodged
+      const evaded = (chance < 0.5 && m.landed) || this.R() < (manual ? dodgeChance(m.rate.acc, this.rate.spd) : 1 - chance)
       m.landed = !evaded
       if (evaded) {
         this.events.push({ t: "miss", on: "me", x: p.x, y: 0, z: p.z, auto: !dodging })
