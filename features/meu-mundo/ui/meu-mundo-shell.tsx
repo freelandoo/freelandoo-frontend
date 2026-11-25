@@ -749,7 +749,6 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           onOpenMarket={() => setShop({ tab: "food", atMarket: true })}
           suspended={suspended}
           menuExtras={menuExtras}
-          onOpenGacha={() => setGachaOpen(true)}
           {...scenePlayer}
         />
       ) : isHouse(scene) ? (
@@ -774,6 +773,7 @@ export default function MeuMundoShell({ initial }: { initial: ScenePayload }) {
           visits={visits}
           onEnterHouse={enterHouse}
           onGoCenter={goCenter}
+          onOpenGacha={() => setGachaOpen(true)}
           onOpenInvite={() => setInviteOpen(true)}
           onMoved={reload}
           onServerMessage={onServerMessage}

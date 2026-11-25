@@ -32,6 +32,7 @@ import {
   Droplet,
   ScrollText,
   Send,
+  Sparkles,
   Swords,
   WifiOff,
   X,
@@ -100,6 +101,8 @@ export interface NeighborhoodSceneProps extends ScenePlayerProps {
   suspended?: boolean
   /** Entradas da casca na gaveta (mm3d-30): Itens e a caixa de entrada. */
   menuExtras?: DrawerItem[]
+  /** gacha-v1b: "Convocar" na Fonte do Éter (pracinha sudeste) abre as Convocações (painel da casca). */
+  onOpenGacha?: () => void
 }
 
 export default function MeuMundoView({
@@ -114,6 +117,7 @@ export default function MeuMundoView({
   onOpenStatus,
   suspended,
   menuExtras,
+  onOpenGacha,
   selectedPlayer = null,
   selectedFrame = null,
   onPlayerTap,
@@ -204,7 +208,7 @@ export default function MeuMundoView({
     }
   }, [status, sayRef])
 
-  const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot })
+  const cbRef = useRef({ onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot, onOpenGacha })
   // Regra do Alex (2026-11-07): um ambiente por vez. Luta, minijogo e prédio tiram a rua da memória.
   const off = !!suspended || !!mob.encounter
   const stage = useOffstage(off, link.parked, {
@@ -222,8 +226,8 @@ export default function MeuMundoView({
     setDrivingLot(0)
   }, [off])
   useEffect(() => {
-    cbRef.current = { onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot }
-  }, [onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot])
+    cbRef.current = { onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot, onOpenGacha }
+  }, [onEnterHouse, onGoCenter, onMoved, onServerMessage, visitingLot, onOpenGacha])
   const [isTouch] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -310,6 +314,7 @@ export default function MeuMundoView({
             if (it.kind === "npc") return void (isNpcId(it.npc) && setTalk(it.npc))
             if (it.kind === "sign") return setSign({ text: it.text, archive: it.archive ?? null })
             if (it.kind === "statue") return setStatue(it.god)
+            if (it.kind === "fountain") return cbRef.current.onOpenGacha?.()
             // Portão do bairro (mm3d-17): agora leva ao centro (o servidor decide a sala).
             if (it.kind === "exit" && cbRef.current.onGoCenter) return cbRef.current.onGoCenter()
             if (it.kind === "house" && ((it.house.isMine && !payload.me.visitor) || it.lot.number === cbRef.current.visitingLot))
@@ -398,7 +403,8 @@ export default function MeuMundoView({
   const nearbyNpc = nearby?.kind === "npc" && isNpcId(nearby.npc) ? nearby.npc : null
   const nearbySign = nearby?.kind === "sign"
   const nearbyStatue = nearby?.kind === "statue" ? nearby.god : null
-  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob || !!nearbyNpc || nearbySign || !!nearbyStatue
+  const nearbyFountain = nearby?.kind === "fountain"
+  const nearbyAction = nearbyMine || nearbyVisit || nearbyCar || nearbyExit || nearbyMob || !!nearbyNpc || nearbySign || !!nearbyStatue || nearbyFountain
   const vehicleKind = nearby?.kind === "car" ? nearby.vkind : drivingKind
   // Veículos (mm3d-14): "Usar" para todos — carro, bike, skate e patins — e "Descer".
   const nearbyLabel = nearby?.kind === "monster"
@@ -411,6 +417,8 @@ export default function MeuMundoView({
     ? nearbyStatue === "aurion"
       ? t("sttTitleAurion", "Estátua de Aurion")
       : t("sttTitleMorkhan", "Estátua de Morkhan")
+    : nearbyFountain
+    ? t("centerFountainUse", "Fonte do Éter · Convocar")
     : nearby?.kind === "car"
     ? t("useVehicle", "Usar")
     : nearby?.kind === "car-exit"
@@ -570,7 +578,7 @@ export default function MeuMundoView({
             variant="primary"
             size="lg"
             kbd="E"
-            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyNpc ? <MessageCircle className="h-5 w-5" /> : nearbySign ? <ScrollText className="h-5 w-5" /> : nearbyStatue ? <Droplet className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
+            icon={nearbyMob ? <Swords className="h-5 w-5" /> : nearbyNpc ? <MessageCircle className="h-5 w-5" /> : nearbySign ? <ScrollText className="h-5 w-5" /> : nearbyStatue ? <Droplet className="h-5 w-5" /> : nearbyFountain ? <Sparkles className="h-5 w-5" /> : nearbyCar ? <VehicleIcon kind={vehicleKind}  className="h-5 w-5" /> : nearbyExit ? <Building2 className="h-5 w-5" /> : <DoorOpen className="h-5 w-5" />}
             onClick={() => gameRef.current?.interact()}
             aria-label={nearbyLabel}
           >
@@ -623,7 +631,7 @@ export default function MeuMundoView({
                   id: "interact",
                   label: nearbyLabel,
                   tone: nearbyMob ? "fight" : "main",
-                  icon: nearbyMob ? <Swords /> : nearbyNpc ? <MessageCircle /> : nearbySign ? <ScrollText /> : nearbyStatue ? <Droplet /> : nearbyCar ? <VehicleIcon kind={vehicleKind} /> : nearbyExit ? <Building2 /> : nearbyAction ? <DoorOpen /> : <Hand />,
+                  icon: nearbyMob ? <Swords /> : nearbyNpc ? <MessageCircle /> : nearbySign ? <ScrollText /> : nearbyStatue ? <Droplet /> : nearbyFountain ? <Sparkles /> : nearbyCar ? <VehicleIcon kind={vehicleKind} /> : nearbyExit ? <Building2 /> : nearbyAction ? <DoorOpen /> : <Hand />,
                   onSelect: () => gameRef.current?.interact(),
                 }
               : null

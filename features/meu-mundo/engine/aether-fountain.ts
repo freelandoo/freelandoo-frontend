@@ -1,4 +1,4 @@
-// features/meu-mundo/engine/aether-fountain.ts — gacha-v1b (24/11/2026): a ÁGUA da Fonte do Éter (praça do centro).
+// features/meu-mundo/engine/aether-fountain.ts — gacha-v1b (24/11/2026): a ÁGUA da Fonte do Éter (pracinha do bairro).
 // Um ParticleSystem só (gotas translúcidas, sem sombra): o jato do meio sobe do cristal e cai na taça/bacia, e as quatro
 // bicas da borda jogam arcos para o meio. Gotas pequenas e azuladas, com brilho de éter. Perfil baixo = metade.
 import { Vector3 } from "@babylonjs/core/Maths/math.vector"
@@ -7,6 +7,7 @@ import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem"
 import { CustomParticleEmitter } from "@babylonjs/core/Particles/EmitterTypes/customParticleEmitter"
 import type { Scene } from "@babylonjs/core/scene"
+import { fountainDims } from "./steampunk/kit"
 
 export interface FountainSpec {
   x: number
@@ -32,11 +33,11 @@ export class AetherFountain {
     tex.update(false)
     this.tex = tex
 
-    const rate = low ? 120 : 260
+    const rate = low ? 200 : 440
     const ps = new ParticleSystem("mm-fonte", Math.round(rate * 1.6), scene)
     ps.particleTexture = tex
     ps.emitter = new Vector3(0, 0, 0)
-    const top = f.h + 2.25
+    const { top, spoutR, spoutY } = fountainDims(f.r, f.h)
     const em = new CustomParticleEmitter()
     // 45% jato do meio, 55% as quatro bicas
     const spout = new Array<number>(4).fill(0).map((_, k) => (k / 4) * Math.PI * 2 + Math.PI / 4)
@@ -44,7 +45,7 @@ export class AetherFountain {
       if (Math.random() < 0.45) out.set(f.x + (Math.random() - 0.5) * 0.06, top, f.z + (Math.random() - 0.5) * 0.06)
       else {
         const a = spout[(Math.random() * 4) | 0]
-        out.set(f.x + Math.cos(a) * (f.r - 0.45), f.h + 0.3, f.z + Math.sin(a) * (f.r - 0.45))
+        out.set(f.x + Math.cos(a) * spoutR, spoutY, f.z + Math.sin(a) * spoutR)
       }
     }
     // a direção sai da posição já sorteada (o jato do meio nasce lá no alto, as bicas na borda)
@@ -59,7 +60,8 @@ export class AetherFountain {
         const dx = f.x - pos.x
         const dz = f.z - pos.z
         const d = Math.hypot(dx, dz) || 1
-        const v = 1.25 + Math.random() * 0.25
+        // o arco cai no meio: a velocidade sai da distância (bacia menor = arco mais curto)
+        const v = (0.7 + Math.random() * 0.14) * Math.sqrt(d)
         out.set((dx / d) * v, 2.1 + Math.random() * 0.35, (dz / d) * v)
       }
     }
@@ -71,8 +73,9 @@ export class AetherFountain {
     ps.emitRate = rate
     ps.minSize = 0.045
     ps.maxSize = 0.09
-    ps.addSizeGradient(0, 1)
-    ps.addSizeGradient(1, 0.55)
+    // gradiente em METROS (ele substitui min/maxSize; com 1 cada gota virava uma bola de 1 m e o jato, uma nuvem)
+    ps.addSizeGradient(0, 0.09, 0.14)
+    ps.addSizeGradient(1, 0.05, 0.08)
     // abaixo do limiar do brilho da cena (senão o bloom borra o jato numa nuvem)
     ps.addColorGradient(0, new Color4(0.62, 0.8, 0.9, 0.8))
     ps.addColorGradient(0.6, new Color4(0.38, 0.62, 0.85, 0.6))

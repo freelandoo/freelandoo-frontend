@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ScenePlayerProps } from "./player-card/player-card"
-import { Activity, Crown, Droplet, Gamepad2, Hand, Home, LocateFixed, Lock, LogOut, MessageCircle, RefreshCw, Sparkles, Store, Swords, WifiOff, X } from "lucide-react"
+import { Activity, Crown, Droplet, Gamepad2, Hand, Home, LocateFixed, Lock, LogOut, MessageCircle, RefreshCw, Store, Swords, WifiOff, X } from "lucide-react"
 import { useTranslations } from "@/components/i18n/I18nProvider"
 import { getToken } from "@/lib/auth"
 import { createMeuMundoGame, type GameHandle } from "../engine/game"
@@ -168,11 +168,9 @@ export interface CenterSceneProps extends ScenePlayerProps {
   suspended?: boolean
   /** Entradas da casca na gaveta (mm3d-30): Itens e a caixa de entrada. */
   menuExtras?: DrawerItem[]
-  /** gacha-v1b: "Convocar" na Fonte do Éter abre as Convocações (painel da casca). */
-  onOpenGacha?: () => void
 }
 
-export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, onOpenMarket, suspended, menuExtras, onOpenGacha, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone, sayRef }: CenterSceneProps) {
+export default function CenterView({ payload, onGoHome, onMoved, onServerMessage, blocked, onOpenStatus, onOpenMarket, suspended, menuExtras, selectedPlayer = null, selectedFrame = null, onPlayerTap, onPlayerGone, sayRef }: CenterSceneProps) {
   const t = useTranslations("MeuMundo")
   const router = useRouter()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -274,7 +272,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     }
   }, [status, sayRef])
 
-  const cbRef = useRef({ onGoHome, onMoved, onServerMessage, onOpenGacha })
+  const cbRef = useRef({ onGoHome, onMoved, onServerMessage })
   // Regra do Alex (2026-11-07): um ambiente por vez. Luta, minijogo e prédio tiram a rua da memória.
   const off = !!minigame || !!suspended || !!mob.encounter || duelFight.active
   const stage = useOffstage(off, link.parked, {
@@ -293,8 +291,8 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
     setDrivingLot(0)
   }, [off])
   useEffect(() => {
-    cbRef.current = { onGoHome, onMoved, onServerMessage, onOpenGacha }
-  }, [onGoHome, onMoved, onServerMessage, onOpenGacha])
+    cbRef.current = { onGoHome, onMoved, onServerMessage }
+  }, [onGoHome, onMoved, onServerMessage])
   const [isTouch] = useState(
     () => typeof window !== "undefined" && (window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0),
   )
@@ -367,7 +365,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
             else if (it.kind === "monster") mobRef.current.fight(it)
             else if (it.kind === "statue") setStatue(it.god)
             else if (it.kind === "domains") setPortalOpen(true)
-            else if (it.kind === "fountain") cbRef.current.onOpenGacha?.()
             else if (it.kind === "npc") {
               if (isNpcId(it.npc)) setTalk(it.npc)
             } else if (it.kind === "place") {
@@ -460,7 +457,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
   const nearNpc = nearby?.kind === "npc" && isNpcId(nearby.npc) ? nearby.npc : null
   const nearStatue = nearby?.kind === "statue" ? nearby.god : null
   const nearDomains = nearby?.kind === "domains"
-  const nearFountain = nearby?.kind === "fountain"
   const nearbyLabel = nearMob
     ? mob.label(nearMob)
     : nearNpc
@@ -477,8 +473,6 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
           ? t("backHome", "Voltar para casa")
           : nearDomains
             ? t("centerDomains", "Portal dos Domínios")
-          : nearFountain
-            ? t("centerFountainUse", "Fonte do Éter · Convocar")
           : nearPlace
             ? placeName(nearPlace)
             : ""
@@ -601,7 +595,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
               variant="primary"
               size="lg"
               kbd="E"
-              icon={nearMob || nearDomains ? <Swords className="h-5 w-5" /> : nearNpc ? <MessageCircle className="h-5 w-5" /> : nearStatue ? <Droplet className="h-5 w-5" /> : nearFountain ? <Sparkles className="h-5 w-5" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5" /> : <Home className="h-5 w-5" />}
+              icon={nearMob || nearDomains ? <Swords className="h-5 w-5" /> : nearNpc ? <MessageCircle className="h-5 w-5" /> : nearStatue ? <Droplet className="h-5 w-5" /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} className="h-5 w-5" /> : <Home className="h-5 w-5" />}
               onClick={() => gameRef.current?.interact()}
               aria-label={nearbyLabel}
             >
@@ -643,7 +637,7 @@ export default function CenterView({ payload, onGoHome, onMoved, onServerMessage
                   id: "interact",
                   label: nearPlace ? `${nearbyLabel} · ${placeTag}` : nearbyLabel,
                   tone: nearMob || nearDomains ? "fight" : "main",
-                  icon: nearMob || nearDomains ? <Swords /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} /> : nearPortal ? <Home /> : nearNpc ? <MessageCircle /> : nearStatue ? <Droplet /> : nearFountain ? <Sparkles /> : nearLock ? <Lock /> : nearPlace ? <Store /> : <Hand />,
+                  icon: nearMob || nearDomains ? <Swords /> : nearCar ? <VehicleIcon kind={nearby.kind === "car" ? nearby.vkind : drivingKind} /> : nearPortal ? <Home /> : nearNpc ? <MessageCircle /> : nearStatue ? <Droplet /> : nearLock ? <Lock /> : nearPlace ? <Store /> : <Hand />,
                   onSelect: () => gameRef.current?.interact(),
                 }
               : null

@@ -129,6 +129,8 @@ export interface NeighborhoodDims {
   /** mm3d-50: as quatro pracinhas do gramado (piso, canteiro, bancos e poste). */
   square?: { r: number; bed: number; bench: number }
   squares?: [number, number][]
+  /** gacha-v1b: a Fonte do Éter no meio de uma pracinha (no lugar da caldeira; r/h = bacia, radius = alcance do "Convocar"). */
+  fountain?: Vec2 & { id: string; r: number; h: number; radius: number }
 }
 
 /** Lore v2 N3: um lado da corrida das estátuas (mL entregues, meta, estágio 0–4, cheia). */
@@ -836,8 +838,6 @@ export interface CenterLayout {
   portal: Vec2 & { id: string; radius: number; nameKey: string }
   /** Lore v2 D1: o Portal dos Domínios (lado leste da praça; pilares a ±span em z). */
   domainPortal?: Vec2 & { id: string; facing: number; radius: number; span: number; h: number; nameKey: string }
-  /** gacha-v1b: a Fonte do Éter (canto nordeste da praça; r = raio da bacia, radius = alcance do "Convocar"). */
-  fountain?: Vec2 & { id: string; r: number; h: number; radius: number; nameKey: string }
   /** Lore v2 F4: os NPCs da praça. */
   npcs?: StreetNpc[]
   obstacles: Box2Def[]

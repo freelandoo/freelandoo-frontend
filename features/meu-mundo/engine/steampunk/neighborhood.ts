@@ -30,6 +30,7 @@ import type { House, Lot, LotPlan, NeighborhoodDims, StatueDef } from "../../typ
 import { SP, shade, rng } from "./palette"
 import { facing, xf } from "./geo"
 import {
+  aetherFountain,
   boiler,
   boundaryWall,
   grate,
@@ -323,7 +324,10 @@ function square(ctx: NbCtx, cx: number, cz: number, sq: { r: number; bed: number
   cobble.cylinder(2 * sq.r + 0.6, 0.05, place(cx, 0.025, cz), COBBLE_DARK, 24)
   pavers.cylinder(2 * sq.r, 0.058, place(cx, 0.029, cz), PLAZA, 24)
   props.ring(2 * sq.r - 0.4, 0.1, flat(cx, 0.059, cz), SP.brassDark, 24)
-  boiler(ctx, cx, cz, Math.atan2(-cx, -cz), 2 * sq.bed)
+  // gacha-v1b: na pracinha da Fonte do Éter, a fonte no lugar da caldeira (a caixa abaixo é a mesma)
+  const f = ctx.d.fountain
+  if (f && Math.abs(f.x - cx) < 0.01 && Math.abs(f.z - cz) < 0.01) aetherFountain(ctx, cx, cz, f.r, f.h)
+  else boiler(ctx, cx, cz, Math.atan2(-cx, -cz), 2 * sq.bed)
   ctx.boxes.push({ x: cx, z: cz, hx: sq.bed * 0.85, hz: sq.bed * 0.85, rot: Math.PI / 4, h: 0.5 })
   for (let i = 0; i < 4; i++) {
     const b = Math.PI / 4 + (i * Math.PI) / 2

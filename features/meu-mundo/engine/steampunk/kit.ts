@@ -387,3 +387,51 @@ export function grate(ctx: SteamCtx, x: number, y: number, z: number, ry: number
   props.box(w + 0.08, 0.016, 0.05, place(0, 0.008, d / 2, 0, f), SP.brassDark)
   for (let i = 1; i < 5; i++) props.box(0.04, 0.02, d - 0.04, place(-w / 2 + (w * i) / 5, 0.012, 0, 0, f), SP.ironHi)
 }
+
+/**
+ * gacha-v1b: medidas da Fonte do Éter a partir da bacia (r, h) — a peça e a água (aether-fountain.ts) usam as
+ * mesmas. `k` escala o que é largo; `v` o que é alto (a fonte não encolhe tanto na altura: tem de ser vista).
+ */
+export function fountainDims(r: number, h: number) {
+  const k = r / 1.8
+  const v = Math.max(0.8, k)
+  return { k, v, top: h + 2.25 * v, spoutR: r - 0.45 * k, spoutY: h + 0.28 * v }
+}
+
+/**
+ * gacha-v1b: a Fonte do Éter (no bairro, no meio da pracinha sudeste) — bacia de pedra com aro de latão, água de
+ * éter acesa, quatro bicas, coluna com taça e o cristal no alto. A água que jorra é de partículas
+ * (engine/aether-fountain.ts). A colisão é a do lugar (a caldeira da pracinha), não daqui.
+ */
+export function aetherFountain(ctx: SteamCtx, x: number, z: number, r: number, h: number) {
+  const { props, glow, pavers } = ctx
+  const { k, v } = fountainDims(r, h)
+  const WATER: RGB = [0.42, 0.86, 1]
+  const DEEP: RGB = [0.22, 0.55, 0.95]
+  pavers.cylinder(2 * r + 1.1, 0.065, place(x, 0.0325, z), SP.stoneDark, 28)
+  props.cylinder(2 * r + 0.36, 0.14, place(x, 0.07, z), SP.stoneDark, 28)
+  props.cylinder(2 * r, h - 0.08, place(x, (h - 0.08) / 2, z), SP.stone, 28)
+  props.ring(2 * r - 0.12, 0.24, place(x, h - 0.03, z), SP.stoneLight, 32, 6)
+  props.ring(2 * r + 0.04, 0.06, place(x, h * 0.45, z), SP.brass, 32)
+  glow.with("flat", () => {
+    glow.cylinder(2 * r - 0.3, 0.03, place(x, h - 0.08, z), WATER, 28)
+    glow.cylinder(1.1 * k, 0.035, place(x, h - 0.065, z), DEEP, 16)
+  })
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4
+    const bx = x + Math.cos(a) * (r - 0.1)
+    const bz = z + Math.sin(a) * (r - 0.1)
+    props.cylinder(0.16, 0.2, place(bx, h + 0.09, bz), SP.brassDark, 8)
+    props.tube([bx, h + 0.18, bz], [x + Math.cos(a) * (r - 0.4 * k), h + 0.26 * v, z + Math.sin(a) * (r - 0.4 * k)], 0.045, SP.brass, 6)
+  }
+  props.cylinder(0.62 * k + 0.1, 0.18, place(x, h + 0.02, z), SP.stoneLight, 12)
+  props.cylinder(0.42 * k + 0.08, 1.35 * v, place(x, h + 0.7 * v, z), SP.stone, 10)
+  for (const y of [h + 0.35 * v, h + 1.05 * v]) props.ring(0.46 * k + 0.08, 0.06, place(x, y, z), SP.brass, 14)
+  props.cone(1.5 * k + 0.2, 0.45 * k + 0.08, 0.3 * v, place(x, h + 1.52 * v, z), SP.stoneLight, 18)
+  props.ring(1.5 * k + 0.2, 0.07, place(x, h + 1.68 * v, z), SP.brass, 24)
+  glow.with("flat", () => {
+    glow.cylinder(1.3 * k + 0.16, 0.03, place(x, h + 1.66 * v, z), WATER, 18)
+    glow.cone(0.02, 0.24, 0.5 * v, place(x, h + 2.2 * v, z), [0.75, 0.95, 1], 6)
+  })
+  props.cylinder(0.14, 0.3 * v, place(x, h + 1.82 * v, z), SP.brassDark, 6)
+}
