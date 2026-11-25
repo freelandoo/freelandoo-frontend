@@ -78,7 +78,10 @@ export function noticeEmotion(n: Pick<MMNotice, "kind" | "code"> & { data?: MMNo
   return EMOTION_OF[e]
 }
 
-/** Expressão para as notificações do servidor (necessidade usa a tabela acima). */
+/** Expressão para as notificações do servidor (necessidade usa a tabela acima). */
+/** legend-v1: nome do minijogo no aviso do prêmio Lendário (nome próprio dos jogos, igual nas três línguas). */
+const PRIZE_GAME: Record<string, string> = { jetpack: "Jetpack", noturno: "Rolê Noturno", corrida: "Antigravidade", gincana: "Gincana", paint: "Paint" }
+
 export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: MMNotice["data"] }): Expression | null {
   if (n.kind === "need") return NEED_EXPRESSION[n.code as LifeNeedId] ?? "worried"
   if (n.kind === "gift") return "grateful"
@@ -87,7 +90,7 @@ export function noticeExpression(n: Pick<MMNotice, "kind" | "code"> & { data?: M
     if (n.code === "hospital_out" || n.code === "adult" || n.code === "wish" || n.code === "wish_ok") return "happy"
     if (n.code === "chatter") return n.data?.emotion === "sad" ? "worried" : n.data?.emotion === "angry" ? "stressed" : "happy"
     if (n.code === "wish_fail") return "worried"
-    if (n.code === "hall_defended" || n.code === "nectar_week") return "happy"
+    if (n.code === "hall_defended" || n.code === "nectar_week" || n.code === "legend_week") return "happy"
     if (n.code === "hall_lost" || n.code === "hall_beaten") return "worried"
     if (n.code === "diabetes" || n.code === "hypertension") return "happy" // D9: aviso antigo = curado
     if (n.code === "born") return "determined"
@@ -157,6 +160,12 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
         return {
           title: t("ntNectarWeek", "Sua semana rendeu {n} L de néctar!").replace("{n}", (Number(n.data.ml ?? 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 2 })),
           line: t("ntNectarWeekLine", "Está guardado para entregar na estátua. Veja no Ranking → Semana."),
+        }
+      // legend-v1: 1º lugar da semana num minijogo = o prêmio Lendário caiu na mochila
+      if (n.code === "legend_week")
+        return {
+          title: t("ntLegendWeek", "1º lugar da semana no {game}! Você ganhou uma Lendária.").replace("{game}", PRIZE_GAME[String(n.data.game)] ?? String(n.data.game ?? "")),
+          line: t("ntLegendWeekLine", "Os fragmentos de classe Lendária estão na mochila: monte a sua arma na Forja."),
         }
       if (n.code === "hall_defended")
         return { title: t("ntHallDefended", "Você defendeu sua vaga contra {name}!").replace("{name}", String(n.data.name ?? "—")), line: t("ntHallDefendedLine", "Sua ficha lutou por você no Hall das Lâminas.") }

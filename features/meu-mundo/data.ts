@@ -673,6 +673,10 @@ export interface WeeklyRanking {
   games: WeeklyGame[]
   top: WeeklyRankingRow[]
   me: WeeklyRankingRow | null
+  /** legend-v1: minijogo — só partidas com esse tanto de pessoas (ou mais) contam */
+  multiOnly?: number
+  /** legend-v1: o que o 1º lugar da semana recebe no fechamento (minijogos); `active` = vale nesta semana */
+  prize?: { position: number; items: { id: string; qty: number }[]; fromWeek: string; active: boolean }
 }
 export const getWeeklyRanking = (token: string, game: WeeklyGame, week?: string) =>
   call<WeeklyRanking>(token, "GET", `/ranking/semana/${game}${week ? `?week=${encodeURIComponent(week)}` : ""}`)

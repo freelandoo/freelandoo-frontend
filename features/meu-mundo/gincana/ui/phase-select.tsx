@@ -108,6 +108,7 @@ export function GincanaPhaseSelect({
   const cols = 1 + (multi ? 1 : 0) + (onShow ? 1 : 0)
   return (
     <StageSelect
+      rankGame="gincana"
       brand={
         <>
           <span style={{ color: YELLOW }}>GIN</span>

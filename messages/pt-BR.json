@@ -15621,7 +15621,17 @@
     "pvBuySwords": "Comprar espadas",
     "pvBuyStaffs": "Comprar cajados",
     "forgeShopTab": "Proteções",
-    "forgeShopTitle": "Venda de proteções"
+    "forgeShopTitle": "Venda de proteções",
+    "rkPrizeTitle": "1º lugar da semana ganha uma Lendária",
+    "rkPrizeLegend": "{n} fragmentos de classe Lendária: monte a arma Lendária que quiser na Forja.",
+    "rkPrizeBastor": "E mais {n} fragmentos de cada peça do conjunto dos Moldes (Bastor).",
+    "rkPrizeMulti": "Só contam partidas com {n} ou mais jogadores. O prêmio cai na virada da semana (domingo).",
+    "rkPrizeFrom": "Vale a partir da semana de {d}.",
+    "rkPrizeBadge": "Lendária",
+    "stageRanking": "Ranking da semana",
+    "stageRankingShort": "Ranking",
+    "ntLegendWeek": "1º lugar da semana no {game}! Você ganhou uma Lendária.",
+    "ntLegendWeekLine": "Os fragmentos de classe Lendária estão na mochila: monte a sua arma na Forja."
   },
   "Sports": {
     "eyebrow": "Esportes",

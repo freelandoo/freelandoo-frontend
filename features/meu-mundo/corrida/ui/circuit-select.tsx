@@ -108,6 +108,7 @@ export function CircuitSelect({
   })
   return (
     <StageSelect
+      rankGame="corrida"
       brand={
         <>
           ANTI<span style={{ color: "#FF7A2F" }}>GRAVIDADE</span>

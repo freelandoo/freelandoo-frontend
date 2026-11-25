@@ -151,6 +151,7 @@ export function PaintMapSelect({
   const modeTitle = joiningMode ? (modes.find((m) => m.mode === joiningMode)?.title ?? "") : ""
   return (
     <StageSelect
+      rankGame="paint"
       brand={joining ? `PAINT · ${modeTitle}` : "PAINT"}
       title={joining ? t("paintMapVoteTitle", "VOTE NO MAPA") : t("paintMapTitle", "SELECIONAR MAPA")}
       cards={cards}

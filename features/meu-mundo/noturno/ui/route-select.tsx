@@ -124,6 +124,7 @@ export function RouteSelect({
   const showTrain = !!onTrain && multi
   return (
     <StageSelect
+      rankGame="noturno"
       brand={
         <>
           ROLÊ <span style={{ color: "#FF4FB3" }}>NOTURNO</span>

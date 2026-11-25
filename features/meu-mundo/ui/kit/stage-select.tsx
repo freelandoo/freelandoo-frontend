@@ -10,8 +10,10 @@
 // dois toques jogam, Enter joga. Cada minijogo só monta os dados dos cartões e os botões.
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { ArrowLeft, CircleHelp, Lock, Trophy, X } from "lucide-react"
-import { useTranslations } from "@/components/i18n/I18nProvider"
+import { ArrowLeft, CircleHelp, Crown, Lock, Trophy, X } from "lucide-react"
+import { useLocale, useTranslations } from "@/components/i18n/I18nProvider"
+import type { WeeklyGame } from "../../data"
+import { WeeklyBoard } from "../ranking/weekly-board"
 import { BackToCity } from "./back-to-city"
 import { MM } from "../hud/tokens"
 
@@ -95,12 +97,19 @@ export interface StageSelectProps {
   overlay?: ReactNode
   /** Folga embaixo da grade (para a espera presa). */
   padBottom?: number
+  /**
+   * legend-v1 (24/11/2026, Alex: "o ranking mostra dentro da tela de escolha de fases, cada minijogo com o seu"):
+   * o botão Ranking do cabeçalho abre o ranking da semana DESTE jogo (o mesmo do Ranking do jogo) com o prêmio Lendário.
+   */
+  rankGame?: WeeklyGame
 }
 
 export function StageSelect(p: StageSelectProps) {
   const t = useTranslations("MeuMundo")
+  const locale = useLocale()
   const chosen = p.cards.find((c) => c.id === p.selected) ?? p.cards[0]
   const [helpOpen, setHelpOpen] = useState(false)
+  const [rankOpen, setRankOpen] = useState(false)
   // Enter joga a fase escolhida (PC); Esc fecha a ajuda
   const runRef = useRef<() => void>(() => {})
   const { onRun } = p
@@ -111,19 +120,20 @@ export function StageSelect(p: StageSelectProps) {
   })
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && helpOpen) {
+      if (e.key === "Escape" && (helpOpen || rankOpen)) {
         setHelpOpen(false)
+        setRankOpen(false)
         e.preventDefault()
         return
       }
-      if (e.key === "Enter" && !helpOpen && !(e.target instanceof HTMLButtonElement)) {
+      if (e.key === "Enter" && !helpOpen && !rankOpen && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault()
         runRef.current()
       }
     }
     window.addEventListener("keydown", k)
     return () => window.removeEventListener("keydown", k)
-  }, [helpOpen])
+  }, [helpOpen, rankOpen])
   return (
     <div className="absolute inset-0 flex flex-col" style={{ background: STAGE_BG, color: MM.text }}>
       <header className="flex shrink-0 items-center gap-3 px-5 pb-2 pt-[max(16px,env(safe-area-inset-top))] max-[759px]:px-3">
@@ -145,6 +155,19 @@ export function StageSelect(p: StageSelectProps) {
           <h1 className="truncate text-[26px] font-black uppercase italic leading-none tracking-tight max-[759px]:text-[20px]">{p.title}</h1>
         </div>
         {p.headerExtra}
+        {p.rankGame && (
+          <button
+            type="button"
+            onClick={() => setRankOpen(true)}
+            aria-label={t("stageRanking", "Ranking da semana")}
+            title={t("stageRanking", "Ranking da semana")}
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-black uppercase italic tracking-[0.06em] max-[759px]:w-10 max-[759px]:justify-center max-[759px]:px-0"
+            style={{ background: "rgba(242,183,5,0.14)", border: `1px solid ${MM.gold}`, color: MM.gold }}
+          >
+            <Crown className="h-5 w-5 shrink-0" />
+            <span className="max-[759px]:hidden">{t("stageRankingShort", "Ranking")}</span>
+          </button>
+        )}
         {p.help && (
           <button
             type="button"
@@ -194,6 +217,32 @@ export function StageSelect(p: StageSelectProps) {
       )}
 
       {p.overlay}
+
+      {rankOpen && p.rankGame && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-4 max-[759px]:p-2" style={{ background: "rgba(4,6,10,0.72)" }} onClick={() => setRankOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("stageRanking", "Ranking da semana")}
+            className="max-h-full w-full max-w-[620px] overflow-y-auto rounded-none p-5 max-[759px]:p-3"
+            style={{ background: MM.surface, border: `1px solid ${MM.border}`, boxShadow: MM.shadow }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: STAGE_CYAN }}>
+                  {p.brand}
+                </div>
+                <h2 className="text-[20px] font-black uppercase italic leading-none">{t("stageRanking", "Ranking da semana")}</h2>
+              </div>
+              <button type="button" onClick={() => setRankOpen(false)} aria-label={t("stageClose", "Fechar")} className="grid h-9 w-9 shrink-0 place-items-center rounded-full" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <WeeklyBoard t={t} locale={locale} only={p.rankGame} />
+          </div>
+        </div>
+      )}
 
       {helpOpen && p.help && (
         <div className="absolute inset-0 z-20 flex items-center justify-center p-4" style={{ background: "rgba(4,6,10,0.72)" }} onClick={() => setHelpOpen(false)}>

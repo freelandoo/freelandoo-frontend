@@ -92,6 +92,7 @@ export function PhaseSelect({
   const showTrain = !!onTrain && multi
   return (
     <StageSelect
+      rankGame="jetpack"
       brand="JETPACK"
       title={t("jetSelectTitle", "Selecionar fase")}
       cards={cards}
