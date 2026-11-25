@@ -65,13 +65,20 @@ export function useGearShelf({ catalog, bag, shelf, busy, act, t, on = true }: {
               badge={t("gearPrice", "{p} moedas").replace("{p}", String(price))}
               subtitle={item.level > 1 ? t("shopFromLevel", "A partir do nível {n}").replace("{n}", String(item.level)) : undefined}
               details={<ItemFacts item={item} t={t} bag={bag} />}
-              note={lock ?? undefined}
             >
               {owned ? (
                 <p className="text-[13px] font-semibold" style={{ color: AE.good }}>
                   {t("gearOwned", "Já é seu")}
                 </p>
-              ) : lock ? null : confirm === item.id ? (
+              ) : lock ? (
+                // 25/11 (Alex: "cadê o botão de comprar?"): travada (classe ou nível) mostra o Comprar apagado com o motivo
+                <>
+                  <p className="text-[12px] font-semibold" style={{ color: AE.goldSoft }}>
+                    {lock}
+                  </p>
+                  <AetherButton disabled>{t("gearBuy", "Comprar")}</AetherButton>
+                </>
+              ) : confirm === item.id ? (
                 <>
                   <p className="text-[12px]" style={{ color: AE.goldSoft }}>
                     {t("forgeBuyConfirm", "Confirmar compra por {n} moedas?").replace("{n}", String(price))}
