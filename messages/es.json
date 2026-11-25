@@ -16188,16 +16188,16 @@
     "pvBuyStaffs": "Comprar bastones",
     "forgeShopTab": "Protecciones",
     "forgeShopTitle": "Venta de protecciones",
-    "rkPrizeTitle": "El 1.er lugar de la semana gana una Legendaria",
-    "rkPrizeLegend": "{n} fragmentos de clase Legendaria: arma en la Forja la Legendaria que quieras.",
+    "rkPrizeTitle": "El 1.er lugar de la semana gana fragmentos Legendarios",
+    "rkPrizeLegend": "{n} fragmentos de clase Legendaria. Juntando 180, armas en la Forja la Legendaria que quieras.",
     "rkPrizeBastor": "Y además {n} fragmentos de cada pieza del conjunto de los Moldes (Bastor).",
     "rkPrizeMulti": "Solo cuentan partidas con {n} o más jugadores. El premio llega al cambiar la semana (domingo).",
     "rkPrizeFrom": "Vale a partir de la semana del {d}.",
     "rkPrizeBadge": "Legendaria",
     "stageRanking": "Ranking semanal",
     "stageRankingShort": "Ranking",
-    "ntLegendWeek": "¡1.er lugar de la semana en {game}! Ganaste una Legendaria.",
-    "ntLegendWeekLine": "Los fragmentos de clase Legendaria están en tu mochila: arma tu arma en la Forja."
+    "ntLegendWeek": "¡1.er lugar de la semana en {game}! Ganaste {n} fragmentos Legendarios.",
+    "ntLegendWeekLine": "Están en tu mochila. Juntando 180, armas una Legendaria en la Forja."
   },
   "Sports": {
     "eyebrow": "Deportes",

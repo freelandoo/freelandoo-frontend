@@ -64,11 +64,11 @@ export function WeeklyPrize({ cur, t, locale }: { cur: WeeklyRanking; t: Tr; loc
       <Crown className="mt-0.5 h-5 w-5 shrink-0" style={{ color: MM.gold }} />
       <div className="min-w-0 text-[12.5px] leading-snug">
         <div className={`${archivo.className} font-bold`} style={{ color: MM.gold }}>
-          {t("rkPrizeTitle", "1º lugar da semana ganha uma Lendária")}
+          {t("rkPrizeTitle", "1º lugar da semana ganha fragmentos Lendários")}
         </div>
         <div style={{ color: MM.text }}>
           {legend &&
-            t("rkPrizeLegend", "{n} fragmentos de classe Lendária: monte a arma Lendária que quiser na Forja.").replace("{n}", legend.qty.toLocaleString(locale))}
+            t("rkPrizeLegend", "{n} fragmentos de classe Lendária. Juntando 180, você monta a arma Lendária que quiser na Forja.").replace("{n}", legend.qty.toLocaleString(locale))}
           {extra.length > 0 && cur.game === "paint" && (
             <> {t("rkPrizeBastor", "E mais {n} fragmentos de cada peça do conjunto dos Moldes (Bastor).").replace("{n}", String(extra[0].qty))}</>
           )}

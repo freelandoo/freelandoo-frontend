@@ -164,8 +164,8 @@ export function noticeText(n: MMNotice, t: Tr): { title: string; line: string | 
       // legend-v1: 1º lugar da semana num minijogo = o prêmio Lendário caiu na mochila
       if (n.code === "legend_week")
         return {
-          title: t("ntLegendWeek", "1º lugar da semana no {game}! Você ganhou uma Lendária.").replace("{game}", PRIZE_GAME[String(n.data.game)] ?? String(n.data.game ?? "")),
-          line: t("ntLegendWeekLine", "Os fragmentos de classe Lendária estão na mochila: monte a sua arma na Forja."),
+          title: t("ntLegendWeek", "1º lugar da semana no {game}! Você ganhou {n} fragmentos Lendários.").replace("{game}", PRIZE_GAME[String(n.data.game)] ?? String(n.data.game ?? "")).replace("{n}", String(n.data.qty ?? 10)),
+          line: t("ntLegendWeekLine", "Estão na mochila. Juntando 180, você monta uma arma Lendária na Forja."),
         }
       if (n.code === "hall_defended")
         return { title: t("ntHallDefended", "Você defendeu sua vaga contra {name}!").replace("{name}", String(n.data.name ?? "—")), line: t("ntHallDefendedLine", "Sua ficha lutou por você no Hall das Lâminas.") }

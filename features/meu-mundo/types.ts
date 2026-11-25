@@ -1000,7 +1000,7 @@ export interface MMNotice {
   code: string
   /** 1 = mais urgente */
   priority: number
-  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string; wish?: string; emotion?: string; /** fala do personagem: o assunto (cada assunto tem a própria espera) */ topic?: string; /** B8: desafio do Hall */ name?: string; seat?: number | null; seatWon?: number | null; /** lore v2 N2: néctar da semana (mL) */ ml?: number; week?: string; /** legend-v1: o minijogo do prêmio Lendário */ game?: string }
+  data: { hours?: number; title?: string; polens?: number; gift?: MailGift; generation?: number; from?: string; conversationId?: string; paidBy?: "freelandoo" | "player"; coins?: number; minutes?: number; reason?: string; wish?: string; emotion?: string; /** fala do personagem: o assunto (cada assunto tem a própria espera) */ topic?: string; /** B8: desafio do Hall */ name?: string; seat?: number | null; seatWon?: number | null; /** lore v2 N2: néctar da semana (mL) */ ml?: number; week?: string; /** legend-v1: o minijogo do prêmio Lendário */ game?: string; qty?: number }
   mailId: string | null
   createdAt: string
   read: boolean

@@ -16208,16 +16208,16 @@
     "pvBuyStaffs": "Buy staffs",
     "forgeShopTab": "Protections",
     "forgeShopTitle": "Protections for sale",
-    "rkPrizeTitle": "Weekly 1st place wins a Legendary",
-    "rkPrizeLegend": "{n} Legendary class fragments: build any Legendary weapon you want at the Forge.",
+    "rkPrizeTitle": "Weekly 1st place wins Legendary fragments",
+    "rkPrizeLegend": "{n} Legendary class fragments. Collect 180 to build any Legendary weapon you want at the Forge.",
     "rkPrizeBastor": "Plus {n} fragments of each piece of the Molds set (Bastor).",
     "rkPrizeMulti": "Only matches with {n} or more players count. The prize lands when the week turns (Sunday).",
     "rkPrizeFrom": "Starts with the week of {d}.",
     "rkPrizeBadge": "Legendary",
     "stageRanking": "Weekly ranking",
     "stageRankingShort": "Ranking",
-    "ntLegendWeek": "1st place of the week in {game}! You won a Legendary.",
-    "ntLegendWeekLine": "The Legendary class fragments are in your backpack: build your weapon at the Forge."
+    "ntLegendWeek": "1st place of the week in {game}! You won {n} Legendary fragments.",
+    "ntLegendWeekLine": "They are in your backpack. Collect 180 to build a Legendary weapon at the Forge."
   },
   "Sports": {
     "eyebrow": "Sports",
