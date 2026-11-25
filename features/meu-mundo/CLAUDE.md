@@ -26,7 +26,7 @@ Carrega só quando se abre arquivo desta pasta. **Teto 8 KB.** Histórico de cad
 
 - **Não existe skin (25/11).** Cada personagem é um ser: certidão, vida e personalidade próprias; trocar de personagem = outro ser, tudo novo. Não criar vestuário/skin nem usar a palavra em texto, código novo ou comentário (sobra só o valor `"skin"` gravado no banco: carta antiga e origem da mig 340).
 - Mexeu num personagem = muda em todo lugar onde aparece, inclusive como monstro (altura, rig, arma, poderes).
-- Alturas (`heights.ts` ↔ `meuMundoHeights.js`): jovem 1,70/1,65, adulto 2,70, deuses 3,20, Ciborgue 2,7, Golem de Pedra/Brutamontes 4, lobos 2,5, Cavaleiro/Garras 2. Iguais na luta e na rua.
+- Alturas (`heights.ts` ↔ `meuMundoHeights.js`): jovem 1,70/1,65, adulto 2,70, deuses 3,20, Ciborgue 2,7, Golem de Pedra/Brutamontes 4, lobos 2,5, Cavaleiro/Garras 2. Iguais na luta e na rua. Nascer: 1,00 m, deuses 1,40 m (`GROW.GOD_BIRTH`/`birthHeight` em `characters/rules.ts`), em linha até a altura de jovem.
 - Status e nível sem teto. Poder = soma dos atributos + HP do nível + equipamento (só o permanente).
 - Força se chama ACURACIDADE na tela (chave `strength`); acurácia é outro atributo. Ataque = força do golpe, defesa amortece, dano por razão pura sem piso.
 - Brutamontes nv. 15 = 506/575/503/431/323; todas as raças nessa dificuldade. Quem aparece como monstro é igual ao personagem.

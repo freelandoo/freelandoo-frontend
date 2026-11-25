@@ -8,7 +8,7 @@
 //  • vários personagens por jogador, UM ativo; os outros ficam na CÁPSULA, congelados
 //    (5 vagas: CAPSULE.SLOTS);
 //  • o visual antigo virou ESPÉCIE (SPECIES): quem tinha um ganhou um personagem dele;
-//  • todos nascem com 1,00 m e crescem em linha até a altura de jovem em 30 dias de vida
+//  • todos nascem com 1,00 m (deuses 1,40 m desde 25/11) e crescem em linha até a altura de jovem em 30 dias de vida
 //    ativa; viram adultos pela regra GROWTH da vida e crescem até a altura final da espécie
 //    em mais 30 dias;
 //  • FUSÃO de dois adultos vivos: os pais somem, o filho nasce com 20% do maior pico entre
@@ -87,10 +87,17 @@ export function speciesBody(species: string | null | undefined, sex: string | nu
 }
 
 // ═══ CRESCER ═══
-export const GROW = Object.freeze({ BIRTH: 1.0, YOUNG_DAYS: 30, ADULT_DAYS: 30 })
+// 25/11 (Alex): os DEUSES nascem com 1,40 m (GOD_BIRTH); os outros seguem com 1,00 m.
+export const GROW = Object.freeze({ BIRTH: 1.0, GOD_BIRTH: 1.4, YOUNG_DAYS: 30, ADULT_DAYS: 30 })
 const DAY_MS = 86400000
 const at01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v)
 const r2 = (v: number) => Math.round(v * 100) / 100
+
+/** Altura ao nascer (m) da espécie: deus 1,40; o resto 1,00. */
+export function birthHeight(species: string | null | undefined): number {
+  const d = speciesById(species)
+  return d && d.kind === "god" ? GROW.GOD_BIRTH : GROW.BIRTH
+}
 
 export interface GrowthLike {
   stage?: string | null
@@ -101,7 +108,7 @@ export interface GrowthLike {
 }
 
 /**
- * Altura de agora (m, 2 casas): 1,00 m ao nascer → altura de jovem em 30 dias de vida
+ * Altura de agora (m, 2 casas): altura ao nascer (birthHeight) → altura de jovem em 30 dias de vida
  * ativa (em linha); fica nela até virar adulto; adulto → altura final em mais 30 dias.
  * Espécie desconhecida: 1,80 (a dos avatares do bairro).
  */
@@ -116,7 +123,8 @@ export function speciesHeight(species: string | null | undefined, sex: string | 
     return r2(young + (d.adult - young) * k)
   }
   const k = from > 0 ? at01((t - from) / (GROW.YOUNG_DAYS * DAY_MS)) : 1
-  return r2(GROW.BIRTH + (young - GROW.BIRTH) * k)
+  const birth = birthHeight(d.id)
+  return r2(birth + (young - birth) * k)
 }
 
 /** Dias de vida ATIVA (o nascimento já vem deslocado pelo tempo congelado). */
@@ -233,7 +241,7 @@ export function mixCount(countA: number | null | undefined, countB: number | nul
 
 // ═══ LABORATÓRIO DE CRIOGENIA (B12) ═══
 // Pedido do Alex (08/11): o laboratório vende o EMBRIÃO de um personagem e o ACELERADOR
-// que o leva aos 15 anos. Embrião = personagem recém-nascido (1,00 m, 0 dia de vida
+// que o leva aos 15 anos. Embrião = personagem recém-nascido (birthHeight: 1,00 m; deus 1,40 m; 0 dia de vida
 // ativa) entregue na cápsula, congelado; descongelado, cresce como qualquer um até a
 // altura de jovem em GROW.YOUNG_DAYS. O acelerador pula essa fase na hora: deixa o
 // personagem com GROW.YOUNG_DAYS dias de vida ativa (o "jovem de 15 anos", a idade com que
