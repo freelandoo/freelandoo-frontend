@@ -192,7 +192,7 @@ function InviteGame({ t }: { t: (k: string, f: string) => string }) {
           <span className="text-[12px]" style={{ color: MM.text }}>{t("invPick", "Escolha o personagem (rodada {r}):").replace("{r}", String(st.round.round))}</span>
           <div className="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
             {st.round.available.map((id) => {
-              const body = speciesBody(id, "m", "adult") as BodyId | null
+              const body = speciesBody(id, "m", "young") as BodyId | null
               return (
                 <button key={id} type="button" disabled={busy} onClick={() => void pick(id)} className="flex flex-col items-center p-1" style={{ background: MM.card, border: `1px solid ${MM.border}` }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}

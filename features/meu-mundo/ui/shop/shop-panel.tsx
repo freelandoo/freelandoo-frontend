@@ -31,7 +31,7 @@ import { effectsOf, thumbOf } from "../fridge/fridge-logic"
 import { itemName } from "../status/status-pages"
 import { canEatItem, clanOfBody, dietOfClan, myClan } from "../../classes"
 import { PORTRAIT, WOLF_PORTRAIT } from "../portraits"
-import { SPECIES, type SpeciesDef } from "../../characters/rules"
+import { SPECIES, YOUNG_SPECIES, type SpeciesDef } from "../../characters/rules"
 import { speciesName } from "../../characters/names"
 import { ShopCard, type ShopLine } from "./shop-card"
 import { ExchangePanel } from "./exchange-panel"
@@ -50,8 +50,10 @@ const MOB_PORTRAIT: Record<TrophyKind, string> = {
   brute: PORTRAIT.brutamontes,
 }
 
-/** A espécie é o corpo, menos as classes (o retrato da classe sai do corpo jovem). */
+/** A espécie é o corpo, menos as classes (o retrato da classe sai do corpo jovem). 25/11: deus e
+ * especial com corpo jovem nascem jovens — a loja mostra o jovem, nunca o adulto. */
 function speciesBody(sp: SpeciesDef): BodyId {
+  if (YOUNG_SPECIES.includes(sp.id)) return `${sp.id}_jovem` as BodyId
   return (sp.id === "raposa" ? "raposa" : sp.id === "vampiro" ? "vampiro" : sp.id) as BodyId
 }
 

@@ -181,7 +181,7 @@ export default function GachaPanel({ t, onClose, onOpenForge }: { t: Tr; onClose
       const it = items.get(id)
       // fragmento de personagem: o retrato e o nome curto (o ícone genérico do fragmento não diz quem é)
       const who = charByFrag.get(id)
-      const body = who ? (speciesBody(who, "m", "adult") as BodyId | null) : null
+      const body = who ? (speciesBody(who, "m", "young") as BodyId | null) : null
       const icon = it ? gearThumb(it) : null
       return {
         name: who ? speciesName(who, t) : it ? nameOf(it, t) : id,
@@ -342,7 +342,7 @@ function BannerView({
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#9AA3AE" }}>{t("gaTargetChar", "Seu alvo")}</span>
           <div className="mt-1 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
             {(banner.targets ?? []).map((c) => {
-              const body = speciesBody(c.id, "m", "adult") as BodyId | null
+              const body = speciesBody(c.id, "m", "young") as BodyId | null
               const on = target === c.id
               return (
                 <button key={c.id} type="button" onClick={() => setTarget(c.id)} aria-pressed={on} className="flex flex-col items-center p-1" style={{ background: on ? AE.steelHi : AE.steel, boxShadow: `inset 0 0 0 ${on ? 2 : 1}px ${on ? AE.gold : AE.brassLine}` }}>

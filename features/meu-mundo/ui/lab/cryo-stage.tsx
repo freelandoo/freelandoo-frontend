@@ -346,7 +346,7 @@ function IcePanel({ title, icon, onClose, children, t }: { title: string; icon: 
 }
 
 const portraitOfSpecies = (species: string, sex: "m" | "f") => {
-  const body = speciesBody(species, sex, "adult") as BodyId | null
+  const body = speciesBody(species, sex, "young") as BodyId | null
   return (body && PORTRAIT[body]) || PORTRAIT.sergio
 }
 
