@@ -118,9 +118,9 @@ if (hasGsap && !reduced) {
   // prólogo: palavras acendem
   $$('[data-words]').forEach(el => {
     const ws = $$('.rv', el);
-    ScrollTrigger.create({ trigger: el, start: 'top 75%', end: 'bottom 45%', scrub: true, onUpdate: s => {
+    ScrollTrigger.create({ trigger: el, start: 'top 85%', end: 'top 35%', scrub: true, onUpdate: s => {
       const n = Math.round(s.progress * ws.length);
-      ws.forEach((w, i) => { w.style.color = i < n ? '' : 'rgba(28,26,22,.16)'; });
+      ws.forEach((w, i) => { w.style.color = i < n ? '' : 'rgba(28,26,22,.3)'; });
     } });
   });
 
