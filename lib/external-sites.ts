@@ -1,5 +1,5 @@
 // Sites de clientes com projeto próprio: GS, Hidrovap e Excelência no domínio
-// deles, Russa Mais Russa por rewrite no `next.config.mjs`. Dentro do Business
+// deles, Russa Mais Russa e MF Refrigeração por rewrite no `next.config.mjs`. Dentro do Business
 // eles aparecem só renderizados: a comunidade não tem construtor nem tela de
 // gestão.
 const EXTERNAL_SITES: Record<string, string> = {
@@ -9,6 +9,7 @@ const EXTERNAL_SITES: Record<string, string> = {
   "605037cc-007b-40e6-9cb9-5f04faa194bf": "https://xn--rhclimatizao-dcb9c.com.br",
   "408de853-8a1f-49af-841b-e3bc78fc5d89": "https://xn--vivaarclimatizao-snb5e.com.br",
   "f9be317e-0882-4f06-9685-7e3e325c31a6": "/russamaisrussa",
+  "dd71b827-2068-4ee1-955a-bca7ec6d003c": "/mf",
 }
 
 export function externalSitePath(idCommunity: string | null | undefined): string | null {

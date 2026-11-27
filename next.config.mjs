@@ -86,11 +86,13 @@ const nextConfig = {
       // entradas casando o mesmo caminho deixam a ordem decidir qual vale — e
       // essa ordem não está escrita em lugar nenhum. Aqui cada caminho casa
       // com exatamente uma regra.
-      { source: "/:path((?!site-preview|(?:russamaisrussa)(?:/|$)).*)", headers: securityHeaders },
+      { source: "/:path((?!site-preview|(?:russamaisrussa|mf)(?:/|$)).*)", headers: securityHeaders },
       { source: "/site-preview/:path*", headers: previewHeaders },
       // Sites externos aparecem em iframe na tela Site da comunidade (lib/external-sites.ts).
       { source: "/russamaisrussa", headers: previewHeaders },
       { source: "/russamaisrussa/:path*", headers: previewHeaders },
+      { source: "/mf", headers: previewHeaders },
+      { source: "/mf/:path*", headers: previewHeaders },
     ]
   },
   // Tree-shaking de barris grandes: framer-motion (29 arquivos) e date-fns não
@@ -166,6 +168,10 @@ const nextConfig = {
         // (serviço russamaisrussa, basePath /russamaisrussa) porque o token da Vercel não cria projeto.
         { source: "/russamaisrussa", destination: "https://russamaisrussa-production.up.railway.app/russamaisrussa" },
         { source: "/russamaisrussa/:path*", destination: "https://russamaisrussa-production.up.railway.app/russamaisrussa/:path*" },
+        // MF Refrigeração (SITES/mf-refrigeracao): site 3D procedural, serviço mf-refrigeracao no
+        // Railway com basePath /mf, até o cliente ter domínio (aí vira 308, como GS/RH/VivaAr).
+        { source: "/mf", destination: "https://mf-refrigeracao-production.up.railway.app/mf" },
+        { source: "/mf/:path*", destination: "https://mf-refrigeracao-production.up.railway.app/mf/:path*" },
       ],
     }
   },
