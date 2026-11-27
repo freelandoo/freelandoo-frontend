@@ -172,6 +172,8 @@ const nextConfig = {
         // Railway com basePath /mf, até o cliente ter domínio (aí vira 308, como GS/RH/VivaAr).
         { source: "/mf", destination: "https://mf-refrigeracao-production.up.railway.app/mf" },
         { source: "/mf/:path*", destination: "https://mf-refrigeracao-production.up.railway.app/mf/:path*" },
+        // Projeto Trancoso: pitch estático da Tenka em public/trancoso (SITES/trancoso-tenka, tools/publicar.sh).
+        { source: "/trancoso", destination: "/trancoso/index.html" },
       ],
     }
   },
