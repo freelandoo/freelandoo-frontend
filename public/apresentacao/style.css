@@ -273,13 +273,27 @@ section{position:relative}
   .scr-profile,.scr-chat{padding:0}
   .flow-steps{padding:0 0 30px}
   .step{min-height:56vh}
-  .cpanel{grid-template-columns:1fr;gap:20px;padding:150px var(--pad) 40px;align-content:center}
-  .cp-text h3{font-size:60px;margin-bottom:10px}
-  .cp-text p{font-size:15px}
-  .cp-post{width:min(240px,62vw)}
+  .comm-pin{height:100svh}
+  .comm-label{top:74px}
+  .comm-label .eyebrow{margin-bottom:8px}
+  .comm-label h2{font-size:21px;white-space:nowrap}
+  .comm-count{margin-top:4px}
+  .cpanel{grid-template-columns:minmax(0,1fr);gap:16px;padding:172px var(--pad) 24px;align-content:start;align-items:start}
+  .cp-n{display:none}
+  .cp-text h3{font-size:clamp(40px,12vw,56px);margin:0 0 10px}
+  .cp-text p{font-size:14.5px;line-height:1.5}
+  .cp-text ul{margin-top:14px;gap:8px}
+  .cp-text li{padding:5px 9px;font-size:11px}
+  .cp-post{width:min(230px,58vw,calc((100svh - 500px) * .62));min-width:150px;padding:8px;box-shadow:10px 10px 0 rgba(0,0,0,.22)}
+  .cp-meta{padding:8px 2px 2px}
+  .cp-meta b{font-size:13px} .cp-meta span{font-size:12px}
   .rev-cols,.game-pts{grid-template-columns:1fr}
   .mj{grid-template-columns:1fr 1fr}
   .cupom{grid-template-columns:1fr}
+}
+@media (max-width:960px) and (max-height:760px){
+  .cp-text ul{display:none}
+  .cp-post{width:min(200px,52vw,calc((100svh - 420px) * .62))}
 }
 @media (prefers-reduced-motion:reduce){.dev-track{transition:none}}
 
