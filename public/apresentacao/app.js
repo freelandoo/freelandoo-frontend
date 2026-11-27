@@ -36,6 +36,23 @@
   window.addEventListener("resize", pickStep);
   pickStep();
 
+  // Simulador do cupom IRONTALKS (25%)
+  var sP = $("#s-people"), sR = $("#s-rate"), sT = $("#s-ticket");
+  function brl(v) { return "R$ " + Math.round(v).toLocaleString("pt-BR"); }
+  function sim() {
+    if (!sP) return;
+    var people = +sP.value, rate = +sR.value, ticket = +sT.value;
+    var gross = people * rate / 100 * ticket;
+    $("#o-people").textContent = people.toLocaleString("pt-BR");
+    $("#o-rate").textContent = rate + "%";
+    $("#o-ticket").textContent = brl(ticket);
+    $("#o-gross").textContent = brl(gross);
+    $("#o-month").textContent = brl(gross * 0.25);
+    $("#o-year").textContent = brl(gross * 0.25 * 12);
+  }
+  [sP, sR, sT].forEach(function (el) { if (el) el.addEventListener("input", sim); });
+  sim();
+
   function runCount(el) {
     var to = +el.dataset.to;
     if (reduce || !window.gsap) { el.textContent = to; return; }
@@ -87,6 +104,7 @@
   });
 
   // Ranking da Casa Views
+  gsap.from(".pol-row i", { scaleX: 0, duration: 1.1, ease: "power3.out", stagger: 0.12, scrollTrigger: { trigger: ".pol-panel", start: "top 80%" } });
   gsap.from(".cv-row i", { scaleX: 0, duration: 1.1, ease: "power3.out", stagger: 0.12, scrollTrigger: { trigger: ".cv-panel", start: "top 80%" } });
 
   $$(".count").forEach(function (el) {
