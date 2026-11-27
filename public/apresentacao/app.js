@@ -11,21 +11,26 @@
     prog.style.width = (h > 0 ? scrollY / h * 100 : 0) + "%";
   }, { passive: true });
 
-  // Sistema: o passo no meio da tela escolhe a tela do aparelho (desliza na horizontal)
-  var steps = $$(".step"), track = $("#dev-track"), dots = $$("#dev-dots i"), url = $("#dev-url");
-  var urls = ["freelandoo.com.br/carla.treina", "freelandoo.com.br/feed", "freelandoo.com.br/vitrine", "freelandoo.com.br/mensagens", "freelandoo.com.br/agendar/aula", "freelandoo.com.br/carteira"];
-  var cur = -1;
-  function show(i) {
-    if (i === cur) return; cur = i;
-    track.style.transform = "translateX(" + (-i * 100 / 6) + "%)";
-    url.textContent = urls[i];
-    steps.forEach(function (s, k) { s.classList.toggle("is-on", k === i); });
-    dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
+  // Aparelhos fixos: o passo no meio da tela escolhe a tela (desliza na horizontal)
+  var sysUrls = ["freelandoo.com.br/carla.treina", "freelandoo.com.br/feed", "freelandoo.com.br/vitrine", "freelandoo.com.br/mensagens", "freelandoo.com.br/agendar/aula", "freelandoo.com.br/carteira"];
+  var flows = $$("[data-flow]").map(function (root) {
+    return { steps: $$(".step", root), track: $(".dev-track", root), dots: $$(".dev-dots i", root), url: $("#dev-url", root), cur: -1 };
+  });
+  function show(f, i) {
+    if (i === f.cur) return; f.cur = i;
+    var n = f.steps.length;
+    f.track.style.transform = "translateX(" + (-i * 100 / n) + "%)";
+    if (f.url) f.url.textContent = sysUrls[i];
+    f.steps.forEach(function (s, k) { s.classList.toggle("is-on", k === i); });
+    f.dots.forEach(function (d, k) { d.classList.toggle("on", k === i); });
   }
   function pickStep() {
-    var line = innerWidth <= 960 ? innerHeight * 0.72 : innerHeight * 0.5, best = 0;
-    steps.forEach(function (s, k) { if (s.getBoundingClientRect().top < line) best = k; });
-    show(best);
+    var line = innerWidth <= 960 ? innerHeight * 0.72 : innerHeight * 0.5;
+    flows.forEach(function (f) {
+      var best = 0;
+      f.steps.forEach(function (s, k) { if (s.getBoundingClientRect().top < line) best = k; });
+      show(f, best);
+    });
   }
   window.addEventListener("scroll", pickStep, { passive: true });
   window.addEventListener("resize", pickStep);
